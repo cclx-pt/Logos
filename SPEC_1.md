@@ -315,21 +315,26 @@ A equipa do ministério organizou os pedidos por **prioridade** (P1 essencial �
 
 | Camada                                | Escolha                                  | Justificação                                                                              |
 |---------------------------------------|------------------------------------------|-------------------------------------------------------------------------------------------|
-| Framework (frontend + backend)        | **Next.js 15 + TypeScript**              | Código único para UI e API; routing por ficheiros; renderização no servidor; nativo no Vercel |
+| Framework (frontend + backend)        | **Next.js 15 + TypeScript** (`strict: true`) | Código único para UI e API; routing por ficheiros; SSR; nativo no Vercel. Versão 15 é a opção aborrecida e bem-documentada (§15); Next.js 16 reavaliado pós-V3 |
 | Estilização                           | **Tailwind CSS**                         | Utility-first; rápido para humano e para Claude Code                                      |
 | Componentes UI                        | **shadcn/ui**                            | Acessíveis, configuráveis para a paleta creme + laranja                                   |
-| Base de dados                         | **Supabase (Postgres)**                  | Postgres real, plano gratuito generoso, sem aprisionamento                                |
+| Base de dados                         | **Supabase (Postgres)** — 2 projetos: `logos-dev` e `logos-prod` | Auth da Supabase fixa-se ao schema `auth.users`; só projetos separados isolam contas. Plano gratuito acomoda 2 projetos |
 | Autenticação                          | **Supabase Auth** (email + Google OAuth) | Integrada com a base de dados; trata de papéis, sessões, recuperação de palavra-passe     |
 | Armazenamento de ficheiros (PDFs)     | **Supabase Storage**                     | Mesma conta Supabase; URLs assinados para descarregar                                     |
-| Acesso à base de dados                | **Supabase JS client**                   | Ponto de partida mais simples que um ORM completo; migração para Drizzle possível mais tarde |
+| Acesso à base de dados                | **Supabase JS client** (`@supabase/ssr` para SSR) | Sessão em Server Components/Actions via cookies httpOnly; migração para Drizzle adiada |
+| Migrations                            | **Supabase CLI** (`supabase/migrations/*.sql` versionado) | Schema replicado entre `logos-dev` e `logos-prod` com `supabase db push`; ficheiros SQL no Git |
 | Formulários e validação               | **react-hook-form + Zod**                | Combinação padrão para os formulários do admin                                            |
-| Email                                 | **Resend**                               | Emails de recuperação de palavra-passe; integração com Supabase Auth                      |
+| Testes (unit / lógica)                | **Vitest** + **@testing-library/react**  | Cobertura obrigatória de visibilidade por etiquetas, conclusão de curso, papéis (`CLAUDE.md`) |
+| Testes E2E *(a partir da V3)*         | **Playwright**                           | Verificação ponta-a-ponta de fluxos de auth e acesso por etiqueta. Adiado para V3: V1 é estático, V2 cobre-se com Vitest |
+| Linting                               | **ESLint** (`next/core-web-vitals`)      | Default do `create-next-app`; impede `any` sem justificação                               |
+| Formatação                            | **Prettier**                             | Configuração mínima                                                                       |
+| Email                                 | **Resend**                               | Emails de recuperação de palavra-passe; SPF + DKIM no DNS Hostinger                        |
 | Alojamento                            | **Vercel**                               | Host nativo de Next.js; plano gratuito; deploy automático a partir do GitHub              |
-| Controlo de versões                   | **GitHub**                               | Repositório + gatilho de deploy do Vercel                                                 |
+| Controlo de versões + CI              | **GitHub** + **GitHub Actions**          | Repositório + deploy Vercel; Actions corre `pnpm lint && pnpm typecheck && pnpm test` em PR; `main` protegido contra push directo |
 | Gestor de pacotes                     | **pnpm**                                 | Mais rápido e eficiente em disco que o npm                                                |
 | Editor                                | **VS Code** (ou Cursor)                  | Ferramentas padrão                                                                        |
-| DNS / domínio                         | **Hostinger DNS** (gerido pela conta da igreja) | CNAME `logos.cclx.pt` aponta para o Vercel                                          |
-| Analytics *(opcional)*                | **Vercel Analytics** ou **Plausible**    | Respeita privacidade, gratuito                                                            |
+| DNS / domínio                         | **Hostinger DNS** (gerido pela conta da igreja) | CNAME `logos.cclx.pt` → Vercel; registos SPF + DKIM para Resend                            |
+| Analytics                             | **Vercel Analytics**                     | Cookieless, gratuito, respeita privacidade                                                |
 | Tracking de erros *(opcional, V2+)*   | **Sentry**                               | Captura erros em produção                                                                 |
 
 **Custo mensal esperado:** **0 €** até crescimento significativo.
@@ -394,20 +399,53 @@ Serviços externos:
 
 ## 13. Fluxo de Desenvolvimento
 
-1. O código é escrito localmente no VS Code, executado em `localhost:3000` via `pnpm dev`.
-2. A aplicação local liga-se a um projeto Supabase (projeto dedicado de desenvolvimento ou o de produção com cuidado — a decidir na fase de Setup).
-3. As alterações são submetidas a um repositório no GitHub.
-4. Push para o branch `main` despoleta automaticamente um deploy no Vercel. Disponível em `logos.cclx.pt` em ~60 segundos.
-5. Branches de pull request recebem deploys de pré-visualização em URLs únicos (comportamento padrão do Vercel).
+1. O código é escrito localmente no VS Code, executado em `localhost:3000` via `pnpm dev`. `.env.local` aponta para o projeto Supabase **`logos-dev`**.
+2. As alterações são submetidas via **pull request** num repositório no GitHub. Push directo para `main` está bloqueado (regra `CLAUDE.md` + branch protection).
+3. **GitHub Actions** corre `pnpm lint && pnpm typecheck && pnpm test` em cada PR. Sem checks verdes, não há merge. A partir da V3 acrescenta-se `pnpm test:e2e` (Playwright).
+4. PRs aprovados são merged em `main`. O Vercel constrói e faz deploy contra o projeto Supabase **`logos-prod`** em ~60 segundos. Disponível em `logos.cclx.pt`.
+5. Branches de pull request recebem deploys de pré-visualização em URLs únicos. Estes apontam também para `logos-prod` (cuidado com mutações ao testar PRs).
+6. **Migrations:** `supabase migration new <nome>` → SQL versionado no Git → `supabase db push` em `logos-dev` → após PR merged, `supabase db push` em `logos-prod` (passo manual e deliberado).
 
 ---
 
 ## 14. Branding e Referências Visuais
 
-- **Logótipo:** Logótipo existente do ministério Logos / CCLX (a fornecer).
-- **Paleta:** Creme + laranja vivo. Valores hexadecimais exatos a confirmar com a referência visual.
-- **Tom:** Acolhedor, limpo, adequado a uma igreja. Não corporativo, não frio.
-- **Tipografia:** A definir na fase de Setup com base na referência visual.
+### Paleta (fixada)
+
+| Token            | Hex       | Uso                                                  |
+|------------------|-----------|------------------------------------------------------|
+| `cream-bg`       | `#FAF4EA` | Fundo principal de todas as páginas                  |
+| `cream-card`     | `#FBE6D4` | Cartão pêssego (variação 1 — ex.: *Fundamentos*)     |
+| `sage-card`      | `#C6CDB1` | Cartão sálvia (variação 2 — ex.: *Discipulado*)      |
+| `butter-card`    | `#F6E6C4` | Cartão amarelo suave (variação 3 — ex.: *Futuros*)   |
+| `orange-primary` | `#E36A2C` | Marca, CTAs, links, ícones de destaque               |
+| `orange-hover`   | `#C85A22` | Estado hover/active de elementos `orange-primary`    |
+| `ink`            | `#1A1A1A` | Texto principal                                      |
+| `muted`          | `#6B6B6B` | Texto secundário, *placeholders*, metadados          |
+
+Os tokens são vinculativos: o tema do Tailwind e do shadcn/ui devem usá-los exactamente. Variações futuras (modo escuro V6) acrescentam tokens novos, sem alterar os existentes.
+
+### Tipografia (fixada)
+
+- **Display / títulos:** **Cormorant Garamond** (Google Fonts, gratuito) — pesos 500 e 600. Usado em `h1`–`h3`, hero, títulos de cartão de curso e no wordmark *LOGOS* quando renderizado em texto.
+- **UI / corpo:** **Inter** (Google Fonts, gratuito) — pesos 400, 500, 600. Usado em corpo, navegação, formulários, botões, sidebars.
+- Carregamento via `next/font/google` com `display: 'swap'` e `subsets: ['latin']`. Sem `latin-ext` — não é necessário para PT-PT e reduz o *bundle*.
+
+### Logótipo
+
+- O wordmark *LOGOS* + livro aberto estilizado (linha laranja) visível em `docs/branding/mockups-v3.jpeg` é a versão visual aprovada.
+- **Pendente:** receber do ministério o ficheiro **SVG vetorial** (e versão monocroma para fundos escuros, futuros V6). Até lá, o wordmark é reproduzido em texto Cormorant Garamond a `orange-primary` como *fallback* aceitável para a V1.
+- Em mobile o cabeçalho colapsa: o wordmark fica visível, navegação fecha em hambúrguer.
+
+### Tom
+
+Acolhedor, limpo, adequado a uma igreja. Não corporativo, não frio. A combinação creme + laranja vivo sustenta este tom; evitar acrescentar paletas frias (azuis, cinzas saturados) sem justificação.
+
+### Referências visuais vinculativas
+
+Os ficheiros em `docs/branding/` são a fonte de verdade visual:
+- `placeholder-cclx-logos.png` — *placeholder* atual em `cclx.cclx.pt/logos`. Estabelece o tom geral; o laranja é mais terracota que o da plataforma final.
+- `mockups-v3.jpeg` — quatro mockups da V3 (catálogo, detalhe de curso, aula, apostila). **Vinculativos no nível da estrutura e da paleta, não ao pixel.**
 
 ### Referências de mockup
 
@@ -450,8 +488,7 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 
 ## 17. Questões em Aberto / Decisões Adiadas
 
-- **Valores hexadecimais exatos da paleta, tipografia e logótipo final** — a fornecer antes do início da V1.
-- **Projeto Supabase único vs. projetos separados de dev/prod** — a decidir na fase de Setup.
+- **Logótipo final em SVG** do ministério — em falta. A V1 pode arrancar com wordmark em texto (Cormorant Garamond a `orange-primary`); substitui-se quando o ficheiro chegar. Paleta e tipografia foram fixadas em §14.
 - **Estratégia de backup no plano gratuito do Supabase** — aceitar o risco para a V1; rever quando houver utilizadores reais.
 - **Identificar o contacto de DNS** na conta Hostinger da igreja — necessário antes da semana de lançamento (com bastante antecedência relativamente a 1 de julho).
 - **Texto público final** (página inicial, *Conhece-nos*, etiquetas de botões) — redigido durante a V1 e revisto pelos responsáveis da igreja.
@@ -482,11 +519,19 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 
 ## 19. Estado do Documento
 
-- **Versão:** 2.0
-- **Última atualização:** 28 de abril de 2026
-- **Alterações relativamente à v1.0:**
-  - Etiquetas estendidas a três níveis (curso, módulo, aula), faseadas: V3 só ao nível do curso, V4 acrescenta módulo e aula
-  - Acompanhamento de progresso simplificado para conclusão binária por aula; eliminadas barras de progresso e percentagens
-  - Versões reorganizadas: nova V4 dedicada a etiquetas multi-nível; antigas V4–V6 deslocaram-se para V5–V7; nova V7 reservada a indicadores de progresso opcionais
+- **Versão:** 2.2
+- **Última atualização:** 5 de maio de 2026
+- **Alterações relativamente à v2.1:**
+  - §14 — paleta hexadecimal fixada (8 tokens), tipografia fixada (Cormorant Garamond + Inter), logo descrito com fallback de texto até chegar SVG, mockups vinculativos referenciados em `docs/branding/`
+  - §17 — decisão "paleta + tipografia" resolvida; pendente apenas o SVG do logótipo
+- **Alterações relativamente à v2.0:**
+  - §11 — explicitada a tooling de qualidade: Vitest (unit) + Playwright (E2E, V3+), ESLint + Prettier, TS `strict: true`, Supabase CLI para migrations
+  - §11 — Supabase passa a ser explicitamente **2 projetos** (`logos-dev` + `logos-prod`)
+  - §13 — fluxo de dev formaliza pull requests + GitHub Actions + protecção de `main`
+  - §17 — removida decisão "projeto Supabase único vs separados" (resolvida)
+- **Alterações relativamente à v1.0 (ver v2.0):**
+  - Etiquetas estendidas a três níveis (curso, módulo, aula), faseadas
+  - Acompanhamento simplificado para conclusão binária por aula
+  - Versões reorganizadas: V4 dedicada a etiquetas multi-nível
 - **Responsável:** Líder do projeto
 - **Próxima revisão:** Antes de iniciar o build da V1 (após conclusão da fase de Setup)
