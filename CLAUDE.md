@@ -11,7 +11,7 @@ Plataforma online de estudo bíblico da **CCLX** (igreja em Portugal). Cursos �
 - **Prazo absoluto V3:** 1 de julho de 2026
 
 ## 🏗️ Arquitetura
-- **Framework:** Next.js 15 + TypeScript (App Router)
+- **Framework:** Next.js 16 + TypeScript (App Router)
 - **DB / Auth / Storage:** Supabase (Postgres, Supabase Auth com email + Google OAuth, Supabase Storage para PDFs)
 - **Estilização:** Tailwind CSS + shadcn/ui
 - **Forms:** react-hook-form + Zod

@@ -1,7 +1,7 @@
 # architecture.md — Logos
 
 > **Quando atualizar:** após mudanças estruturais (novo serviço, alteração de modelo de dados, nova fronteira de segurança, mudança de stack).
-> **Última atualização:** 02-05-2026
+> **Última atualização:** 05-05-2026 (Next.js 16 + Tailwind v4 inicializados)
 
 ## 1. Visão de alto nível
 
@@ -14,7 +14,7 @@
            ▼
 ┌──────────────────────────────────────┐
 │            VERCEL                    │
-│  Next.js 15 (App Router) + TS        │
+│  Next.js 16 (App Router) + TS        │
 │  ├── /app          (rotas públicas)  │
 │  ├── /app/admin    (CRUD de admin)   │
 │  ├── /app/api      (route handlers)  │

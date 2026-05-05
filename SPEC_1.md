@@ -315,7 +315,7 @@ A equipa do ministério organizou os pedidos por **prioridade** (P1 essencial �
 
 | Camada                                | Escolha                                  | Justificação                                                                              |
 |---------------------------------------|------------------------------------------|-------------------------------------------------------------------------------------------|
-| Framework (frontend + backend)        | **Next.js 15 + TypeScript** (`strict: true`) | Código único para UI e API; routing por ficheiros; SSR; nativo no Vercel. Versão 15 é a opção aborrecida e bem-documentada (§15); Next.js 16 reavaliado pós-V3 |
+| Framework (frontend + backend)        | **Next.js 16 + TypeScript** (`strict: true`) | Código único para UI e API; routing por ficheiros; SSR; nativo no Vercel. Versão 16 é a estável corrente a 05-05-2026 — App Router + Turbopack default. Inicial pre-V1 corria Next 15; bump documentado em `feature-docs/nextjs-init.md` §4.1 |
 | Estilização                           | **Tailwind CSS**                         | Utility-first; rápido para humano e para Claude Code                                      |
 | Componentes UI                        | **shadcn/ui**                            | Acessíveis, configuráveis para a paleta creme + laranja                                   |
 | Base de dados                         | **Supabase (Postgres)** — 2 projetos: `logos-dev` e `logos-prod` | Auth da Supabase fixa-se ao schema `auth.users`; só projetos separados isolam contas. Plano gratuito acomoda 2 projetos |

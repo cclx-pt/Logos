@@ -79,7 +79,7 @@
   - Pesos a carregar: **400** (Regular), **500** (Medium), **600** (SemiBold)
   - Aplicado a: `body`, navegação, formulários, botões, sidebars, metadados
 
-### Carregamento (Next.js 15 App Router)
+### Carregamento (Next.js 16 App Router)
 
 ```ts
 // app/fonts.ts

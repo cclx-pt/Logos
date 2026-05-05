@@ -1,0 +1,33 @@
+@import 'tailwindcss';
+
+/*
+ * Tokens vinculativos do branding Logos.
+ * Fonte: feature-docs/branding.md §1 e §2.
+ * NÃO inventar cores fora desta paleta sem atualizar a spec.
+ */
+@theme {
+  /* Paleta — hex autoritativos */
+  --color-cream-bg: #faf4ea;
+  --color-cream-card: #fbe6d4;
+  --color-sage-card: #c6cdb1;
+  --color-butter-card: #f6e6c4;
+  --color-orange: #e36a2c;
+  --color-orange-hover: #c85a22;
+  --color-ink: #1a1a1a;
+  --color-muted: #6b6b6b;
+
+  /* Tipografia — pares fixados (variáveis injectadas pelo next/font em layout.tsx) */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cormorant), Georgia, serif;
+}
+
+/* Fundo sempre cream-bg, texto sempre ink. Branco puro é proibido em superfícies grandes. */
+html,
+body {
+  background-color: var(--color-cream-bg);
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-sans);
+}
