@@ -16,6 +16,20 @@
 
 ---
 
+## [05-05-2026] — Branding: SVG oficial do logótipo
+
+### add
+- add: `docs/branding/logo-cclx-logos.svg` — SVG oficial entregue pelo ministério (1600×913, 452 paths, wordmark "LOGOS" + livro aberto estilizado a linha laranja)
+
+### docs
+- update: `feature-docs/branding.md` — secção §3 Logótipo flipada de pendente → recebido; fallback de texto reclassificado como `aria-label`; histórico de 05-05-2026 estendido
+- update: `status.md` — SVG do logótipo movido de 🚧 para ✅; risco "logótipo bloqueia V1" removido
+
+### infra
+- update: `.gitignore` — ignorar `.claude/worktrees/` (estado interno do Claude Code) e `claude-code-psb-guide.md` (notas pessoais soltas)
+
+---
+
 ## [05-05-2026] — Setup: configuração transversal do Claude Code
 
 ### infra

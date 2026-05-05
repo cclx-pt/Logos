@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 05-05-2026
+> **Última atualização:** 05-05-2026 (SVG do logótipo recebido)
 
 ## 🎯 Milestone atual
 **Fase de Setup** — preparar fundações antes de iniciar a V1.
@@ -18,9 +18,10 @@
 - [x] **Paleta hex fixada** (`cream-bg`, `cream-card`, `sage-card`, `butter-card`, `orange-primary`, `orange-hover`, `ink`, `muted`) — `feature-docs/branding.md`
 - [x] **Tipografia fixada**: Cormorant Garamond (display) + Inter (UI), via `next/font/google`
 - [x] Mockups V3 versionados como referência vinculativa em `docs/branding/`
+- [x] **SVG oficial do logótipo** recebido e versionado em `docs/branding/logo-cclx-logos.svg`
 
 ## 🚧 Em progresso
-- [ ] Receber **SVG** do logótipo final do ministério (V1 pode arrancar com wordmark em texto como fallback)
+_Nada bloqueado de momento. A avançar para Setup → V1._
 
 ## ⏭️ Próximas tarefas (Setup → V1)
 - [ ] Inicializar projeto Next.js 15 + TS (`strict`) + Tailwind + ESLint + Prettier + pnpm
@@ -49,7 +50,6 @@
 
 ## ⚠️ Riscos / bloqueios
 - **DNS Hostinger:** identificar contacto **antes** da semana de lançamento da V1
-- **SVG do logótipo:** em falta; V1 arranca com wordmark em texto Cormorant + `orange-primary` como fallback (substituível drop-in quando chegar)
 - **Plano gratuito Supabase:** sem backups; risco aceite até haver utilizadores reais
 
 ## 📌 Decisões adiadas
