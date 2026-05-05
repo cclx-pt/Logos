@@ -1,6 +1,6 @@
 # branding.md — Identidade Visual da Logos
 
-> **Estado:** ✅ Paleta + tipografia fixadas (05-05-2026). 🚧 SVG do logótipo pendente.
+> **Estado:** ✅ Paleta + tipografia fixadas (05-05-2026). ✅ SVG do logótipo recebido (05-05-2026).
 > **Fonte de verdade:** `SPEC_1.md` §14. Este documento aprofunda a aplicação técnica.
 
 ---
@@ -134,12 +134,12 @@ export const inter = Inter({
 
 ### Estado
 
-- **Aprovado visualmente:** o wordmark "LOGOS" + livro aberto estilizado a linha laranja, visível em `docs/branding/mockups-v3.jpeg`.
-- **Em falta:** ficheiro vetorial **SVG** entregue pelo ministério (e variante monocroma para fundos escuros futuros, V6).
+- **SVG oficial recebido (05-05-2026):** `docs/branding/logo-cclx-logos.svg` — wordmark "LOGOS" + livro aberto estilizado a linha laranja, viewBox `1600×913`, 452 paths.
+- **Em falta:** variante **monocroma** para fundos escuros (V6).
 
-### Fallback aceitável até chegar o SVG
+### Fallback de texto (já não necessário)
 
-Renderizar o wordmark em texto:
+Foi mantido como referência caso o SVG falhe a carregar. Renderizar o wordmark em texto:
 
 ```tsx
 <Link href="/" className="font-display text-2xl font-semibold text-orange tracking-wide">
@@ -147,9 +147,9 @@ Renderizar o wordmark em texto:
 </Link>
 ```
 
-A V1 pode arrancar e ir para produção com este *fallback*. O SVG é uma melhoria *drop-in* quando chegar (substituir o texto por `<Image>` ou inline SVG sem alterar layout).
+A partir da V1, usar diretamente o SVG (inline ou via `next/image`) e manter o texto como `aria-label` para acessibilidade.
 
-### Regras quando o SVG chegar
+### Regras de uso do SVG
 
 - Manter altura mínima de 32px em mobile, 40px em desktop.
 - Espaço livre à volta ≥ metade da altura do logótipo.
@@ -196,3 +196,4 @@ Acolhedor, limpo, adequado a uma igreja. Tradução prática:
 ## 7. Histórico
 
 - **05-05-2026** — Paleta hex fixada (8 tokens), Cormorant + Inter escolhidos, mockups movidos para `docs/branding/`. SPEC_1 §14 atualizado para v2.2. SVG do logo continua pendente do ministério.
+- **05-05-2026** — SVG oficial recebido do ministério e versionado em `docs/branding/logo-cclx-logos.svg` (1600×913, 452 paths). Fallback de texto deixa de ser necessário; mantido como `aria-label`. Variante monocroma para V6 continua pendente.
