@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 05-05-2026 (Next.js 16 + Tailwind v4 inicializados)
+> **Última atualização:** 05-05-2026 (Vitest + Testing Library configurados; primeiro smoke test)
 
 ## 🎯 Milestone atual
 **Fase de Setup** — preparar fundações antes de iniciar a V1.
@@ -20,12 +20,12 @@
 - [x] Mockups V3 versionados como referência vinculativa em `docs/branding/`
 - [x] **SVG oficial do logótipo** recebido e versionado em `docs/branding/logo-cclx-logos.svg`
 - [x] **Next.js 16** inicializado (App Router, src/, alias `@/*`) com TypeScript strict, Tailwind v4, ESLint 9 flat config, Prettier + `eslint-config-prettier` + `prettier-plugin-tailwindcss`, pnpm. Tokens de branding aplicados em `src/app/globals.css` via `@theme`. Smoke test: home `lang="pt-PT"` com wordmark "LOGOS" + "Em construção". Detalhes em `feature-docs/nextjs-init.md`.
+- [x] **Vitest 4 + Testing Library 16 + jsdom** configurados (env jsdom, globals, alias `@/*` via Vite 7 nativo). Setup em `src/test/setup.ts` (matchers de `jest-dom` + `cleanup` automático). Coverage V8. Primeiro smoke test em `src/app/page.test.tsx` (2/2 a passar). Detalhes em `feature-docs/testing.md`.
 
 ## 🚧 Em progresso
 _Nada bloqueado de momento. A avançar para Setup → V1._
 
 ## ⏭️ Próximas tarefas (Setup → V1)
-- [ ] Adicionar Vitest + `@testing-library/react` + primeiro teste smoke
 - [ ] Configurar GitHub Actions (`ci.yml`: lint + typecheck + test em PR)
 - [ ] Ativar branch protection em `main`
 - [ ] Instalar e configurar shadcn/ui
