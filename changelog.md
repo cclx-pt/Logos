@@ -16,6 +16,25 @@
 
 ---
 
+## [05-05-2026] — Setup: Vitest + Testing Library + primeiro smoke test
+
+### add
+- add: **Vitest 4.1.5** + **`@vitest/coverage-v8` 4.1.5** — runner com env `jsdom`, `globals: true`, alias `@/*` via Vite 7 nativo (`resolve.tsconfigPaths: true`)
+- add: **`@testing-library/react` 16.3.2** + **`@testing-library/jest-dom` 6.9.1** + **`@testing-library/user-event` 14.6.1** — primeira major a suportar React 19
+- add: **`@vitejs/plugin-react` 6.0.1** + **`jsdom` 29.1.1**
+- add: `vitest.config.ts` — env jsdom, globals, setup file, exclude `node_modules`/`.next`/`e2e`, coverage V8 (text + html), exclui `layout.tsx`/`fonts.ts` (sem ROI sem mock de `next/font`)
+- add: `src/test/setup.ts` — `import '@testing-library/jest-dom/vitest'` + `cleanup()` automático em `afterEach`
+- add: `src/app/page.test.tsx` — primeiro smoke test (2 asserções: heading `aria-label="Logos"` com texto "LOGOS"; legenda "Em construção" presente). 2/2 a passar
+- add: scripts `test`, `test:watch`, `test:coverage` em `package.json`
+- add: `vitest/globals` + `@testing-library/jest-dom` em `tsconfig.json` `compilerOptions.types`
+- add: `feature-docs/testing.md` — estratégia de testes (stack, decisões, padrões para regras duras de CLAUDE.md, anti-padrões, troubleshooting)
+
+### update
+- update: `status.md` — Vitest item movido para ✅; data atualizada
+- update: `package.json` — bump deps + scripts (sem `vite-tsconfig-paths`, removido após aviso do Vitest 4 sobre suporte nativo)
+
+---
+
 ## [05-05-2026] — Setup: Next.js 16 + Tailwind v4 + TS strict + ESLint 9 + Prettier (pnpm)
 
 ### add
