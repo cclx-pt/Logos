@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 05-05-2026 (SVG do logótipo recebido)
+> **Última atualização:** 05-05-2026 (Next.js 16 + Tailwind v4 inicializados)
 
 ## 🎯 Milestone atual
 **Fase de Setup** — preparar fundações antes de iniciar a V1.
@@ -19,12 +19,12 @@
 - [x] **Tipografia fixada**: Cormorant Garamond (display) + Inter (UI), via `next/font/google`
 - [x] Mockups V3 versionados como referência vinculativa em `docs/branding/`
 - [x] **SVG oficial do logótipo** recebido e versionado em `docs/branding/logo-cclx-logos.svg`
+- [x] **Next.js 16** inicializado (App Router, src/, alias `@/*`) com TypeScript strict, Tailwind v4, ESLint 9 flat config, Prettier + `eslint-config-prettier` + `prettier-plugin-tailwindcss`, pnpm. Tokens de branding aplicados em `src/app/globals.css` via `@theme`. Smoke test: home `lang="pt-PT"` com wordmark "LOGOS" + "Em construção". Detalhes em `feature-docs/nextjs-init.md`.
 
 ## 🚧 Em progresso
 _Nada bloqueado de momento. A avançar para Setup → V1._
 
 ## ⏭️ Próximas tarefas (Setup → V1)
-- [ ] Inicializar projeto Next.js 15 + TS (`strict`) + Tailwind + ESLint + Prettier + pnpm
 - [ ] Adicionar Vitest + `@testing-library/react` + primeiro teste smoke
 - [ ] Configurar GitHub Actions (`ci.yml`: lint + typecheck + test em PR)
 - [ ] Ativar branch protection em `main`

@@ -25,7 +25,7 @@ Para decidir se acrescentas `pnpm test:e2e`, lê `status.md` e procura a versão
 1. **Detecta o estado do projeto:**
    - Se não existir `package.json` na raiz → o projeto Next.js ainda não foi inicializado. Responde claramente:
      > ⚠️ Projeto Next.js ainda não inicializado. Não há tooling para correr.
-     > Próxima tarefa relevante em `status.md`: "Inicializar projeto Next.js 15 + TS (`strict`) + Tailwind + ESLint + Prettier + pnpm".
+     > Próxima tarefa relevante em `status.md`: "Inicializar projeto Next.js 16 + TS (`strict`) + Tailwind + ESLint + Prettier + pnpm".
 
      E para. Não corras nada.
    - Se existir, prossegue.

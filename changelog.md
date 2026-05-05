@@ -16,6 +16,36 @@
 
 ---
 
+## [05-05-2026] — Setup: Next.js 16 + Tailwind v4 + TS strict + ESLint 9 + Prettier (pnpm)
+
+### add
+- add: Next.js **16.2.4** com App Router, `src/`, alias `@/*`, Turbopack default — scaffold via `pnpm create next-app@latest --ts --tailwind --eslint --app --src-dir --import-alias "@/*" --use-pnpm --turbopack`
+- add: TypeScript 5.9 em `strict: true` (config `tsconfig.json` default do scaffold)
+- add: Tailwind **v4** (`tailwindcss@^4`, `@tailwindcss/postcss@^4`) com tokens de branding em `@theme` no `src/app/globals.css` (paleta de 8 cores + famílias `--font-sans` Inter / `--font-display` Cormorant Garamond)
+- add: ESLint **9** flat config (`eslint.config.mjs`) com `eslint-config-next/core-web-vitals` + `eslint-config-next/typescript`
+- add: Prettier 3.8 com `prettier-plugin-tailwindcss` (ordem canónica de classes) e `eslint-config-prettier/flat` (desliga regras conflituosas no ESLint)
+- add: `.prettierrc.json` (single quote, semi true, trailingComma all, printWidth 100, LF) e `.prettierignore` (build, lockfile, `.claude/`, docs versionados manualmente)
+- add: `src/app/fonts.ts` — Cormorant Garamond (500/600) + Inter (400/500/600) via `next/font/google` com subset `latin`
+- add: `src/app/layout.tsx` — `<html lang="pt-PT">`, fontes injetadas, metadata com template `'%s · Logos'`
+- add: `src/app/page.tsx` — wordmark "LOGOS" (Cormorant + `text-orange`) + "Em construção" sobre `bg-cream-bg`, `aria-label` no h1 para screen readers
+- add: scripts `lint:fix`, `typecheck`, `format`, `format:check` em `package.json`
+- add: `engines` (`node >=20`, `pnpm >=10`) e `packageManager: pnpm@10.33.2` em `package.json`
+- add: `feature-docs/nextjs-init.md` — documentação exaustiva (comando exato, flags, decisões, troubleshooting)
+
+### update
+- update: `CLAUDE.md` — Framework de "Next.js 15" para "Next.js 16"
+- update: `architecture.md` — diagrama e cabeçalho passam a Next.js 16; data de última atualização
+- update: `SPEC_1.md` §11 — célula Framework atualizada para Next.js 16 (justificação ajustada)
+- update: `feature-docs/branding.md` — secção "Carregamento (Next.js X App Router)" passa a 16
+- update: `.claude/agents/test-runner.md` — mensagem de erro refere Next.js 16
+- update: `status.md` — Next.js init movido para ✅; remoção do bullet "Inicializar projeto Next.js 15..." da lista de próximas tarefas
+
+### housekeeping
+- remove: SVGs boilerplate em `public/` (`next.svg`, `vercel.svg`, `globe.svg`, `window.svg`, `file.svg`)
+- add: `AGENTS.md` no root — aviso do Next 16 sobre breaking changes vs versões anteriores
+
+---
+
 ## [05-05-2026] — Branding: SVG oficial do logótipo
 
 ### add
