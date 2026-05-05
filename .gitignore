@@ -51,6 +51,10 @@ next-env.d.ts
 
 # ---- Claude Code (config local por máquina) ----
 .claude/settings.local.json
+.claude/worktrees/
+
+# ---- Notas pessoais soltas (não fazem parte do projeto) ----
+claude-code-psb-guide.md
 
 # ---- SO ----
 .DS_Store
