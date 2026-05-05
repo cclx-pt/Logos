@@ -1,0 +1,29 @@
+# Build / output
+.next
+out
+build
+dist
+coverage
+
+# Claude Code (config + agents + commands são editados manualmente)
+.claude/
+
+# Dependências
+node_modules
+pnpm-lock.yaml
+
+# Geração automática
+next-env.d.ts
+
+# Assets vetoriais grandes
+docs/branding/*.svg
+
+# Ficheiros de docs versionados manualmente — manter formato existente
+CLAUDE.md
+SPEC_1.md
+architecture.md
+changelog.md
+status.md
+AGENTS.md
+feature-docs/
+docs/
