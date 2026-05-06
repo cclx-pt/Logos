@@ -1,7 +1,7 @@
 # architecture.md — Logos
 
 > **Quando atualizar:** após mudanças estruturais (novo serviço, alteração de modelo de dados, nova fronteira de segurança, mudança de stack).
-> **Última atualização:** 05-05-2026 (Next.js 16 + Tailwind v4 inicializados)
+> **Última atualização:** 06-05-2026 (stack Next 16 / Tailwind v4 documentada sob tripwire — ver `status.md` ⚠️ Riscos)
 
 ## 1. Visão de alto nível
 

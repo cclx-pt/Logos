@@ -16,6 +16,22 @@
 
 ---
 
+## [06-05-2026] — Honestidade da stack: Next 16 / Tailwind v4 sob tripwire
+
+### update
+- update: `SPEC_1.md` §11 — célula Framework reescrita ("default do `create-next-app` mantido + tripwire") em vez de "estável corrente". Honestidade > racionalização a posteriori (princípio `SPEC_1.md:3`).
+- update: `CLAUDE.md` 🏗️ Arquitetura — nota explícita de que Next 16 é default do scaffold sob tripwire; pedido de evitar APIs novas exclusivas de 16 sem necessidade clara
+- update: `feature-docs/nextjs-init.md` §4.1 — reescrita honesta da decisão Next 16 vs 15; fact-check (shadcn+v4, shadcn+Next 16) registado; gatilhos do tripwire (a/b/c) e custo de reversão (2-4h) documentados
+- update: `status.md` — risco "Stack Next 16 / Tailwind v4 — tripwire" adicionado em ⚠️ Riscos com gatilhos explícitos; "Última atualização" para 06-05-2026
+- update: `architecture.md` — cabeçalho referencia o tripwire em `status.md`
+
+### why
+- Pressure-test à stack revelou que Next 16 + Tailwind v4 foram default do `create-next-app` mantido, não decisão deliberada — colide com a regra "privilegiar a opção aborrecida e bem-documentada" (`CLAUDE.md`)
+- Fact-check (06-05-2026) confirma suporte oficial de shadcn/ui a Tailwind v4 e a Next 16 + React 19; pnpm evita prompts de peer-deps; risco real é baixo
+- Não se faz downgrade preemptivo: shadcn install (próxima task após CI) é o teste decisivo. Tripwire formaliza condições objetivas para reverter sem improviso
+
+---
+
 ## [05-05-2026] — Setup: Vitest + Testing Library + primeiro smoke test
 
 ### add

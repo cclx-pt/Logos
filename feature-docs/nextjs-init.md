@@ -114,11 +114,20 @@ Após o scaffold:
 
 ## 4. Decisões técnicas
 
-### 4.1. Versão Next.js: 16, não 15
+### 4.1. Versão Next.js: 16, não 15 — sob tripwire
 
-`SPEC_1.md` v2.2 e `CLAUDE.md` falam em "Next.js 15". O scaffold trouxe **16.2.4** (mais recente estável a 05-05-2026). Não há razão para downgrade — Next 16 é estável, mantém compatibilidade de App Router com Next 15, e ganhamos Turbopack default + melhorias de cache.
+A SPEC v2.2 inicial pedia Next 15. O scaffold trouxe **16.2.4** (default mais recente do `create-next-app` a 05-05-2026). Optou-se por **manter 16 sob tripwire** documentado em `status.md` ⚠️ Riscos, em vez de fazer downgrade preemptivo: o teste decisivo é a instalação do shadcn/ui (próxima task após CI).
 
-**Ação:** atualizar `CLAUDE.md` e `architecture.md` para refletir Next.js 16.
+Fact-check feito a 06-05-2026 confirma:
+
+- shadcn/ui suporta oficialmente Tailwind v4 desde início de 2026 (CLI auto-deteta versão)
+- shadcn/ui é compatível com Next.js 16 + React 19
+- pnpm evita os prompts de peer-deps típicos do npm
+- Asteriscos conhecidos: bug de hidratação em `Button asChild` (issue específico, contornável); mudança de `React.FC` em React 19 (não inclui `children` por defeito)
+
+**Gatilhos do tripwire:** se (a) `shadcn@latest init` falhar, OU (b) integrar shadcn ou outra dep terceira exigir >2h cumulativas de debug, OU (c) surgir issue de produção rastreada ao Next 16 — abrir PR `chore/downgrade-stack` com Next 16→15 e Tailwind v4→v3 num único commit. Custo estimado: 2-4h (revalidação de Vitest, ESLint, Prettier, `eslint-config-next`).
+
+**Ação resultante:** `CLAUDE.md`, `architecture.md` e `status.md` registam Next.js 16 explicitamente como **default mantido sob tripwire**, não como decisão definitiva.
 
 ### 4.2. Tailwind v4 (sem `tailwind.config.ts`)
 

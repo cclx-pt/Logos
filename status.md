@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 05-05-2026 (Vitest + Testing Library configurados; primeiro smoke test)
+> **Última atualização:** 06-05-2026 (stack Next 16 / Tailwind v4 documentada sob tripwire empírico)
 
 ## 🎯 Milestone atual
 **Fase de Setup** — preparar fundações antes de iniciar a V1.
@@ -51,6 +51,7 @@ _Nada bloqueado de momento. A avançar para Setup → V1._
 ## ⚠️ Riscos / bloqueios
 - **DNS Hostinger:** identificar contacto **antes** da semana de lançamento da V1
 - **Plano gratuito Supabase:** sem backups; risco aceite até haver utilizadores reais
+- **Stack Next 16 / Tailwind v4 — tripwire:** versões adotadas como default do `create-next-app`, não por decisão deliberada. Reverter para Next 15 + Tailwind v3 num único PR (`chore/downgrade-stack`) se: (a) `shadcn@latest init` falhar, OU (b) integrar shadcn ou outra dep terceira exigir >2h cumulativas de debug, OU (c) surgir issue de produção rastreada ao Next 16. Custo estimado de reversão: 2-4h (revalidação de Vitest, ESLint, Prettier, `eslint-config-next`). Validação empírica decisiva: instalação de shadcn/ui (próxima task após CI). Detalhes em `feature-docs/nextjs-init.md` §4.1.
 
 ## 📌 Decisões adiadas
 Ver `SPEC_1.md` §17.
