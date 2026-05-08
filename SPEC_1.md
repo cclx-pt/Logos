@@ -495,7 +495,7 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 - **Decisão sobre adicionar Sentry, analytics ou Drizzle ORM** — adiar até V2+.
 - **Design da funcionalidade de Q&A (V5)** — adiada na totalidade até a V4 estar estável.
 - **Decisão sobre indicadores de progresso (V7)** — só após V3+V4 em produção e feedback real de utilizadores.
-- **Possibilidade futura de SSO com a app da CCLX** — não viável agora; pode ser considerada em versão posterior se a app expuser uma API ou integração SSO.
+- **Integração futura com shell partilhada CCLX** — não implementada agora, mas a fronteira de identidade do Logos foi estruturada para a tornar uma substituição de camada (e não uma reescrita): identidade isolada em `src/lib/auth/` como única importadora de `@supabase/ssr`, FKs sempre para `profiles.id` (nunca para `auth.users`), RLS via função helper `current_profile_id()`. O contrato concreto com a shell será definido em documento próprio quando a shell for desenhada. Detalhes em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
 
 ---
 
@@ -519,8 +519,10 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 
 ## 19. Estado do Documento
 
-- **Versão:** 2.2
-- **Última atualização:** 5 de maio de 2026
+- **Versão:** 2.3
+- **Última atualização:** 8 de maio de 2026
+- **Alterações relativamente à v2.2:**
+  - §17 — entrada sobre "SSO com app da CCLX" reescrita: passa de "não viável agora" para "não implementada agora, mas estruturada para ser substituível" (camada `src/lib/auth/`, FKs para `profiles.id`, RLS via `current_profile_id()`). O desenho está em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
 - **Alterações relativamente à v2.1:**
   - §14 — paleta hexadecimal fixada (8 tokens), tipografia fixada (Cormorant Garamond + Inter), logo descrito com fallback de texto até chegar SVG, mockups vinculativos referenciados em `docs/branding/`
   - §17 — decisão "paleta + tipografia" resolvida; pendente apenas o SVG do logótipo

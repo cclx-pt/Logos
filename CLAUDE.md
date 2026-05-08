@@ -39,6 +39,9 @@ Modelo de dados (3 níveis): `Curso → Módulo → Aula`. Aulas têm `template`
 - **Sem barras de progresso, percentagens ou gamificação** até V7 (e mesmo aí só se justificado).
 - **Nunca commit de `.env`.** Apenas `.env.example` versionado.
 - **Sem `any` em TypeScript** sem justificação por comentário.
+- **Identidade isolada em `src/lib/auth/`.** Importações de `@supabase/ssr` (e equivalentes de identidade) **só** dentro dessa pasta. O resto da app consome `getCurrentUser()` / `getServerClient()`. Esta fronteira é o que torna a futura migração para uma shell partilhada uma substituição de camada, e não uma reescrita.
+- **FKs nunca apontam para `auth.users`.** Sempre para `profiles.id`. A única ligação ao sistema de identidade externo vive em `profiles.external_auth_id`.
+- **Email não é duplicado em tabelas Logos.** Vive em `auth.users.email`. Se a UI precisar, pede à camada de identidade.
 - **Privilegiar a opção aborrecida e bem-documentada.** Developer único, prazo curto.
 
 ## 🔄 Documentação Contínua
