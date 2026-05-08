@@ -16,6 +16,20 @@
 
 ---
 
+## [08-05-2026] — Setup: fronteira de identidade vs autorização Logos
+
+### docs
+- add: `feature-docs/auth-architecture.md` — desenho da fronteira: camada `src/lib/auth/` como única importadora de `@supabase/ssr`; tabela `profiles` com `id` (FK universal Logos) e `external_auth_id` (única ligação ao sistema de identidade externo); sincronização `auth.users → profiles` em defesa em profundidade (Server Action + trigger DB); RLS via função SQL `current_profile_id()`; `display_name` no Logos vs email não duplicado; lista do que muda e do que **não** muda quando uma shell partilhada CCLX vier substituir a identidade. Implementação fica para V2.
+- update: `SPEC_1.md` §17 — entrada sobre "SSO com app da CCLX" reescrita: passa de "não viável agora" para "não implementada agora, mas estruturada para ser substituível"; remete para `architecture.md` §4 e `feature-docs/auth-architecture.md`.
+- update: `SPEC_1.md` §19 — versão 2.2 → 2.3.
+- update: `architecture.md` §2 — FKs `auth.users` migradas para `profiles` em `tags.created_by`, `user_tags.user_id`, `user_tags.assigned_by`, `lesson_completions.user_id`, `course_completions.user_id`, `course_access_log.user_id`; schema de `profiles` reescrito (`id` PK, `external_auth_id` UNIQUE, `display_name`, `role`, `created_at`); nota explicativa da fronteira de identidade.
+- update: `architecture.md` §3 — camada de identidade (`src/lib/auth/`) listada com responsabilidade explícita; `getVisibleCoursesForUser` passa a aceitar `profileId`.
+- update: `architecture.md` §4 — reescrita: identidade isolada em `lib/auth/`; RLS via `current_profile_id()` em vez de JWT custom claim direto; sincronização `auth.users → profiles` em defesa em profundidade documentada; ligação a `feature-docs/auth-architecture.md`.
+- update: `CLAUDE.md` — três regras duras novas em "🚫 Regras (não negociáveis)": (1) identidade isolada em `src/lib/auth/`; (2) FKs nunca para `auth.users`, sempre para `profiles.id`; (3) email não duplicado em tabelas Logos.
+- update: `status.md` — bullet em ✅ Concluído sobre fronteira de identidade documentada; data atualizada.
+
+---
+
 ## [05-05-2026] — Setup: Vitest + Testing Library + primeiro smoke test
 
 ### add

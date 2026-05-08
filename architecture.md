@@ -1,7 +1,7 @@
 # architecture.md — Logos
 
 > **Quando atualizar:** após mudanças estruturais (novo serviço, alteração de modelo de dados, nova fronteira de segurança, mudança de stack).
-> **Última atualização:** 05-05-2026 (Next.js 16 + Tailwind v4 inicializados)
+> **Última atualização:** 08-05-2026 (fronteira de identidade vs autorização documentada; FKs migram para `profiles.id`)
 
 ## 1. Visão de alto nível
 
@@ -60,42 +60,55 @@ lessons
 tags
  ├─ id (uuid, PK)
  ├─ slug (unique), label
- ├─ created_by (admin)
+ ├─ created_by (FK → profiles)
 user_tags
- ├─ user_id (FK → auth.users)
+ ├─ user_id (FK → profiles)
  ├─ tag_id (FK → tags)
- ├─ assigned_by, assigned_at
+ ├─ assigned_by (FK → profiles), assigned_at
  ├─ PK (user_id, tag_id)
 lesson_completions
- ├─ user_id, lesson_id (PK composto)
+ ├─ user_id (FK → profiles), lesson_id (FK → lessons)
+ ├─ PK (user_id, lesson_id)
  ├─ completed_at
 course_completions
- ├─ user_id, course_id (PK composto)
+ ├─ user_id (FK → profiles), course_id (FK → courses)
+ ├─ PK (user_id, course_id)
  ├─ completed_at (primeira vez; preservado)
 course_access_log  -- contabilização leve V3
- ├─ user_id, course_id, accessed_at
-profiles  -- extensão de auth.users
- ├─ user_id (PK), display_name, role ('user'|'admin'|'super_admin')
+ ├─ user_id (FK → profiles), course_id (FK → courses), accessed_at
+profiles  -- fonte de verdade do Logos para o utilizador
+ ├─ id (uuid, PK)                 -- ID interno estável; FK universal para tudo o que é Logos
+ ├─ external_auth_id (uuid, UNIQUE) -- aponta para o sistema de identidade externo
+ ├─ display_name (text)
+ ├─ role ('user'|'admin'|'super_admin')
+ ├─ created_at (timestamptz)
 ```
 
 **IDs estáveis:** todos os IDs são UUIDs gerados pela DB. Renomear/reordenar nunca afeta `lesson_completions`.
+
+**Fronteira de identidade (regra dura):** `profiles.external_auth_id` é o único campo do Logos que aponta para o sistema de identidade externo. Hoje aponta para `auth.users.id` (Supabase Auth). No futuro pode apontar para o ID que uma shell partilhada CCLX vier a entregar — quando essa shell existir, **muda-se apenas este campo (e a função `current_profile_id()`); nenhuma outra tabela é afetada**. Nada mais no Logos referencia `auth.users` diretamente: todas as FKs apontam para `profiles.id`. Detalhes em `feature-docs/auth-architecture.md`.
 
 ## 3. Camadas e responsabilidades
 
 | Camada | Responsabilidade |
 |---|---|
+| **Camada de identidade (`src/lib/auth/`)** | Única importadora de `@supabase/ssr` em toda a app. Expõe duas APIs públicas: `getCurrentUser()` (devolve o `profile` ativo) e `getServerClient()` (cliente Supabase autenticado). Todo o acesso a sessão e cliente passa por aqui. |
 | **Server Components** | Fetch de dados públicos (catálogo, detalhe de curso) com cache do Next |
 | **Server Actions** | Mutações: `markLessonComplete`, CRUD admin, gestão de etiquetas |
 | **Route Handlers `/api`** | Webhooks (Resend, futuros), endpoints assinados |
 | **RLS no Postgres** | Última linha de defesa: utilizador só lê o que pode ver |
-| **Lógica de visibilidade** | Função única `getVisibleCoursesForUser(userId)` reutilizada em catálogo, detalhe e cálculo de conclusão |
+| **Lógica de visibilidade** | Função única `getVisibleCoursesForUser(profileId)` reutilizada em catálogo, detalhe e cálculo de conclusão |
 
 ## 4. Autenticação e papéis
 
-- **Supabase Auth** com email/password e Google OAuth
-- Papel guardado em `profiles.role`; espelhado em JWT custom claim para uso em RLS
-- **Super Admin** é seed manual; promove/despromove via UI dedicada
-- Sessão via cookies httpOnly (Next.js middleware)
+- **Supabase Auth** com email/password e Google OAuth — gere identidade (login, sessão, OAuth callbacks).
+- **Identidade isolada em `src/lib/auth/`** (V2): única parte da app que importa `@supabase/ssr`. Resto da app consome `getCurrentUser()` / `getServerClient()`. Quando a identidade migrar para uma shell externa, só esta camada muda.
+- Papel guardado em `profiles.role` — fonte de verdade do Logos. RLS usa função helper `current_profile_id()` (STABLE em SQL) que faz o lookup `auth.uid() → profiles.external_auth_id → profiles.id`. As policies escrevem-se contra `current_profile_id()`, não contra `auth.uid()`. Quando a identidade vier de outra fonte, troca-se a implementação da função; as policies não mudam.
+- **Super Admin** é seed manual no primeiro ambiente; promove/despromove via UI dedicada (V2). Esta UI **não desaparece** quando a shell existir — papéis continuam fonte de verdade do Logos.
+- Sessão via cookies httpOnly geridos pela camada `lib/auth/` (não diretamente em middleware do Next.js).
+- **Sincronização `auth.users → profiles`** (V2): defesa em profundidade — Server Action no callback de auth faz `insert ... on conflict do nothing` (controlado, testável); trigger DB defensivo apanha qualquer caminho que escape (ex.: criação por SQL admin).
+
+Esta separação entre **identidade** (quem és — pode migrar) e **autorização Logos** (o que podes fazer aqui — fica sempre cá) é a fronteira que torna possível migrar futuramente para identidade externa (ex.: shell partilhada CCLX) sem reescrever a app. Detalhes em `feature-docs/auth-architecture.md`.
 
 ## 5. Visibilidade por etiquetas
 
