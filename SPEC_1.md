@@ -483,6 +483,7 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 - A **empresa que constrói o site principal é independente** e não precisa de coordenar com este projeto além da configuração de DNS.
 - **Acesso a DNS** tem de ser obtido junto de quem gere a conta Hostinger da igreja antes da semana de lançamento (a identificar; assinalado como dependência pré-lançamento).
 - **Os limites do plano gratuito** assumem-se suficientes para o primeiro ano de operação. As primeiras eventuais subidas de plano seriam Supabase Pro (para *backups*) e Resend (para volume de email mais alto) — nenhuma necessária no lançamento.
+- **Branch protection no GitHub não está ativa**. O plano gratuito do GitHub não disponibiliza branch protection (clássica nem rulesets) em repositórios privados — apenas em repositórios públicos ou a partir de GitHub Pro. A decisão é manter o repositório privado e gratuito; a regra "nunca push directo para `main`, sempre via Pull Request" mantém-se em `CLAUDE.md` como regra dura **honor-system**, reforçada por `.claude/settings.json` que coloca `git push --force`, `git reset --hard` e `git branch -D *main*` em `permissions.deny`. Reavaliar se a equipa crescer ou se o risco de erro humano se materializar.
 
 ---
 
@@ -519,8 +520,10 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 
 ## 19. Estado do Documento
 
-- **Versão:** 2.3
+- **Versão:** 2.4
 - **Última atualização:** 8 de maio de 2026
+- **Alterações relativamente à v2.3:**
+  - §16 — restrição nova: branch protection no GitHub não está ativa (plano free de repositório privado não a disponibiliza). Regra "PR obrigatório" mantém-se honor-system em `CLAUDE.md` + `permissions.deny` no `.claude/settings.json`. Decisão consciente de não subscrever GitHub Pro.
 - **Alterações relativamente à v2.2:**
   - §17 — entrada sobre "SSO com app da CCLX" reescrita: passa de "não viável agora" para "não implementada agora, mas estruturada para ser substituível" (camada `src/lib/auth/`, FKs para `profiles.id`, RLS via `current_profile_id()`). O desenho está em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
 - **Alterações relativamente à v2.1:**

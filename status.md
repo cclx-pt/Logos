@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 08-05-2026 (CI configurado + fronteira de identidade vs autorização documentada)
+> **Última atualização:** 08-05-2026 (CI configurado, fronteira de identidade documentada, branch protection registada como honor-system)
 
 ## 🎯 Milestone atual
 **Fase de Setup** — preparar fundações antes de iniciar a V1.
@@ -28,7 +28,6 @@
 _Nada bloqueado de momento. A avançar para Setup → V1._
 
 ## ⏭️ Próximas tarefas (Setup → V1)
-- [ ] Ativar branch protection em `main` (exigir check `Lint · Typecheck · Test · Format` antes de merge)
 - [ ] Instalar e configurar shadcn/ui
 - [ ] Criar projetos Supabase: `logos-dev` e `logos-prod`
 - [ ] Configurar Supabase CLI + primeira migration vazia
@@ -52,6 +51,7 @@ _Nada bloqueado de momento. A avançar para Setup → V1._
 ## ⚠️ Riscos / bloqueios
 - **DNS Hostinger:** identificar contacto **antes** da semana de lançamento da V1
 - **Plano gratuito Supabase:** sem backups; risco aceite até haver utilizadores reais
+- **Branch protection inactiva em `main`:** plano gratuito do GitHub não a disponibiliza em repositórios privados. Decisão consciente de não subscrever Pro. Regra "PR obrigatório, nunca push directo" mantém-se honor-system em `CLAUDE.md` + `permissions.deny` no `.claude/settings.json`. Detalhes em `SPEC_1.md` §16 e `feature-docs/ci.md`.
 
 ## 📌 Decisões adiadas
 Ver `SPEC_1.md` §17.
