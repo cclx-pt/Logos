@@ -16,6 +16,19 @@
 
 ---
 
+## [08-05-2026] — Setup: GitHub Actions CI (lint + typecheck + test + format:check)
+
+### infra
+- add: `.github/workflows/ci.yml` — job único `quality` em `pull_request` e `push` para `main`. Steps sequenciais: checkout → `pnpm/action-setup@v4` (versão lida do `packageManager`) → `actions/setup-node@v4` com `cache: pnpm` → `pnpm install --frozen-lockfile` → `pnpm exec eslint --max-warnings 0` → `pnpm typecheck` → `pnpm test` → `pnpm format:check`. `concurrency` com `cancel-in-progress: true` (poupa minutos em pushes consecutivos). `permissions: contents: read` (princípio do menor privilégio). `timeout-minutes: 10` (rede de segurança contra flakes). Tempo típico de execução: ~30s.
+- add: `.gitattributes` — normaliza line endings (`* text=auto eol=lf`) com listas explícitas para binários e SVGs. Resolve avisos `LF will be replaced by CRLF` em Windows e impede drift entre dev local (Windows) e CI (Linux).
+
+### docs
+- add: `feature-docs/ci.md` — pipeline canónica documentada (triggers, concurrency, decisão de job único, passo a passo dos steps, secção de troubleshooting, roadmap V2 com coverage thresholds e V3 com Playwright contra preview deploys).
+- update: `architecture.md` §10 — passos da pipeline atualizados (5 passos em vez de 4 + E2E V3) e remete para `feature-docs/ci.md`.
+- update: `eslint.config.mjs` — `globalIgnores` inclui `coverage/**`.
+
+---
+
 ## [08-05-2026] — Setup: fronteira de identidade vs autorização Logos
 
 ### docs
