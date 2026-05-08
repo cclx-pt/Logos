@@ -13,7 +13,7 @@ Garantir que **nenhum PR pode mergir em `main`** sem passar:
 
 Este documento descreve o workflow `ci.yml`, as decisões de design, e o roadmap (E2E na V3).
 
-> **Branch protection** ainda não está ativa em `main` — está como tarefa seguinte em `status.md`. A pipeline corre, mas o merge sem checks verdes só fica bloqueado depois de a proteção ser configurada na UI do GitHub.
+> **Branch protection no GitHub não está ativa em `main` e não vai ser ativada com o plano atual.** O plano gratuito do GitHub não disponibiliza branch protection (clássica nem rulesets) em repositórios privados — só em públicos ou a partir de GitHub Pro. Mantém-se o repositório privado e gratuito; a regra "PR obrigatório, nunca push directo para `main`" fica como regra dura honor-system em `CLAUDE.md`, reforçada por `git push --force`, `git reset --hard` e `git branch -D *main*` em `.claude/settings.json` `permissions.deny`. A pipeline aqui descrita continua a correr em todos os PRs e pushes para `main`; o que **não** está bloqueado server-side é o self-merge sem checks verdes — depende de disciplina. Decisão registada em `SPEC_1.md` §16.
 
 ---
 

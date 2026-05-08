@@ -16,6 +16,16 @@
 
 ---
 
+## [08-05-2026] — Setup: branch protection adiada (plano free) → regra honor-system
+
+### docs
+- update: `SPEC_1.md` §16 — restrição nova: branch protection do GitHub não está ativa (plano gratuito não a disponibiliza em repositórios privados; decisão consciente de não subscrever Pro). Regra "PR obrigatório, nunca push directo para `main`" fica honor-system em `CLAUDE.md`, reforçada por `git push --force`, `git reset --hard` e `git branch -D *main*` em `.claude/settings.json` `permissions.deny`.
+- update: `SPEC_1.md` §19 — versão 2.3 → 2.4.
+- update: `feature-docs/ci.md` — nota sobre branch protection reescrita: passa de "ainda não está ativa" (com expectativa de ativar a seguir) para "não vai ser ativada com o plano atual"; explica trade-off e ligação a `SPEC_1.md` §16.
+- update: `status.md` — bullet "Ativar branch protection em `main`" removido de ⏭️ Próximas tarefas; nova entrada em ⚠️ Riscos / bloqueios; "Última atualização" estendida.
+
+---
+
 ## [08-05-2026] — Setup: GitHub Actions CI (lint + typecheck + test + format:check)
 
 ### infra
