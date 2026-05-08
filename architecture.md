@@ -155,12 +155,15 @@ Ver também: `SPEC_1.md` §17.
 - PRs e pushes em `main` despoletam o Vercel automaticamente.
 
 ### GitHub Actions (`.github/workflows/ci.yml`)
-Em cada PR:
+Em cada PR e push para `main`:
 1. `pnpm install --frozen-lockfile`
-2. `pnpm lint` (ESLint; falha em warnings)
+2. `pnpm exec eslint --max-warnings 0` (lint estrito; falha em warnings)
 3. `pnpm typecheck` (`tsc --noEmit`)
 4. `pnpm test` (Vitest)
-5. *(a partir da V3)* `pnpm test:e2e` (Playwright contra preview deploy)
+5. `pnpm format:check` (Prettier — proteção anti-drift)
+6. *(a partir da V3)* `pnpm test:e2e` (Playwright contra preview deploy)
+
+Detalhes em `feature-docs/ci.md`.
 
 ### Vercel
 - **Preview deploy** por branch (URL único partilhável).
