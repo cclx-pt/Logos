@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 09-05-2026 (Supabase: 2 projetos provisionados + CLI + primeira migration)
+> **Última atualização:** 09-05-2026 (pipeline Supabase migrations validado em `logos-dev`)
 
 ## 🎯 Milestone atual
 **Fase de Setup** — preparar fundações antes de iniciar a V1.
@@ -23,6 +23,8 @@
 - [x] **Vitest 4 + Testing Library 16 + jsdom** configurados (env jsdom, globals, alias `@/*` via Vite 7 nativo). Setup em `src/test/setup.ts` (matchers de `jest-dom` + `cleanup` automático). Coverage V8. Primeiro smoke test em `src/app/page.test.tsx` (2/2 a passar). Detalhes em `feature-docs/testing.md`.
 - [x] **GitHub Actions CI** configurado (`.github/workflows/ci.yml`) — job único `quality` em PR e push para `main`: lint estrito (`--max-warnings 0`) + typecheck + Vitest + format:check. `concurrency` com `cancel-in-progress`, `permissions: contents: read`, cache pnpm via `packageManager`, timeout 10 min. `.gitattributes` normaliza line endings em LF (resolve drift CRLF entre Windows e CI). Detalhes em `feature-docs/ci.md`.
 - [x] **Supabase** — 2 projetos provisionados via MCP em `eu-west-3` (Paris): `logos-dev` (ref `dknrnqyqlojvnhspwjrd`) e `logos-prod` (ref `tirzriuabfwzqxtjsmfb`), ambos `ACTIVE_HEALTHY` em plano free ($0/mês). CLI inicializada com `pnpm dlx supabase init` (sem instalar global) — criado `supabase/config.toml`. Primeira migration `supabase/migrations/20260509175745_initial.sql` é placeholder vazio (apenas comentários) para validar pipeline end-to-end antes de existir schema real (V2). `.env.example` atualizado para `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (formato `sb_publishable_*` recomendado, substitui `anon` legacy). Detalhes do workflow em `feature-docs/supabase.md`.
+- [x] **`.env.local` configurado** com credenciais de `logos-dev` (URL + publishable key). `SUPABASE_SERVICE_ROLE_KEY` e `RESEND_API_KEY` ficam comentadas até ao primeiro uso (V2 admin / Resend setup). `.env.local` está em `.gitignore` (não versionado).
+- [x] **Pipeline Supabase migrations validado end-to-end** em `logos-dev` — `pnpm dlx supabase link --project-ref dknrnqyqlojvnhspwjrd` + `pnpm dlx supabase db push` aplicaram `20260509175745_initial.sql` à DB remota. Confirmado via MCP `list_migrations`: `[{"version":"20260509175745","name":"initial"}]`. CLI fica autenticada localmente em `supabase/.temp/` (pasta no `.gitignore`).
 - [x] **shadcn/ui** instalado (`pnpm dlx shadcn@latest init -d`) com `style: base-nova`, `baseColor: stone`, `iconLibrary: lucide`. Tokens semânticos shadcn (`--background`, `--primary`, etc.) mapeados em `src/app/globals.css` para os hex CCLX (paleta de `feature-docs/branding.md` §1 continua fonte de verdade). `Button` instalado como smoke (não usado em produção até V1). `feature-docs/branding.md` §1-§2 reescritas para Tailwind v4 (sem `tailwind.config.ts`). Detalhes e gotchas em `feature-docs/shadcn-ui.md`.
 - [x] **Fronteira de identidade vs autorização** documentada — *identidade* (Supabase Auth, migra para shell um dia) separada de *autorização Logos* (papéis, etiquetas, conclusões; fica sempre cá). Camada `src/lib/auth/` planeada como única importadora de `@supabase/ssr`; FKs migram de `auth.users` para `profiles.id`; `profiles.external_auth_id` é o único ponto de mudança quando a shell existir; RLS via função helper `current_profile_id()`. SPEC_1.md §17 reescrita; `architecture.md` §2-§4 atualizadas; CLAUDE.md ganhou três regras duras (isolamento de importações, FK universal, email não duplicado). Detalhes em `feature-docs/auth-architecture.md`. Implementação fica para V2.
 
@@ -30,8 +32,6 @@
 _Nada bloqueado de momento. A avançar para Setup → V1._
 
 ## ⏭️ Próximas tarefas (Setup → V1)
-- [ ] Configurar `.env.local` com credenciais de `logos-dev` (manual; ver `feature-docs/supabase.md` §3)
-- [ ] Linkar Supabase CLI a `logos-dev` (`pnpm dlx supabase link --project-ref dknrnqyqlojvnhspwjrd`) e correr primeira `db push` para validar pipeline
 - [ ] Criar API key Resend + adicionar SPF/DKIM ao DNS Hostinger
 - [ ] Criar conta Vercel e ligar ao repositório (env vars separadas por ambiente)
 - [ ] Identificar contacto de DNS na Hostinger (CNAME logos.cclx.pt + SPF/DKIM Resend = mesma dependência)
