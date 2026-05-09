@@ -16,6 +16,17 @@
 
 ---
 
+## [09-05-2026] — Setup: pipeline Supabase migrations validado em logos-dev
+
+### infra
+- run: `pnpm dlx supabase link --project-ref dknrnqyqlojvnhspwjrd` — autenticação CLI via PAT (`SUPABASE_ACCESS_TOKEN` + `SUPABASE_DB_PASSWORD` apenas nas env vars da sessão Bash; nada commitado).
+- run: `pnpm dlx supabase db push` — primeira migration `20260509175745_initial.sql` aplicada à DB remota de `logos-dev`. Confirmado via MCP `list_migrations`: `[{"version":"20260509175745","name":"initial"}]`. Pipeline end-to-end (gerar → linkar → push) validado antes de existir schema real (V2).
+
+### docs
+- update: `status.md` — bullets "Configurar `.env.local`" e "Linkar Supabase CLI a `logos-dev` + primeira `db push`" movidos para ✅ Concluído. "Última atualização" estendida.
+
+---
+
 ## [09-05-2026] — Setup: Supabase bootstrap (2 projetos + CLI + primeira migration)
 
 ### infra
