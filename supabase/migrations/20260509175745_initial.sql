@@ -1,0 +1,15 @@
+-- Initial migration — placeholder.
+--
+-- Garante que a pipeline de migrations Supabase CLI funciona end-to-end
+-- (gerar nova migration, aplicar a logos-dev, depois a logos-prod) antes
+-- de existir schema real para validar o caminho.
+--
+-- O schema do Logos é introduzido por versão:
+--   V2: profiles (id, external_auth_id, display_name, role, created_at),
+--       tags, user_tags. Função current_profile_id() e RLS policies em
+--       cada tabela.
+--   V3: courses, modules, lessons, lesson_completions, course_completions,
+--       course_access_log. required_tags em courses (V3) e module/lesson (V4).
+--
+-- Detalhes do modelo em architecture.md §2 e feature-docs/supabase.md.
+-- Detalhes da fronteira de identidade em feature-docs/auth-architecture.md.
