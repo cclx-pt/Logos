@@ -1,6 +1,6 @@
 # branding.md — Identidade Visual da Logos
 
-> **Estado:** ✅ Paleta + tipografia fixadas (05-05-2026). ✅ SVG do logótipo recebido (05-05-2026).
+> **Estado:** ✅ Paleta + tipografia fixadas (05-05-2026). ✅ SVG do logótipo recebido (05-05-2026). ✅ Mapeamento shadcn aplicado (09-05-2026).
 > **Fonte de verdade:** `SPEC_1.md` §14. Este documento aprofunda a aplicação técnica.
 
 ---
@@ -18,45 +18,73 @@
 | `ink`            | `#1A1A1A` | `--foreground`               | Texto principal                                      |
 | `muted`          | `#6B6B6B` | `--muted-foreground`         | Texto secundário, *placeholders*, metadados          |
 
-### Mapeamento sugerido para `tailwind.config.ts`
+### Tokens em Tailwind v4 (`src/app/globals.css`)
 
-```ts
-// extend.colors
-{
-  cream: {
-    bg:     '#FAF4EA',
-    card:   '#FBE6D4',
-    butter: '#F6E6C4',
-  },
-  sage:   { card: '#C6CDB1' },
-  orange: {
-    DEFAULT: '#E36A2C',
-    hover:   '#C85A22',
-  },
-  ink:    '#1A1A1A',
-  muted:  '#6B6B6B',
+A paleta vive directamente em `@theme` no `globals.css`. Tailwind v4 não usa `tailwind.config.ts` — os tokens são resolvidos a partir das CSS variables em parse time.
+
+```css
+@theme {
+  /* Paleta CCLX — hex autoritativos */
+  --color-cream-bg: #faf4ea;
+  --color-cream-card: #fbe6d4;
+  --color-sage-card: #c6cdb1;
+  --color-butter-card: #f6e6c4;
+  --color-orange: #e36a2c;
+  --color-orange-hover: #c85a22;
+  --color-ink: #1a1a1a;
+  --color-muted: #6b6b6b;
+
+  /* Tipografia */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cormorant), Georgia, serif;
 }
 ```
 
-### Mapeamento sugerido para shadcn/ui (`globals.css`)
+Isto disponibiliza classes Tailwind como `bg-cream-bg`, `text-ink`, `text-orange`, `font-display`, etc.
+
+### Mapeamento dos tokens semânticos shadcn
+
+shadcn/ui (`new-york` / `base-nova`) consome tokens semânticos como `--background`, `--primary`, `--foreground`, etc. Em Tailwind v4 a tradução faz-se via `:root` (variáveis "CSS-puras") + `@theme inline` (que expõe `--color-*` para as classes Tailwind). Os hex CCLX são a fonte de verdade; estes tokens semânticos são apenas a camada de tradução.
 
 ```css
 :root {
-  --background: 38 60% 95%;        /* cream-bg     #FAF4EA */
-  --foreground: 0 0% 10%;          /* ink          #1A1A1A */
-  --primary:    19 76% 53%;        /* orange       #E36A2C */
-  --primary-foreground: 0 0% 100%;
-  --muted:      38 30% 88%;
-  --muted-foreground: 0 0% 42%;    /* muted        #6B6B6B */
-  --accent:     27 87% 91%;        /* cream-card   #FBE6D4 */
-  --accent-foreground: 0 0% 10%;
-  --border:     38 30% 85%;
-  --ring:       19 76% 53%;
-  --radius:     0.625rem;
+  --background: #faf4ea; /* cream-bg */
+  --foreground: #1a1a1a; /* ink */
+  --card: #fbe6d4; /* cream-card (default) */
+  --card-foreground: #1a1a1a;
+  --popover: #faf4ea;
+  --popover-foreground: #1a1a1a;
+  --primary: #e36a2c; /* orange-primary */
+  --primary-foreground: #ffffff;
+  --secondary: #f6e6c4; /* butter-card */
+  --secondary-foreground: #1a1a1a;
+  --muted: #f4ead8;
+  --muted-foreground: #6b6b6b;
+  --accent: #c6cdb1; /* sage-card */
+  --accent-foreground: #1a1a1a;
+  --destructive: #b3401a; /* alinhado com paleta quente */
+  --border: #e5dcc7;
+  --input: #e5dcc7;
+  --ring: #e36a2c;
+  --radius: 0.625rem;
+  /* charts/sidebar — placeholders shadcn (sem uso até V3+/V5) */
 }
 ```
 
-> Os valores HSL acima são aproximados; afinar visualmente quando o tema for instalado. Os hex de §14 são autoritativos; HSL é apenas a forma como o shadcn os consome.
+E na `@theme inline` mapeiam-se para as classes Tailwind:
+
+```css
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  /* ...restantes tokens semânticos shadcn... */
+  --font-heading: var(--font-display); /* Cormorant para headings em componentes shadcn */
+}
+```
+
+> Os hex em `:root` são autoritativos. Quando precisar de afinar (p.ex. `--muted` parece demasiado claro contra cartões), atualiza-se em `globals.css` e em `feature-docs/shadcn-ui.md`. **Nunca inventar cores fora de §14.**
 
 ### Regras de uso
 
@@ -107,11 +135,19 @@ export const inter = Inter({
 </html>
 ```
 
-```ts
-// tailwind.config.ts → extend.fontFamily
-{
-  sans:    ['var(--font-inter)', 'system-ui', 'sans-serif'],
-  display: ['var(--font-cormorant)', 'Georgia', 'serif'],
+```css
+/* src/app/globals.css → @theme (Tailwind v4) */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-cormorant), Georgia, serif;
+}
+```
+
+Para componentes shadcn que usem `font-heading`, há também o mapeamento em `@theme inline`:
+
+```css
+@theme inline {
+  --font-heading: var(--font-display);
 }
 ```
 
@@ -197,3 +233,4 @@ Acolhedor, limpo, adequado a uma igreja. Tradução prática:
 
 - **05-05-2026** — Paleta hex fixada (8 tokens), Cormorant + Inter escolhidos, mockups movidos para `docs/branding/`. SPEC_1 §14 atualizado para v2.2. SVG do logo continua pendente do ministério.
 - **05-05-2026** — SVG oficial recebido do ministério e versionado em `docs/branding/logo-cclx-logos.svg` (1600×913, 452 paths). Fallback de texto deixa de ser necessário; mantido como `aria-label`. Variante monocroma para V6 continua pendente.
+- **09-05-2026** — shadcn/ui instalado (`base-nova`/Base UI, `baseColor: stone`, `radius: 0.625rem`); paleta CCLX mapeada para tokens semânticos shadcn (`--background`, `--primary`, etc.) em `:root` + `@theme inline`. §1 e §2 reescritas para Tailwind v4 (sem `tailwind.config.ts`). Detalhes em `feature-docs/shadcn-ui.md`.

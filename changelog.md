@@ -16,6 +16,23 @@
 
 ---
 
+## [09-05-2026] — Setup: shadcn/ui instalado e mapeado à paleta CCLX
+
+### add
+- add: scaffold `pnpm dlx shadcn@latest init -d`. CLI v4 detetou Next.js 16 + Tailwind v4 + alias `@/*` automaticamente. Criou `components.json`, `src/lib/utils.ts` (`cn()` helper), e `src/components/ui/button.tsx` (incluído no scaffold em CLI v4).
+- add: deps em `dependencies` — `@base-ui/react ^1.4.1` (primitive library default em CLI v4; substitui Radix), `class-variance-authority ^0.7.1`, `clsx ^2.1.1`, `lucide-react ^1.14.0`, `shadcn ^4.7.0` (package que disponibiliza `@import "shadcn/tailwind.css"`), `tailwind-merge ^3.5.0`, `tw-animate-css ^1.4.0`.
+
+### update
+- update: `components.json` — `baseColor: neutral` → `stone` (mais quente; alinha com tom creme da paleta).
+- update: `src/app/globals.css` — paleta CCLX preservada em `@theme` (fonte de verdade); tokens semânticos shadcn (`--background`, `--primary`, `--foreground`, `--muted`, `--accent`, `--border`, `--ring`, etc.) mapeados em `:root` para os hex CCLX; `@theme inline` mapeia tokens Tailwind v4 (`--color-*`) para as CSS vars; `--font-heading: var(--font-display)` para que componentes shadcn que usem font-heading apliquem Cormorant. Bloco `.dark` mantém defaults shadcn (placeholder até V6).
+- update: `src/app/layout.tsx` — restaurado para versão original Cormorant + Inter; removida tentativa do CLI v4 de injectar Geist como `--font-sans` (gotcha conhecido).
+- update: `feature-docs/branding.md` §1 e §2 — secções obsoletas reescritas para Tailwind v4 (sem `tailwind.config.ts`). §1 mostra agora `@theme` em `globals.css` para tokens CCLX + `:root`/`@theme inline` para tokens semânticos shadcn. §2 troca `tailwind.config.ts → extend.fontFamily` por `@theme` em CSS. §7 historial estendido.
+
+### docs
+- add: `feature-docs/shadcn-ui.md` — comando, configuração final, mapeamento token-a-token CCLX → shadcn, decisões (style `base-nova`, `baseColor: stone`, Base UI vs Radix, lucide), 4 gotchas (layout corrompido, font-sans circular, prettier reformat após `add`, format:check local em Windows), roadmap por versão (V1: card/input/textarea/label/form; V2: dropdown-menu/avatar/dialog/alert/separator/badge; V3: accordion/skeleton/scroll-area; **sem progress até V7**).
+
+---
+
 ## [08-05-2026] — Setup: branch protection adiada (plano free) → regra honor-system
 
 ### docs
