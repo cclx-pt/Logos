@@ -16,6 +16,23 @@
 
 ---
 
+## [09-05-2026] — Setup: Supabase bootstrap (2 projetos + CLI + primeira migration)
+
+### infra
+- add: projeto Supabase `logos-dev` (ref `dknrnqyqlojvnhspwjrd`) em `eu-west-3` (Paris). Free tier ($0/mês). Provisionado via MCP `mcp__plugin_supabase_supabase__create_project`. Status `ACTIVE_HEALTHY`.
+- add: projeto Supabase `logos-prod` (ref `tirzriuabfwzqxtjsmfb`) em `eu-west-3` (Paris). Free tier ($0/mês). `ACTIVE_HEALTHY`.
+
+### add
+- add: `supabase/config.toml` — gerado por `pnpm dlx supabase init`. Define `project_id = "Logos"`, ports locais (API 54321, DB 54322), schemas `public` + `graphql_public`. Sem instalação global da CLI; `pnpm dlx` é a forma canónica.
+- add: `supabase/migrations/20260509175745_initial.sql` — primeira migration placeholder com comentários. Schema real chega na V2 (profiles, tags, user_tags, função `current_profile_id()`) e V3 (courses, modules, lessons, conclusões).
+
+### docs
+- add: `feature-docs/supabase.md` — bootstrap dos 2 projetos, env vars (com troca de `anon` legacy para `publishable_key`), CLI workflow (link + db push), strategy de migrations dev → prod, gotchas do plano free (sem backups, sem Docker local), referências.
+- update: `.env.example` — `NEXT_PUBLIC_SUPABASE_ANON_KEY` → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (formato moderno `sb_publishable_*` recomendado pela Supabase). `SUPABASE_SERVICE_ROLE_KEY` mantido (legacy enquanto Supabase não migra a UI). Comentário com refs dos 2 projetos para referência rápida.
+- update: `status.md` — bullets "Criar projetos Supabase" e "Configurar Supabase CLI + primeira migration vazia" movidos para ✅ Concluído. Acrescentadas duas tarefas em ⏭️ (configurar `.env.local` e linkar CLI a `logos-dev`).
+
+---
+
 ## [09-05-2026] — Setup: shadcn/ui instalado e mapeado à paleta CCLX
 
 ### add
