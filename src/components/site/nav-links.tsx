@@ -13,27 +13,20 @@ type NavLinksProps = {
   className?: string;
 };
 
-export function NavLinks({
-  orientation = 'horizontal',
-  onNavigate,
-  className,
-}: NavLinksProps) {
+export function NavLinks({ orientation = 'horizontal', onNavigate, className }: NavLinksProps) {
   const pathname = usePathname();
 
   return (
     <ul
       className={cn(
         'flex',
-        orientation === 'horizontal'
-          ? 'items-center gap-6 lg:gap-8'
-          : 'flex-col items-start gap-1',
+        orientation === 'horizontal' ? 'items-center gap-6 lg:gap-8' : 'flex-col items-start gap-1',
         className,
       )}
     >
       {navItems.map((item) => {
         const isActive =
-          pathname === item.href ||
-          (item.href !== '/' && pathname.startsWith(`${item.href}/`));
+          pathname === item.href || (item.href !== '/' && pathname.startsWith(`${item.href}/`));
         return (
           <li key={item.href} className={orientation === 'vertical' ? 'w-full' : undefined}>
             <Link

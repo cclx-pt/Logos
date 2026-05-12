@@ -13,8 +13,8 @@ export default function Home() {
       </h1>
 
       <p className="text-muted-foreground mt-6 max-w-2xl font-sans text-base leading-relaxed sm:text-lg">
-        A plataforma Logos é o espaço da CCLX para crescer no conhecimento das Escrituras. Cursos
-        em vídeo, apostilas para descarregar e o teu ritmo — sempre gratuitos.
+        A plataforma Logos é o espaço da CCLX para crescer no conhecimento das Escrituras. Cursos em
+        vídeo, apostilas para descarregar e o teu ritmo — sempre gratuitos.
       </p>
 
       <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:gap-4">

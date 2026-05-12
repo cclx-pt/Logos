@@ -30,7 +30,7 @@ export function MobileNav() {
         aria-expanded={open}
         aria-controls="mobile-nav-panel"
         onClick={() => setOpen((v) => !v)}
-        className="focus-visible:ring-ring text-ink -ml-2 inline-flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:text-orange-hover focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
+        className="focus-visible:ring-ring text-ink hover:text-orange-hover -ml-2 inline-flex h-10 w-10 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none md:hidden"
       >
         {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
       </button>
@@ -43,7 +43,7 @@ export function MobileNav() {
           aria-label="Menu de navegação"
           className={cn(
             'fixed inset-x-0 top-16 bottom-0 z-40 overflow-y-auto px-6 pt-8 pb-12',
-            'bg-background border-t border-border md:hidden',
+            'bg-background border-border border-t md:hidden',
           )}
         >
           <NavLinks orientation="vertical" onNavigate={() => setOpen(false)} />
