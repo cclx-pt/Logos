@@ -16,6 +16,34 @@
 
 ---
 
+## [12-05-2026] — Setup: Vercel bootstrap (deploy + env vars + repo público)
+
+### infra
+- add: projeto Vercel `logos` (`prj_V0Kp9TZj5QHdAkwBMoPenKlA1TJj`) no scope `jcrninjas-projects` (conta pessoal — CCLX sem Vercel team, adiar até Pro justificável). Framework auto-detectado Next.js. Install/build resolvidos via `packageManager: pnpm@10.33.2` do `package.json`.
+- add: Vercel GitHub App instalado em `cclx-pt` org com acesso restrito a `Logos` (Only select repositories). `push origin main` → Production deploy; PRs → Preview com URL único; webhook GitHub → Vercel.
+- add: env vars nos 3 scopes (Production / Preview / Development) via `vercel env add`:
+  - **Production**: `NEXT_PUBLIC_SITE_NAME=Logos` (Supabase prod env vars deliberadamente unset até checkpoint V2).
+  - **Preview**: `NEXT_PUBLIC_SITE_NAME`, `NEXT_PUBLIC_SUPABASE_URL` (logos-dev), `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (logos-dev). Preview aponta para `logos-dev`, não `logos-prod` (segurança de mutação, schema testing, auth testing, custo zero).
+  - **Development**: mesmo conjunto do Preview + `NEXT_PUBLIC_SITE_URL=http://localhost:3000`. Espelha `.env.local` para `vercel env pull` quando alguém clonar o repo.
+- update: visibilidade do repo `cclx-pt/Logos` privada → pública (12-05-2026). Restrição do plano Hobby: repo de organização privado requer Pro (~20€/mês). Mudança aceite após verificação de segurança (nenhum `.env` jamais commitado; refs Supabase são identificadores públicos por design; publishable key é client-side; service role nunca em ficheiro versionado).
+
+### add
+- add: `.gitignore` — entrada `.vercel` (ficheiros gerados por `vercel link`: `.vercel/project.json` contém `projectId` + `orgId`, não deve ser versionado).
+- add: `feature-docs/vercel.md` — bootstrap completo: recursos provisionados, ligação GitHub↔Vercel, env vars por scope (com decisão Preview→logos-dev), razão da mudança de visibilidade do repo (com checklist de segurança), CLI install/login, gotcha do `vercel env add` em Claude Code (auto-deteção de agent + workaround `env -u CLAUDECODE`), validação do primeiro deploy, DNS pendente, troubleshooting.
+
+### docs
+- update: `SPEC_1.md` §13.5 — Preview deploys formalizados a apontar para `logos-dev` (decisão prévia em `feature-docs/supabase.md` PR #12 promovida à SPEC).
+- update: `SPEC_1.md` §16 e `feature-docs/ci.md` §1 — branch protection passa de "não elegível no plano free" para "elegível agora que o repo é público"; activação fica como tarefa nova.
+- update: `architecture.md` §8 — tabela de ambientes inclui Vercel scopes (Production/Preview/Development) e referência a `feature-docs/vercel.md`.
+- update: `status.md` — bullet "Criar conta Vercel e ligar ao repositório" movido para ✅ Concluído; tarefa nova "Activar branch protection em `main`" em ⏭️ (agora elegível); risco antigo sobre branch protection actualizado.
+
+### why
+- Pré-condição V1 (site público estático precisa de host com deploy automático).
+- Preview deploys por PR aceleram review (URL único, comentário automático no PR, valida build antes de merge).
+- 0€/mês mantido como `SPEC_1.md §11` exige; trade-off da visibilidade do repo aceite após auditoria.
+
+---
+
 ## [09-05-2026] — Setup: auth scope reduzido para Google OAuth apenas (V1-V9)
 
 ### docs

@@ -1,6 +1,6 @@
 # ci.md — Continuous Integration (GitHub Actions)
 
-> **Versão:** Setup (pré-V1) · **Última atualização:** 05-05-2026 · **Estado:** workflow `ci.yml` ativo em PR + push para `main`
+> **Versão:** Setup (pré-V1) · **Última atualização:** 12-05-2026 · **Estado:** workflow `ci.yml` ativo em PR + push para `main`
 
 ## 1. Objetivo
 
@@ -13,7 +13,7 @@ Garantir que **nenhum PR pode mergir em `main`** sem passar:
 
 Este documento descreve o workflow `ci.yml`, as decisões de design, e o roadmap (E2E na V3).
 
-> **Branch protection no GitHub não está ativa em `main` e não vai ser ativada com o plano atual.** O plano gratuito do GitHub não disponibiliza branch protection (clássica nem rulesets) em repositórios privados — só em públicos ou a partir de GitHub Pro. Mantém-se o repositório privado e gratuito; a regra "PR obrigatório, nunca push directo para `main`" fica como regra dura honor-system em `CLAUDE.md`, reforçada por `git push --force`, `git reset --hard` e `git branch -D *main*` em `.claude/settings.json` `permissions.deny`. A pipeline aqui descrita continua a correr em todos os PRs e pushes para `main`; o que **não** está bloqueado server-side é o self-merge sem checks verdes — depende de disciplina. Decisão registada em `SPEC_1.md` §16.
+> **Branch protection em `main` passou a elegível em 12-05-2026.** O repositório `cclx-pt/Logos` mudou de privado para público (decisão tomada para caber no plano Hobby do Vercel — ver `feature-docs/vercel.md` §5), o que torna a branch protection do GitHub disponível no plano gratuito. Activação fica como tarefa nova em `status.md`. Até estar activa, a regra "PR obrigatório, nunca push directo para `main`" continua honor-system em `CLAUDE.md`, reforçada por `git push --force`, `git reset --hard` e `git branch -D *main*` em `.claude/settings.json` `permissions.deny`. Decisão registada em `SPEC_1.md` §16.
 
 ---
 

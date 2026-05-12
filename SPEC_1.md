@@ -402,7 +402,7 @@ Serviços externos:
 2. As alterações são submetidas via **pull request** num repositório no GitHub. Push directo para `main` está bloqueado (regra `CLAUDE.md` + branch protection).
 3. **GitHub Actions** corre `pnpm lint && pnpm typecheck && pnpm test` em cada PR. Sem checks verdes, não há merge. A partir da V3 acrescenta-se `pnpm test:e2e` (Playwright).
 4. PRs aprovados são merged em `main`. O Vercel constrói e faz deploy contra o projeto Supabase **`logos-prod`** em ~60 segundos. Disponível em `logos.cclx.pt`.
-5. Branches de pull request recebem deploys de pré-visualização em URLs únicos. Estes apontam também para `logos-prod` (cuidado com mutações ao testar PRs).
+5. Branches de pull request recebem deploys de pré-visualização em URLs únicos. **Preview aponta para `logos-dev`, não para `logos-prod`** — PRs incluem schema migrations e mutações de teste que não devem poluir produção; auth de teste em V2 vai para `logos-dev`. Trade-off aceite: PRs não apanham bugs "production-only state" (apanham-se em QA pós-merge). Detalhes em `feature-docs/vercel.md` §4.
 6. **Migrations:** `supabase migration new <nome>` → SQL versionado no Git → `supabase db push` em `logos-dev` → após PR merged, `supabase db push` em `logos-prod` (passo manual e deliberado).
 
 ---
@@ -482,7 +482,7 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 - A **empresa que constrói o site principal é independente** e não precisa de coordenar com este projeto além da configuração de DNS.
 - **Acesso a DNS** tem de ser obtido junto de quem gere a conta Hostinger da igreja antes da semana de lançamento (a identificar; assinalado como dependência pré-lançamento).
 - **Os limites do plano gratuito** assumem-se suficientes para o primeiro ano de operação. As primeiras eventuais subidas de plano seriam Supabase Pro (para *backups*) e Resend (para volume de email mais alto) — nenhuma necessária no lançamento.
-- **Branch protection no GitHub não está ativa**. O plano gratuito do GitHub não disponibiliza branch protection (clássica nem rulesets) em repositórios privados — apenas em repositórios públicos ou a partir de GitHub Pro. A decisão é manter o repositório privado e gratuito; a regra "nunca push directo para `main`, sempre via Pull Request" mantém-se em `CLAUDE.md` como regra dura **honor-system**, reforçada por `.claude/settings.json` que coloca `git push --force`, `git reset --hard` e `git branch -D *main*` em `permissions.deny`. Reavaliar se a equipa crescer ou se o risco de erro humano se materializar.
+- **Branch protection no GitHub** passou a **elegível** em 12-05-2026 com a mudança de visibilidade do repositório `cclx-pt/Logos` para **público** (decisão tomada para caber no plano Hobby do Vercel — ver `feature-docs/vercel.md` §5). O plano gratuito do GitHub disponibiliza branch protection (clássica e rulesets) em repositórios públicos. Activação fica como tarefa nova em `status.md`. Até estar activa, a regra "nunca push directo para `main`, sempre via Pull Request" continua honor-system em `CLAUDE.md`, reforçada por `.claude/settings.json` com `git push --force`, `git reset --hard` e `git branch -D *main*` em `permissions.deny`.
 
 ---
 
@@ -521,8 +521,11 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 
 ## 19. Estado do Documento
 
-- **Versão:** 2.5
-- **Última atualização:** 9 de maio de 2026
+- **Versão:** 2.6
+- **Última atualização:** 12 de maio de 2026
+- **Alterações relativamente à v2.5:**
+  - §13.5 — Preview deploys formalizados a apontar para `logos-dev` (não para `logos-prod`). Razão: PRs incluem schema migrations e mutações de teste; Preview tem de correr contra DB descartável. Detalhes em `feature-docs/vercel.md` §4.
+  - §16 — branch protection passa de "não elegível no plano free" para "elegível agora que o repo é público" (mudança de visibilidade do `cclx-pt/Logos` em 12-05-2026 para caber no plano Hobby do Vercel). Activação fica como tarefa próxima.
 - **Alterações relativamente à v2.4:**
   - §9.2 — V2 auth simplificada para Google OAuth apenas (remoção de email/password e linha de recovery emails via Resend).
   - §11 — célula Autenticação atualizada (apenas Google OAuth); célula Email (Resend) move-se para "V5+ notificações Q&A" (sem urgência V2 por o login ser só Google).

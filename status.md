@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 09-05-2026 (auth V1-V9 simplificada para Google OAuth apenas)
+> **Última atualização:** 12-05-2026 (Vercel bootstrap concluído; repo passou a público; branch protection elegível)
 
 ## 🎯 Milestone atual
 **Fase de Setup** — preparar fundações antes de iniciar a V1.
@@ -27,14 +27,16 @@
 - [x] **Pipeline Supabase migrations validado end-to-end** em `logos-dev` — `pnpm dlx supabase link --project-ref dknrnqyqlojvnhspwjrd` + `pnpm dlx supabase db push` aplicaram `20260509175745_initial.sql` à DB remota. Confirmado via MCP `list_migrations`: `[{"version":"20260509175745","name":"initial"}]`. CLI fica autenticada localmente em `supabase/.temp/` (pasta no `.gitignore`).
 - [x] **shadcn/ui** instalado (`pnpm dlx shadcn@latest init -d`) com `style: base-nova`, `baseColor: stone`, `iconLibrary: lucide`. Tokens semânticos shadcn (`--background`, `--primary`, etc.) mapeados em `src/app/globals.css` para os hex CCLX (paleta de `feature-docs/branding.md` §1 continua fonte de verdade). `Button` instalado como smoke (não usado em produção até V1). `feature-docs/branding.md` §1-§2 reescritas para Tailwind v4 (sem `tailwind.config.ts`). Detalhes e gotchas em `feature-docs/shadcn-ui.md`.
 - [x] **Fronteira de identidade vs autorização** documentada — *identidade* (Supabase Auth, migra para shell um dia) separada de *autorização Logos* (papéis, etiquetas, conclusões; fica sempre cá). Camada `src/lib/auth/` planeada como única importadora de `@supabase/ssr`; FKs migram de `auth.users` para `profiles.id`; `profiles.external_auth_id` é o único ponto de mudança quando a shell existir; RLS via função helper `current_profile_id()`. SPEC_1.md §17 reescrita; `architecture.md` §2-§4 atualizadas; CLAUDE.md ganhou três regras duras (isolamento de importações, FK universal, email não duplicado). Detalhes em `feature-docs/auth-architecture.md`. Implementação fica para V2.
+- [x] **Vercel bootstrap** — projeto `logos` (`prj_V0Kp9TZj5QHdAkwBMoPenKlA1TJj`) no scope pessoal `jcrninjas-projects` (CCLX sem Vercel team, adiar até Pro justificável). Vercel GitHub App instalado em `cclx-pt` com acesso restrito a `Logos`: push em `main` → Production; PRs → Preview com URL único. Env vars nos 3 scopes via `vercel env add` (gotcha do `CLAUDECODE=1` documentado em `feature-docs/vercel.md` §7). **Preview aponta para `logos-dev`**, não `logos-prod` (segurança de mutação + schema testing + auth testing; SPEC_1.md §13.5 e architecture.md §8 atualizadas). Repo `cclx-pt/Logos` passou de privado a **público** em 12-05-2026 para caber no plano Hobby do Vercel (verificação de segurança: nenhum `.env` foi alguma vez commitado; refs Supabase são públicas por design; publishable key é client-side; service role nunca em ficheiro versionado). Bónus: branch protection torna-se elegível. `.gitignore` ganhou `.vercel`. Detalhes em `feature-docs/vercel.md`.
 
 ## 🚧 Em progresso
 _Nada bloqueado de momento. A avançar para Setup → V1._
 
 ## ⏭️ Próximas tarefas (Setup → V1)
+- [ ] **Activar branch protection em `main`** — agora elegível (repo é público desde 12-05-2026). Regra mínima: PRs obrigatórios + checks `quality` verdes antes de merge + sem push directo. Self-merge fica permitido (developer único).
+- [ ] Identificar contacto de DNS na Hostinger (CNAME `logos.cclx.pt` → Vercel) — pendente para fechar `NEXT_PUBLIC_SITE_URL` em Production + `vercel domains add`
 - [ ] Criar OAuth App no Google Cloud Console (uma para `logos-dev`, outra para `logos-prod`) e configurar como Provider em Supabase Auth — pré-condição V2
-- [ ] Criar conta Vercel e ligar ao repositório (env vars separadas por ambiente)
-- [ ] Identificar contacto de DNS na Hostinger (CNAME `logos.cclx.pt` → Vercel)
+- [ ] **Checkpoint V2 — antes do primeiro merge V2:** adicionar `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` ao scope Production do Vercel (logos-prod). Hoje estão deliberadamente unset porque V1 é estático.
 - [ ] *(adiado para V5+)* Resend + SPF/DKIM no DNS Hostinger — sem urgência V2 por o login ser apenas Google; necessário para notificações de Q&A em V5
 
 ## 🗺️ Roadmap por versão (resumo)
@@ -53,7 +55,8 @@ _Nada bloqueado de momento. A avançar para Setup → V1._
 ## ⚠️ Riscos / bloqueios
 - **DNS Hostinger:** identificar contacto **antes** da semana de lançamento da V1
 - **Plano gratuito Supabase:** sem backups; risco aceite até haver utilizadores reais
-- **Branch protection inactiva em `main`:** plano gratuito do GitHub não a disponibiliza em repositórios privados. Decisão consciente de não subscrever Pro. Regra "PR obrigatório, nunca push directo" mantém-se honor-system em `CLAUDE.md` + `permissions.deny` no `.claude/settings.json`. Detalhes em `SPEC_1.md` §16 e `feature-docs/ci.md`.
+- **Branch protection em `main`:** elegível desde 12-05-2026 (repo passou a público para caber no Vercel Hobby). Activação fica como tarefa próxima — até estar activa, a regra honor-system de `CLAUDE.md` + `permissions.deny` no `.claude/settings.json` é a única salvaguarda. Detalhes em `SPEC_1.md` §16 e `feature-docs/ci.md` §1.
+- **Repo `cclx-pt/Logos` agora público:** decisão consciente para 0€/mês no Vercel Hobby (Pro custaria ~20€/mês/membro). Verificação de segurança feita antes da mudança (`feature-docs/vercel.md` §5). Trade-off: código visível; service role keys e qualquer credencial continuam apenas em `.env.local` (gitignored) e no painel do Vercel.
 - **Exclusão de utilizadores sem Google account:** decisão consciente (`SPEC_1.md` §17/§18) para reduzir scope V2 e acelerar V3 (01-07-2026). Mitigação prevista: nenhuma — utilizadores afectados são redireccionados para criar uma Google account ou esperar versão futura. Reabrir apenas se o ministério explicitamente pedir inclusão.
 
 ## 📌 Decisões adiadas

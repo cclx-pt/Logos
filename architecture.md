@@ -1,7 +1,7 @@
 # architecture.md — Logos
 
 > **Quando atualizar:** após mudanças estruturais (novo serviço, alteração de modelo de dados, nova fronteira de segurança, mudança de stack).
-> **Última atualização:** 09-05-2026 (auth scope reduzido para Google OAuth apenas em V1-V9)
+> **Última atualização:** 12-05-2026 (Vercel bootstrap + Preview→logos-dev formalizado)
 
 ## 1. Visão de alto nível
 
@@ -139,13 +139,15 @@ Se a shell partilhada CCLX vier a oferecer email/password ou outros providers no
 
 | Ambiente | Branch | Frontend | Supabase | Notas |
 |---|---|---|---|---|
-| Produção | `main` | `logos.cclx.pt` (Vercel) | `logos-prod` | Env vars no painel do Vercel |
-| Preview | feature branches | `<branch>-logos.vercel.app` | `logos-prod` | Cuidado com mutações ao testar PRs |
-| Local | — | `localhost:3000` | `logos-dev` | `.env.local` |
+| Produção | `main` | `logos.cclx.pt` (Vercel scope Production) | `logos-prod` | `NEXT_PUBLIC_SUPABASE_*` deliberadamente unset até checkpoint V2 |
+| Preview | feature branches | `logos-<hash>-jcrninjas-projects.vercel.app` (Vercel scope Preview) | **`logos-dev`** | Aponta para `logos-dev` — PRs testam migrations + mutações sem poluir prod |
+| Local | — | `localhost:3000` | `logos-dev` | `.env.local` (gitignored); espelhado em Vercel scope Development para `vercel env pull` |
+
+Detalhes do bootstrap Vercel (env vars por scope, mudança de visibilidade do repo, gotcha do CLI em Claude Code) em `feature-docs/vercel.md`.
 
 **DNS (Hostinger):**
-- CNAME `logos.cclx.pt → cname.vercel-dns.com`
-- TXT (SPF) e CNAME (DKIM) para Resend — **mesma conta, mesma dependência operacional** (resolver antes da V2)
+- CNAME `logos.cclx.pt → cname.vercel-dns.com` (pendente — depende de contacto Hostinger)
+- TXT (SPF) e CNAME (DKIM) para Resend — adiado para V5+ (login agora é só Google OAuth; Resend não é dependência V2)
 
 **Migrations:**
 - `supabase/migrations/*.sql` no Git (Supabase CLI)
