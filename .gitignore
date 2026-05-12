@@ -70,3 +70,4 @@ supabase/migrations/*.sql.bak
 *.pem
 .turbo/
 .cache/
+.vercel
