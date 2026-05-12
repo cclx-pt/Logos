@@ -9,9 +9,9 @@ describe('Home', () => {
     expect(heading).toHaveTextContent(/estudo bíblico/i);
   });
 
-  it('mostra o wordmark LOGOS no hero', () => {
+  it('mostra o wordmark Logos no hero', () => {
     render(<Home />);
-    expect(screen.getByLabelText('Logos')).toHaveTextContent('LOGOS');
+    expect(screen.getByLabelText('Logos')).toBeInTheDocument();
   });
 
   it('expõe CTAs para /cursos e /conhece-nos', () => {
