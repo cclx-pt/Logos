@@ -13,7 +13,14 @@ Garantir que **nenhum PR pode mergir em `main`** sem passar:
 
 Este documento descreve o workflow `ci.yml`, as decisões de design, e o roadmap (E2E na V3).
 
-> **Branch protection em `main` passou a elegível em 12-05-2026.** O repositório `cclx-pt/Logos` mudou de privado para público (decisão tomada para caber no plano Hobby do Vercel — ver `feature-docs/vercel.md` §5), o que torna a branch protection do GitHub disponível no plano gratuito. Activação fica como tarefa nova em `status.md`. Até estar activa, a regra "PR obrigatório, nunca push directo para `main`" continua honor-system em `CLAUDE.md`, reforçada por `git push --force`, `git reset --hard` e `git branch -D *main*` em `.claude/settings.json` `permissions.deny`. Decisão registada em `SPEC_1.md` §16.
+> **Branch protection em `main` está activa** (12-05-2026). Aplicada via `gh api PUT /repos/cclx-pt/Logos/branches/main/protection` após o repo ter passado a público para caber no plano Hobby do Vercel (`feature-docs/vercel.md` §5). Regra activa:
+> - **PR obrigatório** (`required_pull_request_reviews: { required_approving_review_count: 0 }`) — bloqueia push directo, mas não exige review (single dev faz self-merge).
+> - **Check `Lint · Typecheck · Test · Format` tem de passar** antes de merge (`required_status_checks.contexts`).
+> - **Histórico linear** obrigatório (`required_linear_history: true`) — alinha com squash-merge usado em todos os PRs.
+> - **Force-push e deletion bloqueados** (`allow_force_pushes: false`, `allow_deletions: false`).
+> - **`enforce_admins: false`** — admin pode override em emergência; disciplina honor-system continua em `CLAUDE.md` + `.claude/settings.json` `permissions.deny` (`git push --force`, `git reset --hard`, `git branch -D *main*`).
+>
+> Decisão registada em `SPEC_1.md` §16. Reavaliar `required_approving_review_count` quando equipa crescer.
 
 ---
 

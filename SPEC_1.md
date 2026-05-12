@@ -482,7 +482,13 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 - A **empresa que constrói o site principal é independente** e não precisa de coordenar com este projeto além da configuração de DNS.
 - **Acesso a DNS** tem de ser obtido junto de quem gere a conta Hostinger da igreja antes da semana de lançamento (a identificar; assinalado como dependência pré-lançamento).
 - **Os limites do plano gratuito** assumem-se suficientes para o primeiro ano de operação. As primeiras eventuais subidas de plano seriam Supabase Pro (para *backups*) e Resend (para volume de email mais alto) — nenhuma necessária no lançamento.
-- **Branch protection no GitHub** passou a **elegível** em 12-05-2026 com a mudança de visibilidade do repositório `cclx-pt/Logos` para **público** (decisão tomada para caber no plano Hobby do Vercel — ver `feature-docs/vercel.md` §5). O plano gratuito do GitHub disponibiliza branch protection (clássica e rulesets) em repositórios públicos. Activação fica como tarefa nova em `status.md`. Até estar activa, a regra "nunca push directo para `main`, sempre via Pull Request" continua honor-system em `CLAUDE.md`, reforçada por `.claude/settings.json` com `git push --force`, `git reset --hard` e `git branch -D *main*` em `permissions.deny`.
+- **Branch protection em `main` está activa** (12-05-2026). Tornada elegível pela mudança de visibilidade do repositório para público (ver `feature-docs/vercel.md` §5) e aplicada via API GitHub no mesmo dia. Regra:
+  - Pull request obrigatório (sem push directo).
+  - Check `Lint · Typecheck · Test · Format` (GitHub Actions) tem de passar antes de merge.
+  - Histórico linear obrigatório (alinhado com squash-merge usado em todos os PRs).
+  - `allow_force_pushes: false`, `allow_deletions: false`.
+  - `enforce_admins: false` — administradores podem fazer override em emergência. É salvaguarda; o uso continua disciplina honor-system reforçada por `CLAUDE.md` + `.claude/settings.json` `permissions.deny` (`git push --force`, `git reset --hard`, `git branch -D *main*`).
+  - `required_approving_review_count: 0` — single dev faz self-merge dos próprios PRs sem aprovação. Reavaliar quando equipa crescer.
 
 ---
 
@@ -521,8 +527,10 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 
 ## 19. Estado do Documento
 
-- **Versão:** 2.6
+- **Versão:** 2.7
 - **Última atualização:** 12 de maio de 2026
+- **Alterações relativamente à v2.6:**
+  - §16 — branch protection em `main` passou de "elegível, activação pendente" para **activa**. Regra: PR obrigatório, check `Lint · Typecheck · Test · Format` verde, histórico linear, force-push e deletion bloqueados, admin pode override em emergência, 0 reviews exigidos (single dev). Aplicada via `gh api PUT /repos/.../branches/main/protection` em 12-05-2026.
 - **Alterações relativamente à v2.5:**
   - §13.5 — Preview deploys formalizados a apontar para `logos-dev` (não para `logos-prod`). Razão: PRs incluem schema migrations e mutações de teste; Preview tem de correr contra DB descartável. Detalhes em `feature-docs/vercel.md` §4.
   - §16 — branch protection passa de "não elegível no plano free" para "elegível agora que o repo é público" (mudança de visibilidade do `cclx-pt/Logos` em 12-05-2026 para caber no plano Hobby do Vercel). Activação fica como tarefa próxima.
