@@ -16,6 +16,30 @@
 
 ---
 
+## [12-05-2026] — Setup: branch protection em `main` activa
+
+### infra
+- add: regra de branch protection aplicada via `gh api PUT /repos/cclx-pt/Logos/branches/main/protection`. Configuração:
+  - `required_pull_request_reviews: { required_approving_review_count: 0 }` — PR obrigatório, sem exigência de aprovação (single dev).
+  - `required_status_checks: { strict: false, contexts: ["Lint · Typecheck · Test · Format"] }` — CI tem de passar antes de merge.
+  - `required_linear_history: true` — alinhado com squash-merge usado em todos os PRs.
+  - `allow_force_pushes: false`, `allow_deletions: false`.
+  - `enforce_admins: false` — admin pode override em emergência; disciplina honor-system continua em `CLAUDE.md` + `.claude/settings.json` `permissions.deny`.
+
+### docs
+- update: `SPEC_1.md` §16 — branch protection passa de "elegível, activação pendente" para **activa** com a regra completa documentada.
+- update: `SPEC_1.md` §19 — v2.6 → v2.7.
+- update: `feature-docs/ci.md` §1 — admonition reescrita: regra activa, com a configuração concreta listada.
+- update: `status.md` — bullet "Activar branch protection em `main`" movido para ✅ Concluído; entrada em ⚠️ Riscos actualizada (risco residual = override de admin).
+- update: `changelog.md` — esta entrada.
+
+### why
+- Fecha o último item de fundação que dependia da mudança de visibilidade do repo (PR #15).
+- Estabelece salvaguarda server-side para a regra "nunca push directo para `main`" que era apenas honor-system.
+- Este próprio PR valida a regra na prática (primeiro a passar pelo gate).
+
+---
+
 ## [12-05-2026] — Setup: Vercel bootstrap (deploy + env vars + repo público)
 
 ### infra
