@@ -1,7 +1,7 @@
 # architecture.md — Logos
 
 > **Quando atualizar:** após mudanças estruturais (novo serviço, alteração de modelo de dados, nova fronteira de segurança, mudança de stack).
-> **Última atualização:** 08-05-2026 (fronteira de identidade vs autorização documentada; FKs migram para `profiles.id`)
+> **Última atualização:** 09-05-2026 (auth scope reduzido para Google OAuth apenas em V1-V9)
 
 ## 1. Visão de alto nível
 
@@ -25,7 +25,7 @@
 ┌──────────────────────────────────────┐
 │            SUPABASE                  │
 │  • Postgres (esquema relacional)     │
-│  • Auth (email + Google OAuth)       │
+│  • Auth (Google OAuth apenas)        │
 │  • Storage (bucket: lesson-pdfs)     │
 │  • RLS policies                      │
 └──────────────────────────────────────┘
@@ -101,7 +101,7 @@ profiles  -- fonte de verdade do Logos para o utilizador
 
 ## 4. Autenticação e papéis
 
-- **Supabase Auth** com email/password e Google OAuth — gere identidade (login, sessão, OAuth callbacks).
+- **Supabase Auth** com **Google OAuth apenas** — gere identidade (login via Google, sessão, OAuth callback). Email/password é decisão fechada como fora de âmbito V1-V9 (`SPEC_1.md` §17/§18).
 - **Identidade isolada em `src/lib/auth/`** (V2): única parte da app que importa `@supabase/ssr`. Resto da app consome `getCurrentUser()` / `getServerClient()`. Quando a identidade migrar para uma shell externa, só esta camada muda.
 - Papel guardado em `profiles.role` — fonte de verdade do Logos. RLS usa função helper `current_profile_id()` (STABLE em SQL) que faz o lookup `auth.uid() → profiles.external_auth_id → profiles.id`. As policies escrevem-se contra `current_profile_id()`, não contra `auth.uid()`. Quando a identidade vier de outra fonte, troca-se a implementação da função; as policies não mudam.
 - **Super Admin** é seed manual no primeiro ambiente; promove/despromove via UI dedicada (V2). Esta UI **não desaparece** quando a shell existir — papéis continuam fonte de verdade do Logos.
@@ -109,6 +109,8 @@ profiles  -- fonte de verdade do Logos para o utilizador
 - **Sincronização `auth.users → profiles`** (V2): defesa em profundidade — Server Action no callback de auth faz `insert ... on conflict do nothing` (controlado, testável); trigger DB defensivo apanha qualquer caminho que escape (ex.: criação por SQL admin).
 
 Esta separação entre **identidade** (quem és — pode migrar) e **autorização Logos** (o que podes fazer aqui — fica sempre cá) é a fronteira que torna possível migrar futuramente para identidade externa (ex.: shell partilhada CCLX) sem reescrever a app. Detalhes em `feature-docs/auth-architecture.md`.
+
+Se a shell partilhada CCLX vier a oferecer email/password ou outros providers no futuro, beneficia-se automaticamente — a camada `lib/auth/` continua a ser substituída de uma vez, sem condicionar a decisão de scope V2 que limita o Logos a Google OAuth.
 
 ## 5. Visibilidade por etiquetas
 
@@ -192,8 +194,8 @@ A CCLX é entidade portuguesa, RGPD aplica-se desde o primeiro registo.
 ### Dados pessoais recolhidos
 | Origem | Dado | Tabela |
 |---|---|---|
-| Registo | Email | `auth.users.email` |
-| Google OAuth | Nome de exibição (opcional) | `profiles.display_name` |
+| Google OAuth (claim) | Email | `auth.users.email` |
+| Google OAuth (claim, opcional) | Nome de exibição | `profiles.display_name` |
 | Conclusão de aula | `user_id`, `lesson_id`, timestamp | `lesson_completions` |
 | Acesso a curso | `user_id`, `course_id`, timestamp | `course_access_log` |
 | Análise de tráfego | Páginas vistas, sem cookies | Vercel Analytics (cookieless) |

@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 09-05-2026 (pipeline Supabase migrations validado em `logos-dev`)
+> **Última atualização:** 09-05-2026 (auth V1-V9 simplificada para Google OAuth apenas)
 
 ## 🎯 Milestone atual
 **Fase de Setup** — preparar fundações antes de iniciar a V1.
@@ -32,9 +32,10 @@
 _Nada bloqueado de momento. A avançar para Setup → V1._
 
 ## ⏭️ Próximas tarefas (Setup → V1)
-- [ ] Criar API key Resend + adicionar SPF/DKIM ao DNS Hostinger
+- [ ] Criar OAuth App no Google Cloud Console (uma para `logos-dev`, outra para `logos-prod`) e configurar como Provider em Supabase Auth — pré-condição V2
 - [ ] Criar conta Vercel e ligar ao repositório (env vars separadas por ambiente)
-- [ ] Identificar contacto de DNS na Hostinger (CNAME logos.cclx.pt + SPF/DKIM Resend = mesma dependência)
+- [ ] Identificar contacto de DNS na Hostinger (CNAME `logos.cclx.pt` → Vercel)
+- [ ] *(adiado para V5+)* Resend + SPF/DKIM no DNS Hostinger — sem urgência V2 por o login ser apenas Google; necessário para notificações de Q&A em V5
 
 ## 🗺️ Roadmap por versão (resumo)
 
@@ -42,7 +43,7 @@ _Nada bloqueado de momento. A avançar para Setup → V1._
 |---|---|---|
 | **Setup** | Tooling, Supabase, Vercel, branding | 🚧 Em curso |
 | **V1** | Site público estático (home, conhece-nos, fala connosco) | ⏳ |
-| **V2** | Auth (email + Google), papéis, fundação de etiquetas | ⏳ |
+| **V2** | Auth (Google OAuth apenas), papéis, fundação de etiquetas | ⏳ |
 | **V3** | Cursos/Módulos/Aulas + restrição por curso + conclusão binária | ⏳ **Prazo: 01-07-2026** |
 | **V4** | Etiquetas multi-nível (módulo + aula) | ⏳ |
 | **V5** | Q&A por aula + dashboard de stats | ⏳ |
@@ -53,6 +54,7 @@ _Nada bloqueado de momento. A avançar para Setup → V1._
 - **DNS Hostinger:** identificar contacto **antes** da semana de lançamento da V1
 - **Plano gratuito Supabase:** sem backups; risco aceite até haver utilizadores reais
 - **Branch protection inactiva em `main`:** plano gratuito do GitHub não a disponibiliza em repositórios privados. Decisão consciente de não subscrever Pro. Regra "PR obrigatório, nunca push directo" mantém-se honor-system em `CLAUDE.md` + `permissions.deny` no `.claude/settings.json`. Detalhes em `SPEC_1.md` §16 e `feature-docs/ci.md`.
+- **Exclusão de utilizadores sem Google account:** decisão consciente (`SPEC_1.md` §17/§18) para reduzir scope V2 e acelerar V3 (01-07-2026). Mitigação prevista: nenhuma — utilizadores afectados são redireccionados para criar uma Google account ou esperar versão futura. Reabrir apenas se o ministério explicitamente pedir inclusão.
 
 ## 📌 Decisões adiadas
 Ver `SPEC_1.md` §17.

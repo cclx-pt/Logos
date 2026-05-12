@@ -22,7 +22,7 @@ tools: Read, Grep
 |---|---|
 | **Setup** | Tooling, Supabase, Vercel, branding. Sem código de produto. |
 | **V1** | Site público estático: home, conhece-nos, fala connosco. **Sem auth**, sem BD. |
-| **V2** | Auth (email + Google), papéis, **fundação** de etiquetas. **Sem cursos.** |
+| **V2** | Auth (Google OAuth apenas), papéis, **fundação** de etiquetas. **Sem cursos.** |
 | **V3** | Cursos/Módulos/Aulas + restrição **só por curso** + conclusão **binária**. **Prazo: 01-07-2026.** |
 | **V4** | Etiquetas multi-nível (módulo + aula). |
 | **V5** | Q&A por aula + dashboard de stats. |

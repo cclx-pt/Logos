@@ -224,11 +224,10 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 
 ### V2 — Autenticação e Utilizadores
 
-- Login com email e palavra-passe **e** com Google (OAuth) via Supabase Auth
+- Login com **Google (OAuth)** via Supabase Auth — método único. Email/password está fora de âmbito V1-V9 (ver §17 e §18).
 - Três papéis de sistema: Super Admin, Admin, Utilizador
 - Super Admin pode promover/despromover admins
 - Estrutura da UI de admin (esqueleto vazio, pronto para a V3)
-- Emails de recuperação de palavra-passe via Resend
 - **Fundação do sistema de etiquetas:** admins podem criar etiquetas e atribuí-las a utilizadores (mas ainda não há cursos associados a etiquetas — as etiquetas existem, simplesmente ainda não restringem nada)
 
 ### V3 — Plataforma de Cursos *(prazo: 1 de julho de 2026)*
@@ -319,7 +318,7 @@ A equipa do ministério organizou os pedidos por **prioridade** (P1 essencial �
 | Estilização                           | **Tailwind CSS**                         | Utility-first; rápido para humano e para Claude Code                                      |
 | Componentes UI                        | **shadcn/ui**                            | Acessíveis, configuráveis para a paleta creme + laranja                                   |
 | Base de dados                         | **Supabase (Postgres)** — 2 projetos: `logos-dev` e `logos-prod` | Auth da Supabase fixa-se ao schema `auth.users`; só projetos separados isolam contas. Plano gratuito acomoda 2 projetos |
-| Autenticação                          | **Supabase Auth** (email + Google OAuth) | Integrada com a base de dados; trata de papéis, sessões, recuperação de palavra-passe     |
+| Autenticação                          | **Supabase Auth** (Google OAuth) — único método; ver §17 e §18 | Integrada com a base de dados; trata de papéis e sessões. Sem signup/recovery de palavra-passe (decisão de scope V2 para reduzir esforço e dependências externas) |
 | Armazenamento de ficheiros (PDFs)     | **Supabase Storage**                     | Mesma conta Supabase; URLs assinados para descarregar                                     |
 | Acesso à base de dados                | **Supabase JS client** (`@supabase/ssr` para SSR) | Sessão em Server Components/Actions via cookies httpOnly; migração para Drizzle adiada |
 | Migrations                            | **Supabase CLI** (`supabase/migrations/*.sql` versionado) | Schema replicado entre `logos-dev` e `logos-prod` com `supabase db push`; ficheiros SQL no Git |
@@ -328,7 +327,7 @@ A equipa do ministério organizou os pedidos por **prioridade** (P1 essencial �
 | Testes E2E *(a partir da V3)*         | **Playwright**                           | Verificação ponta-a-ponta de fluxos de auth e acesso por etiqueta. Adiado para V3: V1 é estático, V2 cobre-se com Vitest |
 | Linting                               | **ESLint** (`next/core-web-vitals`)      | Default do `create-next-app`; impede `any` sem justificação                               |
 | Formatação                            | **Prettier**                             | Configuração mínima                                                                       |
-| Email                                 | **Resend**                               | Emails de recuperação de palavra-passe; SPF + DKIM no DNS Hostinger                        |
+| Email                                 | **Resend**                               | **V5+**: notificações de Q&A para admins. SPF + DKIM no DNS Hostinger ficam adiados para essa altura (sem urgência V2 por o login ser apenas Google) |
 | Alojamento                            | **Vercel**                               | Host nativo de Next.js; plano gratuito; deploy automático a partir do GitHub              |
 | Controlo de versões + CI              | **GitHub** + **GitHub Actions**          | Repositório + deploy Vercel; Actions corre `pnpm lint && pnpm typecheck && pnpm test` em PR; `main` protegido contra push directo |
 | Gestor de pacotes                     | **pnpm**                                 | Mais rápido e eficiente em disco que o npm                                                |
@@ -497,6 +496,7 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 - **Design da funcionalidade de Q&A (V5)** — adiada na totalidade até a V4 estar estável.
 - **Decisão sobre indicadores de progresso (V7)** — só após V3+V4 em produção e feedback real de utilizadores.
 - **Integração futura com shell partilhada CCLX** — não implementada agora, mas a fronteira de identidade do Logos foi estruturada para a tornar uma substituição de camada (e não uma reescrita): identidade isolada em `src/lib/auth/` como única importadora de `@supabase/ssr`, FKs sempre para `profiles.id` (nunca para `auth.users`), RLS via função helper `current_profile_id()`. O contrato concreto com a shell será definido em documento próprio quando a shell for desenhada. Detalhes em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
+- **Email/password como método alternativo de autenticação** — fora do âmbito V1-V9. Decisão tomada em 09-05-2026 para reduzir esforço da V2 (de ~13h para ~3.5h), eliminar dependências externas em Resend e DNS Hostinger, e acelerar a entrega da V3 (01-07-2026). Reabrir apenas se o ministério explicitamente pedir inclusão de utilizadores sem Google account. Detalhes em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
 
 ---
 
@@ -515,13 +515,19 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 - Certificados de conclusão de curso para além do simples ecrã "Curso Concluído"
 - Ficheiros de vídeo alojados pelo próprio sistema
 - Barras de progresso, percentagens ou cálculos visuais de avanço (até pelo menos a V7, e mesmo aí só se justificado)
+- Login com email e palavra-passe (e respectivos fluxos: registo manual, recuperação de palavra-passe, validação de email) — Google OAuth é o método único de autenticação V1-V9; ver §17
 
 ---
 
 ## 19. Estado do Documento
 
-- **Versão:** 2.4
-- **Última atualização:** 8 de maio de 2026
+- **Versão:** 2.5
+- **Última atualização:** 9 de maio de 2026
+- **Alterações relativamente à v2.4:**
+  - §9.2 — V2 auth simplificada para Google OAuth apenas (remoção de email/password e linha de recovery emails via Resend).
+  - §11 — célula Autenticação atualizada (apenas Google OAuth); célula Email (Resend) move-se para "V5+ notificações Q&A" (sem urgência V2 por o login ser só Google).
+  - §17 — nova decisão adiada explícita sobre email/password como método alternativo.
+  - §18 — login com email e palavra-passe listado como fora de âmbito V1-V9.
 - **Alterações relativamente à v2.3:**
   - §16 — restrição nova: branch protection no GitHub não está ativa (plano free de repositório privado não a disponibiliza). Regra "PR obrigatório" mantém-se honor-system em `CLAUDE.md` + `permissions.deny` no `.claude/settings.json`. Decisão consciente de não subscrever GitHub Pro.
 - **Alterações relativamente à v2.2:**
