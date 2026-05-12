@@ -1,10 +1,10 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 12-05-2026 (V1 PR1 — shell de navegação entregue)
+> **Última atualização:** 12-05-2026 (V1 PR1 mergeado + domínio `logos.cclx.pt` activo)
 
 ## 🎯 Milestone atual
-**V1 — Site público estático**. Setup terminou em 12-05-2026 com Vercel + branch protection. PR1 da V1 (shell de navegação) está em revisão.
+**V1 — Site público estático**. Setup terminou em 12-05-2026 com Vercel + branch protection. PR1 da V1 (shell de navegação) mergeado em 12-05-2026 e domínio `logos.cclx.pt` activo em Production. Próximas PRs: PR2 (Conhece-nos) e PR3 (Fala connosco).
 
 **Prazo absoluto V3:** 1 de julho de 2026.
 
@@ -29,15 +29,16 @@
 - [x] **Fronteira de identidade vs autorização** documentada — *identidade* (Supabase Auth, migra para shell um dia) separada de *autorização Logos* (papéis, etiquetas, conclusões; fica sempre cá). Camada `src/lib/auth/` planeada como única importadora de `@supabase/ssr`; FKs migram de `auth.users` para `profiles.id`; `profiles.external_auth_id` é o único ponto de mudança quando a shell existir; RLS via função helper `current_profile_id()`. SPEC_1.md §17 reescrita; `architecture.md` §2-§4 atualizadas; CLAUDE.md ganhou três regras duras (isolamento de importações, FK universal, email não duplicado). Detalhes em `feature-docs/auth-architecture.md`. Implementação fica para V2.
 - [x] **Vercel bootstrap** — projeto `logos` (`prj_V0Kp9TZj5QHdAkwBMoPenKlA1TJj`) no scope pessoal `jcrninjas-projects` (CCLX sem Vercel team, adiar até Pro justificável). Vercel GitHub App instalado em `cclx-pt` com acesso restrito a `Logos`: push em `main` → Production; PRs → Preview com URL único. Env vars nos 3 scopes via `vercel env add` (gotcha do `CLAUDECODE=1` documentado em `feature-docs/vercel.md` §7). **Preview aponta para `logos-dev`**, não `logos-prod` (segurança de mutação + schema testing + auth testing; SPEC_1.md §13.5 e architecture.md §8 atualizadas). Repo `cclx-pt/Logos` passou de privado a **público** em 12-05-2026 para caber no plano Hobby do Vercel (verificação de segurança: nenhum `.env` foi alguma vez commitado; refs Supabase são públicas por design; publishable key é client-side; service role nunca em ficheiro versionado). Bónus: branch protection torna-se elegível. `.gitignore` ganhou `.vercel`. Detalhes em `feature-docs/vercel.md`.
 - [x] **Branch protection em `main` activa** (12-05-2026) — aplicada via `gh api PUT /repos/cclx-pt/Logos/branches/main/protection`. Regra: PR obrigatório, check `Lint · Typecheck · Test · Format` verde antes de merge, histórico linear, force-push/deletion bloqueados, admin override possível em emergência, 0 reviews exigidos (single dev faz self-merge). Validação: este próprio PR (#16) é o primeiro a passar pela regra. Detalhes em `SPEC_1.md` §16 e `feature-docs/ci.md` §1.
+- [x] **V1 PR1 — Shell de navegação mergeado** (PR #17, 12-05-2026): `Header` global com hambúrguer mobile, `Footer` com identidade CCLX, `Home` com hero + CTAs, stubs para `/conhece-nos`, `/cursos`, `/fala-connosco`. CI verde, squash-merge, branch apagada. Detalhes em `feature-docs/v1-shell.md`.
+- [x] **Domínio `logos.cclx.pt` activo em Production** (12-05-2026) — CNAME único Vercel (`00f4337193415fe7.vercel-dns-017.com`) configurado no painel Hostinger; A/AAAA antigos do sub-domínio `logos` removidos para libertar o nome. Certificado HTTPS auto-emitido. `NEXT_PUBLIC_SITE_URL=https://logos.cclx.pt` adicionado ao scope Production e redeploy forçado (inlined em build-time). Detalhes em `feature-docs/vercel.md` §9 e changelog `[12-05-2026]`.
 
 ## 🚧 Em progresso
-- **V1 PR1 — Shell de navegação** (em revisão): `Header` global com hambúrguer mobile, `Footer` com identidade CCLX, `Home` com hero + CTAs, stubs para `/conhece-nos`, `/cursos`, `/fala-connosco`. Detalhes em `feature-docs/v1-shell.md`.
+- (sem trabalho em progresso — próxima PR é V1 PR2)
 
 ## ⏭️ Próximas tarefas (V1 → V2)
 - [ ] **V1 PR2** — Conhece-nos (copy real em PT-PT) + Cursos placeholder mais elaborado
 - [ ] **V1 PR3** — Fala connosco com info estática + `mailto:` (sem form em V1)
 - [ ] **Verificação visual da V1** em browser real (Claude não tem browser; utilizador valida `pnpm dev` antes de cada merge)
-- [ ] Identificar contacto de DNS na Hostinger (CNAME `logos.cclx.pt` → Vercel) — pendente para fechar `NEXT_PUBLIC_SITE_URL` em Production + `vercel domains add`
 - [ ] Pedir versão limpa do SVG do logo ao ministério (sem fundo opaco); fallback de texto Cormorant + `BookOpen` está aceitável até lá
 - [ ] Criar OAuth App no Google Cloud Console (uma para `logos-dev`, outra para `logos-prod`) e configurar como Provider em Supabase Auth — pré-condição V2
 - [ ] **Checkpoint V2 — antes do primeiro merge V2:** adicionar `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` ao scope Production do Vercel (logos-prod). Hoje estão deliberadamente unset porque V1 é estático.
@@ -57,7 +58,6 @@
 | **V7+** | Indicadores de progresso (a reavaliar) | 🤔 |
 
 ## ⚠️ Riscos / bloqueios
-- **DNS Hostinger:** identificar contacto **antes** da semana de lançamento da V1
 - **Plano gratuito Supabase:** sem backups; risco aceite até haver utilizadores reais
 - **Branch protection em `main`:** activa desde 12-05-2026. Risco residual: admin (`enforce_admins: false`) pode fazer override em emergência — mitigado por disciplina honor-system de `CLAUDE.md` + `permissions.deny` no `.claude/settings.json`. Detalhes em `SPEC_1.md` §16 e `feature-docs/ci.md` §1.
 - **Repo `cclx-pt/Logos` agora público:** decisão consciente para 0€/mês no Vercel Hobby (Pro custaria ~20€/mês/membro). Verificação de segurança feita antes da mudança (`feature-docs/vercel.md` §5). Trade-off: código visível; service role keys e qualquer credencial continuam apenas em `.env.local` (gitignored) e no painel do Vercel.
