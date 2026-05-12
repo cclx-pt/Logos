@@ -1,6 +1,6 @@
 # vercel — Bootstrap de deploy e env vars
 
-> **Versão:** Setup (pré-V1) · **Concluída em:** 12-05-2026 · **Estado:** projeto `logos` criado em `jcrninjas-projects`, ligado a `cclx-pt/Logos`, env vars configuradas para os 3 scopes
+> **Versão:** Setup (pré-V1) · **Concluída em:** 12-05-2026 · **Estado:** projeto `logos` criado em `jcrninjas-projects`, ligado a `cclx-pt/Logos`, env vars configuradas para os 3 scopes, domínio `logos.cclx.pt` activo em Production
 
 ## 1. Objetivo
 
@@ -142,24 +142,37 @@ vercel inspect <preview-url>
 vercel logs <preview-url>
 ```
 
-## 9. DNS (pendente)
+## 9. DNS (activo desde 12-05-2026)
 
-CNAME `logos.cclx.pt → cname.vercel-dns.com` fica para quando o contacto Hostinger estiver identificado (`status.md` ⚠️ Riscos). Até lá, Production está em `logos-<random>.vercel.app`.
+Domínio Production: **`https://logos.cclx.pt`** (HTTPS auto-emitido por Let's Encrypt após validação).
 
-Quando configurado:
+Configuração no Hostinger (zona DNS de `cclx.pt`):
+
+| Tipo | Nome | Valor | TTL |
+|---|---|---|---|
+| CNAME | `logos` | `00f4337193415fe7.vercel-dns-017.com` | 3600 |
+
+> O Vercel agora emite um CNAME único por domínio (formato `<hash>.vercel-dns-NNN.com`) em vez do antigo `cname.vercel-dns.com`. O hash é estável enquanto o domínio estiver ligado ao mesmo projeto; se desligares e religares, recebes outro hash e tens de actualizar o Hostinger.
+
+**Gotcha (consumido tempo):** antes de adicionar o CNAME foi preciso **remover** os registos A e AAAA pré-existentes no sub-domínio `logos` (Hostinger cria por defeito para parking page). O protocolo DNS proíbe CNAME + A/AAAA no mesmo nome — o Vercel marcaria *Invalid Configuration* até a limpeza acontecer. Lookup `Resolve-DnsName logos.cclx.pt -Server 1.1.1.1` é a forma rápida de confirmar antes de mexer no Vercel.
+
+Adicionar o domínio é feito pelo dashboard Vercel (Project → Settings → Domains → Add). O equivalente CLI seria:
 
 ```bash
 vercel domains add logos.cclx.pt
 ```
 
-(O CLI dá-te os DNS records exatos a meter no Hostinger.)
+Após DNS válido, foi adicionado o env var de Production:
+
+```bash
+'https://logos.cclx.pt' | vercel env add NEXT_PUBLIC_SITE_URL production
+```
+
+E forçado um redeploy (`vercel redeploy <last-prod-url>`) porque `NEXT_PUBLIC_*` é inlined em build-time e o deploy anterior (do squash-merge do PR1) ainda não trazia o valor.
 
 ## 10. Pendente
 
-- **DNS** `logos.cclx.pt` (depende de contacto Hostinger)
 - **Supabase prod env vars** em Production scope (V2 prerequisite, com checkpoint explícito antes do V2 merge)
-- **`NEXT_PUBLIC_SITE_URL`** em Production scope (set após DNS)
-- **Branch protection** em `main` (agora elegível porque repo é público; tarefa nova em `status.md`)
 - **Vercel Pro / team da CCLX** — reavaliar se o ministério crescer; hoje 0€/mês em personal scope é suficiente
 
 ## 11. Troubleshooting

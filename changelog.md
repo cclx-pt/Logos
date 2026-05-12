@@ -16,6 +16,39 @@
 
 ---
 
+## [12-05-2026] — Production: domínio `logos.cclx.pt` activo
+
+### infra
+- add: domínio custom `logos.cclx.pt` adicionado ao projeto Vercel `logos` (Production scope). CNAME `logos.cclx.pt` → `00f4337193415fe7.vercel-dns-017.com` (formato novo do Vercel, hash único por domínio).
+- update: zona DNS Hostinger de `cclx.pt` — registos antigos do sub-domínio `logos` (A `147.79.119.210` + `193.58.105.154`, AAAA `2a02:4780:...`) removidos para libertar o nome; CNAME único adicionado a apontar para o target Vercel. Conflito CNAME+A é rejeitado pelo protocolo DNS, portanto a limpeza era pré-condição.
+- add: certificado HTTPS emitido automaticamente pelo Vercel (Let's Encrypt) após validação. `https://logos.cclx.pt` responde 200.
+- add: env var `NEXT_PUBLIC_SITE_URL=https://logos.cclx.pt` no scope **Production** via `vercel env add`. Era deliberadamente unset durante o Setup à espera de DNS (`feature-docs/vercel.md` §7).
+- update: redeploy de Production forçado após o `env add` — `NEXT_PUBLIC_*` é inlined em build-time, portanto o deploy anterior (do merge PR #17, ~1 min antes) não trazia o valor novo.
+
+### docs
+- update: `feature-docs/vercel.md` §9 — DNS deixa de estar "pendente"; passa a "activo" com o CNAME concreto (`00f4337193415fe7.vercel-dns-017.com`) e nota sobre conflito CNAME+A.
+- update: `feature-docs/vercel.md` §10 — "Pendente" perde os bullets de DNS e `NEXT_PUBLIC_SITE_URL`.
+- update: `status.md` — bullets de DNS Hostinger e checkpoint do `NEXT_PUBLIC_SITE_URL` movem-se para ✅ Concluído; risco "DNS Hostinger" removido.
+- update: `changelog.md` — esta entrada.
+
+### why
+- Fecha a última dependência externa que travava a V1 em Production (até aqui Production estava em `logos-<hash>.vercel.app`).
+- Desbloqueia metadata absoluta (`<link rel="canonical">`, OG tags, sitemap) para qualquer feature V1/V2 que precise de URL fixo.
+
+---
+
+## [12-05-2026] — V1 PR1 mergeado para `main` (PR #17)
+
+### infra
+- update: PR #17 (`feat/v1-shell` → `main`) squash-merged via `gh pr merge --squash --delete-branch`. CI verde, Vercel Preview verde, `mergeStateStatus: CLEAN`. Branch `feat/v1-shell` apagada local e remotamente. Primeiro PR a passar pela regra de branch protection (PR #15 / #16 foram os que a activaram).
+- add: deploy Production do shell de navegação iniciado automaticamente pelo push em `main`. Aliased a `https://logos.cclx.pt` após DNS+env var (entrada acima).
+
+### why
+- Production deixa de servir a página "Em construção" do Setup e passa a servir o shell V1 (Header + Footer + Home + stubs).
+- Conteúdo das PRs V1 seguintes (Conhece-nos, Cursos placeholder, Fala-connosco) será mergeado em cima deste shell.
+
+---
+
 ## [12-05-2026] — V1 PR1: shell de navegação (Header + Footer + Home + stubs)
 
 ### add
