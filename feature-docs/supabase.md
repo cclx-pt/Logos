@@ -4,7 +4,7 @@
 
 ## 1. Objetivo
 
-Provisionar a infraestrutura Supabase que vai sustentar Postgres, Auth (email + Google OAuth) e Storage (PDFs das aulas), e configurar o fluxo de migrations versionadas para que o schema do Logos seja construído de forma reproduzível.
+Provisionar a infraestrutura Supabase que vai sustentar Postgres, Auth (Google OAuth — único provider, ver `SPEC_1.md` §17/§18) e Storage (PDFs das aulas), e configurar o fluxo de migrations versionadas para que o schema do Logos seja construído de forma reproduzível.
 
 ## 2. Projetos provisionados
 
@@ -124,8 +124,9 @@ Bucket `lesson-pdfs` (privado) ainda **não foi criado**. Vai ser criado em V3 c
 
 Configuração no painel Supabase `logos-dev` e `logos-prod` será feita em V2:
 
-- **Email/password** — habilitar provider, configurar templates de email (Resend handover, ver `architecture.md` §11).
-- **Google OAuth** — criar OAuth App no Google Cloud Console; copiar Client ID + Secret para Supabase Auth → Providers → Google. URL de callback: `https://<ref>.supabase.co/auth/v1/callback`.
+- **Google OAuth** — único provider habilitado. Criar OAuth App no Google Cloud Console; copiar Client ID + Secret para Supabase Auth → Providers → Google. URL de callback: `https://<ref>.supabase.co/auth/v1/callback`. Pré-condição V2 registada em `status.md` ⏭️ Próximas tarefas.
+
+Email/password e outros providers (Apple, Microsoft, etc.) estão **fora de âmbito V1-V9** (`SPEC_1.md` §17/§18). A decisão é consciente para reduzir esforço V2 e eliminar dependências em Resend/DNS. Reabrir apenas se o ministério explicitamente pedir inclusão.
 
 Por agora, ambos os projetos têm Auth provisionado (built-in) mas sem providers habilitados além do default.
 

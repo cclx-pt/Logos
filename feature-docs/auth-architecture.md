@@ -4,7 +4,7 @@
 
 ## 1. Objetivo
 
-O Logos pode, num horizonte de 2 a 4 anos, vir a ser um módulo dentro de uma **shell** partilhada da CCLX (uma "Church app" que ainda não existe), juntamente com outros módulos como _Contribuir_ ou _Grupos de Crescimento_. Quando essa shell existir, a **autenticação** deixará de ser feita no Logos: o utilizador faz login uma vez na shell e é encaminhado para o módulo que quiser. Hoje, a shell não existe — o Logos é autónomo em `logos.cclx.pt` com Supabase Auth (email + Google OAuth) e mantém-se assim durante toda a V2 e V3.
+O Logos pode, num horizonte de 2 a 4 anos, vir a ser um módulo dentro de uma **shell** partilhada da CCLX (uma "Church app" que ainda não existe), juntamente com outros módulos como _Contribuir_ ou _Grupos de Crescimento_. Quando essa shell existir, a **autenticação** deixará de ser feita no Logos: o utilizador faz login uma vez na shell e é encaminhado para o módulo que quiser. Hoje, a shell não existe — o Logos é autónomo em `logos.cclx.pt` com Supabase Auth (Google OAuth como único provider; ver `SPEC_1.md` §17/§18) e mantém-se assim durante toda a V2 e V3.
 
 Este documento descreve a **fronteira** que estamos a desenhar agora, antes de implementar a V2, para garantir que essa migração futura seja **uma substituição de camada e não uma reescrita**. Não documentamos o contrato concreto da shell — esse será definido em documento próprio quando a shell for desenhada. Aqui descrevemos o lado **Logos** da fronteira.
 
@@ -28,7 +28,9 @@ A camada expõe duas funções:
 - `getCurrentUser()` — devolve o `Profile` ativo (ou `null` se não há sessão). É a única forma de saber quem está autenticado no Logos.
 - `getServerClient()` — devolve um cliente Supabase autenticado (com a sessão do utilizador atual), pronto para queries que respeitam RLS. É a única forma de obter um cliente Postgres ligado à identidade do utilizador.
 
-Tudo o resto (Server Components, Server Actions, Route Handlers) consome estas duas funções. **Ninguém chama `createServerClient` diretamente fora desta pasta.**
+Em V2, a única forma de iniciar sessão é via Google OAuth — `signInWithGoogle()` é a única função de sign-in na API pública desta camada. Email/password está fora de âmbito V1-V9 (`SPEC_1.md` §17/§18); logo, esta camada não expõe `signInWithPassword`, `signUp` ou `resetPassword`.
+
+Tudo o resto (Server Components, Server Actions, Route Handlers) consome estas três funções. **Ninguém chama `createServerClient` diretamente fora desta pasta.**
 
 ### 3.2. Porquê absorver também o cliente
 
@@ -77,9 +79,9 @@ Esta é a regra que torna a migração futura trivial — quando o `external_aut
 
 ## 5. Sincronização `auth.users → profiles`
 
-Quando um utilizador se regista (ou faz primeiro login Google), o registo `auth.users` nasce automaticamente. O `profiles` correspondente tem de aparecer também. Estratégia escolhida — **defesa em profundidade** com dois caminhos:
+Quando um utilizador faz primeiro login com Google, o registo `auth.users` nasce automaticamente (Supabase Auth processa o callback OAuth). O `profiles` correspondente tem de aparecer também. Estratégia escolhida — **defesa em profundidade** com dois caminhos:
 
-1. **Server Action no callback de auth.** No fluxo TypeScript da V2, o callback de login executa `insert into profiles (external_auth_id, display_name) values ($1, $2) on conflict (external_auth_id) do nothing`. É controlado, testável em Vitest, e mockável.
+1. **Server Action no callback OAuth.** O endpoint `/auth/callback?code=...` (que recebe o código de autorização do Google e troca-o por sessão Supabase) executa `insert into profiles (external_auth_id, display_name) values ($1, $2) on conflict (external_auth_id) do nothing`. É controlado, testável em Vitest, e mockável. O `display_name` inicial é lido do claim `name` (ou `given_name`/`full_name`) que o Google devolve.
 2. **Trigger DB defensivo.** Uma migration cria um trigger em `auth.users` que faz o mesmo `insert ... on conflict do nothing`. Apanha qualquer caminho que escape ao Server Action — por exemplo, criação de utilizadores via SQL admin ou painel da Supabase.
 
 Ambos são idempotentes (`on conflict do nothing`); correr ambos não cria duplicados nem race conditions. O Server Action também serve para pôr `display_name` inicial vindo dos metadados OAuth (que o trigger DB tem mais dificuldade em ler). O trigger DB só preenche o mínimo (`external_auth_id`) — o Server Action completa.
@@ -116,8 +118,8 @@ create policy "user vê só as suas conclusões"
 
 | Dado | Onde vive | Quem gere | Porquê |
 |---|---|---|---|
-| Email | `auth.users.email` (hoje) | Sistema de identidade externo | Uma só fonte da verdade. Facilita RGPD (pedido de eliminação só toca um sítio). |
-| `display_name` | `profiles.display_name` | Logos | Pode ser específico ao contexto Logos. A pessoa pode querer um nome diferente neste módulo. |
+| Email | `auth.users.email` (alimentado pelo claim do Google OAuth) | Sistema de identidade externo (Google → Supabase Auth) | Uma só fonte da verdade. Facilita RGPD (pedido de eliminação só toca um sítio). |
+| `display_name` | `profiles.display_name` | Logos (valor inicial vem do claim `name`/`given_name` do Google; pode ser editado depois) | Pode ser específico ao contexto Logos. A pessoa pode querer um nome diferente neste módulo. |
 | `role` | `profiles.role` | Logos | Autorização Logos, não identidade. Não migra. |
 
 ## 8. Migração futura para shell — em alto nível
@@ -151,6 +153,7 @@ O contrato concreto (formato do JWT, cookies, fluxo de logout coordenado, etc.) 
 - **Implementação V2 da camada `lib/auth/`.** Vai ter o seu próprio documento (`feature-docs/auth.md`) quando ficar concluída.
 - **Política de eliminação de conta / RGPD.** Coberto em `architecture.md` §11.
 - **Detalhes da UI de promoção de papéis (V2).** Documentação V2.
+- **Fluxos de email/password (signup, recovery, validação).** Fora de âmbito V1-V9 — Google OAuth é o método único (`SPEC_1.md` §17/§18).
 
 ## 11. Testes (princípios)
 

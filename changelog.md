@@ -16,6 +16,33 @@
 
 ---
 
+## [09-05-2026] — Setup: auth scope reduzido para Google OAuth apenas (V1-V9)
+
+### docs
+- update: `SPEC_1.md` §9.2 (V2) — login passa a Google OAuth apenas; remoção da linha de recovery emails via Resend.
+- update: `SPEC_1.md` §11 — célula Autenticação atualizada (apenas Google OAuth, com referência a §17/§18); célula Email (Resend) passa para "V5+ notificações Q&A" (sem urgência V2).
+- update: `SPEC_1.md` §17 — nova decisão adiada explícita sobre email/password como método alternativo (reabrir apenas se o ministério pedir inclusão de utilizadores sem Google).
+- update: `SPEC_1.md` §18 — login com email e palavra-passe listado como fora de âmbito V1-V9.
+- update: `SPEC_1.md` §19 — versão 2.4 → 2.5.
+- update: `CLAUDE.md` 🏗️ Arquitetura — descrição auth ajustada (Google OAuth apenas).
+- update: `architecture.md` cabeçalho — data atualizada para 09-05-2026.
+- update: `architecture.md` §4 — primeira linha reescrita; nota sobre shell futura potencialmente oferecer email/password sem condicionar a decisão V2.
+- update: `architecture.md` §11 (RGPD) — origens de email e display_name actualizadas para "Google OAuth (claim)".
+- update: `feature-docs/auth-architecture.md` §3.1 — `signInWithGoogle()` listado como única função de sign-in da API pública.
+- update: `feature-docs/auth-architecture.md` §5 — sincronização clarificada como callback OAuth do Google.
+- update: `feature-docs/auth-architecture.md` §7 — tabela de email/display_name actualizada para refletir claim do Google.
+- update: `feature-docs/auth-architecture.md` §10 — fluxos de email/password listados como fora deste documento.
+- update: `feature-docs/supabase.md` §7 — secção Auth simplificada (só Google).
+- update: `status.md` — Resend movido para tarefa adiada V5+; tarefa Google Cloud OAuth acrescentada como pré-condição V2; nova entrada em ⚠️ Riscos sobre exclusão de utilizadores sem Google.
+
+### why
+- Esforço V2 auth desce de ~13h para ~3.5h.
+- Elimina duas dependências externas em V2 (Resend account + DNS Hostinger SPF/DKIM).
+- Acelera entrega da V3 (prazo: 01-07-2026).
+- Trade-off aceite: utilizadores sem Google ficam fora até decisão contrária.
+
+---
+
 ## [09-05-2026] — Setup: pipeline Supabase migrations validado em logos-dev
 
 ### infra
