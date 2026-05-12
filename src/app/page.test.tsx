@@ -3,14 +3,23 @@ import { describe, it, expect } from 'vitest';
 import Home from './page';
 
 describe('Home', () => {
-  it('renderiza o wordmark LOGOS com aria-label correto', () => {
+  it('apresenta o heading principal de boas-vindas', () => {
     render(<Home />);
-    const heading = screen.getByRole('heading', { level: 1, name: 'Logos' });
-    expect(heading).toHaveTextContent('LOGOS');
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading).toHaveTextContent(/estudo bíblico/i);
   });
 
-  it('exibe a legenda "Em construção"', () => {
+  it('mostra o wordmark Logos no hero', () => {
     render(<Home />);
-    expect(screen.getByText('Em construção')).toBeInTheDocument();
+    expect(screen.getByLabelText('Logos')).toBeInTheDocument();
+  });
+
+  it('expõe CTAs para /cursos e /conhece-nos', () => {
+    render(<Home />);
+    expect(screen.getByRole('link', { name: /ver cursos/i })).toHaveAttribute('href', '/cursos');
+    expect(screen.getByRole('link', { name: /conhece o projeto/i })).toHaveAttribute(
+      'href',
+      '/conhece-nos',
+    );
   });
 });

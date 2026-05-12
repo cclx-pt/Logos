@@ -16,6 +16,35 @@
 
 ---
 
+## [12-05-2026] — V1 PR1: shell de navegação (Header + Footer + Home + stubs)
+
+### add
+- add: `src/components/site/header.tsx` — cabeçalho global sticky, `bg-background/95` com backdrop blur, logo à esquerda + nav à direita em desktop (`md+`), hambúrguer em mobile.
+- add: `src/components/site/footer.tsx` — rodapé com Logo `size="sm"` + descrição do projeto, link à página da CCLX e copyright dinâmico.
+- add: `src/components/site/logo.tsx` — wordmark "LOGOS" em Cormorant Garamond a `text-orange` + ícone `BookOpen` da `lucide-react`. Tamanhos `sm`/`md`/`lg`. Renderiza como `<Link href="/">` por defeito; `asStatic` para uso em hero/rodapé. Decisão de usar fallback de texto em vez do SVG de `docs/branding/logo-cclx-logos.svg` documentada em `feature-docs/v1-shell.md` §3.2 (SVG tem fundo `#F7F7F7` opaco que cobriria a paleta creme).
+- add: `src/components/site/nav-links.tsx` — `'use client'`, lê `usePathname()` para aplicar `aria-current="page"` + sublinhado em rota activa. Reutilizado em desktop (`orientation="horizontal"`) e mobile (`orientation="vertical"`).
+- add: `src/components/site/mobile-nav.tsx` — `'use client'`, hambúrguer + painel `fixed inset-x-0 top-16 bottom-0` com `role="dialog" aria-modal="true"`. Fecha com Escape, bloqueia scroll do body enquanto aberto. Sem dependência shadcn `Sheet` (não está na roadmap V1 do `feature-docs/shadcn-ui.md`).
+- add: `src/lib/site-config.ts` — `siteConfig` (nome, descrição, organização) + `navItems` centralizados (single source of truth para nav).
+- add: `src/app/conhece-nos/page.tsx`, `src/app/cursos/page.tsx`, `src/app/fala-connosco/page.tsx` — **stubs** com "em breve" para que o nav não dê 404 entre PRs. PR2 e PR3 substituem.
+- add: `feature-docs/v1-shell.md` — estrutura, decisões (sem `Sheet`, logo textual, `Button render={<Link/>}` em vez de `asChild`), a11y, validação local.
+
+### update
+- update: `src/app/layout.tsx` — passa a envolver `children` em `<Header />` + `<main className="flex-1">` + `<Footer />`. Body com `bg-background text-foreground flex min-h-full flex-col`. Metadata `default` e `template` consomem `siteConfig`.
+- update: `src/app/page.tsx` — "Em construção" reescrita como hero V1: Logo `size="lg" asStatic`, h1 "Estudo bíblico para uma fé enraizada.", parágrafo de intro PT-PT, dois CTAs (`Button render={<Link href="/cursos" />}` para "Ver cursos" + variant `ghost` para "Conhece o projeto").
+- update: `src/app/page.test.tsx` — 3 testes: heading presente + wordmark visível + CTAs com `href` correctos. Removido o teste de "Em construção" (substituído por hero).
+
+### why
+- Primeira PR da V1; o site deixa de ser "Em construção" e passa a ter shell pronto para receber conteúdo nas PRs seguintes.
+- Stubs em vez de rotas missing evitam 404 do nav durante revisão de PR2/PR3.
+- Copy em PT-PT rascunhada pelo agent; revisão final pelo ministério antes de Production (decisão em chat — `status.md`).
+
+### gotchas (documentados em `feature-docs/v1-shell.md`)
+- Base UI (não Radix) — `Button` não tem `asChild`; usa `render` prop.
+- SVG do logo de `docs/branding/` não é usável em runtime; fallback textual ao abrigo da `SPEC_1.md` §14.
+- Tokens shadcn `--muted` (`#f4ead8`, background) vs `--muted-foreground` (`#6b6b6b`, texto): texto secundário usa `text-muted-foreground`.
+
+---
+
 ## [12-05-2026] — Setup: branch protection em `main` activa
 
 ### infra

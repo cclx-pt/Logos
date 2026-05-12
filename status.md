@@ -1,10 +1,10 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 12-05-2026 (branch protection em `main` activa)
+> **Última atualização:** 12-05-2026 (V1 PR1 — shell de navegação entregue)
 
 ## 🎯 Milestone atual
-**Fase de Setup** — preparar fundações antes de iniciar a V1.
+**V1 — Site público estático**. Setup terminou em 12-05-2026 com Vercel + branch protection. PR1 da V1 (shell de navegação) está em revisão.
 
 **Prazo absoluto V3:** 1 de julho de 2026.
 
@@ -31,10 +31,14 @@
 - [x] **Branch protection em `main` activa** (12-05-2026) — aplicada via `gh api PUT /repos/cclx-pt/Logos/branches/main/protection`. Regra: PR obrigatório, check `Lint · Typecheck · Test · Format` verde antes de merge, histórico linear, force-push/deletion bloqueados, admin override possível em emergência, 0 reviews exigidos (single dev faz self-merge). Validação: este próprio PR (#16) é o primeiro a passar pela regra. Detalhes em `SPEC_1.md` §16 e `feature-docs/ci.md` §1.
 
 ## 🚧 Em progresso
-_Nada bloqueado de momento. A avançar para Setup → V1._
+- **V1 PR1 — Shell de navegação** (em revisão): `Header` global com hambúrguer mobile, `Footer` com identidade CCLX, `Home` com hero + CTAs, stubs para `/conhece-nos`, `/cursos`, `/fala-connosco`. Detalhes em `feature-docs/v1-shell.md`.
 
-## ⏭️ Próximas tarefas (Setup → V1)
+## ⏭️ Próximas tarefas (V1 → V2)
+- [ ] **V1 PR2** — Conhece-nos (copy real em PT-PT) + Cursos placeholder mais elaborado
+- [ ] **V1 PR3** — Fala connosco com info estática + `mailto:` (sem form em V1)
+- [ ] **Verificação visual da V1** em browser real (Claude não tem browser; utilizador valida `pnpm dev` antes de cada merge)
 - [ ] Identificar contacto de DNS na Hostinger (CNAME `logos.cclx.pt` → Vercel) — pendente para fechar `NEXT_PUBLIC_SITE_URL` em Production + `vercel domains add`
+- [ ] Pedir versão limpa do SVG do logo ao ministério (sem fundo opaco); fallback de texto Cormorant + `BookOpen` está aceitável até lá
 - [ ] Criar OAuth App no Google Cloud Console (uma para `logos-dev`, outra para `logos-prod`) e configurar como Provider em Supabase Auth — pré-condição V2
 - [ ] **Checkpoint V2 — antes do primeiro merge V2:** adicionar `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` ao scope Production do Vercel (logos-prod). Hoje estão deliberadamente unset porque V1 é estático.
 - [ ] *(adiado para V5+)* Resend + SPF/DKIM no DNS Hostinger — sem urgência V2 por o login ser apenas Google; necessário para notificações de Q&A em V5
