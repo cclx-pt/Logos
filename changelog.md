@@ -16,6 +16,21 @@
 
 ---
 
+## [13-05-2026] — V1 a11y: skip-link "Saltar para o conteúdo"
+
+### add
+- add: `src/components/site/skip-link.tsx` — link "Saltar para o conteúdo" como **primeiro elemento focável** do body. `sr-only` por defeito, `focus:not-sr-only` quando recebe foco — aparece em cima-esquerda. Aponta para `#main-content`.
+- add: `src/components/site/skip-link.test.tsx` — 2 testes (link tem `href="#main-content"` + texto PT-PT; classes `sr-only` + `focus:not-sr-only` presentes).
+
+### update
+- update: `src/app/layout.tsx` — `<SkipLink />` antes do `<Header />`; `<main>` ganha `id="main-content"` + `tabIndex={-1}` + `focus:outline-none` (alvo do salto, focável programaticamente sem ring visível).
+
+### why
+- Utilizadores de teclado e de leitor de ecrã têm hoje de tabular toda a Header (logo + hambúrguer/nav) antes de chegarem ao conteúdo principal. WCAG 2.4.1 ("Bypass Blocks") pede uma forma de saltar. Esta é a opção mais simples e bem-documentada — um `<a>` que aparece no foco.
+- 7/7 testes locais a passar; sem novas dependências.
+
+---
+
 ## [13-05-2026] — V1 UX: stagger nas páginas + interiores das letras do logo transparentes
 
 ### add
