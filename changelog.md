@@ -16,6 +16,28 @@
 
 ---
 
+## [13-05-2026] — V1 UX: stagger nas páginas + interiores das letras do logo transparentes
+
+### add
+- add: `src/lib/motion-variants.ts` — `staggerContainer` + `staggerItem` partilhados. Substituem variants duplicados que viviam só em `home-hero.tsx`.
+- add: `src/app/conhece-nos/conhece-nos-content.tsx`, `cursos/cursos-content.tsx`, `fala-connosco/fala-connosco-content.tsx`, `not-found-content.tsx` — client components com `motion.section` + stagger. Cada `page.tsx` mantém-se server para preservar `export const metadata`.
+- add: `public/logo-cclx-interiors.svg` — variante do logo com **interiores das letras transparentes**. Gerado a partir de `logo-cclx-clean.svg` via análise programática: bbox de cada path comparado com bboxes das 5 letras (L, O, G, O, S — extraídas dos paths laranja `#E38258`); paths creme **fully contained** dentro de uma letra ficam `fill="none"`. Resultado: 247 paths modificados, 198 mantidos (livro + gaps entre letras). Diff de tamanho: −0.4% (189904 → 189163 bytes).
+
+### update
+- update: `src/components/site/home-hero.tsx` — importa variants do novo módulo partilhado. Comportamento idêntico.
+- update: `src/components/site/logo.tsx` — `src` aponta para `/logo-cclx-interiors.svg`.
+- update: páginas `conhece-nos`, `cursos`, `fala-connosco` e `not-found` passam a delegar render ao client component co-localizado.
+
+### why
+- **Stagger consistente:** Home tinha entrada animada (logo → h1 → parágrafo → CTAs); restantes páginas saltavam directo. Resolve a falta de coerência. Pages curtas (2-3 elementos) também beneficiam — feedback de "página acabou de carregar" sem ruído.
+- **Interiores das letras:** o SVG do ministério tem paths creme a preencher o bowl dos O e do G, dando aspecto de "branco" contra `bg-background` (`#FAF4EA`). Solução cirúrgica: só paths cuja bbox cai inteiramente dentro de uma letra ficam `fill="none"`. Livro fica intacto (paths em `y=509-757`), gaps entre letras também.
+- **Cliente vs servidor:** `motion/react` exige client component. `metadata` exige server component. Padrão Next 15 limpo: `page.tsx` é fino, delega ao `<name>-content.tsx`. Fica `'use client'` localizado, não polui o root.
+
+### limites
+- Análise feita às cegas — Claude não tem browser. O utilizador valida em Preview Vercel se: (a) interior das letras agora mostra a cor do fundo da página, (b) livro mantém detalhe creme, (c) gaps entre letras não têm halo visível indesejado. Se houver halo, iterar — abrir bbox para incluir paths que cruzam a fronteira da letra.
+
+---
+
 ## [13-05-2026] — Decisões pré-V2: bootstrap do Super Admin + entrada admin
 
 ### docs
