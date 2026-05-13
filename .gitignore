@@ -65,6 +65,8 @@ desktop.ini
 supabase/.branches
 supabase/.temp
 supabase/migrations/*.sql.bak
+supabase/seed/*.sql
+!supabase/seed/*.sql.example
 
 # ---- Diversos ----
 *.pem

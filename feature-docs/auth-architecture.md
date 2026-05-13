@@ -1,6 +1,6 @@
 # Fronteira de identidade vs autorização Logos
 
-> **Versão:** Setup (pré-V1) · **Última atualização:** 08-05-2026 · **Estado:** desenho documentado; implementação na V2
+> **Versão:** Setup (pré-V1) · **Última atualização:** 13-05-2026 · **Estado:** desenho documentado; implementação na V2
 
 ## 1. Objetivo
 
@@ -87,6 +87,30 @@ Quando um utilizador faz primeiro login com Google, o registo `auth.users` nasce
 Ambos são idempotentes (`on conflict do nothing`); correr ambos não cria duplicados nem race conditions. O Server Action também serve para pôr `display_name` inicial vindo dos metadados OAuth (que o trigger DB tem mais dificuldade em ler). O trigger DB só preenche o mínimo (`external_auth_id`) — o Server Action completa.
 
 Esta estratégia documenta-se aqui mas **implementa-se na V2**. Não há código nem migrations nesta entrega.
+
+### 5.1. Bootstrap do primeiro Super Admin
+
+O sistema arranca sem nenhum `super_admin`: o callback OAuth + trigger DB criam `profiles` sempre com `role='user'`. Para arrancar a cadeia, faz-se um seed manual por ambiente — uma vez por cada ambiente (`logos-dev`, `logos-prod`), depois é o próprio super_admin que promove os outros pela UI dedicada.
+
+**Pessoa designada:** `joaocanelasribeiro@gmail.com` (V2). Decisão registada em `SPEC_1.md` §4 e `architecture.md` §4.
+
+**Processo:**
+
+1. Pessoa faz login na app via Google OAuth. Isto cria `auth.users` e, em cascata, `profiles` com `role='user'`.
+2. Operador corre `supabase/seed/super-admin.sql.example` (ou cópia local `super-admin.sql`, não versionada) contra o ambiente. O ficheiro está documentado in-line e é idempotente:
+   - Lança erro explícito se a pessoa ainda não fez login.
+   - Faz no-op se já é `super_admin`.
+   - Reporta nº de rows actualizadas via `RAISE NOTICE`.
+3. Operador verifica que o `update` afectou exactamente 1 row.
+
+**Porquê SQL versionado e não migration:**
+
+- Uma migration assume um `auth.users` específico, o que falha em qualquer DB de CI/teste que não tenha o login prévio. O Vercel Preview (que aponta para `logos-dev`) corre migrations automaticamente — incluir o seed numa migration partiria builds.
+- O seed só corre uma vez por ambiente, depois de um acto humano explícito. SQL versionado como `.example` dá rasto auditável (qualquer pessoa que olhe para o repo entende o processo) sem o transformar em automação.
+
+**Porquê não hard-codar `display_name`:**
+
+- `display_name` vem do claim Google no primeiro login (Server Action no callback). O seed só toca em `role`. Mantém-se assim a regra "identidade vem do provider; autorização Logos é Logos".
 
 ## 6. RLS via `current_profile_id()`
 
