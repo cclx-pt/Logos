@@ -16,6 +16,27 @@
 
 ---
 
+## [14-05-2026] — V1 conteúdo: copy placeholder em Conhece-nos, Cursos e Fala connosco
+
+### update
+- update: `src/app/conhece-nos/conhece-nos-content.tsx` — copy substantivo em 3 secções: identificação ("Somos a CCLX — Comunidade Cristã Lisboa"), "O que aqui encontras" (vídeo + PDF + sem prazos, sempre gratuito), "Quem está por trás" (equipa de voluntários). Marcado como "Em construção — texto definitivo em breve".
+- update: `src/app/cursos/cursos-content.tsx` — passa de placeholder simples a layout com intro + secção "O que vais encontrar" (3 cards: vídeo embebido, apostila PDF, ritmo próprio — icons `BookOpen`, `FileDown`, `CheckCircle2`). Mantém tag "Em breve".
+- update: `src/app/fala-connosco/fala-connosco-content.tsx` — passa a oferecer 2 cards de contacto: email (`mailto:logos@cclx.pt?subject=Contacto Logos`) e site da CCLX (`https://cclx.pt`, abre em nova aba com `rel="noopener noreferrer"`). Nota inferior "Horários e morada da igreja em breve".
+
+### add
+- add: `src/app/conhece-nos/page.test.tsx`, `cursos/page.test.tsx`, `fala-connosco/page.test.tsx` — smoke tests por página (h1 + ancoras de copy + mailto/target/rel para Fala connosco). 14/14 testes a passar.
+
+### why
+- **Desbloquear V1 sem esperar pelo ministério.** Decisão consciente: copy nas 3 páginas é placeholder mas concreto o suficiente para servir em Production. Quando o ministério mandar texto final, é substituição de strings em ficheiros isolados (sem mexer em layout/animações/testes — exceto para actualizar matchers de copy se necessário).
+- **3 pilares dos cursos coerentes com SPEC §6/§8:** vídeo YouTube embebido + PDF descarregável + estado de conclusão binário sem barras de progresso (`SPEC_1.md` proíbe percentagens até V7). Os 3 cards na página Cursos já comunicam isto.
+- **Fala connosco com algo útil hoje:** `mailto:` com subject prefill ajuda triagem; link CCLX com nova aba para utilizadores continuarem no Logos depois. Morada/horários da igreja explicitamente pendentes do ministério.
+
+### segue
+- Substituir copy de Conhece-nos e Fala connosco por texto final do ministério (sem alteração de estrutura).
+- Acrescentar morada + horários a Fala connosco quando o ministério os fornecer.
+
+---
+
 ## [13-05-2026] — V1 a11y: skip-link "Saltar para o conteúdo"
 
 ### add

@@ -1,10 +1,10 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 13-05-2026 (V1 a11y skip-link + V1 UX stagger nas 4 páginas + interiores das letras do logo transparentes)
+> **Última atualização:** 14-05-2026 (V1 conteúdo: copy placeholder em Conhece-nos, Cursos e Fala connosco)
 
 ## 🎯 Milestone atual
-**V1 — Site público estático**. Setup terminou em 12-05-2026 com Vercel + branch protection. PR1 da V1 (shell de navegação) mergeado em 12-05-2026 e domínio `logos.cclx.pt` activo em Production. PR de polimento mergeada em 13-05-2026 (PR #19: 404 PT-PT + robots + sitemap + limpeza de `/debug-logo`). Próximas PRs V1 (PR2 Conhece-nos, PR3 Fala connosco) bloqueadas em copy final do ministério. Em paralelo, decisões pré-V2 registadas em docs (bootstrap super_admin + entrada admin).
+**V1 — Site público estático**, conteúdo placeholder em ar. Setup terminou em 12-05-2026 com Vercel + branch protection. PR1 da V1 (shell de navegação) mergeado em 12-05-2026 e domínio `logos.cclx.pt` activo em Production. Polimento V1 + a11y + UX (PRs #19, #21, #22) mergeados em 13-05-2026. V1 PR2/PR3 (Conhece-nos, Cursos, Fala connosco) deixam de estar bloqueadas — avançámos com copy placeholder explicitamente marcado, fácil de trocar quando o ministério mandar texto final.
 
 **Prazo absoluto V3:** 1 de julho de 2026.
 
@@ -34,14 +34,15 @@
 - [x] **V1 polimento — 404 PT-PT + robots/sitemap + limpeza** (13-05-2026) — `src/app/not-found.tsx` em PT-PT dentro do shell (CTAs Home + Cursos); `src/app/robots.ts` permissivo com `sitemap`/`host` para `siteConfig.url`; `src/app/sitemap.ts` derivado de `navItems`; `/debug-logo` removida (scaffolding fechado em V1 PR1). 2 testes novos para o 404 (5/5 a passar). PR #19 mergeada. Detalhes em `changelog.md` `[13-05-2026]`.
 - [x] **Decisões pré-V2 registadas** (13-05-2026) — `SPEC_1.md` §4 + `architecture.md` §4 + `feature-docs/auth-architecture.md` §5.1: primeiro super_admin é `joaocanelasribeiro@gmail.com`; entrada à área `/admin` via item no dropdown do utilizador (apenas visível se `role !== 'user'`); seed via SQL versionado idempotente em `supabase/seed/super-admin.sql.example`. SPEC bump v2.8. PR #20 mergeada.
 - [x] **V1 a11y — skip-link** (13-05-2026) — `src/components/site/skip-link.tsx` como primeiro elemento focável do body (`sr-only` → visível no `:focus`); `<main id="main-content">` é alvo do salto. WCAG 2.4.1. PR #21 mergeada.
-- [x] **V1 UX — stagger nas 4 páginas + interiores das letras do logo** (13-05-2026) — variants partilhados em `src/lib/motion-variants.ts`; `conhece-nos`, `cursos`, `fala-connosco` e `not-found` ganham entrada animada coerente com o hero (`page.tsx` server + `<name>-content.tsx` client). `public/logo-cclx-interiors.svg` gerado a partir de `logo-cclx-clean.svg` via análise de bboxes: 247 paths creme dentro do contorno das letras ficam `fill="none"`, livro e gaps mantidos. **Validação visual pendente em Preview Vercel.**
+- [x] **V1 UX — stagger nas 4 páginas + interiores das letras do logo** (13-05-2026) — variants partilhados em `src/lib/motion-variants.ts`; `conhece-nos`, `cursos`, `fala-connosco` e `not-found` ganham entrada animada coerente com o hero (`page.tsx` server + `<name>-content.tsx` client). `public/logo-cclx-interiors.svg` gerado a partir de `logo-cclx-clean.svg` via análise de bboxes: 247 paths creme dentro do contorno das letras ficam `fill="none"`, livro e gaps mantidos. PR #22 mergeada.
+- [x] **V1 conteúdo placeholder** (14-05-2026) — Conhece-nos com 3 secções (identificação CCLX + "O que aqui encontras" + "Quem está por trás" + tag "Em construção"); Cursos com intro + grid de 3 cards "O que vais encontrar" (vídeo + PDF + ritmo próprio); Fala connosco com 2 cards (mailto `logos@cclx.pt` com subject prefilled + link CCLX `target="_blank" rel="noopener noreferrer"`) + nota inferior sobre horários pendentes. 6 testes novos (14/14 a passar). Copy fácil de trocar quando o ministério mandar texto final.
 
 ## 🚧 Em progresso
-- (sem trabalho em progresso — próximas PRs V1 esperam copy final do ministério)
+- (sem trabalho em progresso)
 
 ## ⏭️ Próximas tarefas (V1 → V2)
-- [ ] **V1 PR2** — Conhece-nos (copy real em PT-PT) + Cursos placeholder mais elaborado
-- [ ] **V1 PR3** — Fala connosco com info estática + `mailto:` (sem form em V1)
+- [ ] Substituir copy placeholder de Conhece-nos e Fala connosco por texto final do ministério.
+- [ ] Acrescentar morada + horários da igreja a Fala connosco quando o ministério os fornecer.
 - [ ] **Verificação visual da V1** em browser real (Claude não tem browser; utilizador valida `pnpm dev` antes de cada merge)
 - [ ] Pedir versão limpa do SVG do logo ao ministério (sem fundo opaco); fallback de texto Cormorant + `BookOpen` está aceitável até lá
 - [ ] Criar OAuth App no Google Cloud Console (uma para `logos-dev`, outra para `logos-prod`) e configurar como Provider em Supabase Auth — pré-condição V2
