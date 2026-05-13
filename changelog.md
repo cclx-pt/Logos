@@ -16,6 +16,26 @@
 
 ---
 
+## [13-05-2026] — V1 polimento: 404 PT-PT + robots/sitemap + limpeza
+
+### add
+- add: `src/app/not-found.tsx` — página 404 global em PT-PT, dentro do shell (`Header`/`Footer` herdados do layout). Heading "Página não encontrada" + CTAs `Voltar ao início` e `Ver cursos`. `metadata.robots = { index: false, follow: false }`.
+- add: `src/app/robots.ts` — `MetadataRoute.Robots` permissivo (`allow: '/'`) com `sitemap` e `host` a apontar para `siteConfig.url` (`https://logos.cclx.pt`).
+- add: `src/app/sitemap.ts` — `MetadataRoute.Sitemap` gerado a partir de `siteConfig.url` + `navItems`. Home com `priority: 1`, restantes com `0.7`. `changeFrequency: 'monthly'`. `lastModified = new Date()` (build-time).
+- add: `src/app/not-found.test.tsx` — 2 testes (heading 404 em PT-PT + CTAs com `href` correctos).
+
+### update
+- update: site deixa de servir o 404 default em inglês do Next em qualquer rota inválida.
+
+### remove
+- remove: `src/app/debug-logo/` — rota de scaffolding usada durante a decisão "logo textual vs SVG" (`feature-docs/v1-shell.md` §3.2). Decisão fechada em V1 PR1, rota não pertence a produção.
+
+### why
+- Higiene técnica antes de partilhar `logos.cclx.pt` publicamente: SEO básico (`robots`/`sitemap`), erro 404 consistente com o resto do site (em PT-PT, dentro do shell), e remoção de rotas debug acessíveis em produção.
+- Não bloqueia em copy do ministério (que é o que trava V1 PR2 e PR3).
+
+---
+
 ## [12-05-2026] — Production: domínio `logos.cclx.pt` activo
 
 ### infra
