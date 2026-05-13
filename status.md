@@ -1,10 +1,10 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 12-05-2026 (V1 PR1 mergeado + domínio `logos.cclx.pt` activo)
+> **Última atualização:** 13-05-2026 (V1 polimento: 404 PT-PT + robots/sitemap + remoção de `/debug-logo`)
 
 ## 🎯 Milestone atual
-**V1 — Site público estático**. Setup terminou em 12-05-2026 com Vercel + branch protection. PR1 da V1 (shell de navegação) mergeado em 12-05-2026 e domínio `logos.cclx.pt` activo em Production. Próximas PRs: PR2 (Conhece-nos) e PR3 (Fala connosco).
+**V1 — Site público estático**. Setup terminou em 12-05-2026 com Vercel + branch protection. PR1 da V1 (shell de navegação) mergeado em 12-05-2026 e domínio `logos.cclx.pt` activo em Production. PR de polimento aberta em 13-05-2026 (404 PT-PT + robots + sitemap + limpeza de `/debug-logo`) — não bloqueia em copy. Próximas PRs de conteúdo: PR2 (Conhece-nos) e PR3 (Fala connosco), ambas à espera de texto final do ministério.
 
 **Prazo absoluto V3:** 1 de julho de 2026.
 
@@ -31,9 +31,10 @@
 - [x] **Branch protection em `main` activa** (12-05-2026) — aplicada via `gh api PUT /repos/cclx-pt/Logos/branches/main/protection`. Regra: PR obrigatório, check `Lint · Typecheck · Test · Format` verde antes de merge, histórico linear, force-push/deletion bloqueados, admin override possível em emergência, 0 reviews exigidos (single dev faz self-merge). Validação: este próprio PR (#16) é o primeiro a passar pela regra. Detalhes em `SPEC_1.md` §16 e `feature-docs/ci.md` §1.
 - [x] **V1 PR1 — Shell de navegação mergeado** (PR #17, 12-05-2026): `Header` global com hambúrguer mobile, `Footer` com identidade CCLX, `Home` com hero + CTAs, stubs para `/conhece-nos`, `/cursos`, `/fala-connosco`. CI verde, squash-merge, branch apagada. Detalhes em `feature-docs/v1-shell.md`.
 - [x] **Domínio `logos.cclx.pt` activo em Production** (12-05-2026) — CNAME único Vercel (`00f4337193415fe7.vercel-dns-017.com`) configurado no painel Hostinger; A/AAAA antigos do sub-domínio `logos` removidos para libertar o nome. Certificado HTTPS auto-emitido. `NEXT_PUBLIC_SITE_URL=https://logos.cclx.pt` adicionado ao scope Production e redeploy forçado (inlined em build-time). Detalhes em `feature-docs/vercel.md` §9 e changelog `[12-05-2026]`.
+- [x] **V1 polimento — 404 PT-PT + robots/sitemap + limpeza** (13-05-2026) — `src/app/not-found.tsx` em PT-PT dentro do shell (CTAs Home + Cursos); `src/app/robots.ts` permissivo com `sitemap`/`host` para `siteConfig.url`; `src/app/sitemap.ts` derivado de `navItems`; `/debug-logo` removida (scaffolding fechado em V1 PR1). 2 testes novos para o 404 (5/5 a passar). Detalhes em `changelog.md` `[13-05-2026]`.
 
 ## 🚧 Em progresso
-- (sem trabalho em progresso — próxima PR é V1 PR2)
+- (sem trabalho em progresso — próximas PRs V1 esperam copy final do ministério)
 
 ## ⏭️ Próximas tarefas (V1 → V2)
 - [ ] **V1 PR2** — Conhece-nos (copy real em PT-PT) + Cursos placeholder mais elaborado
