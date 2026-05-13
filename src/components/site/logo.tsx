@@ -19,7 +19,7 @@ const sizeMap = {
 export function Logo({ className, size = 'md', asStatic = false }: LogoProps) {
   const content = (
     <Image
-      src="/logo-cclx-clean.svg"
+      src="/logo-cclx-interiors.svg"
       alt=""
       width={1600}
       height={913}
