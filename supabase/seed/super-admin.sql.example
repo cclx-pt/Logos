@@ -1,0 +1,54 @@
+-- supabase/seed/super-admin.sql.example
+-- ----------------------------------------------------------------------------
+-- Seed do primeiro Super Admin em cada ambiente (logos-dev, logos-prod).
+-- Documentado em feature-docs/auth-architecture.md §5b e SPEC_1.md §4.
+--
+-- COMO USAR
+--  1. Pessoa designada (`joaocanelasribeiro@gmail.com`) faz login na app
+--     pela primeira vez via Google OAuth — isso cria automaticamente a row
+--     em `auth.users` (Supabase Auth) e a row correspondente em `profiles`
+--     (via Server Action no callback + trigger DB defensivo; ver
+--     architecture.md §4).
+--  2. Copiar este ficheiro para `super-admin.sql` (sem o sufixo `.example`).
+--     A cópia fica fora do git por causa de `.gitignore`.
+--  3. Correr a cópia contra a DB do ambiente em causa:
+--       pnpm dlx supabase link --project-ref <ref-do-ambiente>
+--       pnpm dlx supabase db execute --file supabase/seed/super-admin.sql
+--     (Ou via Supabase MCP, ou via SQL Editor do dashboard.)
+--  4. Verificar que devolveu exactamente 1 row actualizada.
+--
+-- PORQUÊ MANUAL E NÃO MIGRATION
+--  - Migrations correm em CI sobre DB de teste; uma migration que assume
+--    um `auth.users` específico falha em qualquer ambiente que não tenha
+--    feito o login prévio.
+--  - O seed só corre uma vez por ambiente, depois de um acto humano
+--    explícito (login). Tê-lo como SQL versionado (exemplo) dá rasto
+--    auditável sem o transformar em automação.
+--
+-- IDEMPOTÊNCIA
+--  - É seguro re-correr: faz no-op se a role já estiver a `super_admin`.
+--  - Se o `auth.users` ainda não existir (login nunca feito), a sub-query
+--    devolve NULL e o `update` afecta 0 rows — output explícito abaixo.
+
+do $$
+declare
+  v_external_auth_id uuid;
+  v_rows_updated int;
+begin
+  select id into v_external_auth_id
+  from auth.users
+  where email = 'joaocanelasribeiro@gmail.com';
+
+  if v_external_auth_id is null then
+    raise exception 'auth.users sem entrada para joaocanelasribeiro@gmail.com — pessoa precisa de fazer login primeiro';
+  end if;
+
+  update profiles
+     set role = 'super_admin'
+   where external_auth_id = v_external_auth_id
+     and role <> 'super_admin';
+
+  get diagnostics v_rows_updated = row_count;
+  raise notice 'super_admin seed: % rows actualizadas', v_rows_updated;
+end
+$$;

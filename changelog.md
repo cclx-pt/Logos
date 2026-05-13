@@ -16,6 +16,24 @@
 
 ---
 
+## [13-05-2026] — Decisões pré-V2: bootstrap do Super Admin + entrada admin
+
+### docs
+- update: `SPEC_1.md` §4 — nova sub-secção "Bootstrap do primeiro Super Admin (V2)". Primeiro super_admin é `joaocanelasribeiro@gmail.com`. Entrada à área `/admin` via item no dropdown do utilizador (visível apenas se `role !== 'user'`). Sem link na nav principal, sem sub-domain, sem aviso para utilizadores normais.
+- update: `SPEC_1.md` §19 — versão bumped para 2.8.
+- update: `architecture.md` §4 — dois bullets novos: seed do primeiro super_admin via SQL versionado depois do primeiro login Google; entrada admin via dropdown coerente com "conteúdo restrito é invisível".
+- update: `feature-docs/auth-architecture.md` — nova §5.1 "Bootstrap do primeiro Super Admin" com processo passo-a-passo, justificação ("porquê SQL versionado e não migration"), e nota de que `display_name` continua a vir do provider.
+
+### add
+- add: `supabase/seed/super-admin.sql.example` — SQL versionado em `DO $$ ... $$` idempotente. Lança `EXCEPTION` se a pessoa ainda não fez login; faz no-op se já é super_admin; reporta `row_count` via `RAISE NOTICE`. Não é corrido automaticamente — operador copia para `super-admin.sql` (gitignored) e executa contra o ambiente após o primeiro login.
+- add: `.gitignore` — `supabase/seed/*.sql` (cópias locais) + `!supabase/seed/*.sql.example` (manter exemplos versionados).
+
+### why
+- Pre-V2 alignment: os três pontos abertos do design admin estavam por decidir (quem é o primeiro super_admin, como se entra na área admin, como se faz o seed). Sem isto, V2 PR1 (implementação da camada `lib/auth/` + migration `profiles`) começaria com decisões em runtime.
+- Mantém-se a regra "boring, well-documented option" do `CLAUDE.md`: SQL versionado em vez de automação opaca; cópia local em vez de credenciais em CI.
+
+---
+
 ## [13-05-2026] — V1 polimento: 404 PT-PT + robots/sitemap + limpeza
 
 ### add

@@ -73,6 +73,11 @@ Logos substitui esse fluxo por um portal único e estruturado onde:
 
 **Os professores não são um papel do sistema.** São utilizadores normais por defeito. Se um Super Admin promover um professor a Admin, este passa a ter poderes de admin. Professores que não são admins criam o seu conteúdo fora da plataforma (gravam vídeos, escrevem PDFs) e entregam-no a um admin para upload.
 
+### Bootstrap do primeiro Super Admin (V2)
+
+- **Primeiro Super Admin:** `joaocanelasribeiro@gmail.com`. Em cada ambiente (`logos-dev` primeiro, `logos-prod` depois), o seed faz-se assim: a pessoa faz login Google normalmente → o callback OAuth cria o `profiles` com `role='user'` (defesa em profundidade: Server Action + trigger DB, ver `architecture.md` §4) → corre-se manualmente o SQL versionado `supabase/seed/super-admin.sql.example` (cópia para `super-admin.sql` local, não versionada) que faz `update profiles set role='super_admin' where external_auth_id = (select id from auth.users where email = 'joaocanelasribeiro@gmail.com')`. Daí em diante, este utilizador promove os outros pela UI dedicada.
+- **Entrada à área admin:** a área `/admin` é acessível via item dedicado no **dropdown do utilizador** (no Header, após o login). O item só é renderizado se `profile.role !== 'user'`. Não há link na nav principal. Não há sub-domain admin. Não há banner ou aviso para utilizadores normais — coerente com o princípio "conteúdo restrito é invisível, não bloqueado" (§5).
+
 ---
 
 ## 5. Sistema de Etiquetas
@@ -527,8 +532,10 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 
 ## 19. Estado do Documento
 
-- **Versão:** 2.7
-- **Última atualização:** 12 de maio de 2026
+- **Versão:** 2.8
+- **Última atualização:** 13 de maio de 2026
+- **Alterações relativamente à v2.7:**
+  - §4 — nova sub-secção "Bootstrap do primeiro Super Admin (V2)": primeiro super_admin é `joaocanelasribeiro@gmail.com`; entrada à área `/admin` via item no dropdown do utilizador (apenas visível se `role !== 'user'`); processo de seed documentado em `supabase/seed/super-admin.sql.example` + `feature-docs/auth-architecture.md`.
 - **Alterações relativamente à v2.6:**
   - §16 — branch protection em `main` passou de "elegível, activação pendente" para **activa**. Regra: PR obrigatório, check `Lint · Typecheck · Test · Format` verde, histórico linear, force-push e deletion bloqueados, admin pode override em emergência, 0 reviews exigidos (single dev). Aplicada via `gh api PUT /repos/.../branches/main/protection` em 12-05-2026.
 - **Alterações relativamente à v2.5:**
