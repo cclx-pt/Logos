@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 13-05-2026 (decisões pré-V2 registadas: bootstrap super_admin + entrada admin via dropdown + processo de seed SQL)
+> **Última atualização:** 13-05-2026 (V1 a11y: skip-link "Saltar para o conteúdo")
 
 ## 🎯 Milestone atual
 **V1 — Site público estático**. Setup terminou em 12-05-2026 com Vercel + branch protection. PR1 da V1 (shell de navegação) mergeado em 12-05-2026 e domínio `logos.cclx.pt` activo em Production. PR de polimento mergeada em 13-05-2026 (PR #19: 404 PT-PT + robots + sitemap + limpeza de `/debug-logo`). Próximas PRs V1 (PR2 Conhece-nos, PR3 Fala connosco) bloqueadas em copy final do ministério. Em paralelo, decisões pré-V2 registadas em docs (bootstrap super_admin + entrada admin).
@@ -32,7 +32,8 @@
 - [x] **V1 PR1 — Shell de navegação mergeado** (PR #17, 12-05-2026): `Header` global com hambúrguer mobile, `Footer` com identidade CCLX, `Home` com hero + CTAs, stubs para `/conhece-nos`, `/cursos`, `/fala-connosco`. CI verde, squash-merge, branch apagada. Detalhes em `feature-docs/v1-shell.md`.
 - [x] **Domínio `logos.cclx.pt` activo em Production** (12-05-2026) — CNAME único Vercel (`00f4337193415fe7.vercel-dns-017.com`) configurado no painel Hostinger; A/AAAA antigos do sub-domínio `logos` removidos para libertar o nome. Certificado HTTPS auto-emitido. `NEXT_PUBLIC_SITE_URL=https://logos.cclx.pt` adicionado ao scope Production e redeploy forçado (inlined em build-time). Detalhes em `feature-docs/vercel.md` §9 e changelog `[12-05-2026]`.
 - [x] **V1 polimento — 404 PT-PT + robots/sitemap + limpeza** (13-05-2026) — `src/app/not-found.tsx` em PT-PT dentro do shell (CTAs Home + Cursos); `src/app/robots.ts` permissivo com `sitemap`/`host` para `siteConfig.url`; `src/app/sitemap.ts` derivado de `navItems`; `/debug-logo` removida (scaffolding fechado em V1 PR1). 2 testes novos para o 404 (5/5 a passar). PR #19 mergeada. Detalhes em `changelog.md` `[13-05-2026]`.
-- [x] **Decisões pré-V2 registadas** (13-05-2026) — `SPEC_1.md` §4 + `architecture.md` §4 + `feature-docs/auth-architecture.md` §5.1: primeiro super_admin é `joaocanelasribeiro@gmail.com`; entrada à área `/admin` via item no dropdown do utilizador (apenas visível se `role !== 'user'`); seed via SQL versionado idempotente em `supabase/seed/super-admin.sql.example`. SPEC bump v2.8.
+- [x] **Decisões pré-V2 registadas** (13-05-2026) — `SPEC_1.md` §4 + `architecture.md` §4 + `feature-docs/auth-architecture.md` §5.1: primeiro super_admin é `joaocanelasribeiro@gmail.com`; entrada à área `/admin` via item no dropdown do utilizador (apenas visível se `role !== 'user'`); seed via SQL versionado idempotente em `supabase/seed/super-admin.sql.example`. SPEC bump v2.8. PR #20 mergeada.
+- [x] **V1 a11y — skip-link** (13-05-2026) — `src/components/site/skip-link.tsx` como primeiro elemento focável do body (`sr-only` → visível no `:focus`); `<main id="main-content">` é alvo do salto. WCAG 2.4.1. 7/7 testes a passar.
 
 ## 🚧 Em progresso
 - (sem trabalho em progresso — próximas PRs V1 esperam copy final do ministério)
