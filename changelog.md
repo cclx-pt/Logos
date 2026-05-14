@@ -16,6 +16,21 @@
 
 ---
 
+## [14-05-2026] — fix: cartão de partilha (Open Graph) com o livro do logótipo
+
+### fix
+- fix: partilhar `logos.cclx.pt` no WhatsApp/redes mostrava um cartão genérico da Vercel — a app não definia nenhuma `og:image` nem bloco `openGraph`, e sem imagem própria os scrapers caíam para o fallback do alojador.
+
+### add
+- add: `public/logo-cclx-book.svg` — só o livro do logótipo, sem as letras. Extraído de `logo-cclx-interiors.svg` por análise de bounding boxes: corte horizontal limpo em `y=440` separa 299 paths de letras (em cima) de 152 paths de livro (em baixo), zero paths a atravessar a fronteira. `viewBox` reajustado à caixa do livro com margem de 24px.
+- add: `public/og-image.png` — cartão Open Graph 1200×630, fundo creme (`#faf4ea`), livro centrado. Imagem estática (gerada com `sharp`, sem código em runtime — opção aborrecida e à prova de bala). Nada de texto: só o livro, conforme decidido.
+- add: bloco `openGraph` + `twitter` (`summary_large_image`) + `metadataBase` em `src/app/layout.tsx`, apontando para `/og-image.png` com `width`/`height`/`alt`.
+
+### docs
+- docs: `feature-docs/og-image.md` — porquê do bug, técnica de extração do livro e como regenerar o `og-image.png`.
+
+---
+
 ## [14-05-2026] — V2 PR2: login flow Google OAuth + callback + trigger profile sync + RLS fixes
 
 ### add

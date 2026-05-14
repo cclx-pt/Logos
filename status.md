@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 14-05-2026 (V2 PR2 implementada: login flow Google OAuth + callback + trigger profile sync + middleware refresh)
+> **Última atualização:** 14-05-2026 (fix Open Graph: cartão de partilha com o livro do logótipo)
 
 ## 🎯 Milestone atual
 **V2 — Auth + Roles + Etiquetas em curso**, em 4 PRs sequenciais (`feature-docs/v2-auth.md`). PR1 (foundation) e PR2 (login flow) mergeadas. **A seguir:** correr seed super_admin contra `logos-dev` (depois do primeiro login real de `joaocanelasribeiro@gmail.com`), depois PR3 (Roles UI + área `/admin` esqueleto).
@@ -40,6 +40,7 @@
 - [x] **V2 planeada** (14-05-2026) — `feature-docs/google-oauth-setup.md` com passo-a-passo Google Cloud Console + Supabase Auth provider para `logos-dev` e `logos-prod`; `feature-docs/v2-auth.md` com sequência de 4 PRs (foundation → login → roles UI → etiquetas), ficheiros tocados, testes pensados, riscos. PR1 não precisa de OAuth funcional. PR #24 mergeada.
 - [x] **V2 PR1 — Foundation** (14-05-2026) — migration `profiles` + função `current_profile_id()` + RLS em profiles (select próprio/super_admin, update próprio); skeleton `src/lib/auth/index.ts` com tipo `Profile`/`Role` + 4 stubs (getCurrentUser/getServerClient/signInWithGoogle/signOut); ESLint `no-restricted-imports` bloqueia `@supabase/ssr` e `@supabase/supabase-js` fora de `src/lib/auth/**`. Deps instaladas: `@supabase/ssr@0.10.3` + `@supabase/supabase-js@2.105.4`. 18/18 testes a passar.
 - [x] **V2 PR2 — Login flow** (14-05-2026) — `getCurrentUser()`/`getServerClient()`/`getRouteHandlerClient(response)` reais em `src/lib/auth/index.ts`; Server Actions `signInWithGoogleAction`/`signOutAction` em `src/lib/auth/actions.ts`; route handler `src/app/auth/callback/route.ts` faz `exchangeCodeForSession` + redirect (com validação anti-open-redirect em `?next`); proxy raiz `src/proxy.ts` (convenção Next.js 16, ex-`middleware.ts`) refresca tokens via `src/lib/auth/proxy.ts`; `<SignInButton />` no Header (substitui "Olá, {nome}" quando autenticado); 3 migrations aplicadas a `logos-dev`: `20260514015528` (trigger `on_auth_user_created` em `auth.users` que popula `profiles` via `SECURITY DEFINER`), `20260514022124` (`current_profile_id()` passa a `SECURITY DEFINER` para quebrar recursão RLS), `20260514022734` (policy SELECT em `profiles` reescrita para usar `current_profile_role()` em vez de `or exists (select ... from profiles)` — segunda recursão eliminada). E2E manual confirmou login Google → "Olá, João" no Header. Bonus: `home-hero.tsx` migrou de `<Button render={<Link/>}>` para `<Link className={buttonVariants(...)}>` para eliminar warning Base UI persistente. 24/24 testes a passar.
+- [x] **fix Open Graph — cartão de partilha** (14-05-2026) — partilhar `logos.cclx.pt` mostrava um cartão genérico da Vercel (sem `og:image`/`openGraph` definidos). `public/logo-cclx-book.svg` (só o livro do logótipo, extraído de `logo-cclx-interiors.svg` por corte de bboxes em `y=440` — 152 paths de livro, 0 a atravessar) + `public/og-image.png` (1200×630, livro centrado em fundo creme, gerado com `sharp`, estático) + blocos `openGraph`/`twitter`/`metadataBase` em `layout.tsx`. Detalhes em `feature-docs/og-image.md`.
 
 ## 🚧 Em progresso
 - (sem trabalho em progresso)
