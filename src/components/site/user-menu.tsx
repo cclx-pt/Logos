@@ -1,3 +1,6 @@
+'use client';
+
+import { useTransition } from 'react';
 import Link from 'next/link';
 import { ChevronDown, LogOut, Shield } from 'lucide-react';
 
@@ -17,6 +20,7 @@ function firstName(displayName: string): string {
 }
 
 export function UserMenu({ user }: { user: Profile }) {
+  const [isPending, startTransition] = useTransition();
   const showAdminLink = user.role !== 'user';
 
   return (
@@ -39,12 +43,17 @@ export function UserMenu({ user }: { user: Profile }) {
             Área admin
           </DropdownMenuItem>
         )}
-        <form action={signOutAction}>
-          <DropdownMenuItem render={<button type="submit" className="w-full" />}>
-            <LogOut className="h-4 w-4" aria-hidden="true" />
-            Terminar sessão
-          </DropdownMenuItem>
-        </form>
+        <DropdownMenuItem
+          disabled={isPending}
+          onClick={() => {
+            startTransition(() => {
+              void signOutAction();
+            });
+          }}
+        >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          Terminar sessão
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
