@@ -38,8 +38,8 @@ export function NotFoundContent() {
         <Button size="lg" render={<Link href="/" />}>
           Voltar ao início
         </Button>
-        <Button variant="ghost" size="lg" render={<Link href="/cursos" />}>
-          Ver cursos
+        <Button variant="ghost" size="lg" render={<Link href="/conteudos" />}>
+          Ver conteúdos
         </Button>
       </motion.div>
     </motion.section>

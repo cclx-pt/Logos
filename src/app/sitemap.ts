@@ -1,6 +1,9 @@
 import type { MetadataRoute } from 'next';
 import { siteConfig, navItems } from '@/lib/site-config';
 
+/** Rotas que não estão na nav principal mas devem entrar no sitemap (sub-páginas de Conteúdos). */
+const extraRoutes = ['/conteudos/cursos', '/conteudos/escola-biblica'] as const;
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
   return [
@@ -15,6 +18,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
+    })),
+    ...extraRoutes.map((href) => ({
+      url: `${siteConfig.url}${href}`,
+      lastModified,
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
     })),
   ];
 }

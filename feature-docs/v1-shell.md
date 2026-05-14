@@ -2,6 +2,8 @@
 
 > **Versão:** V1 (PR1 — fundação do site público) · **Última atualização:** 12-05-2026 · **Estado:** shell entregue; conteúdo das páginas internas chega em PR2 (Conhece-nos + Cursos) e PR3 (Fala connosco)
 
+> **Nota (14-05-2026):** mudança de design posterior — o item de nav "Cursos" passou a **"Conteúdos"** e a rota `/cursos` deu lugar ao hub `/conteudos` (cartões *Cursos* + *Escola Bíblica*, sub-páginas em `/conteudos/cursos` e `/conteudos/escola-biblica`). As referências a `/cursos` neste documento são históricas. Ver `changelog.md` [14-05-2026] e `SPEC_1.md` §6.
+
 ## 1. Objetivo
 
 Substituir a página única "Em construção" por um shell de site público com:
