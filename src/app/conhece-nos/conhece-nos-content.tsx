@@ -1,6 +1,8 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { ArrowUpRight } from 'lucide-react';
+import { siteConfig } from '@/lib/site-config';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 
 export function ConheceNosContent() {
@@ -22,40 +24,70 @@ export function ConheceNosContent() {
         variants={staggerItem}
         className="text-muted-foreground mt-8 font-sans text-lg leading-relaxed"
       >
-        Somos a <span className="text-ink font-medium">CCLX — Comunidade Cristã Lisboa</span>, uma
-        igreja em Lisboa que acredita que o estudo cuidadoso das Escrituras alimenta a fé. O Logos é
-        o nosso espaço online para esse estudo.
+        O Logos, o ministério de ensino da{' '}
+        <span className="text-ink font-medium">CCLX — Comunidade Cristã Lisboa</span>, nasce com um
+        propósito simples, mas essencial: levar a igreja a conhecer, amar e viver a Palavra de Deus.
       </motion.p>
 
-      <motion.div variants={staggerItem} className="mt-12 space-y-6">
-        <h2 className="font-display text-ink text-2xl font-medium">O que aqui encontras</h2>
+      <motion.div variants={staggerItem} className="mt-8 space-y-6">
         <p className="text-muted-foreground font-sans leading-relaxed">
-          Cursos estruturados em vídeo, com apostilas em PDF para descarregar e levar contigo. Cada
-          aula tem o seu ritmo — vês quando podes, voltas atrás quando precisas, marcas como
-          concluída quando achares bem. Sem prazos, sem barras de progresso, sem distrações.
+          O nome <span className="text-ink font-medium">Logos</span> não é apenas um nome. Vem do
+          grego e significa «Palavra», mas também carrega a ideia de razão, verdade e expressão
+          divina. Na Bíblia, aponta diretamente para Cristo como a Palavra viva de Deus — aquele que
+          revela quem Deus é e dá sentido à nossa vida.
         </p>
         <p className="text-muted-foreground font-sans leading-relaxed">
-          Tudo é, e será sempre, <span className="text-ink font-medium">gratuito</span>. Não há
-          subscrições, não há paywalls, não há pedidos de donativo no caminho. Se queres apoiar a
-          CCLX, fala connosco diretamente.
+          É exatamente isso que queremos construir. Queremos ser uma igreja que não apenas ouve a
+          Palavra, mas que a conhece profundamente. Uma igreja que não apenas aprende, mas que se
+          apaixona pelas Escrituras. Uma igreja que não apenas estuda, mas que vive aquilo que
+          aprende. Acreditamos que uma fé sólida nasce de uma compreensão clara da Palavra e que uma
+          vida transformada começa quando aquilo que entendemos passa a moldar quem somos.
+        </p>
+        <p className="text-muted-foreground font-sans leading-relaxed">
+          Por isso, enquanto ministério, dedicamo-nos a criar espaços de ensino, partilha e
+          crescimento, promovendo aulas, estudos e iniciativas que ajudam cada pessoa a aprofundar a
+          sua relação com Deus através das Escrituras.
         </p>
       </motion.div>
 
-      <motion.div variants={staggerItem} className="mt-12 space-y-6">
-        <h2 className="font-display text-ink text-2xl font-medium">Quem está por trás</h2>
-        <p className="text-muted-foreground font-sans leading-relaxed">
-          Uma equipa pequena de voluntários da CCLX. Quem ensina nos cursos vem da própria
-          comunidade — pastores, líderes e membros que querem partilhar o que estudaram. Quem mantém
-          a plataforma a funcionar também.
+      <motion.div variants={staggerItem} className="border-orange/50 mt-12 border-l-2 pl-6 sm:pl-8">
+        <p className="font-display text-ink text-2xl leading-snug font-medium sm:text-3xl">
+          Mais do que transmitir informação, queremos formar pessoas.
+        </p>
+        <p className="font-display text-ink mt-3 text-2xl leading-snug font-medium sm:text-3xl">
+          Mais do que ensinar conteúdos, queremos despertar paixão.
+        </p>
+        <p className="font-display text-ink mt-3 text-2xl leading-snug font-medium sm:text-3xl">
+          Mais do que estudar a Bíblia, queremos viver a Bíblia.
         </p>
       </motion.div>
 
       <motion.p
         variants={staggerItem}
-        className="text-muted-foreground mt-16 font-sans text-xs tracking-[0.25em] uppercase"
+        className="text-muted-foreground mt-12 font-sans leading-relaxed"
       >
-        Em construção — texto definitivo em breve
+        Deus ricamente te abençoe,
+        <br />
+        <span className="text-ink font-medium">Logos</span>
       </motion.p>
+
+      <motion.div
+        variants={staggerItem}
+        className="border-border bg-cream-card/60 mt-16 rounded-lg border p-6 sm:p-8"
+      >
+        <p className="text-muted-foreground font-sans leading-relaxed">
+          Queres conhecer mais da CCLX?{' '}
+          <a
+            href={siteConfig.organization.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-orange hover:text-orange-hover focus-visible:ring-ring inline-flex items-center font-medium underline-offset-4 hover:underline focus-visible:rounded-xs focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          >
+            Visita o site da igreja
+            <ArrowUpRight className="ml-1 h-4 w-4" aria-hidden="true" />
+          </a>
+        </p>
+      </motion.div>
     </motion.section>
   );
 }
