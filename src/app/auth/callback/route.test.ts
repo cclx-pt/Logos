@@ -29,8 +29,8 @@ describe('GET /auth/callback (V2 PR2)', () => {
 
   it('redirecciona para ?next quando é caminho relativo válido', async () => {
     mockExchangeCodeForSession.mockResolvedValue({ error: null });
-    const res = await GET(makeRequest('/auth/callback?code=abc&next=/cursos'));
-    expect(res.headers.get('location')).toBe('http://localhost:3000/cursos');
+    const res = await GET(makeRequest('/auth/callback?code=abc&next=/conteudos'));
+    expect(res.headers.get('location')).toBe('http://localhost:3000/conteudos');
   });
 
   it('rejeita ?next absoluto (URL externa) e cai em /', async () => {

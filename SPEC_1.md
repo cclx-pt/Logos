@@ -118,6 +118,17 @@ Quando um admin adiciona ou remove uma etiqueta de um utilizador, a visibilidade
 
 ## 6. Modelo de Conteúdo
 
+### Conteúdos: o nível de topo
+
+O ensino da plataforma organiza-se sob um nível de topo chamado **Conteúdos**, com duas áreas:
+
+- **Cursos** — a árvore de três níveis descrita abaixo (Curso → Módulo → Aula). É o foco das V1–V5.
+- **Escola Bíblica** — as transmissões em direto da Escola Bíblica da CCLX. O esqueleto existe desde a V1 (placeholder "em construção"); a funcionalidade real (embeber YouTube Live) chega na **V6**.
+
+A navegação principal expõe **Conteúdos** (não "Cursos") como item de topo. As duas áreas vivem em `/conteudos/cursos` e `/conteudos/escola-biblica`.
+
+### Árvore de Cursos
+
 Uma árvore de três níveis:
 
 ```
@@ -222,7 +233,7 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 - Página inicial com o logótipo Logos e a marca da CCLX (paleta creme + laranja vivo)
 - Página *Conhece-nos*
 - Página *Fala connosco*
-- Página *Cursos* vazia ou com placeholder "em breve"
+- Página *Conteúdos* — hub de topo do ensino, com dois cartões: *Cursos* e *Escola Bíblica*. Cada cartão leva a uma sub-página placeholder "em breve" (`/conteudos/cursos`, `/conteudos/escola-biblica`). O catálogo real de cursos é construído na V3; a Escola Bíblica (transmissões em direto) na V6. A entrega ao público de um esqueleto "em construção" é deliberada — sinaliza o que virá.
 - Identidade visual aplicada em todo o site
 - Disponível em `logos.cclx.pt`
 - **Sem login, sem base de dados** — a V1 pode ser inteiramente estática.
@@ -268,7 +279,7 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 
 ### V6 — Live Stream e Tema
 
-- Suporte para embeber YouTube Live (vídeos não listados): admin cola um URL ao vivo e o player aparece na página apropriada
+- Suporte para embeber YouTube Live (vídeos não listados): admin cola um URL ao vivo e o player aparece na área **Escola Bíblica** (`/conteudos/escola-biblica`), cujo esqueleto foi entregue na V1
 - Alternância **modo escuro / modo claro**
 
 ### V7 — Indicadores de Progresso *(opcional)*
@@ -455,7 +466,7 @@ Os ficheiros em `docs/branding/` são a fonte de verdade visual:
 
 A equipa forneceu um conjunto de mockups a servir de referência visual de alto nível. Os mockups **não são vinculativos ao pixel**, mas estabelecem a linguagem visual e a estrutura da UI:
 
-1. **Cabeçalho global** (todas as páginas): logótipo Logos à esquerda, navegação à direita com *Conhece-nos / Cursos / Fala connosco*. Menu hambúrguer em mobile.
+1. **Cabeçalho global** (todas as páginas): logótipo Logos à esquerda, navegação à direita com *Conhece-nos / Conteúdos / Fala connosco*. Menu hambúrguer em mobile.
 
 2. **Catálogo de cursos**: grelha de cartões de curso. Cada cartão tem um ícone, o nome do curso e uma seta CTA. Cartões alternam fundo creme com variações com tonalidade.
 
@@ -532,8 +543,14 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 
 ## 19. Estado do Documento
 
-- **Versão:** 2.8
-- **Última atualização:** 13 de maio de 2026
+- **Versão:** 2.9
+- **Última atualização:** 14 de maio de 2026
+- **Alterações relativamente à v2.8:**
+  - §6 — nova sub-secção "Conteúdos: o nível de topo": o ensino passa a organizar-se sob um nível de topo **Conteúdos** com duas áreas (Cursos + Escola Bíblica). A árvore Curso → Módulo → Aula passou a sub-secção "Árvore de Cursos".
+  - §9 V1 — "Página *Cursos* vazia" passa a "Página *Conteúdos*": hub com dois cartões (Cursos + Escola Bíblica), cada um a ligar a uma sub-página placeholder.
+  - §9 V6 — clarificado que o YouTube Live embebido aterra na área **Escola Bíblica** (`/conteudos/escola-biblica`), cujo esqueleto é entregue já na V1.
+  - §14 — a navegação principal passa de *Conhece-nos / Cursos / Fala connosco* para *Conhece-nos / Conteúdos / Fala connosco*.
+  - Mudança de design do líder do projeto (14-05-2026): entregar o esqueleto "em construção" das duas áreas ao público para sinalizar o que virá.
 - **Alterações relativamente à v2.7:**
   - §4 — nova sub-secção "Bootstrap do primeiro Super Admin (V2)": primeiro super_admin é `joaocanelasribeiro@gmail.com`; entrada à área `/admin` via item no dropdown do utilizador (apenas visível se `role !== 'user'`); processo de seed documentado em `supabase/seed/super-admin.sql.example` + `feature-docs/auth-architecture.md`.
 - **Alterações relativamente à v2.6:**

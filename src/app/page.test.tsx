@@ -14,9 +14,12 @@ describe('Home', () => {
     expect(screen.getByLabelText('Logos')).toBeInTheDocument();
   });
 
-  it('expõe CTAs para /cursos e /conhece-nos', () => {
+  it('expõe CTAs para /conteudos e /conhece-nos', () => {
     render(<Home />);
-    expect(screen.getByRole('link', { name: /ver cursos/i })).toHaveAttribute('href', '/cursos');
+    expect(screen.getByRole('link', { name: /ver conteúdos/i })).toHaveAttribute(
+      'href',
+      '/conteudos',
+    );
     expect(screen.getByRole('link', { name: /conhece o projeto/i })).toHaveAttribute(
       'href',
       '/conhece-nos',

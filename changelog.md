@@ -16,6 +16,24 @@
 
 ---
 
+## [14-05-2026] — "Cursos" passa a "Conteúdos" (hub com Cursos + Escola Bíblica)
+
+### update
+- update: o item de topo da navegação deixa de ser **Cursos** e passa a **Conteúdos**. A página `/cursos` deu lugar a `/conteudos`, um hub com dois cartões — **Cursos** e **Escola Bíblica** — que prepara o site para os dois tipos de conteúdo previstos. Decisão de produto do líder do projeto: entregar o esqueleto ao público numa versão "em construção", para sinalizar o que virá.
+- update: `home-hero.tsx` e `not-found-content.tsx` — o CTA "Ver cursos" passa a "Ver conteúdos" e aponta para `/conteudos`.
+- update: o hub `/conteudos` recebe a copy definitiva do ministério — parágrafo de abertura ("Os nossos conteúdos foram desenvolvidos…") e linha de contacto com `logos@cclx.pt` a substituir a tag placeholder "Em construção". Teste novo para o mailto (29/29 a passar).
+
+### add
+- add: `src/app/conteudos/` — hub (`conteudos-content.tsx`) com dois cartões em grelha (tonalidades `cream-card` e `sage-card`), cada um a ligar à respetiva sub-página.
+- add: `src/app/conteudos/cursos/` — a antiga página `/cursos` (placeholder "Em breve" + 3 pilares) movida para `/conteudos/cursos`, sem alteração de conteúdo.
+- add: `src/app/conteudos/escola-biblica/` — nova sub-página placeholder "Em construção / Em breve" para as futuras transmissões da Escola Bíblica da CCLX (live streams, trabalho de uma versão futura — ver `SPEC_1.md` §6/§9).
+- add: 4 testes novos (hub: heading, dois cartões com destinos certos, badge "Em breve"; Escola Bíblica: heading + nota). 28/28 a passar.
+
+### docs
+- docs: `SPEC_1.md` atualizada — modelo de conteúdo passa a falar de "Conteúdos" como nível de topo com duas áreas (Cursos + Escola Bíblica); `sitemap.ts` ganha as duas sub-rotas de Conteúdos.
+
+---
+
 ## [14-05-2026] — favicon maior (logótipo de margem a margem)
 
 ### update
