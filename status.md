@@ -1,10 +1,10 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 14-05-2026 (V1 conteúdo: copy placeholder em Conhece-nos, Cursos e Fala connosco)
+> **Última atualização:** 14-05-2026 (V2 planeada: feature-docs/google-oauth-setup.md + feature-docs/v2-auth.md)
 
 ## 🎯 Milestone atual
-**V1 — Site público estático**, conteúdo placeholder em ar. Setup terminou em 12-05-2026 com Vercel + branch protection. PR1 da V1 (shell de navegação) mergeado em 12-05-2026 e domínio `logos.cclx.pt` activo em Production. Polimento V1 + a11y + UX (PRs #19, #21, #22) mergeados em 13-05-2026. V1 PR2/PR3 (Conhece-nos, Cursos, Fala connosco) deixam de estar bloqueadas — avançámos com copy placeholder explicitamente marcado, fácil de trocar quando o ministério mandar texto final.
+**V1 — Site público estático em ar.** Conteúdo placeholder substituível, a11y, stagger, logo com interiores transparentes. **V2 — Auth + Roles + Etiquetas** começa a seguir, em 4 PRs sequenciais (`feature-docs/v2-auth.md`). PR1 (foundation: migration `profiles` + skeleton `lib/auth/` + ESLint rule) não precisa de OAuth real e pode arrancar de imediato. PR2 em diante depende de executar `feature-docs/google-oauth-setup.md`.
 
 **Prazo absoluto V3:** 1 de julho de 2026.
 
@@ -35,17 +35,21 @@
 - [x] **Decisões pré-V2 registadas** (13-05-2026) — `SPEC_1.md` §4 + `architecture.md` §4 + `feature-docs/auth-architecture.md` §5.1: primeiro super_admin é `joaocanelasribeiro@gmail.com`; entrada à área `/admin` via item no dropdown do utilizador (apenas visível se `role !== 'user'`); seed via SQL versionado idempotente em `supabase/seed/super-admin.sql.example`. SPEC bump v2.8. PR #20 mergeada.
 - [x] **V1 a11y — skip-link** (13-05-2026) — `src/components/site/skip-link.tsx` como primeiro elemento focável do body (`sr-only` → visível no `:focus`); `<main id="main-content">` é alvo do salto. WCAG 2.4.1. PR #21 mergeada.
 - [x] **V1 UX — stagger nas 4 páginas + interiores das letras do logo** (13-05-2026) — variants partilhados em `src/lib/motion-variants.ts`; `conhece-nos`, `cursos`, `fala-connosco` e `not-found` ganham entrada animada coerente com o hero (`page.tsx` server + `<name>-content.tsx` client). `public/logo-cclx-interiors.svg` gerado a partir de `logo-cclx-clean.svg` via análise de bboxes: 247 paths creme dentro do contorno das letras ficam `fill="none"`, livro e gaps mantidos. PR #22 mergeada.
-- [x] **V1 conteúdo placeholder** (14-05-2026) — Conhece-nos com 3 secções (identificação CCLX + "O que aqui encontras" + "Quem está por trás" + tag "Em construção"); Cursos com intro + grid de 3 cards "O que vais encontrar" (vídeo + PDF + ritmo próprio); Fala connosco com 2 cards (mailto `logos@cclx.pt` com subject prefilled + link CCLX `target="_blank" rel="noopener noreferrer"`) + nota inferior sobre horários pendentes. 6 testes novos (14/14 a passar). Copy fácil de trocar quando o ministério mandar texto final.
+- [x] **V1 conteúdo placeholder** (14-05-2026) — Conhece-nos com 3 secções (identificação CCLX + "O que aqui encontras" + "Quem está por trás" + tag "Em construção"); Cursos com intro + grid de 3 cards "O que vais encontrar" (vídeo + PDF + ritmo próprio); Fala connosco com 2 cards (mailto `logos@cclx.pt` com subject prefilled + link CCLX `target="_blank" rel="noopener noreferrer"`) + nota inferior sobre horários pendentes. 6 testes novos (14/14 a passar). PR #23 mergeada.
+- [x] **Logo SVG resolvido** (14-05-2026) — decisão: ficamos com `public/logo-cclx-interiors.svg` (gerado por análise de bboxes, interiores das letras transparentes) em vez de esperar versão limpa do ministério. Funciona bem em Production, livro mantém detalhe.
+- [x] **V2 planeada** (14-05-2026) — `feature-docs/google-oauth-setup.md` com passo-a-passo Google Cloud Console + Supabase Auth provider para `logos-dev` e `logos-prod`; `feature-docs/v2-auth.md` com sequência de 4 PRs (foundation → login → roles UI → etiquetas), ficheiros tocados, testes pensados, riscos. PR1 não precisa de OAuth funcional.
 
 ## 🚧 Em progresso
 - (sem trabalho em progresso)
 
 ## ⏭️ Próximas tarefas (V1 → V2)
-- [ ] Substituir copy placeholder de Conhece-nos e Fala connosco por texto final do ministério.
+- [ ] Substituir copy placeholder de Conhece-nos e Fala connosco por texto final do ministério (sem alteração de estrutura).
 - [ ] Acrescentar morada + horários da igreja a Fala connosco quando o ministério os fornecer.
-- [ ] **Verificação visual da V1** em browser real (Claude não tem browser; utilizador valida `pnpm dev` antes de cada merge)
-- [ ] Pedir versão limpa do SVG do logo ao ministério (sem fundo opaco); fallback de texto Cormorant + `BookOpen` está aceitável até lá
-- [ ] Criar OAuth App no Google Cloud Console (uma para `logos-dev`, outra para `logos-prod`) e configurar como Provider em Supabase Auth — pré-condição V2
+- [ ] **V2 PR1 — Foundation** (não bloqueia em OAuth): migration `profiles` + função `current_profile_id()` + skeleton `src/lib/auth/` + ESLint `no-restricted-imports`. Detalhes em `feature-docs/v2-auth.md` §1.
+- [ ] **Executar `feature-docs/google-oauth-setup.md`** (20 min no browser) — pré-condição para V2 PR2.
+- [ ] **V2 PR2 — Login flow** (precisa de OAuth do passo anterior). Detalhes em `feature-docs/v2-auth.md` §2.
+- [ ] **V2 PR3 — Roles UI**. Detalhes em `feature-docs/v2-auth.md` §3.
+- [ ] **V2 PR4 — Etiquetas (fundação)**. Detalhes em `feature-docs/v2-auth.md` §4.
 - [ ] **Após V2 PR1 (migration `profiles`):** primeiro login Google em `logos-dev` por `joaocanelasribeiro@gmail.com` → correr `supabase/seed/super-admin.sql.example` (cópia local) contra `logos-dev`. Repetir em `logos-prod` no final da V2. Processo documentado em `feature-docs/auth-architecture.md` §5.1.
 - [ ] **Checkpoint V2 — antes do primeiro merge V2:** adicionar `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` ao scope Production do Vercel (logos-prod). Hoje estão deliberadamente unset porque V1 é estático.
 - [ ] *(adiado para V5+)* Resend + SPF/DKIM no DNS Hostinger — sem urgência V2 por o login ser apenas Google; necessário para notificações de Q&A em V5

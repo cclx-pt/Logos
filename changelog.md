@@ -16,6 +16,21 @@
 
 ---
 
+## [14-05-2026] — V2 planeada: 2 docs novos em feature-docs/
+
+### docs
+- add: `feature-docs/google-oauth-setup.md` — passo-a-passo para criar OAuth App no Google Cloud Console (consent screen + 2 Web Clients, um por ambiente Supabase) e ligar ao provider Google de `logos-dev` (`dknrnqyqlojvnhspwjrd`) e `logos-prod` (`tirzriuabfwzqxtjsmfb`). Inclui tabela de troubleshooting e nota sobre `Publish app` para evitar bloqueio em "Testing".
+- add: `feature-docs/v2-auth.md` — sequência de 4 PRs para V2 (PR1 foundation sem OAuth, PR2 login + callback + profile sync, PR3 roles UI + área `/admin` esqueleto, PR4 etiquetas). Cada PR lista ficheiros tocados, testes pensados e checkpoints operacionais (ex.: correr seed super_admin pós-PR2).
+
+### update
+- update: `status.md` — secção "Próximas tarefas" reescrita: SVG do ministério marcado como resolvido (continuamos com `logo-cclx-interiors.svg`); tarefa genérica de OAuth substituída por referência directa a `google-oauth-setup.md`; V2 PR1-PR4 listadas como próximos passos com ponteiros para `v2-auth.md`.
+
+### why
+- V2 é o salto técnico maior do projecto (4 PRs, mexe em DB + auth + RLS + UI admin). Antes de escrever migrations, valer a pena fechar o desenho num documento que define **o que cada PR entrega**, **o que ainda não entrega**, e **a ordem operacional** (ex.: seed super_admin só pode correr depois de a pessoa fazer login pela primeira vez).
+- O documento de OAuth setup é necessário porque o utilizador escreveu explicitamente "não sei como começar" — passo-a-passo no painel Google reduz fricção e elimina decisões em runtime.
+
+---
+
 ## [14-05-2026] — V1 conteúdo: copy placeholder em Conhece-nos, Cursos e Fala connosco
 
 ### update
