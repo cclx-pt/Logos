@@ -16,18 +16,24 @@
 
 ---
 
-## [14-05-2026] — fix: cartão de partilha (Open Graph) com o livro do logótipo
+## [14-05-2026] — Open Graph + favicon com o logótipo completo Logos
 
 ### fix
 - fix: partilhar `logos.cclx.pt` no WhatsApp/redes mostrava um cartão genérico da Vercel — a app não definia nenhuma `og:image` nem bloco `openGraph`, e sem imagem própria os scrapers caíam para o fallback do alojador.
+- fix: o separador do browser mostrava o favicon por omissão do Next.js — substituído pelo logótipo Logos.
 
 ### add
-- add: `public/logo-cclx-book.svg` — só o livro do logótipo, sem as letras. Extraído de `logo-cclx-interiors.svg` por análise de bounding boxes: corte horizontal limpo em `y=440` separa 299 paths de letras (em cima) de 152 paths de livro (em baixo), zero paths a atravessar a fronteira. `viewBox` reajustado à caixa do livro com margem de 24px.
-- add: `public/og-image.png` — cartão Open Graph 1200×630, fundo creme (`#faf4ea`), livro centrado. Imagem estática (gerada com `sharp`, sem código em runtime — opção aborrecida e à prova de bala). Nada de texto: só o livro, conforme decidido.
+- add: `public/og-image.png` — cartão Open Graph 1200×630, logótipo completo (livro + letras "LOGOS") centrado em fundo creme (`#faf4ea`). Imagem estática composta com `sharp`, sem código em runtime.
+- add: `src/app/icon.png` — ícone 512×512 com o logótipo centrado em fundo creme (browsers modernos, via `<link rel="icon">` gerado pelo App Router).
 - add: bloco `openGraph` + `twitter` (`summary_large_image`) + `metadataBase` em `src/app/layout.tsx`, apontando para `/og-image.png` com `width`/`height`/`alt`.
 
+### update
+- update: `src/app/favicon.ico` passa a ser o logótipo Logos (PNG 48×48 embebido num contentor ICO montado à mão — o `sharp` não escreve `.ico`).
+
 ### docs
-- docs: `feature-docs/og-image.md` — porquê do bug, técnica de extração do livro e como regenerar o `og-image.png`.
+- docs: `feature-docs/og-image.md` — porquê dos bugs, decisões e como regenerar os assets.
+
+> Nota: uma iteração intermédia (PR #28) usou só o livro do logótipo no cartão; revertido para o logótipo completo por decisão de produto. O `public/logo-cclx-book.svg` desse PR foi removido.
 
 ---
 

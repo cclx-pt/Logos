@@ -1,67 +1,75 @@
-# og-image — Cartão de partilha (Open Graph)
+# og-image — Cartão de partilha (Open Graph) e favicon
 
 > **Versão:** V1 (polimento tardio) · **Concluída em:** 14-05-2026 · **Autor(es):** João Ribeiro
 
 ## Objetivo
 
-Partilhar `logos.cclx.pt` no WhatsApp (ou qualquer rede) mostrava um cartão genérico da
-Vercel em vez da identidade Logos. Este fix dá ao site uma pré-visualização própria.
+Dar ao site uma identidade própria quando partilhado e no separador do browser:
+
+1. **Partilha** (WhatsApp, redes) — mostrava um cartão genérico da Vercel.
+2. **Separador do browser** — mostrava o favicon por omissão do Next.js.
+
+Ambos passam a usar o **logótipo completo Logos** (livro + letras "LOGOS").
 
 ## Comportamento
 
-- Ao colar o link em WhatsApp/Telegram/redes sociais, o cartão de pré-visualização mostra
-  o **livro do logótipo CCLX** centrado em fundo creme, com o título e a descrição do site.
-- Aplica-se a todas as páginas (definido no `layout.tsx` raiz); páginas futuras podem
-  fazer override do `openGraph` na sua própria `metadata`.
+- Colar `logos.cclx.pt` em WhatsApp/Telegram/redes mostra um cartão 1200×630 com o
+  logótipo completo centrado em fundo creme, mais o título e a descrição do site.
+- O separador do browser mostra o logótipo Logos.
+- Tudo definido no `layout.tsx` raiz / convenções de ficheiro do App Router; aplica-se
+  a todas as páginas.
 
 ## Decisões técnicas
 
-- **Causa do bug:** o `layout.tsx` só definia `title` + `description`. Sem `og:image` nem
-  bloco `openGraph`, os scrapers caem para o fallback do alojador — daí o cartão da Vercel.
-- **Imagem estática, não gerada em runtime.** Optou-se por `public/og-image.png` (PNG fixo
-  1200×630) em vez de `opengraph-image.tsx` com `next/og`/Satori. Sem código em runtime,
-  sem dependência de file-tracing — a opção aborrecida e à prova de bala (CLAUDE.md).
-- **Só o livro, sem letras.** Decisão do produto: o cartão é apenas o livro do logótipo,
-  sobre fundo creme (`#faf4ea`), sem texto sobreposto.
-- **Extração do livro.** O `public/logo-cclx-interiors.svg` é uma lista plana de 451
-  `<path>` sem grupos. Calculando a bounding box de cada path, há um corte horizontal
-  limpo em `y=440`: 299 paths ficam acima (as letras "LOGOS") e 152 abaixo (o livro),
-  com **zero paths a atravessar** a fronteira. `public/logo-cclx-book.svg` mantém só os
-  152 e reajusta o `viewBox` à caixa do livro com 24px de margem.
+- **Causa do bug de partilha:** o `layout.tsx` só definia `title` + `description`. Sem
+  `og:image` nem bloco `openGraph`, os scrapers caem para o fallback do alojador.
+- **Logótipo completo, não só o livro.** Uma primeira iteração usou só o livro (sem
+  letras); revertido por decisão de produto — o cartão e o ícone usam o logótipo
+  inteiro (`public/logo-cclx-interiors.svg`).
+- **Assets estáticos, não gerados em runtime.** `og-image.png`, `icon.png` e
+  `favicon.ico` são ficheiros fixos compostos com `sharp` — sem `next/og`/Satori, sem
+  código em runtime, sem dependência de file-tracing. A opção aborrecida e à prova de
+  bala (CLAUDE.md).
+- **Favicon como ICO com PNG embebido.** O `sharp` não escreve `.ico`, por isso o
+  `favicon.ico` é montado à mão: cabeçalho ICO de 6 bytes + 1 entrada de directório de
+  16 bytes + um PNG 48×48. Formato suportado por todos os browsers desde o Windows
+  Vista. `icon.png` (512×512) cobre os browsers modernos via `<link rel="icon">`.
 - **`metadataBase`** aposto a `siteConfig.url` para o Next resolver `/og-image.png` para
   URL absoluto (os scrapers exigem URL absoluto na `og:image`).
 
 ## Modelo de dados / API
 
-Nenhum. Só metadata estática e dois assets em `public/`.
+Nenhum. Metadata estática + assets em `public/` e `src/app/`.
 
 Ficheiros tocados:
 - `src/app/layout.tsx` — blocos `openGraph` + `twitter` + `metadataBase`.
-- `public/logo-cclx-book.svg` — livro isolado (novo).
-- `public/og-image.png` — cartão 1200×630 (novo).
+- `public/og-image.png` — cartão 1200×630, logótipo completo em fundo creme.
+- `src/app/icon.png` — ícone 512×512, logótipo centrado em fundo creme (novo).
+- `src/app/favicon.ico` — substitui o favicon por omissão do Next.js (logótipo 48×48).
 
-## Como regenerar o `og-image.png`
+## Como regenerar os assets
 
-A imagem foi composta com `sharp` (já presente em `node_modules` via Next). Para
-regenerar (ex.: novo logótipo, outra cor de fundo): rasterizar `logo-cclx-book.svg` a
-~860px de largura e fazer `composite` centrado sobre uma tela 1200×630 a `#faf4ea`.
+Compostos com `sharp` (já em `node_modules` via Next). Rasterizar
+`public/logo-cclx-interiors.svg` e fazer `composite` centrado sobre tela creme
+(`#faf4ea`): 1200×630 para o `og-image.png`, 512×512 para o `icon.png`, 48×48 para o
+PNG dentro do `favicon.ico`.
 
 ## Limites conhecidos
 
 - O WhatsApp guarda pré-visualizações em cache de forma agressiva. Links já partilhados
   podem continuar a mostrar o cartão antigo durante algum tempo; testar com um URL novo
   (ex.: `?v=2`) ou aguardar a expiração da cache.
-- O livro é um grafismo largo e baixo (~4,8:1), por isso o cartão tem bastante espaço
-  vazio acima e abaixo — aceite, é o que o produto pediu ("apenas o livro").
-- Não há favicon dedicado ao livro — o `src/app/favicon.ico` existente não foi tocado.
+- O logótipo é largo (~1,75:1). No separador do browser, a tamanhos muito pequenos
+  (16px) as letras "LOGOS" ficam pouco legíveis — lê-se sobretudo a forma e a cor. Se
+  no futuro se quiser um ícone mais nítido a 16px, recortar só o livro é alternativa.
 
 ## Testes
 
-Sem testes automatizados (metadata estática + assets binários). Verificação manual:
-o `og-image.png` foi inspecionado visualmente; `pnpm typecheck`/`lint`/`test` verdes.
+Sem testes automatizados (metadata estática + assets binários). Verificação manual: as
+imagens foram inspecionadas visualmente; `pnpm typecheck`/`lint`/`test` verdes.
 Pós-deploy, validar com o Facebook Sharing Debugger ou colando o link no WhatsApp.
 
 ## Referências
 
-- PR: fix/og-image-whatsapp
+- PRs: `fix/og-image-whatsapp` (#28, versão livro-só), `fix/og-favicon-full-logo`
 - `SPEC_1.md` — site público V1
