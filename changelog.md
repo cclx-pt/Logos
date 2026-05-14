@@ -16,6 +16,13 @@
 
 ---
 
+## [14-05-2026] — favicon maior (logótipo de margem a margem)
+
+### update
+- update: `src/app/favicon.ico` e `src/app/icon.png` regenerados com o logótipo de margem a margem (~2% de margem em vez de ~16%) — fica o maior possível no separador do browser. A legibilidade do texto "LOGOS" a 16–32px continua limitada pelo formato largo do logótipo (decisão de produto: manter o logótipo completo).
+
+---
+
 ## [14-05-2026] — favicon e ícone com fundo transparente
 
 ### fix
