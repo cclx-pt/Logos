@@ -79,14 +79,16 @@ Esta é a regra que torna a migração futura trivial — quando o `external_aut
 
 ## 5. Sincronização `auth.users → profiles`
 
-Quando um utilizador faz primeiro login com Google, o registo `auth.users` nasce automaticamente (Supabase Auth processa o callback OAuth). O `profiles` correspondente tem de aparecer também. Estratégia escolhida — **defesa em profundidade** com dois caminhos:
+> **Nota de implementação (V2 PR2, 14-05-2026):** a estratégia "Server Action + trigger" descrita abaixo foi simplificada na implementação para **trigger sozinho**. O Server Action no callback exigiria `SUPABASE_SERVICE_ROLE_KEY` (RLS em `profiles` deixou-se deliberadamente sem `for insert` policy em PR1) e o trigger `SECURITY DEFINER` consegue ler `raw_user_meta_data` sem dificuldade. Cobre 100% dos caminhos sem novo segredo. Decisão e código real em `feature-docs/v2-auth.md` §2 "Decisão"; este parágrafo fica como contexto histórico do desenho original.
+
+Quando um utilizador faz primeiro login com Google, o registo `auth.users` nasce automaticamente (Supabase Auth processa o callback OAuth). O `profiles` correspondente tem de aparecer também. Estratégia originalmente desenhada — **defesa em profundidade** com dois caminhos:
 
 1. **Server Action no callback OAuth.** O endpoint `/auth/callback?code=...` (que recebe o código de autorização do Google e troca-o por sessão Supabase) executa `insert into profiles (external_auth_id, display_name) values ($1, $2) on conflict (external_auth_id) do nothing`. É controlado, testável em Vitest, e mockável. O `display_name` inicial é lido do claim `name` (ou `given_name`/`full_name`) que o Google devolve.
 2. **Trigger DB defensivo.** Uma migration cria um trigger em `auth.users` que faz o mesmo `insert ... on conflict do nothing`. Apanha qualquer caminho que escape ao Server Action — por exemplo, criação de utilizadores via SQL admin ou painel da Supabase.
 
 Ambos são idempotentes (`on conflict do nothing`); correr ambos não cria duplicados nem race conditions. O Server Action também serve para pôr `display_name` inicial vindo dos metadados OAuth (que o trigger DB tem mais dificuldade em ler). O trigger DB só preenche o mínimo (`external_auth_id`) — o Server Action completa.
 
-Esta estratégia documenta-se aqui mas **implementa-se na V2**. Não há código nem migrations nesta entrega.
+Esta estratégia foi revista em V2 PR2 (ver nota acima): mantemos só o trigger, que faz o coalesce(name, full_name, email) ele próprio.
 
 ### 5.1. Bootstrap do primeiro Super Admin
 

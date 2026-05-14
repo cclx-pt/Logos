@@ -1,18 +1,18 @@
 # V2 — Plano de implementação de autenticação e papéis
 
-> **Estado:** plano (sem código). Lê em paralelo `feature-docs/auth-architecture.md` (a fundação conceptual) e `feature-docs/google-oauth-setup.md` (passos no painel Google/Supabase).
+> **Estado:** PR1 ✅ + PR2 ✅ implementadas; PR3 + PR4 por implementar. Lê em paralelo `feature-docs/auth-architecture.md` (a fundação conceptual) e `feature-docs/google-oauth-setup.md` (passos no painel Google/Supabase).
 > **Última atualização:** 14-05-2026
 
 ## 0. Resumo
 
 V2 entrega 4 capacidades, em 4 PRs separadas. As PRs são desenhadas para serem **mergíveis individualmente** — cada uma deixa o site em estado válido em Production.
 
-| PR | Foco | Precisa de OAuth real? | UI visível ao utilizador? |
-|---|---|---|---|
-| **V2 PR1** | DB + `lib/auth/` skeleton + ESLint rule | Não | Não |
-| **V2 PR2** | Login flow Google + callback + profile sync | **Sim** | Sim (botão "Entrar" no Header) |
-| **V2 PR3** | Roles UI (dropdown user + área `/admin` vazia + promoção super_admin) | Sim | Sim (dropdown só para autenticados) |
-| **V2 PR4** | Etiquetas (DB + admin CRUD + atribuir a utilizadores) | Sim | Sim (só dentro de `/admin`) |
+| PR | Foco | Precisa de OAuth real? | UI visível ao utilizador? | Estado |
+|---|---|---|---|---|
+| **V2 PR1** | DB + `lib/auth/` skeleton + ESLint rule | Não | Não | ✅ |
+| **V2 PR2** | Login flow Google + callback + trigger profile sync + middleware refresh | **Sim** | Sim (botão "Entrar" no Header) | ✅ |
+| **V2 PR3** | Roles UI (dropdown user + área `/admin` vazia + promoção super_admin) | Sim | Sim (dropdown só para autenticados) | ⏳ |
+| **V2 PR4** | Etiquetas (DB + admin CRUD + atribuir a utilizadores) | Sim | Sim (só dentro de `/admin`) | ⏳ |
 
 PRs 2-4 precisam que [google-oauth-setup.md](google-oauth-setup.md) esteja executado. PR1 pode arrancar sem.
 
@@ -58,40 +58,52 @@ PRs 2-4 precisam que [google-oauth-setup.md](google-oauth-setup.md) esteja execu
 
 ---
 
-## 2. V2 PR2 — Login Flow
+## 2. V2 PR2 — Login Flow ✅ (implementada 14-05-2026)
 
 **Objectivo:** clicar "Entrar" → ida ao Google → volta com sessão → `profile` criado se for primeira vez.
 
 ### Pré-condições
 
-- `feature-docs/google-oauth-setup.md` executado para `logos-dev` (PR2 testa contra Preview Vercel que aponta para `logos-dev`).
+- `feature-docs/google-oauth-setup.md` executado para `logos-dev`.
+- `.env.local` com `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` definidos.
 
-### Ficheiros criados/modificados
+### Ficheiros implementados
 
-- `src/lib/auth/index.ts`:
-  - `getCurrentUser()` agora lê de `cookies()` (App Router) via `createServerClient` de `@supabase/ssr`, devolve `Profile` com o lookup `auth.uid() → profiles.external_auth_id → profiles.id`.
-  - `getServerClient()` agora devolve o cliente Supabase autenticado real.
-  - `signInWithGoogle()` agora chama `supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: \`${origin}/auth/callback\` } })`.
-  - `signOut()` adicionada.
+- `src/lib/auth/index.ts` — `getServerClient()` real (cria cliente `@supabase/ssr` com cookies); `getCurrentUser()` real (lookup `auth.uid() → profiles.external_auth_id → Profile camelCase`). Helper `getEnv()` valida vars Supabase. `signInWithGoogle()`/`signOut()` da PR1 movidas para `actions.ts` como Server Actions.
+- `src/lib/auth/actions.ts` — `'use server'`. Server Actions `signInWithGoogleAction()` (chama `supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: \`${origin}/auth/callback\` })` e redirecciona) + `signOutAction()`. Helper `getOrigin()` lê `origin`/`x-forwarded-proto`+`host` por ordem.
+- `src/lib/auth/middleware.ts` + `src/middleware.ts` — refresca tokens Supabase em cada request. **Não estava na spec original**, mas é o setup canónico para `@supabase/ssr` em App Router (sem isto, sessões expiravam silenciosamente após 1h).
 - `src/app/auth/callback/route.ts` — Route Handler GET:
-  1. Recebe `?code=...` do Google
-  2. Chama `supabase.auth.exchangeCodeForSession(code)`
-  3. Após sessão, faz `insert into profiles (external_auth_id, display_name) values ($auth_user_id, $name_from_google) on conflict (external_auth_id) do nothing`. **Server Action é a fonte principal de criação de `profiles`** (mais controlado que trigger DB).
-  4. Redireciona para `/` (ou para `?next=<url>` se foi tracked antes do login).
-- `src/components/site/sign-in-button.tsx` — botão "Entrar com Google" que chama Server Action que invoca `signInWithGoogle()`.
-- `src/components/site/header.tsx` — passa a renderizar `<SignInButton />` se não houver sessão, ou um placeholder de "Olá, {name}" se houver (dropdown real vem em PR3).
-- `supabase/migrations/<timestamp>_profiles_insert_trigger.sql` (defesa em profundidade):
-  - Trigger `on insert on auth.users` que faz `insert into profiles (external_auth_id, display_name) values (NEW.id, coalesce(NEW.raw_user_meta_data->>'name', NEW.email)) on conflict do nothing`. Apanha casos em que o callback não corre (criação por SQL admin).
+  1. Recebe `?code=...` do Google.
+  2. Chama `supabase.auth.exchangeCodeForSession(code)`.
+  3. Redirecciona para `?next=<path>` (validado: só caminhos relativos internos, defesa anti-open-redirect) ou `/`.
+  4. Erros viram `?auth_error=missing_code|exchange_failed`.
+  5. **Não toca em `profiles`** — o trigger DB (abaixo) faz tudo. Ver "Decisão" abaixo.
+- `src/components/site/sign-in-button.tsx` — `<form action={signInWithGoogleAction}>` com `Button` shadcn (`size="sm"`, label "Entrar"). Server component, sem `'use client'`.
+- `src/components/site/header.tsx` — passa a `async`. Lê `getCurrentUser()`. Renderiza `<SignInButton />` quando `null`, ou `<span aria-live="polite">Olá, {primeiroNome}</span>` quando há sessão (dropdown real em PR3).
+- `supabase/migrations/20260514015528_profiles_insert_trigger.sql` — função `handle_new_auth_user()` (`SECURITY DEFINER`, `coalesce(name, full_name, email)`) + trigger `on_auth_user_created AFTER INSERT ON auth.users`. Idempotente via `on conflict (external_auth_id) do nothing`.
+
+### Decisão: trigger DB sozinho (vs spec original "Server Action + trigger")
+
+A spec inicial em `auth-architecture.md` §5 propunha **dois caminhos** de criação de `profiles`: Server Action no callback (primário, lê metadata) + trigger DB (defensivo). A migration de PR1 deixou `profiles` sem `for insert` policy — Server Action a inserir exigiria service role (`SUPABASE_SERVICE_ROLE_KEY`).
+
+**Implementámos só o trigger.** Razões:
+
+1. Trigger `SECURITY DEFINER` cobre 100% dos caminhos: callback OAuth, criação por SQL admin, dashboard Supabase. Não há "buraco" para o callback tapar.
+2. Trigger lê `raw_user_meta_data->>'name'` perfeitamente — a preocupação da spec original ("trigger DB tem mais dificuldade em ler") não se concretiza.
+3. Evita introduzir um novo segredo (`SUPABASE_SERVICE_ROLE_KEY`) na app só para esta operação.
+
+Trade-off: se a Supabase mudar a interface dos triggers de `auth.users`, o sync quebra silenciosamente. Mitigação: o teste E2E manual no fim do PR (ver abaixo) confirma fluxo end-to-end.
 
 ### Testes
 
-- `src/app/auth/callback/route.test.ts` — mock de `exchangeCodeForSession`, verifica insert idempotente, verifica redirect.
-- `src/lib/auth/index.test.ts` — adicionar testes para `getCurrentUser()` mockando cookies de sessão.
-- E2E manual: `pnpm dev` em local com `.env.local` apontado a `logos-dev` → clicar "Entrar" → faz round-trip Google → vê "Olá, joão" no Header.
+- `src/lib/auth/index.test.ts` — 4 testes para `getCurrentUser()`: sem sessão; sessão sem profile; erro RLS; sucesso com mapeamento camelCase.
+- `src/app/auth/callback/route.test.ts` — 6 testes: sucesso, `?next` válido, `?next` absoluto rejeitado, `?next` protocol-relative rejeitado, código em falta, exchange falhado.
+- E2E manual em 14-05-2026: `pnpm dev` → clicar "Entrar" → round-trip Google → "Olá, {primeiroNome}" no Header.
 
 ### Checkpoint pós-PR2
 
 - Correr `supabase/seed/super-admin.sql.example` contra `logos-dev` para promover `joaocanelasribeiro@gmail.com` a `super_admin`. Sem isto, PR3 não tem como testar o dropdown admin.
+- Antes do primeiro merge V2 visível em prod: aplicar migrations PR1 + PR2 a `logos-prod` e definir `NEXT_PUBLIC_SUPABASE_*` no scope Production do Vercel.
 
 ---
 

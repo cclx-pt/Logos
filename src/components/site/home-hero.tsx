@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import { Logo } from './logo';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 
 export function HomeHero() {
@@ -38,13 +38,13 @@ export function HomeHero() {
         variants={staggerItem}
         className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:gap-4"
       >
-        <Button size="lg" render={<Link href="/cursos" />}>
+        <Link href="/cursos" className={buttonVariants({ size: 'lg' })}>
           Ver cursos
           <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-        </Button>
-        <Button variant="ghost" size="lg" render={<Link href="/conhece-nos" />}>
+        </Link>
+        <Link href="/conhece-nos" className={buttonVariants({ variant: 'ghost', size: 'lg' })}>
           Conhece o projeto
-        </Button>
+        </Link>
       </motion.div>
     </motion.section>
   );
