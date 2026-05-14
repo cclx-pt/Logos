@@ -46,7 +46,7 @@
 ## ⏭️ Próximas tarefas (V1 → V2)
 - [ ] Substituir copy placeholder de Conhece-nos e Fala connosco por texto final do ministério (sem alteração de estrutura).
 - [ ] Acrescentar morada + horários da igreja a Fala connosco quando o ministério os fornecer.
-- [ ] **Aplicar migration V2 PR1 a `logos-dev`** — `pnpm dlx supabase db push` (ou via MCP/painel) com `supabase/migrations/20260514002002_profiles_and_current_profile_id.sql`. Validar via `list_migrations` que aparece aplicada. Repetir em `logos-prod` apenas antes da primeira merge V2 PR2 em prod.
+- [ ] **Aplicar migration V2 PR1 a `logos-prod`** — `pnpm dlx supabase db push` com `--project-ref tirzriuabfwzqxtjsmfb`. Já aplicada em `logos-dev` em 14-05-2026 (timestamp `20260514002002` confirmado em local + remoto). Repetir em prod só antes do primeiro merge V2 PR2 em produção.
 - [ ] **Executar `feature-docs/google-oauth-setup.md`** (20 min no browser) — pré-condição para V2 PR2.
 - [ ] **V2 PR2 — Login flow** (precisa de OAuth do passo anterior). Detalhes em `feature-docs/v2-auth.md` §2.
 - [ ] **V2 PR3 — Roles UI**. Detalhes em `feature-docs/v2-auth.md` §3.

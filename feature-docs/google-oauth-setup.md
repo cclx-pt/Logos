@@ -57,14 +57,13 @@
 2. **Create credentials → OAuth client ID**.
 3. **Application type:** **Web application**.
 4. **Name:** `logos-dev` (para te lembrares qual é qual).
-5. **Authorized JavaScript origins:** adicionar:
+5. **Authorized JavaScript origins:** adicionar **apenas**:
    - `http://localhost:3000`
-   - `https://logos-git-*.vercel.app` (Vercel Preview — usa wildcard)
-   - Qualquer outro URL onde queiras testar em browser.
-6. **Authorized redirect URIs:** adicionar **exactamente**:
+   > ⚠️ **Google não aceita wildcards** (`*.vercel.app` é rejeitado com erro "Origem inválida"). Por isso login a partir de Vercel Preview URLs **não funciona** — validamos visualmente em Preview mas o teste real do login fica em local (`localhost:3000`) e em Production (`https://logos.cclx.pt`, no OAuth Client `logos-prod`).
+6. **Authorized redirect URIs:** adicionar **exactamente** (sem `/` final, sem wildcard):
    - `https://dknrnqyqlojvnhspwjrd.supabase.co/auth/v1/callback`
 7. **Create**.
-8. Aparece um modal com **Client ID** e **Client secret**. **Copia ambos** — vais precisar no passo 7.
+8. Aparece um modal com **Client ID** e **Client secret**. **Copia ambos** — vais precisar no passo 7. **Não commits** o JSON que a Google oferece em "Download JSON" — guarda-o fora de pastas sincronizadas com git.
 
 ## 6. Criar OAuth Client para `logos-prod`
 
@@ -95,8 +94,10 @@ Para **cada um** dos dois projectos (`logos-dev` primeiro, `logos-prod` depois):
 Antes de termos código de login, podes confirmar que está tudo certo:
 
 1. No painel Supabase do projecto `logos-dev` → **Authentication → Providers → Google**: deve mostrar **"Enabled"**.
-2. No painel Supabase → **Authentication → URL Configuration**: confirmar que **Site URL** está `http://localhost:3000` (dev). Em `logos-prod` deve estar `https://logos.cclx.pt`.
-3. **Redirect URLs** (allow list) no Supabase: garantir que estão `http://localhost:3000/**` (dev) e `https://logos.cclx.pt/**` + `https://logos-git-*.vercel.app/**` (prod). Sem isto, Supabase recusa o redirect pós-callback.
+2. **Authentication → URL Configuration** (mesma página, scroll):
+   - **Site URL** (campo único no topo): `http://localhost:3000` em `logos-dev`; `https://logos.cclx.pt` em `logos-prod`.
+   - **Redirect URLs** (secção logo abaixo, é uma **lista**, não campo único; aqui wildcards **são** aceites): adicionar `http://localhost:3000/**` em `logos-dev`; adicionar `https://logos.cclx.pt/**` em `logos-prod`.
+3. **Não vale a pena** adicionar `https://logos-git-*.vercel.app/**` em `logos-dev` — o Google já bloqueia o login a partir de Preview URLs no passo 5.5, portanto Supabase aceitar não muda nada.
 
 Quando o V2 PR2 (login) tiver código, basta ir a `/entrar` (ou clicar no botão "Entrar" do Header) e o fluxo deve ir-vir com Google.
 
@@ -106,13 +107,20 @@ Quando o V2 PR2 (login) tiver código, basta ir a `/entrar` (ou clicar no botão
 
 Quando a app fizer `signInWithOAuth({ provider: 'google' })`, é Supabase Auth que sabe os secrets — o Logos só recebe a sessão depois do callback.
 
+**O ficheiro JSON que a Google oferece descarregar** ("Download JSON" no modal pós-create) tem o secret em plaintext. Recomendado:
+- Não guardar em pastas sincronizadas (OneDrive, Dropbox, Google Drive).
+- Após colar Client ID + Secret no Supabase (passo 7), o ficheiro JSON pode ser apagado — o Supabase Dashboard fica como fonte de verdade.
+- Se precisares de re-aceder ao Secret, vais a Google Cloud Console → Credentials → clica no OAuth Client → mostra novamente.
+
 ## 10. Troubleshooting
 
 | Sintoma | Causa provável | Fix |
 |---|---|---|
 | `Error 400: redirect_uri_mismatch` | URL no Google ≠ URL de callback do Supabase | Garantir que **passo 5/6** tem **exactamente** `https://<ref>.supabase.co/auth/v1/callback`, sem `/` final |
+| `Origem inválida: não é permitido que o domínio contenha um caractere curinga (*)` | Wildcard em "Authorized JavaScript origins" | Google **não aceita** wildcards. Pôr apenas hosts concretos (`http://localhost:3000` em dev, `https://logos.cclx.pt` em prod). Login a partir de Preview URLs fica sem suporte por design. |
 | Login só funciona para alguns Gmails | App ainda em "Testing" no consent screen | Publish app (passo 4.11) ou adicionar email aos Test users |
 | Pós-login redireciona para localhost em produção | "Site URL" do Supabase mal configurado | Painel Supabase → Authentication → URL Configuration → corrigir |
+| Não encontro "Redirect URLs" no Supabase, só vejo Site URL | Estás a olhar para o campo errado | "Redirect URLs" é uma **secção separada**, abaixo do Site URL na mesma página. Scroll. É uma lista (botão "Add URL"), não um campo único. |
 | `cclx.pt` não aceita como authorized domain | Domínio não verificado no Google Cloud | Adicionar e verificar `cclx.pt` em **APIs & Services → Domain verification**; meter um TXT record no DNS da Hostinger (Google indica) |
 
 ## 11. Referências externas
