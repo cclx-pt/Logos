@@ -30,6 +30,10 @@ Ambos passam a usar o **logótipo completo Logos** (livro + letras "LOGOS").
   `favicon.ico` são ficheiros fixos compostos com `sharp` — sem `next/og`/Satori, sem
   código em runtime, sem dependência de file-tracing. A opção aborrecida e à prova de
   bala (CLAUDE.md).
+- **Fundo do `og-image.png` é creme; o do `icon.png`/`favicon.ico` é transparente.**
+  O cartão Open Graph precisa de fundo opaco — o WhatsApp e o Facebook renderizam PNG
+  transparente como preto. O favicon, pelo contrário, deve ser transparente: o separador
+  do browser tem o seu próprio fundo (claro ou escuro) e o logótipo deve flutuar nele.
 - **Favicon como ICO com PNG embebido.** O `sharp` não escreve `.ico`, por isso o
   `favicon.ico` é montado à mão: cabeçalho ICO de 6 bytes + 1 entrada de directório de
   16 bytes + um PNG 48×48. Formato suportado por todos os browsers desde o Windows
@@ -44,15 +48,16 @@ Nenhum. Metadata estática + assets em `public/` e `src/app/`.
 Ficheiros tocados:
 - `src/app/layout.tsx` — blocos `openGraph` + `twitter` + `metadataBase`.
 - `public/og-image.png` — cartão 1200×630, logótipo completo em fundo creme.
-- `src/app/icon.png` — ícone 512×512, logótipo centrado em fundo creme (novo).
-- `src/app/favicon.ico` — substitui o favicon por omissão do Next.js (logótipo 48×48).
+- `src/app/icon.png` — ícone 512×512, logótipo centrado em fundo transparente.
+- `src/app/favicon.ico` — substitui o favicon por omissão do Next.js (logótipo 48×48,
+  fundo transparente).
 
 ## Como regenerar os assets
 
 Compostos com `sharp` (já em `node_modules` via Next). Rasterizar
-`public/logo-cclx-interiors.svg` e fazer `composite` centrado sobre tela creme
-(`#faf4ea`): 1200×630 para o `og-image.png`, 512×512 para o `icon.png`, 48×48 para o
-PNG dentro do `favicon.ico`.
+`public/logo-cclx-interiors.svg` e fazer `composite` centrado: sobre tela creme
+(`#faf4ea`) 1200×630 para o `og-image.png`; sobre tela **transparente** 512×512 para o
+`icon.png` e 48×48 para o PNG dentro do `favicon.ico`.
 
 ## Limites conhecidos
 

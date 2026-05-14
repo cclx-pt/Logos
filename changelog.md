@@ -16,6 +16,13 @@
 
 ---
 
+## [14-05-2026] — favicon e ícone com fundo transparente
+
+### fix
+- fix: `src/app/favicon.ico` e `src/app/icon.png` tinham fundo creme — passa a transparente, para o logótipo flutuar no separador do browser sem caixa à volta. O `og-image.png` mantém o fundo creme de propósito (PNG transparente renderiza como preto no WhatsApp/Facebook).
+
+---
+
 ## [14-05-2026] — Open Graph + favicon com o logótipo completo Logos
 
 ### fix
