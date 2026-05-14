@@ -28,4 +28,10 @@ describe('ConteudosContent', () => {
     render(<ConteudosContent />);
     expect(screen.getByText(/^em breve$/i)).toBeInTheDocument();
   });
+
+  it('expõe o contacto do ministério via mailto', () => {
+    render(<ConteudosContent />);
+    const emailLink = screen.getByRole('link', { name: /logos@cclx\.pt/i });
+    expect(emailLink).toHaveAttribute('href', 'mailto:logos@cclx.pt');
+  });
 });

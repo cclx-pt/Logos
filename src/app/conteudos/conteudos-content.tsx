@@ -5,6 +5,7 @@ import { motion } from 'motion/react';
 import { BookOpen, GraduationCap, ArrowRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
+import { siteConfig } from '@/lib/site-config';
 import { cn } from '@/lib/utils';
 
 type ContentSection = {
@@ -55,8 +56,11 @@ export function ConteudosContent() {
         variants={staggerItem}
         className="text-muted-foreground mt-8 font-sans text-lg leading-relaxed"
       >
-        Tudo o que a CCLX disponibiliza para estudares a Bíblia, organizado em duas áreas. Escolhe
-        por onde queres começar.
+        Os nossos conteúdos foram desenvolvidos para fortalecer a igreja e aprofundar o amor pelas
+        Escrituras. Disponibilizamos diferentes formatos — aulas gravadas, apostilas, materiais de
+        apoio e outros recursos pensados para tornar o ensino bíblico mais acessível, prático e
+        transformador. O nosso objetivo é ajudar cada pessoa a crescer no conhecimento da Palavra de
+        Deus, com conteúdos claros, edificantes e centrados em Cristo.
       </motion.p>
 
       <motion.ul variants={staggerItem} className="mt-12 grid gap-6 sm:grid-cols-2">
@@ -94,9 +98,17 @@ export function ConteudosContent() {
 
       <motion.p
         variants={staggerItem}
-        className="text-muted-foreground mt-16 font-sans text-xs tracking-[0.3em] uppercase"
+        className="text-muted-foreground mt-16 font-sans text-sm leading-relaxed"
       >
-        Em construção
+        Tens alguma dúvida ou gostavas de perceber melhor como tudo funciona? Entra em contacto
+        connosco através de{' '}
+        <a
+          href={`mailto:${siteConfig.organization.email}`}
+          className="text-orange hover:text-orange-hover font-medium underline-offset-4 hover:underline"
+        >
+          {siteConfig.organization.email}
+        </a>
+        .
       </motion.p>
     </motion.section>
   );

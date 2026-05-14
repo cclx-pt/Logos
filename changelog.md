@@ -21,6 +21,7 @@
 ### update
 - update: o item de topo da navegação deixa de ser **Cursos** e passa a **Conteúdos**. A página `/cursos` deu lugar a `/conteudos`, um hub com dois cartões — **Cursos** e **Escola Bíblica** — que prepara o site para os dois tipos de conteúdo previstos. Decisão de produto do líder do projeto: entregar o esqueleto ao público numa versão "em construção", para sinalizar o que virá.
 - update: `home-hero.tsx` e `not-found-content.tsx` — o CTA "Ver cursos" passa a "Ver conteúdos" e aponta para `/conteudos`.
+- update: o hub `/conteudos` recebe a copy definitiva do ministério — parágrafo de abertura ("Os nossos conteúdos foram desenvolvidos…") e linha de contacto com `logos@cclx.pt` a substituir a tag placeholder "Em construção". Teste novo para o mailto (29/29 a passar).
 
 ### add
 - add: `src/app/conteudos/` — hub (`conteudos-content.tsx`) com dois cartões em grelha (tonalidades `cream-card` e `sage-card`), cada um a ligar à respetiva sub-página.
