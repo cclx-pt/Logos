@@ -65,8 +65,11 @@ Compostos com `sharp` (já em `node_modules` via Next). Rasterizar
   podem continuar a mostrar o cartão antigo durante algum tempo; testar com um URL novo
   (ex.: `?v=2`) ou aguardar a expiração da cache.
 - O logótipo é largo (~1,75:1). No separador do browser, a tamanhos muito pequenos
-  (16px) as letras "LOGOS" ficam pouco legíveis — lê-se sobretudo a forma e a cor. Se
-  no futuro se quiser um ícone mais nítido a 16px, recortar só o livro é alternativa.
+  (16–32px) as letras "LOGOS" ficam pouco legíveis — lê-se sobretudo a forma e a cor.
+  O `icon.png`/`favicon.ico` usam o logótipo de margem a margem (~2% de margem) para o
+  maximizar dentro do quadrado; mesmo assim a legibilidade do texto a esse tamanho é
+  limitação física do formato. Decisão de produto: manter o logótipo completo. Se um
+  dia se quiser um ícone nítido a 16px, recortar só o livro é a alternativa.
 
 ## Testes
 
