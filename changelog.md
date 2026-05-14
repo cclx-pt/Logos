@@ -16,6 +16,33 @@
 
 ---
 
+## [14-05-2026] — V2 PR1: foundation auth (DB + skeleton lib/auth/ + ESLint guard)
+
+### add
+- add: `supabase/migrations/20260514002002_profiles_and_current_profile_id.sql` — cria `profiles` (id, external_auth_id, display_name, role, created_at; check em role para `user|admin|super_admin`; FK `auth.users` com `on delete restrict`), função SQL `current_profile_id()` (STABLE, security invoker) e 2 RLS policies em `profiles` (select próprio ou super_admin; update apenas próprio). Sem `for insert` policy — Server Action no callback OAuth (PR2) faz o insert via service role.
+- add: `src/lib/auth/index.ts` — tipo `Profile` + `Role` + 4 stubs (`getCurrentUser` devolve `null`, `getServerClient`/`signInWithGoogle`/`signOut` atiram erro com mensagem "chega em V2 PR2"). Fixa o contrato público da camada de identidade.
+- add: `src/lib/auth/index.test.ts` — 4 testes que verificam o comportamento dos stubs.
+- add: `@supabase/ssr@0.10.3` + `@supabase/supabase-js@2.105.4` em dependências (uso real só em PR2; instaladas agora para validar o ESLint guard).
+
+### update
+- update: `eslint.config.mjs` — regra `no-restricted-imports` bloqueia `@supabase/ssr` e `@supabase/supabase-js` fora de `src/lib/auth/**`. Override por ficheiro reactiva-os dentro dessa pasta. Mensagem de erro aponta consumidores para `@/lib/auth`.
+
+### segue
+- ✅ Migration aplicada a `logos-dev` em 14-05-2026 (CLI + `SUPABASE_ACCESS_TOKEN`). `list_migrations` confirma `20260514002002` em local + remoto. Repetir em `logos-prod` antes do primeiro merge V2 PR2 em produção.
+- 🚧 `feature-docs/google-oauth-setup.md` em execução pelo utilizador (~20 min). Pré-condição para PR2.
+
+### fix (doc)
+- fix: `feature-docs/google-oauth-setup.md` §5.5 — Google **não aceita wildcards** em "Authorized JavaScript origins" (`*.vercel.app` é rejeitado com erro "Origem inválida"). Doc passa a indicar apenas hosts concretos (`localhost:3000` em dev, `logos.cclx.pt` em prod). Login em Vercel Preview fica sem suporte por design.
+- fix: `feature-docs/google-oauth-setup.md` §8.2 — clarificar que "Redirect URLs" é uma **secção separada do Site URL** na mesma página (não um campo único); aqui wildcards **são** aceites pelo Supabase, mas adicionar Preview wildcards não vale a pena (Google já bloqueia antes).
+- add: `feature-docs/google-oauth-setup.md` §9 + §10 — nota sobre não guardar o JSON com Client Secret em pastas sincronizadas + 2 linhas novas na tabela de troubleshooting (erro de wildcard + "não vejo Redirect URLs").
+
+### why
+- Estabelece a **fronteira de identidade** em código antes de a fronteira ser exercitada por código real. A regra ESLint torna desvios automáticos de detectar logo no PR seguinte.
+- A migration aplica-se a Production sem efeito visível (tabela vazia até primeiro login real em prod, pós-PR2).
+- Stubs com mensagem clara evitam que outros desenvolvedores (ou Claude noutra sessão) chamem a API antes de PR2 e fiquem confusos com o porquê.
+
+---
+
 ## [14-05-2026] — V2 planeada: 2 docs novos em feature-docs/
 
 ### docs
