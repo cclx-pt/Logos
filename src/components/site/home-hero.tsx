@@ -30,7 +30,7 @@ export function HomeHero() {
         variants={staggerItem}
         className="text-muted-foreground mt-6 max-w-2xl font-sans text-base leading-relaxed sm:text-lg"
       >
-        A plataforma Logos é o espaço da CCLX para crescer no conhecimento das Escrituras. Cursos em
+        O ministério Logos é o espaço da CCLX para crescer no conhecimento das Escrituras. Cursos em
         vídeo, apostilas para descarregar e o teu ritmo — sempre gratuitos.
       </motion.p>
 

@@ -16,6 +16,16 @@
 
 ---
 
+## [14-05-2026] — copy do ministério: Conhece-nos, home e Fala connosco
+
+### update
+- update: `Conhece-nos` substitui o texto placeholder (tag "Em construção" + secções "O que aqui encontras"/"Quem está por trás") pelo manifesto definitivo do ministério Logos — propósito, significado de «Logos», a igreja que se quer construir, a tríade "Mais do que… queremos…" e a assinatura. Fecha com um cartão-CTA que liga ao site da CCLX (`cclx.pt`, nova aba, `rel` seguro).
+- update: parágrafo do hero da home passa a abrir com "O ministério Logos é o espaço…" (antes "A plataforma Logos…"), alinhando o vocabulário com o do ministério.
+- update: `Fala connosco` — intro deixa cair "viste um erro num curso"; fica "Tens uma sugestão ou queres saber mais sobre a CCLX?".
+- update: `conhece-nos/page.test.tsx` reescrito para o novo conteúdo (propósito + tríade + link CCLX). 25/25 testes a passar. O texto "Os nossos conteúdos foram desenvolvidos…" pertence ao hub `/conteudos` e é entregue à parte.
+
+---
+
 ## [14-05-2026] — favicon maior (logótipo de margem a margem)
 
 ### update

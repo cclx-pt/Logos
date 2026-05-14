@@ -26,8 +26,7 @@ export function FalaConnoscoContent() {
         variants={staggerItem}
         className="text-muted-foreground mt-8 font-sans text-lg leading-relaxed"
       >
-        Tens uma sugestão, viste um erro num curso ou queres saber mais sobre a CCLX? Escreve-nos —
-        lemos tudo.
+        Tens uma sugestão ou queres saber mais sobre a CCLX? Escreve-nos — lemos tudo.
       </motion.p>
 
       <motion.div variants={staggerItem} className="mt-12 grid gap-4 sm:grid-cols-2">

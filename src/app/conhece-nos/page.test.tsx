@@ -9,13 +9,19 @@ describe('ConheceNosContent', () => {
     expect(screen.getByText(/CCLX — Comunidade Cristã Lisboa/)).toBeInTheDocument();
   });
 
-  it('expõe sub-secções "O que aqui encontras" e "Quem está por trás"', () => {
+  it('apresenta o propósito e o manifesto do ministério Logos', () => {
     render(<ConheceNosContent />);
+    expect(screen.getByText(/conhecer, amar e viver a Palavra de Deus/i)).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { level: 2, name: /o que aqui encontras/i }),
+      screen.getByText(/Mais do que estudar a Bíblia, queremos viver a Bíblia/i),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { level: 2, name: /quem está por trás/i }),
-    ).toBeInTheDocument();
+  });
+
+  it('liga ao site da CCLX em nova aba com rel seguro', () => {
+    render(<ConheceNosContent />);
+    const churchLink = screen.getByRole('link', { name: /visita o site da igreja/i });
+    expect(churchLink).toHaveAttribute('href', 'https://cclx.pt');
+    expect(churchLink).toHaveAttribute('target', '_blank');
+    expect(churchLink).toHaveAttribute('rel', 'noopener noreferrer');
   });
 });
