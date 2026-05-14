@@ -1,14 +1,19 @@
 /**
- * Camada de identidade do Logos — V2 PR1 (skeleton).
+ * Camada de identidade do Logos — V2 PR2.
  *
  * Esta é a **única** parte da aplicação que pode importar `@supabase/ssr`
- * (regra dura em CLAUDE.md + ESLint `no-restricted-imports`). O resto da
- * app consome `getCurrentUser()` e `getServerClient()` daqui.
+ * e `@supabase/supabase-js` (regra dura em CLAUDE.md + ESLint
+ * `no-restricted-imports`). O resto da app consome a API pública daqui:
+ * `getCurrentUser()`, `getServerClient()`, e as Server Actions em `./actions`.
  *
- * Estado actual (V2 PR1): só **tipos + stubs**. Implementações reais entram
- * em V2 PR2 (login flow). Ver `feature-docs/v2-auth.md` §1-§2 e
- * `feature-docs/auth-architecture.md`.
+ * Ver `feature-docs/auth-architecture.md` (princípios) e
+ * `feature-docs/v2-auth.md` §2 (escopo desta PR).
  */
+
+import { cookies } from 'next/headers';
+import type { NextResponse } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type Role = 'user' | 'admin' | 'super_admin';
 
@@ -20,44 +25,109 @@ export type Profile = {
   createdAt: string;
 };
 
+type ProfileRow = {
+  id: string;
+  external_auth_id: string;
+  display_name: string;
+  role: Role;
+  created_at: string;
+};
+
+function getEnv() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) {
+    throw new Error(
+      'Faltam env vars: NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY são obrigatórias.',
+    );
+  }
+  return { url, key };
+}
+
+/**
+ * Devolve um cliente Supabase autenticado com a sessão actual.
+ *
+ * Em Server Components, escritas a cookies podem falhar (Next.js bloqueia)
+ * — apanhamos silenciosamente porque o middleware (`src/middleware.ts`)
+ * vai refrescar os cookies no próximo request.
+ */
+export async function getServerClient(): Promise<SupabaseClient> {
+  const { url, key } = getEnv();
+  const cookieStore = await cookies();
+
+  return createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // Server Component — middleware refrescará no próximo request.
+        }
+      },
+    },
+  });
+}
+
+/**
+ * Cliente Supabase para Route Handlers (escreve cookies na `NextResponse`
+ * passada). É necessário porque `cookieStore.set()` do `next/headers`
+ * **não** propaga cookies para uma `NextResponse.redirect()` — só funciona
+ * em Server Components / Server Actions geridos pelo framework.
+ *
+ * Padrão canónico Supabase Next.js: montar a `NextResponse` primeiro,
+ * passar o seu objecto `cookies` ao client, e devolver essa response.
+ */
+export async function getRouteHandlerClient(response: NextResponse): Promise<SupabaseClient> {
+  const { url, key } = getEnv();
+  const cookieStore = await cookies();
+
+  return createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
+      },
+    },
+  });
+}
+
 /**
  * Devolve o `Profile` da sessão activa, ou `null` se não houver sessão.
  *
- * V2 PR1: stub que devolve sempre `null` (build-time / SSR sem sessão).
- * V2 PR2: lê cookies via `@supabase/ssr` + lookup
- * `auth.uid() → profiles.external_auth_id → profiles.id`.
+ * Faz o lookup `auth.uid() → profiles.external_auth_id → profiles.id`.
+ * RLS em `profiles` permite ao próprio user ler a sua row (policy
+ * `profiles_select_own_or_super_admin` na migration 20260514002002).
  */
 export async function getCurrentUser(): Promise<Profile | null> {
-  return null;
-}
+  const supabase = await getServerClient();
 
-/**
- * Devolve um cliente Supabase autenticado (cookies da sessão actual).
- *
- * V2 PR1: stub que atira. Ninguém deve chamar isto até V2 PR2.
- * Mantemos a assinatura aqui para fixar o contrato — qualquer consumidor
- * que tente usar agora falha em tempo de execução com mensagem clara.
- */
-export function getServerClient(): never {
-  throw new Error('getServerClient() ainda não implementado — chega em V2 PR2 com o login flow.');
-}
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
 
-/**
- * Inicia o fluxo de login com Google OAuth via Supabase Auth.
- *
- * V2 PR1: stub que atira. Implementação real em V2 PR2.
- * Email/password está deliberadamente fora de âmbito V1-V9 (ver SPEC_1.md §17/§18);
- * é por isso que esta é a única função de sign-in exportada.
- */
-export async function signInWithGoogle(): Promise<never> {
-  throw new Error('signInWithGoogle() ainda não implementado — chega em V2 PR2.');
-}
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, external_auth_id, display_name, role, created_at')
+    .eq('external_auth_id', user.id)
+    .maybeSingle<ProfileRow>();
 
-/**
- * Termina a sessão actual.
- *
- * V2 PR1: stub que atira. Implementação real em V2 PR2.
- */
-export async function signOut(): Promise<never> {
-  throw new Error('signOut() ainda não implementado — chega em V2 PR2.');
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    externalAuthId: data.external_auth_id,
+    displayName: data.display_name,
+    role: data.role,
+    createdAt: data.created_at,
+  };
 }

@@ -16,6 +16,40 @@
 
 ---
 
+## [14-05-2026] — V2 PR2: login flow Google OAuth + callback + trigger profile sync + RLS fixes
+
+### add
+- add: `src/lib/auth/index.ts` — implementação real de `getServerClient()` (cria cliente `@supabase/ssr` com cookies do request, para Server Components/Actions); `getRouteHandlerClient(response)` (variante para Route Handlers — escreve cookies directamente na `NextResponse` em vez do `cookieStore`, padrão canónico Supabase Next.js); `getCurrentUser()` (lookup `auth.uid() → profiles.external_auth_id → Profile camelCase`). Substitui stubs de PR1.
+- add: `src/lib/auth/actions.ts` — Server Actions `signInWithGoogleAction` (chama `supabase.auth.signInWithOAuth({ provider: 'google', redirectTo: ${origin}/auth/callback })` e redirecciona) + `signOutAction`. Helper `getOrigin()` lê `origin`/`x-forwarded-proto`+`x-forwarded-host`/`host` por ordem de robustez.
+- add: `src/lib/auth/proxy.ts` — `updateSession()` que refresca o token Supabase em cada request. Sem isto, sessões expiravam silenciosamente após ~1h.
+- add: `src/proxy.ts` — shim raiz que invoca `updateSession`. Matcher exclui assets estáticos. **Convenção Next.js 16:** `proxy.ts` (não `middleware.ts` — depreciado).
+- add: `src/app/auth/callback/route.ts` — GET handler do callback OAuth: `exchangeCodeForSession(code)` → redirect para `?next=` (validado como caminho relativo interno, defesa anti-open-redirect) ou `/`. Erros viram `?auth_error=missing_code|exchange_failed`. Usa `getRouteHandlerClient(response)` para os cookies de sessão chegarem ao redirect.
+- add: `src/components/site/sign-in-button.tsx` — `<form action={signInWithGoogleAction}>` com `Button` shadcn (`size="sm"`, label "Entrar"). Renderizado pelo Header quando não há sessão.
+- add: `supabase/migrations/20260514015528_profiles_insert_trigger.sql` — função `handle_new_auth_user()` (`SECURITY DEFINER`, `coalesce(name, full_name, email)` para `display_name`) + trigger `on_auth_user_created AFTER INSERT ON auth.users`. Idempotente via `on conflict (external_auth_id) do nothing`.
+- add: `supabase/migrations/20260514022124_current_profile_id_security_definer.sql` — fix #1 descoberto no E2E: `current_profile_id()` passa de `SECURITY INVOKER` a `SECURITY DEFINER` para quebrar recursão RLS (a função era chamada pela policy de `profiles` e queryava `profiles`).
+- add: `supabase/migrations/20260514022734_profiles_select_policy_no_recursion.sql` — fix #2 descoberto no E2E: a policy `profiles_select_own_or_super_admin` ainda continha `or exists (select 1 from profiles me ...)`, sub-select que re-disparava a policy. Nova função `current_profile_role()` `SECURITY DEFINER` + reescrita da policy para `id = current_profile_id() or current_profile_role() = 'super_admin'`. Sem queries em `profiles` dentro da policy.
+- add: `src/app/auth/callback/route.test.ts` — 6 testes (sucesso, `?next` válido, rejeição de `next` absoluto e protocol-relative, código em falta, exchange falhado).
+
+### update
+- update: `src/components/site/header.tsx` — passa a `async` server component, lê `getCurrentUser()`, renderiza `<SignInButton />` ou `<span aria-live="polite">Olá, {primeiroNome}</span>` (placeholder; dropdown real fica para PR3).
+- update: `src/lib/auth/index.test.ts` — reescrito: cobre `getCurrentUser()` em 4 ramos (sem sessão, sessão sem profile, erro RLS, sucesso com mapeamento camelCase).
+- update: `src/components/site/home-hero.tsx` — CTAs migram de `<Button render={<Link/>}>` para `<Link className={buttonVariants(...)}>`. Razão: o uso anterior disparava warning Base UI ("`nativeButton=true` mas elemento renderizado não é `<button>`") e tentar silenciar com `nativeButton={false}` partia testes (mudava o role acessível). O padrão `Link + buttonVariants` é idiomático shadcn, mantém `role="link"` correcto e elimina o warning.
+
+### infra
+- infra: 3 migrations aplicadas a `logos-dev` via `pnpm dlx supabase db push` — `20260514015528` (trigger), `20260514022124` (function security definer), `20260514022734` (policy sem recursão). Confirmadas em `migration list`. Repetir todas em `logos-prod` antes do primeiro merge V2 visível em produção.
+
+### why
+- **Trigger DB sozinho** (em vez de "Server Action + trigger" da spec original) — Server Action a inserir em `profiles` exigia service role (RLS sem `for insert` policy, decisão deliberada de PR1). Trigger `SECURITY DEFINER` cobre 100% dos caminhos (callback OAuth, criação por SQL admin, dashboard) sem introduzir novo segredo (`SUPABASE_SERVICE_ROLE_KEY`).
+- **Proxy + cliente para Route Handlers separado** — `cookieStore.set()` do `next/headers` **não** propaga cookies para uma `NextResponse.redirect()`. Sem `getRouteHandlerClient(response)`, a sessão exchangeada no callback não persistia no redirect → `getCurrentUser()` no Header seguinte devolvia `null`. Descoberto no E2E manual via logs `[auth/diag]` temporários (já removidos).
+- **2 fixes RLS** — descobertos por experimentação no E2E. A função e a policy ambas tocavam `profiles`, criando dois pontos de recursão. Documentado em comentários SQL detalhados das migrations.
+- **Validação de `?next`** — recusar URLs absolutos e protocol-relative (`//evil.com`) é defesa contra open redirect. Aceita apenas caminhos `/<algo>` internos.
+
+### segue
+- 🔜 Após primeiro login Google de `joaocanelasribeiro@gmail.com` em `logos-dev` (já feito durante este E2E): correr `supabase/seed/super-admin.sql.example` (cópia local) contra `logos-dev` para promover. Necessário antes de PR3.
+- 🔜 PR3 — Roles UI + área `/admin` esqueleto.
+
+---
+
 ## [14-05-2026] — V2 PR1: foundation auth (DB + skeleton lib/auth/ + ESLint guard)
 
 ### add

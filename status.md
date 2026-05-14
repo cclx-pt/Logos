@@ -1,10 +1,10 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 14-05-2026 (V2 PR1 implementada: migration profiles + skeleton lib/auth/ + ESLint guard)
+> **Última atualização:** 14-05-2026 (V2 PR2 implementada: login flow Google OAuth + callback + trigger profile sync + middleware refresh)
 
 ## 🎯 Milestone atual
-**V1 — Site público estático em ar.** Conteúdo placeholder substituível, a11y, stagger, logo com interiores transparentes. **V2 — Auth + Roles + Etiquetas** começa a seguir, em 4 PRs sequenciais (`feature-docs/v2-auth.md`). PR1 (foundation: migration `profiles` + skeleton `lib/auth/` + ESLint rule) não precisa de OAuth real e pode arrancar de imediato. PR2 em diante depende de executar `feature-docs/google-oauth-setup.md`.
+**V2 — Auth + Roles + Etiquetas em curso**, em 4 PRs sequenciais (`feature-docs/v2-auth.md`). PR1 (foundation) e PR2 (login flow) mergeadas. **A seguir:** correr seed super_admin contra `logos-dev` (depois do primeiro login real de `joaocanelasribeiro@gmail.com`), depois PR3 (Roles UI + área `/admin` esqueleto).
 
 **Prazo absoluto V3:** 1 de julho de 2026.
 
@@ -39,20 +39,19 @@
 - [x] **Logo SVG resolvido** (14-05-2026) — decisão: ficamos com `public/logo-cclx-interiors.svg` (gerado por análise de bboxes, interiores das letras transparentes) em vez de esperar versão limpa do ministério. Funciona bem em Production, livro mantém detalhe.
 - [x] **V2 planeada** (14-05-2026) — `feature-docs/google-oauth-setup.md` com passo-a-passo Google Cloud Console + Supabase Auth provider para `logos-dev` e `logos-prod`; `feature-docs/v2-auth.md` com sequência de 4 PRs (foundation → login → roles UI → etiquetas), ficheiros tocados, testes pensados, riscos. PR1 não precisa de OAuth funcional. PR #24 mergeada.
 - [x] **V2 PR1 — Foundation** (14-05-2026) — migration `profiles` + função `current_profile_id()` + RLS em profiles (select próprio/super_admin, update próprio); skeleton `src/lib/auth/index.ts` com tipo `Profile`/`Role` + 4 stubs (getCurrentUser/getServerClient/signInWithGoogle/signOut); ESLint `no-restricted-imports` bloqueia `@supabase/ssr` e `@supabase/supabase-js` fora de `src/lib/auth/**`. Deps instaladas: `@supabase/ssr@0.10.3` + `@supabase/supabase-js@2.105.4`. 18/18 testes a passar.
+- [x] **V2 PR2 — Login flow** (14-05-2026) — `getCurrentUser()`/`getServerClient()`/`getRouteHandlerClient(response)` reais em `src/lib/auth/index.ts`; Server Actions `signInWithGoogleAction`/`signOutAction` em `src/lib/auth/actions.ts`; route handler `src/app/auth/callback/route.ts` faz `exchangeCodeForSession` + redirect (com validação anti-open-redirect em `?next`); proxy raiz `src/proxy.ts` (convenção Next.js 16, ex-`middleware.ts`) refresca tokens via `src/lib/auth/proxy.ts`; `<SignInButton />` no Header (substitui "Olá, {nome}" quando autenticado); 3 migrations aplicadas a `logos-dev`: `20260514015528` (trigger `on_auth_user_created` em `auth.users` que popula `profiles` via `SECURITY DEFINER`), `20260514022124` (`current_profile_id()` passa a `SECURITY DEFINER` para quebrar recursão RLS), `20260514022734` (policy SELECT em `profiles` reescrita para usar `current_profile_role()` em vez de `or exists (select ... from profiles)` — segunda recursão eliminada). E2E manual confirmou login Google → "Olá, João" no Header. Bonus: `home-hero.tsx` migrou de `<Button render={<Link/>}>` para `<Link className={buttonVariants(...)}>` para eliminar warning Base UI persistente. 24/24 testes a passar.
 
 ## 🚧 Em progresso
 - (sem trabalho em progresso)
 
-## ⏭️ Próximas tarefas (V1 → V2)
+## ⏭️ Próximas tarefas (V2)
 - [ ] Substituir copy placeholder de Conhece-nos e Fala connosco por texto final do ministério (sem alteração de estrutura).
 - [ ] Acrescentar morada + horários da igreja a Fala connosco quando o ministério os fornecer.
-- [ ] **Aplicar migration V2 PR1 a `logos-prod`** — `pnpm dlx supabase db push` com `--project-ref tirzriuabfwzqxtjsmfb`. Já aplicada em `logos-dev` em 14-05-2026 (timestamp `20260514002002` confirmado em local + remoto). Repetir em prod só antes do primeiro merge V2 PR2 em produção.
-- [ ] **Executar `feature-docs/google-oauth-setup.md`** (20 min no browser) — pré-condição para V2 PR2.
-- [ ] **V2 PR2 — Login flow** (precisa de OAuth do passo anterior). Detalhes em `feature-docs/v2-auth.md` §2.
-- [ ] **V2 PR3 — Roles UI**. Detalhes em `feature-docs/v2-auth.md` §3.
+- [ ] **Aplicar migrations V2 (PR1 + PR2) a `logos-prod`** — `pnpm dlx supabase db push` com `--project-ref tirzriuabfwzqxtjsmfb`. PR1 (`20260514002002`) e PR2 (`20260514015528`) ainda só estão em `logos-dev`. Aplicar em prod antes do primeiro merge V2 visível em produção.
+- [ ] **Primeiro login Google de `joaocanelasribeiro@gmail.com` em `logos-dev`** → correr `supabase/seed/super-admin.sql.example` (cópia local) contra `logos-dev`. Pré-condição para PR3 testar dropdown admin. Repetir em `logos-prod` no final da V2. Processo em `feature-docs/auth-architecture.md` §5.1.
+- [ ] **V2 PR3 — Roles UI** (dropdown user no Header + área `/admin` + UI super_admin promove admins). Detalhes em `feature-docs/v2-auth.md` §3.
 - [ ] **V2 PR4 — Etiquetas (fundação)**. Detalhes em `feature-docs/v2-auth.md` §4.
-- [ ] **Após V2 PR1 (migration `profiles`):** primeiro login Google em `logos-dev` por `joaocanelasribeiro@gmail.com` → correr `supabase/seed/super-admin.sql.example` (cópia local) contra `logos-dev`. Repetir em `logos-prod` no final da V2. Processo documentado em `feature-docs/auth-architecture.md` §5.1.
-- [ ] **Checkpoint V2 — antes do primeiro merge V2:** adicionar `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` ao scope Production do Vercel (logos-prod). Hoje estão deliberadamente unset porque V1 é estático.
+- [ ] **Checkpoint V2 — antes do primeiro merge V2 visível em prod:** adicionar `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` ao scope Production do Vercel (logos-prod). Hoje estão deliberadamente unset porque V1 é estático.
 - [ ] *(adiado para V5+)* Resend + SPF/DKIM no DNS Hostinger — sem urgência V2 por o login ser apenas Google; necessário para notificações de Q&A em V5
 
 ## 🗺️ Roadmap por versão (resumo)
