@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 14-05-2026 (V2 planeada: feature-docs/google-oauth-setup.md + feature-docs/v2-auth.md)
+> **Última atualização:** 14-05-2026 (V2 PR1 implementada: migration profiles + skeleton lib/auth/ + ESLint guard)
 
 ## 🎯 Milestone atual
 **V1 — Site público estático em ar.** Conteúdo placeholder substituível, a11y, stagger, logo com interiores transparentes. **V2 — Auth + Roles + Etiquetas** começa a seguir, em 4 PRs sequenciais (`feature-docs/v2-auth.md`). PR1 (foundation: migration `profiles` + skeleton `lib/auth/` + ESLint rule) não precisa de OAuth real e pode arrancar de imediato. PR2 em diante depende de executar `feature-docs/google-oauth-setup.md`.
@@ -37,7 +37,8 @@
 - [x] **V1 UX — stagger nas 4 páginas + interiores das letras do logo** (13-05-2026) — variants partilhados em `src/lib/motion-variants.ts`; `conhece-nos`, `cursos`, `fala-connosco` e `not-found` ganham entrada animada coerente com o hero (`page.tsx` server + `<name>-content.tsx` client). `public/logo-cclx-interiors.svg` gerado a partir de `logo-cclx-clean.svg` via análise de bboxes: 247 paths creme dentro do contorno das letras ficam `fill="none"`, livro e gaps mantidos. PR #22 mergeada.
 - [x] **V1 conteúdo placeholder** (14-05-2026) — Conhece-nos com 3 secções (identificação CCLX + "O que aqui encontras" + "Quem está por trás" + tag "Em construção"); Cursos com intro + grid de 3 cards "O que vais encontrar" (vídeo + PDF + ritmo próprio); Fala connosco com 2 cards (mailto `logos@cclx.pt` com subject prefilled + link CCLX `target="_blank" rel="noopener noreferrer"`) + nota inferior sobre horários pendentes. 6 testes novos (14/14 a passar). PR #23 mergeada.
 - [x] **Logo SVG resolvido** (14-05-2026) — decisão: ficamos com `public/logo-cclx-interiors.svg` (gerado por análise de bboxes, interiores das letras transparentes) em vez de esperar versão limpa do ministério. Funciona bem em Production, livro mantém detalhe.
-- [x] **V2 planeada** (14-05-2026) — `feature-docs/google-oauth-setup.md` com passo-a-passo Google Cloud Console + Supabase Auth provider para `logos-dev` e `logos-prod`; `feature-docs/v2-auth.md` com sequência de 4 PRs (foundation → login → roles UI → etiquetas), ficheiros tocados, testes pensados, riscos. PR1 não precisa de OAuth funcional.
+- [x] **V2 planeada** (14-05-2026) — `feature-docs/google-oauth-setup.md` com passo-a-passo Google Cloud Console + Supabase Auth provider para `logos-dev` e `logos-prod`; `feature-docs/v2-auth.md` com sequência de 4 PRs (foundation → login → roles UI → etiquetas), ficheiros tocados, testes pensados, riscos. PR1 não precisa de OAuth funcional. PR #24 mergeada.
+- [x] **V2 PR1 — Foundation** (14-05-2026) — migration `profiles` + função `current_profile_id()` + RLS em profiles (select próprio/super_admin, update próprio); skeleton `src/lib/auth/index.ts` com tipo `Profile`/`Role` + 4 stubs (getCurrentUser/getServerClient/signInWithGoogle/signOut); ESLint `no-restricted-imports` bloqueia `@supabase/ssr` e `@supabase/supabase-js` fora de `src/lib/auth/**`. Deps instaladas: `@supabase/ssr@0.10.3` + `@supabase/supabase-js@2.105.4`. 18/18 testes a passar.
 
 ## 🚧 Em progresso
 - (sem trabalho em progresso)
@@ -45,7 +46,7 @@
 ## ⏭️ Próximas tarefas (V1 → V2)
 - [ ] Substituir copy placeholder de Conhece-nos e Fala connosco por texto final do ministério (sem alteração de estrutura).
 - [ ] Acrescentar morada + horários da igreja a Fala connosco quando o ministério os fornecer.
-- [ ] **V2 PR1 — Foundation** (não bloqueia em OAuth): migration `profiles` + função `current_profile_id()` + skeleton `src/lib/auth/` + ESLint `no-restricted-imports`. Detalhes em `feature-docs/v2-auth.md` §1.
+- [ ] **Aplicar migration V2 PR1 a `logos-dev`** — `pnpm dlx supabase db push` (ou via MCP/painel) com `supabase/migrations/20260514002002_profiles_and_current_profile_id.sql`. Validar via `list_migrations` que aparece aplicada. Repetir em `logos-prod` apenas antes da primeira merge V2 PR2 em prod.
 - [ ] **Executar `feature-docs/google-oauth-setup.md`** (20 min no browser) — pré-condição para V2 PR2.
 - [ ] **V2 PR2 — Login flow** (precisa de OAuth do passo anterior). Detalhes em `feature-docs/v2-auth.md` §2.
 - [ ] **V2 PR3 — Roles UI**. Detalhes em `feature-docs/v2-auth.md` §3.

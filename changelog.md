@@ -16,6 +16,28 @@
 
 ---
 
+## [14-05-2026] — V2 PR1: foundation auth (DB + skeleton lib/auth/ + ESLint guard)
+
+### add
+- add: `supabase/migrations/20260514002002_profiles_and_current_profile_id.sql` — cria `profiles` (id, external_auth_id, display_name, role, created_at; check em role para `user|admin|super_admin`; FK `auth.users` com `on delete restrict`), função SQL `current_profile_id()` (STABLE, security invoker) e 2 RLS policies em `profiles` (select próprio ou super_admin; update apenas próprio). Sem `for insert` policy — Server Action no callback OAuth (PR2) faz o insert via service role.
+- add: `src/lib/auth/index.ts` — tipo `Profile` + `Role` + 4 stubs (`getCurrentUser` devolve `null`, `getServerClient`/`signInWithGoogle`/`signOut` atiram erro com mensagem "chega em V2 PR2"). Fixa o contrato público da camada de identidade.
+- add: `src/lib/auth/index.test.ts` — 4 testes que verificam o comportamento dos stubs.
+- add: `@supabase/ssr@0.10.3` + `@supabase/supabase-js@2.105.4` em dependências (uso real só em PR2; instaladas agora para validar o ESLint guard).
+
+### update
+- update: `eslint.config.mjs` — regra `no-restricted-imports` bloqueia `@supabase/ssr` e `@supabase/supabase-js` fora de `src/lib/auth/**`. Override por ficheiro reactiva-os dentro dessa pasta. Mensagem de erro aponta consumidores para `@/lib/auth`.
+
+### segue
+- **Antes de PR2:** correr `pnpm dlx supabase db push` contra `logos-dev` para aplicar a migration. Verificar via MCP `list_migrations` que aparece como aplicada.
+- **Executar `feature-docs/google-oauth-setup.md`** (~20 min) para desbloquear PR2.
+
+### why
+- Estabelece a **fronteira de identidade** em código antes de a fronteira ser exercitada por código real. A regra ESLint torna desvios automáticos de detectar logo no PR seguinte.
+- A migration aplica-se a Production sem efeito visível (tabela vazia até primeiro login real em prod, pós-PR2).
+- Stubs com mensagem clara evitam que outros desenvolvedores (ou Claude noutra sessão) chamem a API antes de PR2 e fiquem confusos com o porquê.
+
+---
+
 ## [14-05-2026] — V2 planeada: 2 docs novos em feature-docs/
 
 ### docs
