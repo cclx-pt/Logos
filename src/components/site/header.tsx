@@ -2,11 +2,8 @@ import { Logo } from './logo';
 import { NavLinks } from './nav-links';
 import { MobileNav } from './mobile-nav';
 import { SignInButton } from './sign-in-button';
+import { UserMenu } from './user-menu';
 import { getCurrentUser } from '@/lib/auth';
-
-function firstName(displayName: string): string {
-  return displayName.trim().split(/\s+/)[0] ?? displayName;
-}
 
 export async function Header() {
   const user = await getCurrentUser();
@@ -22,13 +19,7 @@ export async function Header() {
           <nav aria-label="Navegação principal" className="hidden md:block">
             <NavLinks orientation="horizontal" />
           </nav>
-          {user ? (
-            <span className="text-ink text-sm font-medium" aria-live="polite">
-              Olá, {firstName(user.displayName)}
-            </span>
-          ) : (
-            <SignInButton />
-          )}
+          {user ? <UserMenu user={user} /> : <SignInButton />}
         </div>
       </div>
     </header>

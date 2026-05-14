@@ -1,6 +1,6 @@
 # V2 — Plano de implementação de autenticação e papéis
 
-> **Estado:** PR1 ✅ + PR2 ✅ implementadas; PR3 + PR4 por implementar. Lê em paralelo `feature-docs/auth-architecture.md` (a fundação conceptual) e `feature-docs/google-oauth-setup.md` (passos no painel Google/Supabase).
+> **Estado:** PR1 ✅ + PR2 ✅ + PR3 ✅ (local; E2E manual + merge pendentes) implementadas; PR4 por implementar. Lê em paralelo `feature-docs/auth-architecture.md` (a fundação conceptual) e `feature-docs/google-oauth-setup.md` (passos no painel Google/Supabase).
 > **Última atualização:** 14-05-2026
 
 ## 0. Resumo
@@ -11,7 +11,7 @@ V2 entrega 4 capacidades, em 4 PRs separadas. As PRs são desenhadas para serem 
 |---|---|---|---|---|
 | **V2 PR1** | DB + `lib/auth/` skeleton + ESLint rule | Não | Não | ✅ |
 | **V2 PR2** | Login flow Google + callback + trigger profile sync + middleware refresh | **Sim** | Sim (botão "Entrar" no Header) | ✅ |
-| **V2 PR3** | Roles UI (dropdown user + área `/admin` vazia + promoção super_admin) | Sim | Sim (dropdown só para autenticados) | ⏳ |
+| **V2 PR3** | Roles UI (dropdown user + área `/admin` vazia + promoção super_admin) | Sim | Sim (dropdown só para autenticados) | ✅ |
 | **V2 PR4** | Etiquetas (DB + admin CRUD + atribuir a utilizadores) | Sim | Sim (só dentro de `/admin`) | ⏳ |
 
 PRs 2-4 precisam que [google-oauth-setup.md](google-oauth-setup.md) esteja executado. PR1 pode arrancar sem.
@@ -107,31 +107,60 @@ Trade-off: se a Supabase mudar a interface dos triggers de `auth.users`, o sync 
 
 ---
 
-## 3. V2 PR3 — Roles UI + área admin esqueleto
+## 3. V2 PR3 — Roles UI + área admin esqueleto ✅ (implementada 14-05-2026, local)
 
 **Objectivo:** dropdown do utilizador no Header, área `/admin` acessível só a admin/super_admin, UI para super_admin promover outros.
 
-### Ficheiros
+### Ficheiros implementados
 
-- `src/components/site/user-menu.tsx` — dropdown (shadcn `DropdownMenu`) com nome do utilizador + items:
-  - "Sessão de **{display_name}**"
-  - Se `role !== 'user'`: link **"Área admin"** → `/admin`
-  - "Terminar sessão" → Server Action que invoca `signOut()`
-- `src/components/site/header.tsx` — substitui placeholder "Olá, {name}" pelo `<UserMenu />`.
+- `src/components/site/user-menu.tsx` — dropdown shadcn (`@base-ui/react/menu` por baixo) com:
+  - Trigger: "Olá, {primeiro nome}" + `<ChevronDown />`, com `aria-label="Menu do utilizador {displayName}"`.
+  - `DropdownMenuLabel`: "Sessão de **{display_name}**" (read-only).
+  - `DropdownMenuItem` (apenas se `role !== 'user'`): "Área admin" → `<Link href="/admin">` via `render` prop do base-ui.
+  - `DropdownMenuItem`: "Terminar sessão" — `<form action={signOutAction}>` que invoca o Server Action de PR2.
+- `src/components/site/header.tsx` — substitui o placeholder `<span>Olá, {nome}</span>` por `<UserMenu user={user} />`. Helper `firstName()` movido para dentro do `UserMenu`.
+- `src/components/ui/dropdown-menu.tsx` — instalado via `pnpm dlx shadcn@latest add dropdown-menu`. Não modificado à mão.
 - `src/app/admin/layout.tsx`:
-  - Server component que chama `getCurrentUser()`. Se `role === 'user'`, devolve `notFound()` (renderiza o 404 PT-PT — coerente com "conteúdo restrito é invisível").
-  - Renderiza um shell com `<aside>` de nav (Cursos, Utilizadores, Etiquetas — items que vão sendo implementados) + `<main>`.
-- `src/app/admin/page.tsx` — landing simples ("Olá, admin").
-- `src/app/admin/utilizadores/page.tsx` (só visível a super_admin):
-  - Lista de profiles com o role actual
-  - Botões "Promover a admin" / "Despromover a user" — Server Action gated por `role === 'super_admin'`
-  - **Não** promove super_admins (apenas user ⇄ admin).
-- RLS update: policy nova em `profiles` para `update role` só a super_admin.
+  - Async server component que chama `getCurrentUser()`.
+  - Se `!user || user.role === 'user'`, chama `notFound()` (404 PT-PT — coerente com "conteúdo restrito é invisível" da CLAUDE.md §🚫).
+  - Renderiza shell com `<aside>` nav (Painel + Utilizadores, este último só se super_admin) + `<main>` com `children`.
+- `src/app/admin/page.tsx` — landing PT-PT: saudação, parágrafo sobre o que a área vai conter ao longo das versões, parágrafo extra para super_admin apontando para Utilizadores.
+- `src/app/admin/utilizadores/page.tsx`:
+  - Restrito a super_admin (`notFound()` caso contrário).
+  - Query `select id, display_name, role, created_at from profiles order by created_at desc` (RLS deixa super_admin ver tudo).
+  - Tabela. Para cada linha que **não** é o próprio caller e **não** é super_admin: botão "Promover a admin" (se role=user) ou "Despromover a utilizador" (se role=admin). Próprio caller renderiza "Tu"; super_admins renderizam "—".
+  - Cada botão vive num `<form>` com `'use server'` inline que invoca `setUserRoleAction(formData)`. Inline porque Server Action exterior devolve `SetUserRoleResult` (útil para testes) e `<form action>` exige retorno void.
+- `src/app/admin/utilizadores/actions.ts` — `setUserRoleAction(formData)`:
+  - Recusa se caller não for super_admin.
+  - Valida `targetId` (UUID) e `newRole` (`user` | `admin`) manualmente — sem Zod ainda (CLAUDE.md menciona-o como lib alvo mas só vamos puxar quando PR4 precisar de formulários reais).
+  - Recusa se `targetId === caller.id`.
+  - Lookup do alvo → se `role === 'super_admin'`, recusa; se já tem o role pedido, devolve `{ok: true}` no-op.
+  - `update profiles set role = $newRole where id = $targetId` + `revalidatePath('/admin/utilizadores')`.
+  - Devolve `SetUserRoleResult` (`{ok: true} | {ok: false, error: string}`) para testes; o `<form action>` da página chama-a via wrapper void.
+- `supabase/migrations/20260514030344_profiles_role_mutation_authority.sql`:
+  - Policy `profiles_update_super_admin` (`for update using/check current_profile_role() = 'super_admin'`) — compõe (OR) com `profiles_update_own` da PR1, permitindo super_admin ver/escrever em linhas alheias.
+  - Função `enforce_profiles_role_mutation_authority()` `SECURITY DEFINER` + trigger BEFORE UPDATE em `profiles`. Quando `NEW.role IS DISTINCT FROM OLD.role`, exige (a) caller=super_admin, (b) `OLD.role <> 'super_admin'`, (c) `NEW.role ∈ {user, admin}`. Raise com `errcode 42501` / `22023`. Cobre service-role-bypass (RLS não corre, trigger sim) — única forma de mudar role de super_admin é via SQL directo, coerente com bootstrap do primeiro super_admin (auth-architecture.md §5.1).
 
-### Testes
+### Decisões vs spec original
 
-- `src/app/admin/utilizadores/page.test.tsx` — render com mock de `getCurrentUser()` super_admin vs admin vs user. Server Action chamada com user role → erro.
-- E2E manual: login com super_admin → vê dropdown com "Área admin" → entra → promove outro user a admin → faz logout/login do outro → outro vê dropdown com "Área admin".
+- **Layout admin para `admin` permite Painel mas não `/admin/utilizadores`.** A spec não tinha posição definida sobre se admin (não super_admin) consegue ver Utilizadores. Decisão: não — `utilizadores/page.tsx` faz `notFound()` se role !== 'super_admin'. Razão: hoje só super_admin pode mutar roles; mostrar a lista a admin sem botões era ruído sem valor.
+- **Server Action devolve resultado em vez de redirect com erro.** A spec não detalhava propagação de erro. Optámos por devolver `SetUserRoleResult` (útil para Vitest sem mock de redirect). O page wrappa em `async (fd) => { 'use server'; await setUserRoleAction(fd); }` para compor com `<form action>`. Em PR4 ou versão futura, quando houver UI de feedback de erro, esta API já está pronta — só falta um `<button>` client side com `useActionState`.
+- **Validação sem Zod.** PR3 só valida 1 UUID + 1 enum; uma regex + comparação directa cobre. Zod entra quando PR4 ou V3 trouxer forms maiores.
+
+### Testes implementados
+
+- `src/components/site/user-menu.test.tsx` (2 testes) — trigger renderiza com primeiro nome + aria-label completo. Items do dropdown **não** são testados aqui porque o base-ui `Menu` não monta o conteúdo sem APIs de browser (ResizeObserver) que jsdom não tem; cobertura equivalente vem dos testes do admin layout (mesma condição `role !== 'user'`) + E2E manual.
+- `src/app/admin/layout.test.tsx` (4 testes) — `notFound()` quando sem sessão e quando role=user; render normal para admin (sem link Utilizadores) e super_admin (com link).
+- `src/app/admin/utilizadores/actions.test.ts` (9 testes) — gating do caller (sem sessão / não super_admin), validação (UUID inválido, newRole inválido), recusa self e super_admin, no-op quando role já está bem, promoção feliz com `revalidatePath`, propagação de erro DB.
+
+### E2E manual a fazer antes do merge
+
+1. Login com `joaocanelasribeiro@gmail.com` (super_admin) → ver dropdown com "Área admin".
+2. Entrar em `/admin` → painel.
+3. Entrar em `/admin/utilizadores` → ver a si próprio (sem botão) e qualquer outro user.
+4. Promover outro user a admin → confirmar revalidação e label muda para "Despromover a utilizador".
+5. Logout, login com o outro user → dropdown agora mostra "Área admin"; entrar; `/admin/utilizadores` faz `notFound()` (admin não vê esta página).
+6. Tentar aceder `/admin/utilizadores?…` via URL para confirmar 404.
 
 ---
 

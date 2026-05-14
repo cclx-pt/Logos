@@ -16,6 +16,28 @@
 
 ---
 
+## [14-05-2026] — V2 PR3: Roles UI (dropdown user + área /admin + promoção super_admin)
+
+### add
+- add: `src/components/site/user-menu.tsx` — dropdown do utilizador no Header (base-ui via shadcn `DropdownMenu`). Items: label "Sessão de {displayName}", "Área admin" (só se `role !== 'user'`, link para `/admin`), "Terminar sessão" (Server Action `signOutAction`). Trigger acessível com `aria-label` completo, indicador `<ChevronDown />`.
+- add: `src/components/ui/dropdown-menu.tsx` — shadcn `DropdownMenu` instalado via `pnpm dlx shadcn@latest add dropdown-menu`. Wrapper de `@base-ui/react/menu`.
+- add: `src/app/admin/layout.tsx` — server component gating: chama `getCurrentUser()`; se `role === 'user'` ou sem sessão, devolve `notFound()` (coerente com "conteúdo restrito é invisível", CLAUDE.md §🚫). Shell com `<aside>` nav (Painel + Utilizadores apenas se super_admin) + `<main>`.
+- add: `src/app/admin/page.tsx` — landing da área admin: saudação, descrição PT-PT, parágrafo extra para super_admin a apontar para Utilizadores.
+- add: `src/app/admin/utilizadores/page.tsx` — listagem de profiles (super_admin only — `notFound()` caso contrário). Tabela com nome, papel, data de criação, e botão "Promover a admin" / "Despromover a utilizador" inline via Server Action wrapped (`'use server'` inline para retorno void exigido por `<form action={}>`). Próprio caller e super_admins existentes aparecem sem botão.
+- add: `src/app/admin/utilizadores/actions.ts` — `setUserRoleAction(formData)`: gating (caller=super_admin, alvo ≠ caller, alvo ≠ super_admin), validação manual de uuid + enum `user|admin`, lookup do alvo, update, `revalidatePath('/admin/utilizadores')`. Devolve `SetUserRoleResult` para testes; consumido como void no form da página.
+- add: `supabase/migrations/20260514030344_profiles_role_mutation_authority.sql` — policy `profiles_update_super_admin` (super_admin pode update em qualquer profile, necessário para a UI) + função `enforce_profiles_role_mutation_authority()` + trigger BEFORE UPDATE que bloqueia (a) mudanças de role por não-super_admin, (b) mudanças que afectem super_admins, (c) valores fora de `{user, admin}`. Defesa em profundidade ao Server Action; cobre service-role-bypass também (trigger corre sempre).
+- add: `src/components/site/user-menu.test.tsx` — 2 testes para o trigger (nome no botão + aria-label). Nota in-line: items do menu não testados em jsdom porque base-ui `Menu` não monta o conteúdo sem APIs de browser (ResizeObserver, etc.); cobertura via testes do admin layout (mesma lógica `role !== 'user'`) + E2E manual.
+- add: `src/app/admin/layout.test.tsx` — 4 testes: `notFound()` quando sem sessão e quando role=user; renderização normal para admin (sem link Utilizadores) e super_admin (com link).
+- add: `src/app/admin/utilizadores/actions.test.ts` — 9 testes do Server Action: caller sem sessão / não super_admin; targetId inválido; newRole inválido; alvo é o próprio; alvo é super_admin; no-op quando role já é o pedido; promoção feliz com revalidatePath; erro de DB ao update.
+
+### update
+- update: `src/components/site/header.tsx` — substitui `<span>Olá, {nome}</span>` por `<UserMenu user={user} />`. Helper `firstName()` movido para dentro de `UserMenu`.
+
+### infra
+- infra: 1 migration aplicada a `logos-dev` (`20260514030344_profiles_role_mutation_authority`). A aplicar a `logos-prod` antes do merge desta PR em produção.
+
+---
+
 ## [14-05-2026] — copy do ministério: Conhece-nos, home e Fala connosco
 
 ### update
