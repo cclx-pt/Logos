@@ -9,9 +9,12 @@ describe('NotFound', () => {
     expect(heading).toHaveTextContent(/página não encontrada/i);
   });
 
-  it('oferece CTAs para Home e Cursos', () => {
+  it('oferece CTAs para Home e Conteúdos', () => {
     render(<NotFound />);
     expect(screen.getByRole('link', { name: /voltar ao início/i })).toHaveAttribute('href', '/');
-    expect(screen.getByRole('link', { name: /ver cursos/i })).toHaveAttribute('href', '/cursos');
+    expect(screen.getByRole('link', { name: /ver conteúdos/i })).toHaveAttribute(
+      'href',
+      '/conteudos',
+    );
   });
 });

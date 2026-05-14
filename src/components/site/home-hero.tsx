@@ -38,8 +38,8 @@ export function HomeHero() {
         variants={staggerItem}
         className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:gap-4"
       >
-        <Link href="/cursos" className={buttonVariants({ size: 'lg' })}>
-          Ver cursos
+        <Link href="/conteudos" className={buttonVariants({ size: 'lg' })}>
+          Ver conteúdos
           <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
         </Link>
         <Link href="/conhece-nos" className={buttonVariants({ variant: 'ghost', size: 'lg' })}>
