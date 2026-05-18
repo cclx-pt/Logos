@@ -25,14 +25,25 @@ function getOrigin(headersList: Headers): string {
   return `${proto}://${host}`;
 }
 
-export async function signInWithGoogleAction(): Promise<void> {
+function safeNext(next: FormDataEntryValue | null): string | null {
+  if (typeof next !== 'string' || !next) return null;
+  if (!next.startsWith('/') || next.startsWith('//')) return null;
+  return next;
+}
+
+export async function signInWithGoogleAction(formData?: FormData): Promise<void> {
   const supabase = await getServerClient();
   const origin = getOrigin(await headers());
+
+  const next = formData ? safeNext(formData.get('next')) : null;
+  const callback = next
+    ? `${origin}/auth/callback?next=${encodeURIComponent(next)}`
+    : `${origin}/auth/callback`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      redirectTo: callback,
     },
   });
 

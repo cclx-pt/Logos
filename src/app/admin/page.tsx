@@ -1,7 +1,7 @@
 import { getCurrentUser } from '@/lib/auth';
 
 export const metadata = {
-  title: 'Área admin · Logos',
+  title: 'Área admin · LOGOS',
 };
 
 const ROLE_LABEL: Record<'admin' | 'super_admin', string> = {
@@ -27,7 +27,7 @@ export default async function AdminHomePage() {
       </header>
       <section className="text-ink/80 max-w-prose space-y-3 text-sm leading-relaxed">
         <p>
-          Esta é a área de gestão do Logos. À medida que as versões avançam, vais encontrar aqui
+          Esta é a área de gestão do LOGOS. À medida que as versões avançam, vais encontrar aqui
           ferramentas para criar cursos, módulos e aulas, atribuir etiquetas a utilizadores, e rever
           estatísticas de uso.
         </p>

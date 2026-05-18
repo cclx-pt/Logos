@@ -11,7 +11,7 @@ describe('FalaConnoscoContent', () => {
   it('expõe mailto para logos@cclx.pt com subject preenchido', () => {
     render(<FalaConnoscoContent />);
     const emailLink = screen.getByRole('link', { name: /email/i });
-    expect(emailLink).toHaveAttribute('href', 'mailto:logos@cclx.pt?subject=Contacto%20Logos');
+    expect(emailLink).toHaveAttribute('href', 'mailto:logos@cclx.pt?subject=Contacto%20LOGOS');
   });
 
   it('link para o site da CCLX abre em nova aba com rel seguro', () => {
@@ -20,5 +20,15 @@ describe('FalaConnoscoContent', () => {
     expect(churchLink).toHaveAttribute('href', 'https://cclx.pt');
     expect(churchLink).toHaveAttribute('target', '_blank');
     expect(churchLink).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('apresenta o parágrafo intro com texto novo do ministério', () => {
+    render(<FalaConnoscoContent />);
+    expect(screen.getByText(/Queres falar Connosco ou descobrir melhor/i)).toBeInTheDocument();
+  });
+
+  it('não mostra nota de horários nem morada', () => {
+    render(<FalaConnoscoContent />);
+    expect(screen.queryByText(/horários e morada/i)).not.toBeInTheDocument();
   });
 });

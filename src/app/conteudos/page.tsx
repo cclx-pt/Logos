@@ -4,7 +4,7 @@ import { ConteudosContent } from './conteudos-content';
 export const metadata: Metadata = {
   title: 'Conteúdos',
   description:
-    'O estudo bíblico da CCLX em duas áreas — Cursos em vídeo com apostilas e a Escola Bíblica.',
+    'Catálogo de estudo Bíblico da CCLX. Cursos em vídeo com apostilas para descarregar, sempre gratuitos.',
 };
 
 export default function ConteudosPage() {

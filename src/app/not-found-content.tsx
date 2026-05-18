@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 
 export function NotFoundContent() {
@@ -35,12 +35,12 @@ export function NotFoundContent() {
         variants={staggerItem}
         className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:gap-4"
       >
-        <Button size="lg" render={<Link href="/" />}>
+        <Link href="/" className={buttonVariants({ size: 'lg' })}>
           Voltar ao início
-        </Button>
-        <Button variant="ghost" size="lg" render={<Link href="/conteudos" />}>
+        </Link>
+        <Link href="/conteudos" className={buttonVariants({ variant: 'ghost', size: 'lg' })}>
           Ver conteúdos
-        </Button>
+        </Link>
       </motion.div>
     </motion.section>
   );

@@ -8,30 +8,16 @@ describe('ConteudosContent', () => {
     expect(screen.getByRole('heading', { level: 1, name: /^conteúdos$/i })).toBeInTheDocument();
   });
 
-  it('mostra os dois cartões: Cursos e Escola Bíblica, com os destinos certos', () => {
+  it('apresenta o parágrafo intro do ministério', () => {
     render(<ConteudosContent />);
-    expect(screen.getByRole('heading', { level: 2, name: /^cursos$/i })).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { level: 2, name: /^escola bíblica$/i }),
+      screen.getByText(/Os nossos conteúdos foram desenvolvidos para fortalecer a igreja/i),
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /cursos/i })).toHaveAttribute(
-      'href',
-      '/conteudos/cursos',
-    );
-    expect(screen.getByRole('link', { name: /escola bíblica/i })).toHaveAttribute(
-      'href',
-      '/conteudos/escola-biblica',
-    );
   });
 
-  it('assinala a Escola Bíblica como "Em breve"', () => {
+  it('apresenta o bloco "Em breve" com a mensagem de disponibilidade futura', () => {
     render(<ConteudosContent />);
-    expect(screen.getByText(/^em breve$/i)).toBeInTheDocument();
-  });
-
-  it('expõe o contacto do ministério via mailto', () => {
-    render(<ConteudosContent />);
-    const emailLink = screen.getByRole('link', { name: /logos@cclx\.pt/i });
-    expect(emailLink).toHaveAttribute('href', 'mailto:logos@cclx.pt');
+    expect(screen.getByRole('heading', { level: 2, name: /^em breve$/i })).toBeInTheDocument();
+    expect(screen.getByText(/Os cursos estão a ser preparados/i)).toBeInTheDocument();
   });
 });

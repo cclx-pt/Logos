@@ -4,7 +4,7 @@ import { getCurrentUser, getServerClient, type Role } from '@/lib/auth';
 import { setUserRoleAction } from './actions';
 
 export const metadata = {
-  title: 'Utilizadores · Área admin · Logos',
+  title: 'Utilizadores · Área admin · LOGOS',
 };
 
 type ProfileRow = {
@@ -54,8 +54,8 @@ export default async function UtilizadoresPage() {
         <h1 className="font-display text-ink text-3xl font-medium tracking-tight">Utilizadores</h1>
         <p className="text-muted-foreground mt-2 max-w-prose text-sm">
           Aqui podes promover utilizadores a administrador e despromover administradores a
-          utilizador. Os super administradores existentes não aparecem como editáveis — a sua
-          mudança de papel é feita só via SQL.
+          utilizador. Os super administradores existentes não aparecem como editáveis; a sua mudança
+          de papel é feita só via SQL.
         </p>
       </header>
 
@@ -109,7 +109,9 @@ export default async function UtilizadoresPage() {
                         </button>
                       </form>
                     ) : (
-                      <span className="text-muted-foreground text-xs">{isSelf ? 'Tu' : '—'}</span>
+                      <span className="text-muted-foreground text-xs">
+                        {isSelf ? 'Tu' : 'Sem ação'}
+                      </span>
                     )}
                   </td>
                 </tr>

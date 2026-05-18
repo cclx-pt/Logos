@@ -1,9 +1,13 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { ArrowUpRight } from 'lucide-react';
-import { siteConfig } from '@/lib/site-config';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
+
+const mottoLines = [
+  'Mais do que transmitir informação, queremos formar pessoas.',
+  'Mais do que ensinar conteúdos, queremos despertar paixão.',
+  'Mais do que estudar a Bíblia, queremos viver a Bíblia.',
+] as const;
 
 export function ConheceNosContent() {
   return (
@@ -20,73 +24,58 @@ export function ConheceNosContent() {
         Conhece-nos
       </motion.h1>
 
-      <motion.p
+      <motion.div
         variants={staggerItem}
-        className="text-muted-foreground mt-8 font-sans text-lg leading-relaxed"
+        className="text-ink/85 mt-10 space-y-6 font-sans text-lg leading-relaxed"
       >
-        O Logos, o ministério de ensino da{' '}
-        <span className="text-ink font-medium">CCLX — Comunidade Cristã Lisboa</span>, nasce com um
-        propósito simples, mas essencial: levar a igreja a conhecer, amar e viver a Palavra de Deus.
-      </motion.p>
-
-      <motion.div variants={staggerItem} className="mt-8 space-y-6">
-        <p className="text-muted-foreground font-sans leading-relaxed">
-          O nome <span className="text-ink font-medium">Logos</span> não é apenas um nome. Vem do
-          grego e significa «Palavra», mas também carrega a ideia de razão, verdade e expressão
-          divina. Na Bíblia, aponta diretamente para Cristo como a Palavra viva de Deus — aquele que
-          revela quem Deus é e dá sentido à nossa vida.
+        <p className="text-justify hyphens-auto">
+          O LOGOS é o ministério de ensino da CCLX. Nasce com um propósito simples, mas essencial:
+          levar a igreja a conhecer, amar e viver a Palavra de Deus.
         </p>
-        <p className="text-muted-foreground font-sans leading-relaxed">
+
+        <p className="text-justify hyphens-auto">
+          O nome &ldquo;Logos&rdquo; não é apenas um nome. Vem do grego e significa
+          &ldquo;Palavra&rdquo;, mas também carrega a ideia de razão, verdade e expressão divina. Na
+          Bíblia, aponta diretamente para Cristo como a Palavra viva de Deus, aquele que revela quem
+          Deus é e dá sentido à nossa vida.
+        </p>
+
+        <p className="text-justify hyphens-auto">
           É exatamente isso que queremos construir. Queremos ser uma igreja que não apenas ouve a
           Palavra, mas que a conhece profundamente. Uma igreja que não apenas aprende, mas que se
           apaixona pelas Escrituras. Uma igreja que não apenas estuda, mas que vive aquilo que
           aprende. Acreditamos que uma fé sólida nasce de uma compreensão clara da Palavra e que uma
           vida transformada começa quando aquilo que entendemos passa a moldar quem somos.
         </p>
-        <p className="text-muted-foreground font-sans leading-relaxed">
+
+        <p className="text-justify hyphens-auto">
           Por isso, enquanto ministério, dedicamo-nos a criar espaços de ensino, partilha e
           crescimento, promovendo aulas, estudos e iniciativas que ajudam cada pessoa a aprofundar a
           sua relação com Deus através das Escrituras.
         </p>
       </motion.div>
 
-      <motion.div variants={staggerItem} className="border-orange/50 mt-12 border-l-2 pl-6 sm:pl-8">
-        <p className="font-display text-ink text-2xl leading-snug font-medium sm:text-3xl">
-          Mais do que transmitir informação, queremos formar pessoas.
-        </p>
-        <p className="font-display text-ink mt-3 text-2xl leading-snug font-medium sm:text-3xl">
-          Mais do que ensinar conteúdos, queremos despertar paixão.
-        </p>
-        <p className="font-display text-ink mt-3 text-2xl leading-snug font-medium sm:text-3xl">
-          Mais do que estudar a Bíblia, queremos viver a Bíblia.
-        </p>
-      </motion.div>
-
-      <motion.p
+      <motion.aside
         variants={staggerItem}
-        className="text-muted-foreground mt-12 font-sans leading-relaxed"
+        aria-label="Lema do ministério LOGOS"
+        className="border-orange/30 mt-12 space-y-3 border-y py-10 text-center sm:py-12"
       >
-        Deus ricamente te abençoe,
-        <br />
-        <span className="text-ink font-medium">Logos</span>
-      </motion.p>
+        {mottoLines.map((line) => (
+          <p
+            key={line}
+            className="font-display text-ink text-xl leading-relaxed italic sm:text-2xl"
+          >
+            {line}
+          </p>
+        ))}
+      </motion.aside>
 
       <motion.div
         variants={staggerItem}
-        className="border-border bg-cream-card/60 mt-16 rounded-lg border p-6 sm:p-8"
+        className="text-ink/85 mt-12 font-sans text-lg leading-relaxed"
       >
-        <p className="text-muted-foreground font-sans leading-relaxed">
-          Queres conhecer mais da CCLX?{' '}
-          <a
-            href={siteConfig.organization.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-orange hover:text-orange-hover focus-visible:ring-ring inline-flex items-center font-medium underline-offset-4 hover:underline focus-visible:rounded-xs focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-          >
-            Visita o site da igreja
-            <ArrowUpRight className="ml-1 h-4 w-4" aria-hidden="true" />
-          </a>
-        </p>
+        <p>Deus ricamente te abençoe,</p>
+        <p className="font-display text-ink mt-1 text-2xl font-medium tracking-wide">LOGOS</p>
       </motion.div>
     </motion.section>
   );

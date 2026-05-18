@@ -16,6 +16,39 @@
 
 ---
 
+## [16-05-2026] — V2.x: Copy & UX (LOGOS, hero, /conteudos, testemunhos, /perfil)
+
+Ronda só de copy + UX (sem DB, sem auth) executada em 6 PRs locais (PR-A a PR-F). Plano e mapeamento das 19 pedidas do ministério em `feature-docs/v2-copy-and-conteudos.md`.
+
+### add
+- add: `src/components/site/home-motto.tsx` — lema do ministério em três linhas em itálico (`<aside>` com `aria-label="Lema do ministério LOGOS"`, bordas laranja subtis). Renderizado no `page.tsx` abaixo do hero.
+- add: `src/components/site/home-testimonials.tsx` — carrossel com 5 testemunhos placeholder PT-PT. embla-carousel-react@8.6.0 instalado como dep directa; carrossel custom shadcn-style (não copiado do CLI shadcn por hang) com loop infinito, 1/2/3 slides por breakpoint, setas prev/next acessíveis e dots tab-list com `aria-selected`. Sync inicial via `queueMicrotask` para evitar `react-hooks/set-state-in-effect`.
+- add: `src/app/conteudos/` (page + content + test) — nova rota pública que substitui `/cursos`. Parágrafo intro justificado com texto final do ministério, 3 cards placeholder "Em preparação" (badge laranja). H1 "Conteúdos".
+- add: `src/app/perfil/page.tsx` — placeholder de perfil para utilizadores autenticados. Avatar (Google `avatar_url` ou iniciais), nome, email (lido de `auth.users`, não duplicado em `profiles`), papel em PT-PT, data de criação. `notFound()` quando sem sessão.
+- add: `feature-docs/v2-copy-and-conteudos.md` — doc de planeamento das 6 PRs com escopo, verificações e mapeamento da checklist do ministério.
+
+### update
+- update: `src/components/site/home-hero.tsx` — logo `size="xl"` (`h-32 sm:h-44 md:h-52`, `priority`); h1 "Estudo Bíblico para uma Fé Enraizada." com capitalizações pedidas; CTA único centrado "Meus cursos"; comportamento depende de sessão (server resolve via `getCurrentUser()` e passa `isAuthenticated` + `ctaHref`): autenticado abre `<Link href={ctaHref}>`, sem sessão abre `<form action={signInWithGoogleAction}>` com hidden `next`. Parágrafo justificado.
+- update: `src/components/site/user-menu.tsx` — items finais: "Os meus cursos" (→ /conteudos), "Perfil" (→ /perfil), "Área admin" (condicional), separador, "Terminar sessão". Label "Sessão de X" agora envolvida em `<DropdownMenuGroup>` (corrige bug Base UI residual de PR3).
+- update: `src/lib/auth/actions.ts` — `signInWithGoogleAction(formData?)` aceita FormData opcional com campo `next`; valida com `safeNext` (mesma defesa anti-open-redirect do callback) e injecta `?next=` no `redirectTo`.
+- update: `src/lib/auth/index.ts` — re-exporta `SupabaseUser` (alias de `User` do `@supabase/supabase-js`) para que código fora de `lib/auth/**` possa tipar sem violar `no-restricted-imports`.
+- update: `src/lib/site-config.ts` — `name: 'LOGOS'`, descrição sem em dash, nav passa a ter `{ href: '/conteudos', label: 'Conteúdos' }` e `{ href: '/fala-connosco', label: 'Fala Connosco' }`.
+- update: `src/app/cursos/page.tsx` — passa a `permanentRedirect('/conteudos')` (308). `cursos-content.tsx` e `cursos/page.test.tsx` eliminados.
+- update: `src/app/conhece-nos/conhece-nos-content.tsx` — `Logos` → `LOGOS`, `fé` → `Fé`, `fala connosco` → `fala Connosco`. Todos os em dashes (—) em copy substituídos por vírgulas / ponto-e-vírgula / dois pontos. Três parágrafos longos com `text-justify hyphens-auto`. Frase "Sem prazos, sem barras de progresso, sem distrações" removida (tom IA).
+- update: `src/app/fala-connosco/fala-connosco-content.tsx` — título "Fala Connosco" (C maiúsculo), parágrafo intro substituído pelo texto novo do ministério com "Connosco" maiúsculo, justificado. Nota "Horários e morada da igreja em breve" eliminada. Subject email "Contacto LOGOS".
+- update: `src/components/site/logo.tsx` — novo tamanho `xl`; aria-label "LOGOS" (era "Logos"); em dash fora.
+- update: `src/app/admin/page.tsx`, `src/app/admin/utilizadores/page.tsx`, `src/app/fala-connosco/page.tsx`, `src/app/cursos/page.tsx`, `src/app/layout.tsx`: metadata title/description com `LOGOS`. UI em dashes substituídos por pontuação alternativa.
+- update: `src/app/not-found-content.tsx` + `not-found.test.tsx` — CTA "Ver conteúdos" → `/conteudos`.
+
+### infra
+- infra: `embla-carousel-react@^8.6.0` adicionado como dependência directa para suportar o carrossel de testemunhos.
+- infra: `src/test/setup.ts` ganha stubs mínimos de `matchMedia`, `ResizeObserver` e `IntersectionObserver` (jsdom não os tem; embla e motion tocam neles à montagem).
+
+### fix
+- fix: `src/components/site/user-menu.tsx` — `<DropdownMenuLabel>` agora envolvido em `<DropdownMenuGroup>` (fix do `MenuGroupRootContext is missing` reportado na PR3 em preview Vercel).
+
+---
+
 ## [14-05-2026] — V2 PR3: Roles UI (dropdown user + área /admin + promoção super_admin)
 
 ### add
