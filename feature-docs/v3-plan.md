@@ -158,12 +158,13 @@ PRs 1-7 são *gates* para o prazo: sem elas, V3 não existe. PRs 8-9 são *polis
 
 ---
 
-## 10. Pendentes do utilizador antes de começar PR1
+## 10. Decisões fechadas (18-05-2026)
 
-- [ ] Confirmar branch base: `v2.5-copy-ux` (decidido 18-05-2026). Quando V2.5 mergear em `main`, rebase do `v3-cursos` em `main`.
-- [ ] Decidir se o catálogo V3 deve ter, além da pesquisa textual, **categorias** simples (V3 default = não; apenas pesquisa).
-- [ ] Confirmar a abordagem PDF: armazenado em `lesson-pdfs` privado, com URL assinado de curta duração (5 min). Não há cache, descarregar sempre via Server Action.
-- [ ] Decidir título canónico das tabelas em PT vs EN. Decisão V3 default = **EN** (`courses`, `modules`, `lessons`) para consistência com tools (Drizzle, Prisma futuras); colunas em EN; UI em PT.
+- [x] **Branch base:** `v2.5-copy-ux`. Quando V2.5 mergear em `main`, rebase do `v3-cursos` em `main`.
+- [x] **Catálogo:** apenas pesquisa textual em V3. Sem categorias. Categorias só entram em V4+ se o ministério pedir.
+- [x] **PDF storage:** bucket `lesson-pdfs` privado, descarregar via URL assinado de curta duração (5 min) gerado por Server Action.
+- [x] **Língua dos nomes de tabela:** **EN** (`courses`, `modules`, `lessons`, `tags`, `user_tags`, `lesson_completions`, `course_completions`, `course_access_log`). UI continua 100% PT-PT.
+- [x] **Reordenar módulos no admin:** setas ↑↓ (botões simples). Drag&drop adiado para V4+ se a UX exigir.
 
 ---
 
