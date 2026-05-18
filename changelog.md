@@ -16,6 +16,28 @@
 
 ---
 
+## [18-05-2026] — V2.5: rebase + fix do 404 + branch de preview
+
+Ronda V2.x (PR-A a PR-F) re-aplicada em cima de `main` após terem aterrado PR #27 (V2 PR3 roles UI), PR #32 (Cursos→Conteúdos hub) e PR #33 (copy do ministério). Conflitos resolvidos a favor do trabalho V2.x: `/conteudos` volta a ser página flat (intro justificada + bloco "Em breve" único), os sub-routes `/conteudos/cursos` e `/conteudos/escola-biblica` do hub anterior são eliminados. Branch `v2.5-copy-ux` pushed para preview-only — **não merge em `main`** enquanto os testemunhos forem placeholder.
+
+### add
+- add: `feature-docs/accounts.md` — mapa de *ownership* de todas as contas externas (GitHub, Vercel, Supabase, Google Cloud, Hostinger, Resend) sob `joaocanelasribeiro@gmail.com`. Esclarece a fronteira entre *ownership* (João, ministério) e acesso operacional (developer actual). Decisão para *bus factor* + sucessão centralizada no líder do ministério.
+
+### fix
+- fix: `src/app/not-found-content.tsx` — `Base UI: A component that acts as a button expected a native <button>` quando se carregava num 404. `Button render={<Link/>}` substituído por `<Link className={buttonVariants(...)}>` (mesmo padrão já usado em `home-hero.tsx`). Erro só aparecia no client porque a primitiva valida o contexto de render no browser.
+
+### update
+- update: `src/app/conteudos/{page,page.test,conteudos-content}.tsx` — versão flat da rota (alinhada com `feature-docs/v2-copy-and-conteudos.md` §3), com intro justificada + cartão "Em breve" único. Os ficheiros do hub anterior (`/conteudos/cursos/*` e `/conteudos/escola-biblica/*`) são eliminados.
+- update: `src/app/cursos/page.tsx` — fica como `permanentRedirect('/conteudos')`, agora no caminho final (recriado após o rename de `main` que tinha movido para `/conteudos/cursos/`).
+
+### infra
+- infra: branch `v2.5-copy-ux` push para `origin`. Vercel cria preview deploy automático em `https://logos-l4nq6ppd8-jcrninjas-projects.vercel.app/` (URL protegida por Vercel Authentication — só *signed in* na conta Vercel do João). Production em `logos.cclx.pt` continua intocada.
+
+### docs
+- docs: `status.md` actualizada para reflectir o estado de V2.5 (preview-only, à espera de testemunhos do ministério).
+
+---
+
 ## [16-05-2026] — V2.x: Copy & UX (LOGOS, hero, /conteudos, testemunhos, /perfil)
 
 Ronda só de copy + UX (sem DB, sem auth) executada em 6 PRs locais (PR-A a PR-F). Plano e mapeamento das 19 pedidas do ministério em `feature-docs/v2-copy-and-conteudos.md`.

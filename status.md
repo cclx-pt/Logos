@@ -1,10 +1,10 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 16-05-2026 (V2.x copy+UX implementada localmente — PR-A a PR-F prontas, 49/49 testes verdes; falta E2E manual + abrir PRs)
+> **Última atualização:** 18-05-2026 (V2.5 rebase em cima do hub `/conteudos` mergeado em `main`; branch `v2.5-copy-ux` push para preview; fix 404 Base UI; 52/52 testes verdes)
 
 ## 🎯 Milestone atual
-**V2.x — Copy, UX do hero, rota Conteúdos e dropdown.** Ronda só de copy + UX (sem DB, sem auth) executada em 6 PRs pequenas (`feature-docs/v2-copy-and-conteudos.md`): PR-A (copy & branding ✅), PR-B (logo maior + CTA único ✅), PR-C (renomear Cursos→Conteúdos ✅), PR-D (carrossel de testemunhos ✅), PR-E (Fala Connosco novo ✅), PR-F (dropdown + /perfil ✅). **A seguir:** E2E manual + abrir PRs no GitHub. Depois retomar V2 PR4 (Etiquetas — DB + admin CRUD + atribuir a utilizadores).
+**V2.5 — Copy + UX em preview, aguarda conteúdo final do ministério.** Ronda V2.x (PR-A a PR-F, `feature-docs/v2-copy-and-conteudos.md`) re-aplicada após PRs #27/#32/#33 terem chegado a `main`. Branch `v2.5-copy-ux` pushed (não merge) com preview Vercel acessível na conta `joaocanelasribeiro@gmail.com`. **Bloqueio antes do merge em `main`:** testemunhos finais + títulos provisórios dos cards de `/conteudos` (ver `feature-docs/v2-copy-and-conteudos.md` §8). Depois disso, retomar V2 PR4 (Etiquetas — DB + admin CRUD + atribuir a utilizadores).
 
 **Prazo absoluto V3:** 1 de julho de 2026.
 
@@ -53,11 +53,13 @@
 - [x] **PR-E** — Fala Connosco com texto novo do ministério ("Queres falar Connosco..."), sem horários nem morada.
 - [x] **PR-F** — Dropdown user: `Os meus cursos` / `Perfil` / `Área admin` (condicional) / `Terminar sessão`. `/perfil` placeholder com avatar Google, nome, email (de `auth.users`), papel, data de criação.
 
-### Próximos passos para fechar V2.x
-- [ ] E2E manual em preview Vercel: hero (autenticado e não autenticado) → carrossel → /conteudos → /perfil → dropdown completo. Confirmar redirect 308 de /cursos.
+### Próximos passos para fechar V2.5
+- [x] **Branch `v2.5-copy-ux` push para preview** (18-05-2026) — não merge em `main` enquanto carrossel for placeholder. Preview Vercel atrás de Vercel Authentication (login na conta do João).
+- [x] **Fix 404 Base UI** (18-05-2026) — `not-found-content.tsx` passa de `<Button render={<Link/>}>` para `<Link className={buttonVariants(...)}>`.
+- [ ] E2E completo no preview a partir de outro dispositivo (login no Vercel com a conta `joaocanelasribeiro@gmail.com`): hero (autenticado e não autenticado) → carrossel → /conteudos → /perfil → dropdown completo. Confirmar redirect 308 de /cursos.
 - [ ] Pedir ao ministério os 4–5 testemunhos finais para substituir os placeholders.
 - [ ] Pedir ao ministério títulos provisórios para os cards de cursos em `/conteudos`.
-- [ ] Abrir PR(s) no GitHub. Single PR ou agrupar por PR-A..F? (Decidir antes de push.)
+- [ ] Quando testemunhos chegarem: substituir, abrir PR de `v2.5-copy-ux` → `main`, merge, apagar branch.
 
 ## ⏭️ Próximas tarefas (V2 core)
 - [x] **Aplicar migrations V2 a `logos-prod`** (14-05-2026) — 5 migrations em ar via `pnpm dlx supabase db push --include-all` (placeholder inicial + PR1 profiles + PR2 trigger + 2 fixes RLS). Confirmadas em `migration list`.
