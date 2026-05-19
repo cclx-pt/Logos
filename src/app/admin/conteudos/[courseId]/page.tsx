@@ -235,7 +235,10 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
 
                   if (isConfirmingModuleDelete) {
                     return (
-                      <li key={module.id} className="bg-destructive/5 p-4">
+                      <li
+                        key={module.id}
+                        className="border-l-destructive bg-destructive/10 border-l-4 p-4"
+                      >
                         <p className="text-ink text-sm">
                           Apagar o módulo <strong>{module.title}</strong>? Esta ação remove também
                           todas as aulas e conclusões associadas. Não pode ser revertida.
@@ -364,7 +367,7 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
 
         <section
           aria-labelledby="zona-perigo-heading"
-          className="border-destructive/30 bg-destructive/5 rounded-lg border p-5"
+          className="border-destructive bg-destructive/10 rounded-lg border-2 p-5"
         >
           <h2
             id="zona-perigo-heading"

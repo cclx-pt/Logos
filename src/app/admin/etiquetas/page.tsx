@@ -211,7 +211,10 @@ export default async function EtiquetasPage({ searchParams }: PageProps) {
 
                   if (isConfirmingDelete) {
                     return (
-                      <tr key={tag.id} className="bg-destructive/5">
+                      <tr
+                        key={tag.id}
+                        className="border-l-destructive bg-destructive/10 border-l-4"
+                      >
                         <td colSpan={4} className="px-4 py-3">
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <p className="text-ink text-sm">
