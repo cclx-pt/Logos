@@ -16,6 +16,31 @@
 
 ---
 
+## [20-05-2026] — Fase C: optimistic UI em etiquetas-por-utilizador + apagar etiqueta — local em `v3-cursos`
+
+Resposta a queixa do user de Fase B ("alguns botões demoram muito"): mesmo com `Spinner` no `SubmitButton`, atribuir/remover etiqueta a um utilizador ou apagar uma etiqueta tinham latência perceptível (round-trip Supabase + revalidatePath). Solução: `useOptimistic` aplica o estado-melhor-caso imediatamente; a Server Action corre em paralelo via `startTransition`; em falha, `useOptimistic` reverte automaticamente para o estado base do server.
+
+### add
+- add: `src/app/admin/utilizadores/user-tags-cell.tsx` — Client Component que renderiza pills + select de adicionar com `useOptimistic`. Estado é `assigned: TagItem[]` + reducer que aplica `add` (insere ordenado por label PT-PT) ou `remove` (filtra por id). Pill é agora `<button type="button">` com `onClick` (já não é submit num form) — feedback visual é o desaparecimento imediato, não o spinner. Form de adicionar usa `action={handleAdd}` (Client Component aceita server action wrapped numa função client; `formRef.current?.reset()` limpa o select após o submit).
+- add: `src/app/admin/etiquetas/tags-table.tsx` — Client Component que envolve a tabela de etiquetas com `useOptimistic` para o delete. Linha desaparece imediatamente ao clicar "Apagar definitivamente"; `deleteTagAction` corre em paralelo. Edit row continua URL-driven (`?editar=`) e usa a Server Action `updateTagAction` directamente. Confirm delete também URL-driven (`?apagar=`) mas o botão final agora é client `onClick` (e não form submit).
+
+### remove
+- remove: `src/app/admin/utilizadores/tag-pill-remove-button.tsx` + teste — substituído por `UserTagsCell`. O spinner no `×` deixa de ser necessário porque a pill desaparece imediato (optimistic). Manter o spinner seria redundante.
+
+### update
+- update: `src/app/admin/utilizadores/page.tsx` — passa de ~70 linhas de forms inline (pills + select de adicionar) para `<UserTagsCell userId userName assigned allTags />`. Server Component continua a fazer o fetch das 3 queries (profiles + tags + user_tags) e calcular `tagsByUser`; o Client Component recebe só os dados via props.
+- update: `src/app/admin/etiquetas/page.tsx` — passa de ~150 linhas de tabela inline para `<TagsTable initial editingId confirmingDeleteId />`. Server Component continua a ler `searchParams` (`editar`, `apagar`) e a fazer a query.
+
+### test
+- 13 testes novos: 7 em `user-tags-cell.test.tsx` (render placeholder/pills/select; options excluem assigned; click chama action; pill desaparece imediato com mock pending; pill aparece imediato ao adicionar) + 6 em `tags-table.test.tsx` (placeholder; render; edit/confirm rows; optimistic delete com mock pending).
+- 215/215 verdes (204 → 215, +11 líquido — -2 TagPillRemoveButton + 13 novos).
+- Nota sobre testes de `useOptimistic`: o estado optimistic reverte assim que a action resolve. Para observá-lo na assertion, o mock precisa de ficar pending (`new Promise(() => {})`). Documentado no comentário inline dos testes relevantes.
+
+### docs
+- update: `status.md` regista a Fase C; `changelog.md` ganha esta entrada.
+
+---
+
 ## [20-05-2026] — Remove `tags.slug` — local em `v3-cursos`
 
 Decisão do user: tags nunca aparecem em URLs públicas (são referenciadas por UUID internamente). Manter um slug kebab-case estável era fricção desnecessária no fluxo "criar etiqueta". `courses.slug` fica — esse vai ser usado em `/conteudos/[curso-slug]`.

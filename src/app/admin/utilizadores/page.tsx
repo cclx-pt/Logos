@@ -3,8 +3,8 @@ import Link from 'next/link';
 
 import { SubmitButton } from '@/components/ui/submit-button';
 import { getCurrentUser, getServerClient, type Role } from '@/lib/auth';
-import { assignTagAction, setUserRoleAction, unassignTagAction } from './actions';
-import { TagPillRemoveButton } from './tag-pill-remove-button';
+import { setUserRoleAction } from './actions';
+import { UserTagsCell } from './user-tags-cell';
 
 export const metadata = {
   title: 'Utilizadores · Área admin · LOGOS',
@@ -150,72 +150,18 @@ export default async function UtilizadoresPage() {
                 row.role === 'admin' ? 'Despromover a utilizador' : 'Promover a admin';
 
               const assigned = tagsByUser.get(row.id) ?? [];
-              const assignedIds = new Set(assigned.map((t) => t.id));
-              const available = tags.filter((t) => !assignedIds.has(t.id));
 
               return (
                 <tr key={row.id} className="text-ink align-top">
                   <td className="px-4 py-3 font-medium">{row.display_name}</td>
                   <td className="px-4 py-3">{ROLE_LABEL[row.role]}</td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {assigned.length === 0 ? (
-                        <span className="text-muted-foreground text-xs">Sem etiquetas</span>
-                      ) : (
-                        assigned.map((tag) => (
-                          <form
-                            key={tag.id}
-                            action={async (formData: FormData) => {
-                              'use server';
-                              await unassignTagAction(formData);
-                            }}
-                          >
-                            <input type="hidden" name="userId" value={row.id} />
-                            <input type="hidden" name="tagId" value={tag.id} />
-                            <TagPillRemoveButton
-                              label={tag.label}
-                              ariaLabel={`Remover etiqueta ${tag.label} de ${row.display_name}`}
-                            />
-                          </form>
-                        ))
-                      )}
-                    </div>
-                    {available.length > 0 && (
-                      <form
-                        action={async (formData: FormData) => {
-                          'use server';
-                          await assignTagAction(formData);
-                        }}
-                        className="mt-2 flex flex-wrap items-center gap-2"
-                      >
-                        <input type="hidden" name="userId" value={row.id} />
-                        <label className="sr-only" htmlFor={`tag-select-${row.id}`}>
-                          Adicionar etiqueta a {row.display_name}
-                        </label>
-                        <select
-                          id={`tag-select-${row.id}`}
-                          name="tagId"
-                          required
-                          defaultValue=""
-                          className="border-border bg-background text-ink focus-visible:ring-ring rounded-md border px-2 py-1 text-xs focus-visible:ring-2 focus-visible:outline-none"
-                        >
-                          <option value="" disabled>
-                            Adicionar etiqueta…
-                          </option>
-                          {available.map((tag) => (
-                            <option key={tag.id} value={tag.id}>
-                              {tag.label}
-                            </option>
-                          ))}
-                        </select>
-                        <SubmitButton
-                          pendingLabel="A adicionar…"
-                          className="bg-transparent text-orange-primary hover:bg-muted/40 hover:text-orange-hover h-auto rounded-md px-2 py-1 text-xs font-medium"
-                        >
-                          Adicionar
-                        </SubmitButton>
-                      </form>
-                    )}
+                    <UserTagsCell
+                      userId={row.id}
+                      userName={row.display_name}
+                      assigned={assigned}
+                      allTags={tags}
+                    />
                   </td>
                   <td className="px-4 py-3">{formatDate(row.created_at)}</td>
                   {canMutateRoles && (
