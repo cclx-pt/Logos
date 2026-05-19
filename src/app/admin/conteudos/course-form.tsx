@@ -1,5 +1,7 @@
 import Link from 'next/link';
 
+import { IconPicker } from './icon-picker';
+
 export type TagOption = { id: string; slug: string; label: string };
 
 export type CourseFormInitialData = {
@@ -72,19 +74,7 @@ export function CourseForm({ mode, tags, course, action }: CourseFormProps) {
         />
       </label>
 
-      <label className="block">
-        <span className="text-muted-foreground text-xs font-medium">
-          Ícone (nome Lucide, opcional — ex.: <code>book-open</code>)
-        </span>
-        <input
-          type="text"
-          name="icon"
-          maxLength={64}
-          defaultValue={course?.icon ?? ''}
-          placeholder="book-open"
-          className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-        />
-      </label>
+      <IconPicker selected={course?.icon ?? null} />
 
       <fieldset className="border-border rounded-md border p-4">
         <legend className="text-muted-foreground px-1 text-xs font-medium">
