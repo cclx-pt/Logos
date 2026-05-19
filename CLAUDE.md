@@ -30,6 +30,8 @@ Modelo de dados (3 níveis): `Curso → Módulo → Aula`. Aulas têm `template`
 
 ## 🚫 Regras (não negociáveis)
 - **Nunca fazer push direto para `main`.** Sempre via Pull Request.
+- **V3 nunca mergea em `main` em parciais.** Entre 19-05-2026 e 01-07-2026 (lançamento), o repo vive em 3 camadas: `main` (V2 live), `v2.5-copy-ux` (V2.5 stored), `v3-cursos` (V3 em dev). PRs de V3 (PR1-PR9) ficam só em `v3-cursos`. Detalhes e workflow de teste cross-device em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
+- **Migrations V3 nunca aplicadas a `logos-prod` antes de 01-07-2026.** Só `logos-dev`.
 - **Sempre escrever testes** para: visibilidade por etiquetas, lógica de conclusão de curso, controlo de acesso por papel.
 - **Verificar a versão (V1–V9) antes de implementar.** Nada de scope creep entre versões.
 - **PT-PT em toda a UI e copy.** Sem PT-BR. Sem inglês na UI.

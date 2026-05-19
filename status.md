@@ -4,7 +4,19 @@
 > **Última atualização:** 19-05-2026 (V2.5 em hold no preview; V3 arrancou em `v3-cursos`; V3 PR1 Etiquetas concluído localmente; 73/73 testes verdes)
 
 ## 🎯 Milestone atual
-**V3 em desenvolvimento local em `v3-cursos`, V2.5 em hold no preview.** Decisão estratégica (19-05-2026): V2.5 fica em preview até o ministério mandar testemunhos finais + títulos dos cards de `/conteudos`; quando isso chegar, V2.5 é mergeada em `main` e fica live em `logos.cclx.pt`. V3 é desenvolvida só em branch `v3-cursos` + Vercel previews, **nunca toca `main` em parciais** — sobe ao Production num único merge no dia do lançamento (prazo 01-07-2026). Plano completo em `feature-docs/v3-plan.md` (9 PRs). V2 PR4 (Etiquetas) absorvida em V3 PR1.
+**V3 em desenvolvimento local em `v3-cursos`, V2.5 em hold no preview.** Detalhes da estratégia + workflow de teste em outros dispositivos: [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
+
+### Mapa de 3 camadas (19-05-2026 → 01-07-2026)
+
+| Camada | Branch | Onde está visível | Conteúdo |
+|---|---|---|---|
+| **Live** | `main` | `https://logos.cclx.pt/` | V1 shell + V2 auth/roles + hub `/conteudos` |
+| **Stored** | `v2.5-copy-ux` | `https://logos-git-v2.5-copy-ux-jcrninjas-projects.vercel.app/` | `main` + copy do ministério (hero LOGOS, lema, carrossel, /perfil). À espera de testemunhos finais para mergear em `main`. |
+| **Dev** | `v3-cursos` | `https://logos-git-v3-cursos-jcrninjas-projects.vercel.app/` | `v2.5-copy-ux` + V3 PR1 (etiquetas). PR2-PR9 vêm aqui. Mergea em `main` no dia do lançamento. |
+
+Previews Vercel estão atrás de Vercel Authentication — login com a conta `joaocanelasribeiro@gmail.com`. Ambos os previews lêem de `logos-dev` (que já tem schema V3 PR1). Production lê de `logos-prod` (schema V2 puro).
+
+V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3-plan.md` (9 PRs).
 
 **Prazo absoluto V3:** 1 de julho de 2026.
 
