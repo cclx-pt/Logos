@@ -74,3 +74,79 @@ export async function setUserRoleAction(formData: FormData): Promise<SetUserRole
   revalidatePath('/admin/utilizadores');
   return { ok: true };
 }
+
+/**
+ * Atribuição de etiquetas a utilizadores — V3 PR1.
+ *
+ * Defesa em profundidade:
+ *   1. Esta action recusa se o caller não for admin nem super_admin.
+ *   2. RLS em `user_tags` (user_tags_insert_admin/user_tags_delete_admin)
+ *      garante que escritas por outro role nunca tocam dados.
+ *   3. PK composta (user_id, tag_id) torna a atribuição idempotente
+ *      via `upsert` com `ignoreDuplicates: true`.
+ */
+
+export type AssignTagResult = { ok: true } | { ok: false; error: string };
+
+export async function assignTagAction(formData: FormData): Promise<AssignTagResult> {
+  const caller = await getCurrentUser();
+  if (!caller || (caller.role !== 'admin' && caller.role !== 'super_admin')) {
+    return { ok: false, error: 'Apenas admin ou super_admin pode atribuir etiquetas.' };
+  }
+
+  const userId = formData.get('userId');
+  const tagId = formData.get('tagId');
+
+  if (typeof userId !== 'string' || !UUID_RE.test(userId)) {
+    return { ok: false, error: 'userId inválido.' };
+  }
+  if (typeof tagId !== 'string' || !UUID_RE.test(tagId)) {
+    return { ok: false, error: 'tagId inválido.' };
+  }
+
+  const supabase = await getServerClient();
+  const { error } = await supabase
+    .from('user_tags')
+    .upsert(
+      { user_id: userId, tag_id: tagId, assigned_by: caller.id },
+      { onConflict: 'user_id,tag_id', ignoreDuplicates: true },
+    );
+
+  if (error) {
+    return { ok: false, error: `Falha a atribuir etiqueta: ${error.message}` };
+  }
+
+  revalidatePath('/admin/utilizadores');
+  return { ok: true };
+}
+
+export async function unassignTagAction(formData: FormData): Promise<AssignTagResult> {
+  const caller = await getCurrentUser();
+  if (!caller || (caller.role !== 'admin' && caller.role !== 'super_admin')) {
+    return { ok: false, error: 'Apenas admin ou super_admin pode remover etiquetas.' };
+  }
+
+  const userId = formData.get('userId');
+  const tagId = formData.get('tagId');
+
+  if (typeof userId !== 'string' || !UUID_RE.test(userId)) {
+    return { ok: false, error: 'userId inválido.' };
+  }
+  if (typeof tagId !== 'string' || !UUID_RE.test(tagId)) {
+    return { ok: false, error: 'tagId inválido.' };
+  }
+
+  const supabase = await getServerClient();
+  const { error } = await supabase
+    .from('user_tags')
+    .delete()
+    .eq('user_id', userId)
+    .eq('tag_id', tagId);
+
+  if (error) {
+    return { ok: false, error: `Falha a remover etiqueta: ${error.message}` };
+  }
+
+  revalidatePath('/admin/utilizadores');
+  return { ok: true };
+}

@@ -2,14 +2,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import type { Profile } from '@/lib/auth';
 
-const { mockGetCurrentUser, mockMaybeSingle, mockUpdateEq, mockRevalidatePath } = vi.hoisted(
-  () => ({
-    mockGetCurrentUser: vi.fn(),
-    mockMaybeSingle: vi.fn(),
-    mockUpdateEq: vi.fn(),
-    mockRevalidatePath: vi.fn(),
-  }),
-);
+const {
+  mockGetCurrentUser,
+  mockMaybeSingle,
+  mockUpdateEq,
+  mockUpsert,
+  mockDeleteEqEq,
+  mockRevalidatePath,
+} = vi.hoisted(() => ({
+  mockGetCurrentUser: vi.fn(),
+  mockMaybeSingle: vi.fn(),
+  mockUpdateEq: vi.fn(),
+  mockUpsert: vi.fn(),
+  mockDeleteEqEq: vi.fn(),
+  mockRevalidatePath: vi.fn(),
+}));
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: mockGetCurrentUser,
@@ -23,6 +30,12 @@ vi.mock('@/lib/auth', () => ({
       update: vi.fn(() => ({
         eq: mockUpdateEq,
       })),
+      upsert: mockUpsert,
+      delete: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          eq: mockDeleteEqEq,
+        })),
+      })),
     })),
   })),
 }));
@@ -31,7 +44,7 @@ vi.mock('next/cache', () => ({
   revalidatePath: mockRevalidatePath,
 }));
 
-import { setUserRoleAction } from './actions';
+import { assignTagAction, setUserRoleAction, unassignTagAction } from './actions';
 
 function makeProfile(role: Profile['role'], id: string): Profile {
   return {
@@ -145,5 +158,93 @@ describe('setUserRoleAction (V2 PR3)', () => {
       error: expect.stringMatching(/permission denied/i),
     });
     expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+const TAG_ID = '33333333-3333-4333-8333-333333333333';
+
+describe('assignTagAction (V3 PR1)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('recusa quando não há sessão', async () => {
+    mockGetCurrentUser.mockResolvedValue(null);
+    const result = await assignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/admin/i) });
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it('recusa quando caller é user (não admin nem super_admin)', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('user', CALLER_ID));
+    const result = await assignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/admin/i) });
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it('recusa userId inválido', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    const result = await assignTagAction(formDataOf({ userId: 'not-uuid', tagId: TAG_ID }));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/userId/i) });
+  });
+
+  it('recusa tagId inválido', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    const result = await assignTagAction(formDataOf({ userId: TARGET_ID, tagId: 'not-uuid' }));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/tagId/i) });
+  });
+
+  it('upserta idempotentemente quando caller é admin', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockUpsert.mockResolvedValue({ error: null });
+
+    const result = await assignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+
+    expect(result).toEqual({ ok: true });
+    expect(mockUpsert).toHaveBeenCalledWith(
+      { user_id: TARGET_ID, tag_id: TAG_ID, assigned_by: CALLER_ID },
+      { onConflict: 'user_id,tag_id', ignoreDuplicates: true },
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/utilizadores');
+  });
+
+  it('aceita super_admin como caller', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', CALLER_ID));
+    mockUpsert.mockResolvedValue({ error: null });
+    const result = await assignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+    expect(result).toEqual({ ok: true });
+  });
+});
+
+describe('unassignTagAction (V3 PR1)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('recusa quando caller é user', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('user', CALLER_ID));
+    const result = await unassignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/admin/i) });
+    expect(mockDeleteEqEq).not.toHaveBeenCalled();
+  });
+
+  it('apaga a atribuição quando válida', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockDeleteEqEq.mockResolvedValue({ error: null });
+
+    const result = await unassignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+
+    expect(result).toEqual({ ok: true });
+    expect(mockDeleteEqEq).toHaveBeenCalledWith('tag_id', TAG_ID);
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/utilizadores');
+  });
+
+  it('idempotente: não falha se a atribuição não existir (PK composta + RLS)', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockDeleteEqEq.mockResolvedValue({ error: null });
+
+    const result = await unassignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+
+    expect(result).toEqual({ ok: true });
   });
 });

@@ -36,6 +36,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               Utilizadores
             </Link>
           )}
+          {canSeeUsers && (
+            <Link
+              href="/admin/etiquetas"
+              className="text-ink hover:text-orange-hover focus-visible:ring-ring rounded-md px-2 py-1.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            >
+              Etiquetas
+            </Link>
+          )}
         </nav>
       </aside>
       <main className="min-w-0 flex-1">{children}</main>

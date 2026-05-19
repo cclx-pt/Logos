@@ -16,6 +16,27 @@
 
 ---
 
+## [19-05-2026] — V3 PR1: Etiquetas (fundação) — local em `v3-cursos`
+
+Primeira PR de V3, executada localmente. V2.5 fica em hold em preview a aguardar testemunhos do ministério; V3 desenvolve em paralelo em `v3-cursos` sem tocar `main` (V3 sobe ao Production só no merge final, prazo 01-07-2026). Decisão: V2 PR4 (etiquetas planeada em `feature-docs/v2-auth.md` §4) absorvida directamente em V3 PR1, conforme `feature-docs/v3-plan.md` §1.
+
+### add
+- add: migration `supabase/migrations/20260518120000_tags_and_user_tags.sql` aplicada a `logos-dev` via `pnpm dlx supabase db push`. Cria `tags` (id, slug unique kebab-case CHECK 2-64 chars, label 1-80, created_by → profiles `on delete restrict`, created_at) e `user_tags` (PK composta `(user_id, tag_id)`, assigned_by → profiles `on delete restrict`, assigned_at, cascade em user_id/tag_id). Índice em `user_tags(tag_id)` para queries reversas. Helper SQL `current_profile_has_tag(uuid[]) → boolean` STABLE + SECURITY DEFINER (padrão anti-recursão RLS estabelecido em V2). RLS: `tags` SELECT admin/super_admin tudo + user só as próprias (subquery a `user_tags`), escrita só super_admin; `user_tags` SELECT próprias ou admin/super_admin, INSERT/DELETE admin + super_admin (sem UPDATE — atribuição binária).
+- add: `src/app/admin/etiquetas/{page,actions,actions.test}.tsx|ts` — CRUD de etiquetas super_admin-only. Form de criar (label + slug, ambos com regex/length validation matching DB constraints). Edição inline via query param `?editar=<id>`, confirmação de delete via `?apagar=<id>` (server-side puro, sem Client Components novos). Mensagens claras para slug duplicado (Postgres 23505).
+- add: `src/app/admin/utilizadores/actions.ts` — `assignTagAction` + `unassignTagAction` (admin + super_admin). Upsert idempotente com `onConflict: 'user_id,tag_id', ignoreDuplicates: true` para evitar 409 em cliques duplos. Defesas em profundidade: caller role, UUID regex em ambos os IDs, RLS no servidor.
+
+### update
+- update: `src/app/admin/layout.tsx` — adiciona link "Etiquetas" no aside (super_admin only).
+- update: `src/app/admin/utilizadores/page.tsx` — gating relaxa para admin + super_admin (antes era super_admin only). Coluna "Etiquetas" nova com pills das etiquetas atribuídas (botão `×` por pill → unassign) + `<select>` nativo + botão Adicionar para atribuir as ainda não atribuídas. Coluna "Papel" (acção) condicional só para super_admin; admin vê página focada em etiquetas. Cabeçalho cresce com link "Criar uma etiqueta" quando não há etiquetas e o caller é super_admin.
+
+### testing
+- 21 testes novos (52 → 73 a passar): 12 em `etiquetas/actions.test.ts` (create/update/delete com defesas + slug regex + label vazia + dup 23505), 8 em `utilizadores/actions.test.ts` (assign/unassign com defesas + idempotência), 1 ajuste em `admin/layout.test.tsx` (novo link "Etiquetas" aparece a super_admin, ausente a admin).
+
+### docs
+- docs (a fazer): `status.md` move V3 PR1 para concluído e regista a estratégia "V3 só sobe ao Production no fim".
+
+---
+
 ## [18-05-2026] — V2.5: rebase + fix do 404 + branch de preview
 
 Ronda V2.x (PR-A a PR-F) re-aplicada em cima de `main` após terem aterrado PR #27 (V2 PR3 roles UI), PR #32 (Cursos→Conteúdos hub) e PR #33 (copy do ministério). Conflitos resolvidos a favor do trabalho V2.x: `/conteudos` volta a ser página flat (intro justificada + bloco "Em breve" único), os sub-routes `/conteudos/cursos` e `/conteudos/escola-biblica` do hub anterior são eliminados. Branch `v2.5-copy-ux` pushed para preview-only — **não merge em `main`** enquanto os testemunhos forem placeholder.
