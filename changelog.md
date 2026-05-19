@@ -16,6 +16,28 @@
 
 ---
 
+## [19-05-2026] — Admin UX: secções colapsáveis + reorder optimistic — local em `v3-cursos`
+
+Continuação da iteração de UX admin. Páginas `/admin/conteudos/[courseId]` e `[courseId]/[moduleId]` estavam a empilhar 3–5 blocos densos (Módulos, Detalhes, Zona de perigo / Nova aula, Aulas existentes), forçando scroll longo. Reordenar módulos/aulas com ↑↓ implicava `revalidatePath` + full reload — perceptível em listas grandes. Sem migrations, sem mudanças funcionais — só extracção de componentes UI + `useOptimistic` nas listas.
+
+### add
+- add: `src/components/ui/collapsible-section.tsx` — wrapper genérico `<details>` + `<summary>` com chevron rotativo (`group-open:rotate-180`), título `font-display` (h2), subtítulo opcional, `variant="default" | "danger"`, `defaultOpen` controlável. Zero JS no cliente — o browser cuida do toggle; leitores de ecrã têm suporte nativo a `<details>`. Persistência não — o estado vive na DOM e reseta em navegação (aceitável dado ≤ 5 secções por página).
+- add: `src/app/admin/conteudos/module-list.tsx` — Client Component que renderiza a lista de módulos com **optimistic reorder** via `useOptimistic`. Clicar ↑/↓ aplica o swap imediato na UI; `startTransition` dispara `moveModuleUpAction` / `moveModuleDownAction` em paralelo. Quando o server confirma e `revalidatePath` corre, `initial` muda e o estado optimistic reseta. Modos edit/delete continuam URL-driven (`?editar=`, `?apagar=`) — o pai pré-renderiza `editingNode` / `deletingNode` (JSX com Server Actions inline) e passa-os via props (funções não passam para Client Components, JSX pré-renderizado passa).
+- add: `src/app/admin/conteudos/lesson-list.tsx` — mesmo padrão de `ModuleList` para aulas, com pill do template (só pdf / vídeo + pdf) e link YouTube quando `template === 'video_pdf'`.
+
+### update
+- update: `[courseId]/page.tsx` refactor — `Módulos`, `Detalhes do curso`, `Zona de perigo` passam a viver dentro de `<CollapsibleSection>`. Detalhes e Zona de perigo arrancam fechados (`defaultOpen={false}`). 459 → menos linhas (a lógica de ordenar/editar/apagar saiu da página para `ModuleList`).
+- update: `[courseId]/[moduleId]/page.tsx` refactor — `Nova aula` e `Aulas existentes` passam a viver dentro de `<CollapsibleSection>`. Lista de aulas movida para `LessonList`. 485 → menos linhas.
+
+### test
+- 24 testes novos: 6 em `collapsible-section.test.tsx` (heading, subtítulo, defaultOpen, variant danger, id-heading), 8 em `module-list.test.tsx` (render: placeholder vazio, numeração 1-based, editingNode, deletingNode; reorder: ↑ no primeiro disabled, ↓ no último disabled, ↑ chama action com FormData, ↓ chama action), 10 em `lesson-list.test.tsx` (mesmo do ModuleList + pill do template + link YouTube).
+- 202/202 testes verdes (178 → 202, +24 nesta iteração).
+
+### docs
+- update: `status.md` regista a iteração; `changelog.md` ganha esta entrada.
+
+---
+
 ## [19-05-2026] — A11y WCAG AA + loading states — local em `v3-cursos`
 
 Resposta a issues de axe DevTools (contraste insuficiente em `orange-primary`, falha de "Label in Name" no `UserMenu`) + pedido de skeletons/spinners/progress bars. Sem migrations, sem mudanças funcionais — só tokens visuais + novos componentes UI.
