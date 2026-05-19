@@ -16,6 +16,31 @@
 
 ---
 
+## [19-05-2026] — V3 PR3: Admin CRUD de Cursos — local em `v3-cursos`
+
+Terceira PR de V3. Primeira UI por cima do schema da PR2: a área admin ganha o painel `/admin/cursos` para criar, editar e apagar cursos. Aplicada apenas a `logos-dev` (sem migrations novas — só UI). Continua sem mergear em `main` conforme estratégia de 3 camadas.
+
+### add
+- add: `/admin/cursos` listagem (admin + super_admin) com estado Publicado/Rascunho, etiquetas necessárias resolvidas para labels, botão "Novo curso".
+- add: `/admin/cursos/novo` form de criação (server component) com `title`, `slug` (kebab-case regex), `description` (textarea texto puro), `icon` (Lucide name livre, opcional), `required_tags` (checkboxes alimentados por `tags` da PR1), toggle "Publicado". Após sucesso faz `redirect` para `/admin/cursos/<id>` para o utilizador continuar a editar.
+- add: `/admin/cursos/[id]` form de edição com o mesmo `CourseForm` partilhado. UUID inválido ou curso inexistente → `notFound()`.
+- add: Zona de perigo na página de edição com hard delete confirmado via `?confirmar=apagar` (mesmo padrão server-side de `/admin/etiquetas`, sem Client Components). Apagar usa o CASCADE da FK em modules/lessons/completions.
+- add: Server Actions `createCourseAction`/`updateCourseAction`/`deleteCourseAction` em `src/app/admin/cursos/actions.ts` com validação inline (slug regex 2-80, title 1-120, description ≤ 4000, icon ≤ 64, required_tags UUID-checked, dedup), defesa de role admin+super_admin, mensagem clara para slug duplicado (Postgres 23505). Sem Zod — manter convenção das actions existentes.
+- add: regra `published_at` "primeira publicação preservada" — toggle off ⇒ NULL; toggle on com `published_at` actual ⇒ mantém data; toggle on com NULL anterior ⇒ `now()`. Decisão para minimizar churn da data publicada em re-edições.
+- add: link "Cursos" na navegação admin (`src/app/admin/layout.tsx`) visível a admin **e** super_admin (diferente de Etiquetas/Utilizadores que ficam só super_admin).
+- add: `src/app/admin/cursos/course-form.tsx` (server component) partilhado entre create/edit para reduzir duplicação.
+
+### test
+- add: `src/app/admin/cursos/actions.test.ts` com 13 testes — 7 para `createCourseAction` (sessão, role, slug regex, título vazio, required_tags UUID, rascunho vs publicado, slug duplicado 23505), 5 para `updateCourseAction` (role, id inválido, preservação de `published_at`, despublicar, primeira publicação, curso inexistente), 1 para `deleteCourseAction`.
+- update: `src/app/admin/layout.test.tsx` ajustado para verificar que `role=admin` vê link Cursos mas não vê Utilizadores/Etiquetas.
+- 89/89 testes verdes (73 → 89, +16 incluindo 13 novos em cursos + 3 ajustes no layout).
+
+### docs
+- update: `status.md` move "V3 PR3" de "Em progresso" para "Concluído"; aponta "V3 PR4" como próxima.
+- update: `feature-docs/v3-plan.md` tabela e §3 ticadas para PR3.
+
+---
+
 ## [19-05-2026] — V3 PR2: Schema base + storage (cursos, módulos, aulas, conclusões, bucket lesson-pdfs) — local em `v3-cursos`
 
 Segunda PR de V3, puramente SQL/infra (sem UI; ship-able sozinha sem mudar nada visível). PRs 3-7 vão construir UI por cima deste schema. Aplicada apenas a `logos-dev`; `logos-prod` continua schema V2 conforme estratégia de 3 camadas (`feature-docs/branch-strategy.md`).

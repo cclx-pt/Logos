@@ -3,7 +3,7 @@
 > **Branch:** `v3-cursos` (base: `v2.5-copy-ux`, próxima base: `main` quando V2.5 mergear).
 > **Prazo absoluto:** 01-07-2026 (ver `SPEC_1.md` §1, §9).
 > **Fonte:** `SPEC_1.md` §9 (V3), `architecture.md` §2 (modelo de dados), §5 (visibilidade), §6 (conclusão), §7 (storage).
-> **Estado:** PR1 + PR2 concluídas em 19-05-2026 (commits `3afb750`, `502f139`). 7 PRs restantes. Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
+> **Estado:** PR1 + PR2 + PR3 concluídas em 19-05-2026 (commits `3afb750`, `502f139`, PR3 pending commit). 6 PRs restantes. Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
 
 ## 0. Resumo
 
@@ -17,7 +17,7 @@ Trabalhamos em 9 PRs pequenas e sequenciais, cada uma ship-able sozinha (testes 
 |---|---|---|---|---|
 | 1 | V3 PR1 | Etiquetas (DB + admin CRUD + assign a utilizadores) | ✅ 19-05-2026 | tudo o resto |
 | 2 | V3 PR2 | Schema cursos/módulos/aulas + Storage `lesson-pdfs` + RLS | ✅ 19-05-2026 | PR3-7 |
-| 3 | V3 PR3 | Admin: CRUD de Cursos (com `required_tags`) | ⏳ próximo | PR4 |
+| 3 | V3 PR3 | Admin: CRUD de Cursos (com `required_tags`) | ✅ 19-05-2026 | PR4 |
 | 4 | V3 PR4 | Admin: CRUD de Módulos + Aulas (PDF upload, YouTube URL) | ⏳ | PR5 |
 | 5 | V3 PR5 | Catálogo público em `/conteudos` (substitui o "Em breve") | ⏳ | PR6 |
 | 6 | V3 PR6 | Página de curso + página de aula (YouTube + PDF + nav) | ⏳ | PR7 |
@@ -75,13 +75,29 @@ PRs 1-7 são *gates* para o prazo: sem elas, V3 não existe. PRs 8-9 são *polis
 
 ---
 
-## 3. V3 PR3 — Admin CRUD de Cursos
+## 3. V3 PR3 — Admin CRUD de Cursos ✅ 19-05-2026
 
-- `/admin/cursos` listagem com botão "Novo curso".
-- `/admin/cursos/[id]` create/edit form: title, slug (auto + editável), description (markdown simples? não — texto puro V3), icon (lucide icon name ou file upload? V3 = texto livre que mapeia para Lucide; UI manual sem ícones em V4 se necessário), `required_tags` (multi-select alimentado por `tags`), `published_at` (toggle "Publicar"/"Despublicar").
-- Server Actions com Zod validation.
-- Delete = soft delete (`deleted_at` coluna) **ou** hard delete com confirmação? Decisão: hard delete (V3 não tem auditoria); admin avisado com `<AlertDialog>`.
-- 6-10 testes (action defesas, redirect quando user/admin sem permissão).
+**Concluída em** `v3-cursos` (sem migrations novas — só UI por cima do schema da PR2).
+
+### Entregue
+- `/admin/cursos` listagem (admin + super_admin) com colunas Título / Slug / Estado (Publicado vs Rascunho) / Etiquetas resolvidas para labels / Criado em / Editar.
+- `/admin/cursos/novo` form server-side: title, slug (kebab-case regex), description (textarea texto puro, ≤ 4000), icon (Lucide name livre, opcional ≤ 64), `required_tags` via checkboxes alimentados pelas tags da PR1, toggle "Publicado". Redirect para `/admin/cursos/<id>` após sucesso.
+- `/admin/cursos/[id]` partilha o mesmo `course-form.tsx` server component. UUID inválido ou curso inexistente → `notFound()`.
+- "Zona de perigo" na página de edição: hard delete confirmado via `?confirmar=apagar` URL param — mesmo padrão server-side de `/admin/etiquetas`, sem Client Components ou shadcn AlertDialog. Hard delete usa CASCADE da FK em modules/lessons/completions.
+- Server Actions `createCourseAction` / `updateCourseAction` / `deleteCourseAction` em `src/app/admin/cursos/actions.ts` com validação inline (sem Zod — convenção do codebase): slug 2-80 regex, title 1-120, description ≤ 4000, icon ≤ 64, required_tags UUID-checked + dedup; defesa de role admin+super_admin; mensagem clara para slug duplicado (Postgres 23505); `created_by = caller.id` no insert.
+- Regra `published_at` "primeira publicação preservada": toggle off ⇒ NULL; toggle on com `published_at` actual ⇒ mantém data; toggle on com NULL anterior ⇒ `now()`. Minimiza churn da data publicada em re-edições.
+- Link "Cursos" na navegação do `AdminLayout` agora visível a admin **e** super_admin (Etiquetas/Utilizadores continuam super_admin only).
+- 13 testes em `cursos/actions.test.ts` + 3 ajustes em `layout.test.tsx`. 89/89 verdes.
+
+### Não-âmbito (passa para PRs seguintes)
+- Módulos/aulas dentro do curso — V3 PR4.
+- Catálogo público que mostra estes cursos a utilizadores — V3 PR5.
+- Página de curso/aula com vídeo + PDF — V3 PR6.
+
+### Decisões fechadas durante a PR
+- **Sem Zod.** O codebase usa validadores inline em `etiquetas/actions.ts` e `utilizadores/actions.ts`; manter consistência supera o ganho marginal de adicionar `zod`.
+- **AlertDialog ⇒ confirmação server-side via URL param.** O padrão de `/admin/etiquetas` (`?apagar=<id>`) já estava estabelecido; reusar evita um Client Component só para confirmar um delete.
+- **`required_tags` como checkboxes em `<fieldset>`** em vez de `<select multiple>` — melhor acessibilidade, mantém server-side, lê via `formData.getAll('required_tags')`.
 
 ---
 

@@ -14,6 +14,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   const canSeeUsers = user.role === 'super_admin';
+  const canSeeCourses = user.role === 'admin' || user.role === 'super_admin';
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 gap-8 px-4 py-10 sm:px-6 lg:px-8">
@@ -28,6 +29,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           >
             Painel
           </Link>
+          {canSeeCourses && (
+            <Link
+              href="/admin/cursos"
+              className="text-ink hover:text-orange-hover focus-visible:ring-ring rounded-md px-2 py-1.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            >
+              Cursos
+            </Link>
+          )}
           {canSeeUsers && (
             <Link
               href="/admin/utilizadores"
