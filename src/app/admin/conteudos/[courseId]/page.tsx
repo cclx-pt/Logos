@@ -49,7 +49,7 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
       .maybeSingle<CourseFormInitialData>(),
     supabase
       .from('tags')
-      .select('id, slug, label')
+      .select('id, label')
       .order('label', { ascending: true })
       .returns<TagOption[]>(),
     supabase

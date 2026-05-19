@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { IconPicker } from './icon-picker';
 
-export type TagOption = { id: string; slug: string; label: string };
+export type TagOption = { id: string; label: string };
 
 export type CourseFormInitialData = {
   id: string;
@@ -109,7 +109,6 @@ export function CourseForm({ mode, tags, course, action }: CourseFormProps) {
                     className="text-orange-primary focus-visible:ring-ring rounded focus-visible:ring-2 focus-visible:outline-none"
                   />
                   <span>{tag.label}</span>
-                  <code className="text-muted-foreground text-[10px]">{tag.slug}</code>
                 </label>
               ))}
             </div>

@@ -59,7 +59,7 @@ lessons
  ├─ required_tags[] (V4)
 tags
  ├─ id (uuid, PK)
- ├─ slug (unique), label
+ ├─ label
  ├─ created_by (FK → profiles)
 user_tags
  ├─ user_id (FK → profiles)

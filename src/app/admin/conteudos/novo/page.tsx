@@ -18,7 +18,7 @@ export default async function NovoCursoPage() {
   const supabase = await getServerClient();
   const { data: tagsData, error: tagsError } = await supabase
     .from('tags')
-    .select('id, slug, label')
+    .select('id, label')
     .order('label', { ascending: true })
     .returns<TagOption[]>();
 

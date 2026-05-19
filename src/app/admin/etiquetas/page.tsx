@@ -11,7 +11,6 @@ export const metadata = {
 
 type TagRow = {
   id: string;
-  slug: string;
   label: string;
   created_at: string;
 };
@@ -39,7 +38,7 @@ export default async function EtiquetasPage({ searchParams }: PageProps) {
   const supabase = await getServerClient();
   const { data, error } = await supabase
     .from('tags')
-    .select('id, slug, label, created_at')
+    .select('id, label, created_at')
     .order('label', { ascending: true })
     .returns<TagRow[]>();
 
@@ -78,10 +77,10 @@ export default async function EtiquetasPage({ searchParams }: PageProps) {
             'use server';
             await createTagAction(formData);
           }}
-          className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+          className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end"
         >
           <label className="block">
-            <span className="text-muted-foreground text-xs font-medium">Nome visível</span>
+            <span className="text-muted-foreground text-xs font-medium">Nome</span>
             <input
               type="text"
               name="label"
@@ -89,21 +88,6 @@ export default async function EtiquetasPage({ searchParams }: PageProps) {
               minLength={1}
               maxLength={80}
               placeholder="Ex.: Mentoria CCLX"
-              className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-            />
-          </label>
-          <label className="block">
-            <span className="text-muted-foreground text-xs font-medium">
-              Slug (kebab-case, estável)
-            </span>
-            <input
-              type="text"
-              name="slug"
-              required
-              pattern="[a-z0-9]+(-[a-z0-9]+)*"
-              minLength={2}
-              maxLength={64}
-              placeholder="ex.: mentoria-cclx"
               className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
             />
           </label>
@@ -131,9 +115,6 @@ export default async function EtiquetasPage({ searchParams }: PageProps) {
                     Nome
                   </th>
                   <th scope="col" className="px-4 py-2 font-medium">
-                    Slug
-                  </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
                     Criada em
                   </th>
                   <th scope="col" className="px-4 py-2 text-right font-medium">
@@ -149,13 +130,13 @@ export default async function EtiquetasPage({ searchParams }: PageProps) {
                   if (isEditing) {
                     return (
                       <tr key={tag.id} className="bg-muted/20">
-                        <td colSpan={4} className="px-4 py-3">
+                        <td colSpan={3} className="px-4 py-3">
                           <form
                             action={async (formData: FormData) => {
                               'use server';
                               await updateTagAction(formData);
                             }}
-                            className="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end"
+                            className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end"
                           >
                             <input type="hidden" name="id" value={tag.id} />
                             <label className="block">
@@ -169,21 +150,6 @@ export default async function EtiquetasPage({ searchParams }: PageProps) {
                                 defaultValue={tag.label}
                                 minLength={1}
                                 maxLength={80}
-                                className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-                              />
-                            </label>
-                            <label className="block">
-                              <span className="text-muted-foreground text-xs font-medium">
-                                Slug
-                              </span>
-                              <input
-                                type="text"
-                                name="slug"
-                                required
-                                defaultValue={tag.slug}
-                                pattern="[a-z0-9]+(-[a-z0-9]+)*"
-                                minLength={2}
-                                maxLength={64}
                                 className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
                               />
                             </label>
@@ -206,13 +172,12 @@ export default async function EtiquetasPage({ searchParams }: PageProps) {
                         key={tag.id}
                         className="border-l-destructive bg-destructive/10 border-l-4"
                       >
-                        <td colSpan={4} className="px-4 py-3">
+                        <td colSpan={3} className="px-4 py-3">
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <p className="text-ink text-sm">
                               Apagar a etiqueta{' '}
-                              <strong className="font-semibold">{tag.label}</strong> (
-                              <code className="text-xs">{tag.slug}</code>)? Esta ação remove-a de
-                              todos os utilizadores e não pode ser revertida.
+                              <strong className="font-semibold">{tag.label}</strong>? Esta ação
+                              remove-a de todos os utilizadores e não pode ser revertida.
                             </p>
                             <div className="flex gap-2">
                               <form
@@ -245,9 +210,6 @@ export default async function EtiquetasPage({ searchParams }: PageProps) {
                   return (
                     <tr key={tag.id} className="text-ink">
                       <td className="px-4 py-3 font-medium">{tag.label}</td>
-                      <td className="px-4 py-3">
-                        <code className="text-muted-foreground text-xs">{tag.slug}</code>
-                      </td>
                       <td className="px-4 py-3 text-sm">{formatDate(tag.created_at)}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex justify-end gap-3">

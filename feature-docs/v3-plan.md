@@ -36,7 +36,7 @@ PRs 1-7 são *gates* para o prazo: sem elas, V3 não existe. PRs 8-9 são *polis
 **Concluída em** commit `3afb750`. Migration `20260518120000_tags_and_user_tags.sql` em `logos-dev`. Absorveu o trabalho de `feature-docs/v2-auth.md` §4 (V2 PR4).
 
 ### Entregue
-- DB: `tags` (slug unique CHECK 2-64 kebab-case, label 1-80, created_by → profiles restrict), `user_tags` (PK composta, assigned_by, cascade em user_id/tag_id), helper `current_profile_has_tag(uuid[])` STABLE + SECURITY DEFINER (usado em PR2).
+- DB: `tags` (label 1-80, created_by → profiles restrict — slug retirado em 20-05-2026 via migration `20260520120000_drop_tags_slug.sql`; identificação interna por uuid), `user_tags` (PK composta, assigned_by, cascade em user_id/tag_id), helper `current_profile_has_tag(uuid[])` STABLE + SECURITY DEFINER (usado em PR2).
 - RLS: super_admin escreve em `tags`; admin+super_admin escrevem em `user_tags`. User vê apenas as suas etiquetas (mantém invisibilidade de tags que não possui).
 - UI: `/admin/etiquetas` super_admin-only (create + edit `?editar=<id>` + delete `?apagar=<id>`, server-side puro). `/admin/utilizadores` relaxa para admin+super_admin com coluna de pills + select nativo para assign/unassign.
 - Server Actions: `createTagAction`/`updateTagAction`/`deleteTagAction` (super_admin); `assignTagAction`/`unassignTagAction` (admin+super_admin, upsert idempotente).

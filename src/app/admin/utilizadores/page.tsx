@@ -19,7 +19,6 @@ type ProfileRow = {
 
 type TagRow = {
   id: string;
-  slug: string;
   label: string;
 };
 
@@ -65,7 +64,7 @@ export default async function UtilizadoresPage() {
       .returns<ProfileRow[]>(),
     supabase
       .from('tags')
-      .select('id, slug, label')
+      .select('id, label')
       .order('label', { ascending: true })
       .returns<TagRow[]>(),
     supabase.from('user_tags').select('user_id, tag_id').returns<UserTagRow[]>(),

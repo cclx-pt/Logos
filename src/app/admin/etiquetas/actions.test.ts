@@ -54,36 +54,27 @@ describe('createTagAction (V3 PR1)', () => {
 
   it('recusa quando não há sessão', async () => {
     mockGetCurrentUser.mockResolvedValue(null);
-    const result = await createTagAction(formDataOf({ slug: 'mentoria', label: 'Mentoria CCLX' }));
+    const result = await createTagAction(formDataOf({ label: 'Mentoria CCLX' }));
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/super_admin/i) });
     expect(mockInsert).not.toHaveBeenCalled();
   });
 
   it('recusa quando caller é admin (não super_admin)', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', SUPER_ID));
-    const result = await createTagAction(formDataOf({ slug: 'mentoria', label: 'Mentoria' }));
+    const result = await createTagAction(formDataOf({ label: 'Mentoria' }));
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/super_admin/i) });
     expect(mockInsert).not.toHaveBeenCalled();
   });
 
-  it('recusa slug com caracteres inválidos', async () => {
-    mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', SUPER_ID));
-    const result = await createTagAction(
-      formDataOf({ slug: 'Mentoria CCLX', label: 'Mentoria CCLX' }),
-    );
-    expect(result).toEqual({ ok: false, error: expect.stringMatching(/slug/i) });
-    expect(mockInsert).not.toHaveBeenCalled();
-  });
-
-  it('recusa slug demasiado curto', async () => {
-    mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', SUPER_ID));
-    const result = await createTagAction(formDataOf({ slug: 'x', label: 'Curta' }));
-    expect(result).toEqual({ ok: false, error: expect.stringMatching(/slug/i) });
-  });
-
   it('recusa label vazia', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', SUPER_ID));
-    const result = await createTagAction(formDataOf({ slug: 'mentoria', label: '   ' }));
+    const result = await createTagAction(formDataOf({ label: '   ' }));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/nome/i) });
+  });
+
+  it('recusa label demasiado longa', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', SUPER_ID));
+    const result = await createTagAction(formDataOf({ label: 'x'.repeat(81) }));
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/nome/i) });
   });
 
@@ -91,28 +82,35 @@ describe('createTagAction (V3 PR1)', () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', SUPER_ID));
     mockInsert.mockResolvedValue({ error: null });
 
-    const result = await createTagAction(
-      formDataOf({ slug: 'mentoria-cclx', label: 'Mentoria CCLX' }),
-    );
+    const result = await createTagAction(formDataOf({ label: 'Mentoria CCLX' }));
 
     expect(result).toEqual({ ok: true });
     expect(mockInsert).toHaveBeenCalledWith({
-      slug: 'mentoria-cclx',
       label: 'Mentoria CCLX',
       created_by: SUPER_ID,
     });
     expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/etiquetas');
   });
 
-  it('reporta slug duplicado (Postgres 23505) com mensagem clara', async () => {
+  it('faz trim ao label antes de gravar', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', SUPER_ID));
-    mockInsert.mockResolvedValue({ error: { code: '23505', message: 'duplicate key' } });
+    mockInsert.mockResolvedValue({ error: null });
 
-    const result = await createTagAction(
-      formDataOf({ slug: 'mentoria-cclx', label: 'Mentoria CCLX' }),
-    );
+    await createTagAction(formDataOf({ label: '  Mentoria CCLX  ' }));
 
-    expect(result).toEqual({ ok: false, error: expect.stringMatching(/já existe/i) });
+    expect(mockInsert).toHaveBeenCalledWith({
+      label: 'Mentoria CCLX',
+      created_by: SUPER_ID,
+    });
+  });
+
+  it('propaga erro de DB ao insert', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', SUPER_ID));
+    mockInsert.mockResolvedValue({ error: { code: 'XX000', message: 'algo correu mal' } });
+
+    const result = await createTagAction(formDataOf({ label: 'Mentoria' }));
+
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/algo correu mal/i) });
     expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });
@@ -124,16 +122,14 @@ describe('updateTagAction (V3 PR1)', () => {
 
   it('recusa quando caller é user', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('user', SUPER_ID));
-    const result = await updateTagAction(formDataOf({ id: TAG_ID, slug: 'novo', label: 'Novo' }));
+    const result = await updateTagAction(formDataOf({ id: TAG_ID, label: 'Novo' }));
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/super_admin/i) });
     expect(mockUpdateEq).not.toHaveBeenCalled();
   });
 
   it('recusa quando id não é UUID', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', SUPER_ID));
-    const result = await updateTagAction(
-      formDataOf({ id: 'not-uuid', slug: 'novo', label: 'Novo' }),
-    );
+    const result = await updateTagAction(formDataOf({ id: 'not-uuid', label: 'Novo' }));
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/id/i) });
   });
 
@@ -141,9 +137,7 @@ describe('updateTagAction (V3 PR1)', () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', SUPER_ID));
     mockUpdateEq.mockResolvedValue({ error: null });
 
-    const result = await updateTagAction(
-      formDataOf({ id: TAG_ID, slug: 'mentoria-2026', label: 'Mentoria 2026' }),
-    );
+    const result = await updateTagAction(formDataOf({ id: TAG_ID, label: 'Mentoria 2026' }));
 
     expect(result).toEqual({ ok: true });
     expect(mockUpdateEq).toHaveBeenCalledWith('id', TAG_ID);

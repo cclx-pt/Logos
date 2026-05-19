@@ -16,6 +16,29 @@
 
 ---
 
+## [20-05-2026] — Remove `tags.slug` — local em `v3-cursos`
+
+Decisão do user: tags nunca aparecem em URLs públicas (são referenciadas por UUID internamente). Manter um slug kebab-case estável era fricção desnecessária no fluxo "criar etiqueta". `courses.slug` fica — esse vai ser usado em `/conteudos/[curso-slug]`.
+
+### remove
+- remove (DB): coluna `tags.slug` (incluindo UNIQUE constraint implícito e CHECK do regex/length). Migration `20260520120000_drop_tags_slug.sql` aplicada a `logos-dev`. RLS, função `current_profile_has_tag(uuid[])` e `user_tags` ficam intactos — não dependiam de `slug`.
+- remove (Server Action): `validateSlug`, `SLUG_RE`, `SLUG_MIN`, `SLUG_MAX` em `etiquetas/actions.ts`. `createTagAction` / `updateTagAction` deixam de aceitar/inserir slug.
+- remove (UI): input "Slug (kebab-case, estável)" do form Nova etiqueta + da row de edição. Coluna "Slug" da tabela. `<code>{tag.slug}</code>` em `CourseForm` ao lado da label da etiqueta no fieldset de `required_tags`.
+- remove (queries): `id, slug, label` passa a `id, label` em 4 selects (`etiquetas/page.tsx`, `utilizadores/page.tsx`, `conteudos/novo/page.tsx`, `conteudos/[courseId]/page.tsx`).
+
+### update
+- update: copy do form Nova etiqueta — "Nome visível" passa a só "Nome" (uma palavra chega quando não há slug). Grid `1fr_1fr_auto` → `1fr_auto`.
+- update: confirm delete de etiqueta deixa de mostrar `(slug)` ao lado da label.
+- update: `architecture.md` §3 (tabela `tags` sem `slug`); `feature-docs/v3-plan.md` §1 reflecte a remoção.
+
+### test
+- update: `etiquetas/actions.test.ts` — testes que validavam slug (caracteres inválidos, demasiado curto, duplicado 23505) removidos. Novos: "recusa label demasiado longa", "faz trim ao label antes de gravar", "propaga erro de DB ao insert". Net 204/204 (sem mudança de cobertura final).
+
+### docs
+- update: `status.md` regista a remoção; `changelog.md` ganha esta entrada.
+
+---
+
 ## [19-05-2026] — Remove CoursesColumn (bloco lateral redundante) — local em `v3-cursos`
 
 Pedido directo do user antes de avançar para Fase C: o bloco lateral "Cursos" no painel `/admin/conteudos/*` era redundante com a `CourseTree` (que mostra a árvore do curso actual) e com o item "Conteúdos" da sidebar admin. Sem migrations, mudança puramente cosmética + simplificação de layout.
