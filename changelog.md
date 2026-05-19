@@ -16,6 +16,35 @@
 
 ---
 
+## [19-05-2026] — V3 PR2: Schema base + storage (cursos, módulos, aulas, conclusões, bucket lesson-pdfs) — local em `v3-cursos`
+
+Segunda PR de V3, puramente SQL/infra (sem UI; ship-able sozinha sem mudar nada visível). PRs 3-7 vão construir UI por cima deste schema. Aplicada apenas a `logos-dev`; `logos-prod` continua schema V2 conforme estratégia de 3 camadas (`feature-docs/branch-strategy.md`).
+
+### add
+- add: migration `supabase/migrations/20260519020000_v3_courses_schema_and_storage.sql` aplicada a `logos-dev`.
+  - **Helper** `set_updated_at()` trigger function genérica para gerir `updated_at`.
+  - **`courses`**: id, slug unique (kebab-case CHECK 2-80), title (1-120), description, icon (nome Lucide ou texto livre), `required_tags uuid[] default '{}'`, `published_at` nullable (NULL = draft), created_by → profiles restrict, updated_at via trigger. Índice parcial `courses_published_at_idx` em published_at IS NOT NULL para catálogo público rápido.
+  - **`modules`**: course_id CASCADE, position int >= 0, title, description, updated_at via trigger. Índice composto `(course_id, position)`.
+  - **`lessons`**: module_id CASCADE, position, title, description, template CHECK in ('pdf','video_pdf'), youtube_url nullable, pdf_storage_path **not** nullable (V3 exige apostila), CHECK `video_pdf → youtube_url IS NOT NULL`. Índice composto `(module_id, position)`.
+  - **`lesson_completions`**: PK composta (user_id, lesson_id), CASCADE em ambos. Idempotente por design.
+  - **`course_completions`**: PK composta (user_id, course_id), CASCADE. Imutável (sem policy UPDATE/DELETE).
+  - **`course_access_log`**: id uuid, user/course CASCADE, accessed_at — sem unique. Índices em course_id e accessed_at desc para stats em PR8.
+  - **Helper** `course_is_visible(courses) → boolean` STABLE + SECURITY DEFINER unifica a regra de visibilidade: admin/super_admin tudo; user só published_at NOT NULL E (required_tags vazio OR overlap via `current_profile_has_tag`). Reutilizado nas policies de courses, modules e lessons.
+  - **RLS** activa em todas as 6 tabelas:
+    - `courses`/`modules`/`lessons` SELECT via `course_is_visible`; INSERT/UPDATE/DELETE admin+super_admin.
+    - `lesson_completions` SELECT próprias ou admin/super_admin; INSERT/DELETE só o próprio (conclusão é acto pessoal — admin não marca por outros).
+    - `course_completions` SELECT próprias ou admin/super_admin; INSERT só o próprio; sem UPDATE/DELETE (imutável).
+    - `course_access_log` SELECT só admin/super_admin (auditoria); INSERT só o próprio.
+  - **Storage**: bucket `lesson-pdfs` privado (public=false), `file_size_limit` 20 MB, `allowed_mime_types: ['application/pdf']`. Policies em `storage.objects`: SELECT authenticated qualquer profile (acesso fino fica na Server Action de PR6 que verifica `course_is_visible` antes de `createSignedUrl`); INSERT/UPDATE/DELETE admin+super_admin.
+
+### testing
+- Suite continua 73/73 (esperado — sem código novo). RLS validada manualmente em PR3-PR7 quando a UI existir.
+
+### docs
+- docs: `status.md` move V3 PR2 para concluído; muda "Em progresso" para PR3.
+
+---
+
 ## [19-05-2026] — V3 PR1: Etiquetas (fundação) — local em `v3-cursos`
 
 Primeira PR de V3, executada localmente. V2.5 fica em hold em preview a aguardar testemunhos do ministério; V3 desenvolve em paralelo em `v3-cursos` sem tocar `main` (V3 sobe ao Production só no merge final, prazo 01-07-2026). Decisão: V2 PR4 (etiquetas planeada em `feature-docs/v2-auth.md` §4) absorvida directamente em V3 PR1, conforme `feature-docs/v3-plan.md` §1.
