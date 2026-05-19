@@ -2,8 +2,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * Skeleton da página de detalhe do curso (drill-down). Mantém o esqueleto
- * de 3 colunas (conteúdo + Cursos + Estrutura) para minimizar layout shift
- * quando a página real chega.
+ * de 2 colunas (conteúdo + Estrutura) para minimizar layout shift quando a
+ * página real chega.
  */
 export default function Loading() {
   return (
@@ -45,9 +45,6 @@ export default function Loading() {
         </section>
       </div>
 
-      <aside className="hidden w-56 shrink-0 md:block">
-        <Skeleton className="border-border h-72 w-full rounded-lg border" />
-      </aside>
       <aside className="hidden w-60 shrink-0 xl:block">
         <Skeleton className="border-border h-96 w-full rounded-lg border" />
       </aside>

@@ -16,6 +16,27 @@
 
 ---
 
+## [19-05-2026] — Remove CoursesColumn (bloco lateral redundante) — local em `v3-cursos`
+
+Pedido directo do user antes de avançar para Fase C: o bloco lateral "Cursos" no painel `/admin/conteudos/*` era redundante com a `CourseTree` (que mostra a árvore do curso actual) e com o item "Conteúdos" da sidebar admin. Sem migrations, mudança puramente cosmética + simplificação de layout.
+
+### remove
+- remove: componente `CoursesColumn` em `src/app/admin/conteudos/courses-column.tsx` (linhas ~14-78). Ficheiro renomeado para `conteudos-breadcrumb.tsx` — só fica lá o `ConteudosBreadcrumb` mobile-only que ainda é usado.
+- remove: `<CoursesColumn />` das 3 páginas (`/novo`, `/[courseId]`, `/[courseId]/[moduleId]`). O esqueleto correspondente nos 3 `loading.tsx` também sai.
+- update: `course-tree.tsx` comentário deixa de mencionar "à direita da CoursesColumn".
+
+### update
+- update: `/admin/conteudos/novo/page.tsx` deixa de precisar de wrapper `<div className="flex gap-6">` — não há 2ª coluna ali.
+- update: `[courseId]/page.tsx` e `[courseId]/[moduleId]/page.tsx` mantêm o wrapper flex porque a `CourseTree` (xl+) ainda vive lá.
+
+### test
+- 204/204 verdes (sem mudança de cobertura — não havia testes do `CoursesColumn`).
+
+### docs
+- update: `status.md` regista a remoção; `changelog.md` ganha esta entrada.
+
+---
+
 ## [19-05-2026] — Skeletons em falta + spinners em todos os submits — local em `v3-cursos`
 
 Resposta a queixa do user: vários botões clicados ficavam mudos (sem indicar "estou a trabalhar"), e várias rotas com queries Supabase abriam em branco antes do conteúdo aparecer. Auditoria identificou 5 rotas sem `loading.tsx` e 8 botões `<button type="submit">` sem feedback de pending. Sem migrations, sem mudanças funcionais — só visibilidade.

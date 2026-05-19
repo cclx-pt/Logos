@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { SubmitButton } from '@/components/ui/submit-button';
-import { CoursesColumn, ConteudosBreadcrumb } from '../../courses-column';
+import { ConteudosBreadcrumb } from '../../conteudos-breadcrumb';
 import { CourseTree } from '../../course-tree';
 import {
   createLessonAction,
@@ -367,7 +367,6 @@ export default async function ModuloAulasPage({ params, searchParams }: PageProp
         </CollapsibleSection>
       </div>
 
-      <CoursesColumn selectedId={course.id} />
       <CourseTree courseId={course.id} currentModuleId={module.id} currentLessonId={editar} />
     </div>
   );

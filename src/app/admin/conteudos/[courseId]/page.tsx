@@ -5,7 +5,7 @@ import { SubmitButton } from '@/components/ui/submit-button';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { CourseForm, type CourseFormInitialData, type TagOption } from '../course-form';
-import { CoursesColumn, ConteudosBreadcrumb } from '../courses-column';
+import { ConteudosBreadcrumb } from '../conteudos-breadcrumb';
 import { CourseTree } from '../course-tree';
 import { deleteCourseAction, updateCourseAction } from '../courses-actions';
 import { createModuleAction, deleteModuleAction, updateModuleAction } from '../modules-actions';
@@ -310,7 +310,6 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
         </CollapsibleSection>
       </div>
 
-      <CoursesColumn selectedId={course.id} />
       <CourseTree courseId={course.id} />
     </div>
   );

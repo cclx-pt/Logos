@@ -33,7 +33,7 @@ export type CourseTreeProps = {
  *
  * Visibilidade:
  *   - mobile/md/lg: escondida (`hidden xl:block`).
- *   - xl+ (≥1280px): visível à direita da CoursesColumn.
+ *   - xl+ (≥1280px): visível à direita do conteúdo principal.
  *
  * Default-open: o módulo actual abre sozinho via `<details open>`.
  *

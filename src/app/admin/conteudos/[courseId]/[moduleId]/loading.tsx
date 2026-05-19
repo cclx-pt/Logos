@@ -2,8 +2,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * Skeleton da página de aulas de um módulo (drill-down). Mantém o esqueleto
- * de 3 colunas (conteúdo + Cursos + Estrutura) para minimizar layout shift
- * quando a página real chega — esta página tem várias queries Supabase
+ * de 2 colunas (conteúdo + Estrutura) para minimizar layout shift quando a
+ * página real chega — esta página tem várias queries Supabase
  * (course + module + lessons + CourseTree) e o upload de PDF é lento.
  */
 export default function Loading() {
@@ -52,9 +52,6 @@ export default function Loading() {
         </section>
       </div>
 
-      <aside className="hidden w-56 shrink-0 md:block">
-        <Skeleton className="border-border h-72 w-full rounded-lg border" />
-      </aside>
       <aside className="hidden w-60 shrink-0 xl:block">
         <Skeleton className="border-border h-96 w-full rounded-lg border" />
       </aside>
