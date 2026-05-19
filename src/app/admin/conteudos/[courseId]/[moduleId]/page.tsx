@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { SubmitButton } from '@/components/ui/submit-button';
 import { CoursesColumn, ConteudosBreadcrumb } from '../../courses-column';
 import { CourseTree } from '../../course-tree';
 import {
@@ -212,12 +213,9 @@ export default async function ModuloAulasPage({ params, searchParams }: PageProp
             </label>
 
             <div className="flex justify-end">
-              <button
-                type="submit"
-                className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
-              >
+              <SubmitButton pendingLabel="A enviar PDF…" showProgressBar>
                 Adicionar aula
-              </button>
+              </SubmitButton>
             </div>
           </form>
         </section>
@@ -347,13 +345,14 @@ export default async function ModuloAulasPage({ params, searchParams }: PageProp
                           </span>
                         </label>
 
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="submit"
-                            className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md px-3 text-xs font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        <div className="flex flex-wrap items-start gap-2">
+                          <SubmitButton
+                            pendingLabel="A guardar…"
+                            showProgressBar
+                            className="h-9 px-3 text-xs"
                           >
                             Guardar
-                          </button>
+                          </SubmitButton>
                           <Link
                             href={backHref}
                             className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"

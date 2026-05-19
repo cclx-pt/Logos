@@ -16,6 +16,34 @@
 
 ---
 
+## [19-05-2026] — A11y WCAG AA + loading states — local em `v3-cursos`
+
+Resposta a issues de axe DevTools (contraste insuficiente em `orange-primary`, falha de "Label in Name" no `UserMenu`) + pedido de skeletons/spinners/progress bars. Sem migrations, sem mudanças funcionais — só tokens visuais + novos componentes UI.
+
+### fix
+- fix: `orange-primary` passa de `#E36A2C` para `#B14E1F` — WCAG AA passa com margem (5.27:1 white-on-orange; 4.84:1 orange-on-cream). Antes falhava o threshold 4.5:1 em ambas as direcções. `orange-hover` de `#C85A22` para `#993F15` (6.84:1 / 6.27:1).
+- fix: `UserMenu` `DropdownMenuTrigger` deixa de ter `aria-label="Menu do utilizador X"` — substituía o texto visível `Olá, X` e falhava WCAG SC 2.5.3 "Label in Name". Accessible name passa a derivar do texto visível (Base UI anuncia o role de menu trigger automaticamente). Teste actualizado para verificar `getByRole('button', { name: /olá, joão/i })`.
+
+### add
+- add: `src/components/ui/spinner.tsx` — Lucide `Loader2` com `animate-spin`, `role="status"` + sr-only label. Server-renderable.
+- add: `src/components/ui/skeleton.tsx` — `bg-muted/60` + `animate-pulse`, `aria-hidden`. Usado por `loading.tsx`.
+- add: `src/components/ui/progress-bar.tsx` — indeterminada, `role="progressbar"` sem `aria-valuenow` (pattern WAI-ARIA recomendado). Keyframe `indeterminate` definido em `globals.css`.
+- add: `src/components/ui/submit-button.tsx` — Client Component que usa `useFormStatus` (React 19) para mostrar `Spinner` + label alternativo enquanto a Server Action corre. Opcional `showProgressBar` para uploads longos. Aplicado nos forms de criar e editar aula (uploads de PDF até 20 MB são lentos).
+- add: `src/app/admin/conteudos/loading.tsx`, `src/app/admin/conteudos/[courseId]/loading.tsx`, `src/app/conteudos/loading.tsx` — skeletons que reflectem o layout final para minimizar layout shift quando a página real chega.
+
+### update
+- update: `branding.md` §1 reflecte os novos hex.
+
+### test
+- 15 testes novos: 3 em `spinner.test.tsx`, 3 em `progress-bar.test.tsx`, 3 em `skeleton.test.tsx`, 5 em `submit-button.test.tsx` (mock de `useFormStatus`).
+- update: `user-menu.test.tsx` — verifica accessible name via texto visível em vez do antigo `aria-label`.
+- 178/178 testes verdes (163 → 178, +15 nesta iteração).
+
+### docs
+- update: `status.md` regista a iteração de a11y + loading states; `changelog.md` ganha entrada para 19-05-2026.
+
+---
+
 ## [19-05-2026] — Admin UX: full-width + árvore do curso (CourseTree) — local em `v3-cursos`
 
 Iteração de UX após pedido do user em showcase: admin estava demasiado centrado no PC, e navegar entre aulas de um curso exigia voltar à página do módulo a cada salto. Sem migrations, sem mudanças funcionais — só layout + nova coluna de navegação.

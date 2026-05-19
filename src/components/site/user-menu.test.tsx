@@ -30,10 +30,11 @@ describe('UserMenu (V2 PR3) — trigger', () => {
     expect(screen.getByText(/olá, joão/i)).toBeInTheDocument();
   });
 
-  it('expõe trigger acessível com aria-label completo', () => {
+  it('trigger é um button acessível cujo accessible name inclui o texto visível', () => {
+    // WCAG SC 2.5.3 (Label in Name): accessible name tem de incluir
+    // o texto visível. Sem aria-label, o accessible name passa a ser
+    // o próprio texto "Olá, João".
     render(<UserMenu user={makeUser('admin')} />);
-    expect(
-      screen.getByRole('button', { name: /menu do utilizador joão ribeiro/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /olá, joão/i })).toBeInTheDocument();
   });
 });

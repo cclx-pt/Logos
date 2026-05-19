@@ -26,10 +26,15 @@ export function UserMenu({ user }: { user: Profile }) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        className="text-ink hover:text-orange-hover focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-        aria-label={`Menu do utilizador ${user.displayName}`}
-      >
+      {/*
+        Sem aria-label aqui: WCAG SC 2.5.3 ("Label in Name") exige que o
+        accessible name inclua o texto visível. Antes existia
+        `aria-label="Menu do utilizador {nome}"` que substituía o
+        texto visível "Olá, {nome}" — falhava em axe DevTools. Base UI
+        anuncia automaticamente o role de menu trigger; o texto visível
+        passa a ser o accessible name.
+      */}
+      <DropdownMenuTrigger className="text-ink hover:text-orange-hover focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none">
         <span aria-live="polite">Olá, {firstName(user.displayName)}</span>
         <ChevronDown className="h-4 w-4" aria-hidden="true" />
       </DropdownMenuTrigger>
