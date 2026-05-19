@@ -1,0 +1,49 @@
+import { Skeleton } from '@/components/ui/skeleton';
+
+/**
+ * Skeleton da página de curso público. Reflecte cabeçalho (ícone + título +
+ * descrição), CTA "Começar curso", e lista de módulos com aulas.
+ */
+export default function Loading() {
+  return (
+    <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
+      <Skeleton className="h-3 w-48" />
+
+      <header className="mt-6 flex flex-col items-start gap-6 sm:flex-row">
+        <Skeleton className="h-16 w-16 shrink-0 rounded-2xl" />
+        <div className="min-w-0 flex-1 space-y-3">
+          <Skeleton className="h-9 w-2/3 max-w-md" />
+          <Skeleton className="h-4 w-full max-w-prose" />
+          <Skeleton className="h-4 w-3/4 max-w-prose" />
+        </div>
+      </header>
+
+      <Skeleton className="mt-8 h-11 w-40 rounded-md" />
+
+      <section className="mt-12 space-y-6">
+        <Skeleton className="h-4 w-32" />
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="border-border bg-card rounded-2xl border p-6">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="mt-2 h-7 w-1/2" />
+            <Skeleton className="mt-2 h-4 w-3/4" />
+            <div className="border-border mt-4 space-y-0 overflow-hidden rounded-lg border">
+              {Array.from({ length: 3 }).map((_, j) => (
+                <div
+                  key={j}
+                  className="border-border flex items-start gap-4 p-4 last:border-0 [&:not(:last-child)]:border-b"
+                >
+                  <Skeleton className="h-5 w-6" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-1/2" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </section>
+    </section>
+  );
+}

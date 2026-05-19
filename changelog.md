@@ -16,6 +16,28 @@
 
 ---
 
+## [20-05-2026] — V3 PR6: página de curso + página de aula — local em `v3-cursos`
+
+Rotas públicas para consumir conteúdo: `/conteudos/[slug]` e `/conteudos/[slug]/[lessonId]`. URL da aula usa o UUID (lessons não têm slug; adicionar slug ficou para V4 — estável e sem migration). Visibilidade fica 100% delegada na RLS de PR2 (`course_is_visible` herdada em modules/lessons via subquery).
+
+### add
+- add: `src/lib/courses/detail.ts` — `getCourseDetailBySlug(slug)` carrega o curso completo (módulos + aulas) ordenado por position; `getLessonDetailById(id)` faz select com embed `module:modules!inner ( ..., course:courses!inner ( ... ) )` e devolve a aula em forma flat; `getLessonNavigation(course, currentLessonId)` linariza módulos+aulas e retorna `{ previous, next }`; `getFirstLessonOfCourse(course)` para o CTA "Começar curso" (PR7 muda para "primeira aula incompleta").
+- add: `src/lib/courses/access-actions.ts` — `getLessonPdfSignedUrlAction(lessonId)` gera URL assinada de 5 min para o PDF (RLS em `lessons` filtra acesso; storage policies permitem authenticated ler qualquer objecto do bucket, defesa fina aqui). `logCourseAccessAction(courseId)` — stub no-op em PR6; PR8 destapa o insert em `course_access_log`.
+- add: `src/lib/courses/youtube.ts` — `extractYoutubeId(url)` parseia formatos aceites em PR4b (`youtu.be/<id>`, `youtube.com/watch?v=<id>`); valida id contra `^[A-Za-z0-9_-]{11}$`; devolve null em formato inválido (defesa contra URL antiga/corrompida).
+- add: `src/app/conteudos/[slug]/page.tsx` — header com ícone + título + descrição; CTA "Começar curso" linka para primeira aula; lista de módulos (h2) com aulas (Link cada uma); estado "Em breve" quando o curso não tem aulas publicadas. `generateMetadata` server-side com o título do curso.
+- add: `src/app/conteudos/[slug]/[lessonId]/page.tsx` — breadcrumb 3 níveis (Conteúdos › Curso › Aula); módulo + título + descrição; iframe YouTube em `aspect-video` rounded-2xl com `loading="lazy"`, `youtube-nocookie.com` (privacidade), `allow` standard, `allowFullScreen`; botão "Descarregar apostila" (Client); navegação anterior/próxima atravessando fronteira de módulo; "Voltar ao curso" se for a última; índice do curso colapsável (módulo actual `open` por defeito) com indicador visual `aria-current="page"` na aula activa.
+- add: `src/app/conteudos/[slug]/[lessonId]/pdf-download-button.tsx` — Client Component que chama `getLessonPdfSignedUrlAction` via `useTransition`, abre a URL em nova aba (`window.open(..., '_blank', 'noopener,noreferrer')`). Estados: idle (Download icon + label), pending (Spinner + "A preparar PDF…" + disabled + aria-busy), error (alert inline). UUID validado antes do submit.
+- add: skeletons em `[slug]/loading.tsx` e `[slug]/[lessonId]/loading.tsx` reflectem o layout final (ícone + título + módulos / vídeo + nav + índice).
+
+### test
+- 33 testes novos: 9 em `youtube.test.ts` (formatos válidos + inválidos), 12 em `detail.test.ts` (mock supabase chain; navegação edge cases — primeira/última/atravessar módulo), 8 em `access-actions.test.ts` (RLS deny via maybeSingle null, signed URL TTL=300s, stub PR6), 4 em `pdf-download-button.test.tsx` (idle/pending/error/click flow).
+- 253/253 verdes (215 → 253, +38 líquido).
+
+### docs
+- update: `status.md` regista PR6 concluída; `changelog.md` ganha esta entrada.
+
+---
+
 ## [20-05-2026] — Fase C: optimistic UI em etiquetas-por-utilizador + apagar etiqueta — local em `v3-cursos`
 
 Resposta a queixa do user de Fase B ("alguns botões demoram muito"): mesmo com `Spinner` no `SubmitButton`, atribuir/remover etiqueta a um utilizador ou apagar uma etiqueta tinham latência perceptível (round-trip Supabase + revalidatePath). Solução: `useOptimistic` aplica o estado-melhor-caso imediatamente; a Server Action corre em paralelo via `startTransition`; em falha, `useOptimistic` reverte automaticamente para o estado base do server.
