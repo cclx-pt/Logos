@@ -18,7 +18,8 @@ Trabalhamos em 9 PRs pequenas e sequenciais, cada uma ship-able sozinha (testes 
 | 1 | V3 PR1 | Etiquetas (DB + admin CRUD + assign a utilizadores) | ✅ 19-05-2026 | tudo o resto |
 | 2 | V3 PR2 | Schema cursos/módulos/aulas + Storage `lesson-pdfs` + RLS | ✅ 19-05-2026 | PR3-7 |
 | 3 | V3 PR3 | Admin: CRUD de Cursos (com `required_tags`) | ✅ 19-05-2026 | PR4 |
-| 4 | V3 PR4 | Admin: CRUD de Módulos + Aulas (PDF upload, YouTube URL) | ⏳ | PR5 |
+| 4a | V3 PR4a | Admin: CRUD de Módulos (dentro de `/admin/cursos/[id]`, setas ↑↓) | ⏳ | PR4b |
+| 4b | V3 PR4b | Admin: CRUD de Aulas (PDF upload, YouTube URL, coerência de template) | ⏳ | PR5 |
 | 5 | V3 PR5 | Catálogo público em `/conteudos` (substitui o "Em breve") | ⏳ | PR6 |
 | 6 | V3 PR6 | Página de curso + página de aula (YouTube + PDF + nav) | ⏳ | PR7 |
 | 7 | V3 PR7 | Conclusão binária + ecrã "Curso Concluído" | ⏳ | PR8 |
@@ -103,15 +104,27 @@ PRs 1-7 são *gates* para o prazo: sem elas, V3 não existe. PRs 8-9 são *polis
 
 ## 4. V3 PR4 — Admin CRUD de Módulos + Aulas
 
-- `/admin/cursos/[id]` ganha tab/secção "Módulos" — listagem ordenada por `position` com botões "Adicionar módulo" + reordenar (drag&drop adiado, V3 usa setas ↑↓).
-- `/admin/cursos/[id]/modulos/[moduleId]/aulas` — listagem de aulas + create.
-- Aula form: title, template selector, YouTube URL (validado: regex `youtu.be/…|youtube.com/watch?v=…`), PDF upload (multipart Server Action via FormData; sobe para `lesson-pdfs/<courseId>/<lessonId>.pdf`).
-- Server Action `uploadLessonPdfAction` separada para isolar lógica de Storage.
-- 8-12 testes.
+PR4 foi dividida em duas sub-iterações sequenciais (19-05-2026, ver `branch-strategy.md` §4 — cada uma ship-able sozinha em `v3-cursos` com preview Vercel testável em telemóvel antes de avançar).
 
-### Pendente do utilizador antes desta PR
-- Confirmar se queremos drag&drop ou setas ↑↓ (V3 default = setas).
-- Confirmar se admin pode mudar template após criar a aula (V3 default = sim, mas se passar `pdf` → `video_pdf` exige novo upload).
+### 4a. V3 PR4a — Módulos
+
+- `/admin/cursos/[id]` ganha secção **Módulos** abaixo do form de curso — listagem ordenada por `position` com:
+  - Form "Novo módulo" no topo (title + description opcional).
+  - Linha em modo edit via `?editar=<moduleId>` (mesma URL, sem `[…]/editar`; padrão consistente com `/admin/etiquetas`).
+  - Linha em modo apagar via `?apagar=<moduleId>` (confirmação inline).
+  - Setas ↑↓ que chamam `moveModuleUpAction`/`moveModuleDownAction` (swap de `position` com o vizinho; no-op se já está nos extremos).
+- Server Actions em `src/app/admin/cursos/[id]/modules/actions.ts`: `createModuleAction`, `updateModuleAction`, `deleteModuleAction`, `moveModuleUpAction`, `moveModuleDownAction`. Triple defesa: role check + RLS + CHECK constraints.
+- Nova `position` ao criar = `max(position) + 1` no curso (0 se vazio). Race mínima aceitável (admin único, mutex implícito da UI).
+- 8-10 testes em `actions.test.ts` (validators, role guard, swap, no-op nos extremos).
+
+### 4b. V3 PR4b — Aulas
+
+- `/admin/cursos/[id]/modulos/[moduleId]/aulas` — listagem + create. Aula em modo edit via `?editar=<lessonId>`.
+- Form aula: `title`, `description` (opcional), `template` selector (`pdf` ↔ `video_pdf`), `youtube_url` (regex `youtu.be/…|youtube.com/watch?v=…`), PDF upload via multipart FormData → `lesson-pdfs/<courseId>/<lessonId>.pdf`.
+- **Regra de coerência de template** (decidida 19-05-2026): template é mutável. `pdf → video_pdf` exige `youtube_url` preenchido no mesmo submit (senão erro de validação). `video_pdf → pdf` limpa `youtube_url`. PDF mantém-se em ambos os templates (`pdf_storage_path is not null` é regra de schema).
+- Server Action `uploadLessonPdfAction` separada para isolar lógica de Storage (valida MIME, tamanho ≤ 20MB, gera path).
+- Setas ↑↓ para aulas dentro do módulo.
+- 8-12 testes (validators, template coherence, YouTube URL regex, PDF upload mockado, swap).
 
 ---
 
@@ -179,6 +192,8 @@ PRs 1-7 são *gates* para o prazo: sem elas, V3 não existe. PRs 8-9 são *polis
 - [x] **PDF storage:** bucket `lesson-pdfs` privado, descarregar via URL assinado de curta duração (5 min) gerado por Server Action.
 - [x] **Língua dos nomes de tabela:** **EN** (`courses`, `modules`, `lessons`, `tags`, `user_tags`, `lesson_completions`, `course_completions`, `course_access_log`). UI continua 100% PT-PT.
 - [x] **Reordenar módulos no admin:** setas ↑↓ (botões simples). Drag&drop adiado para V4+ se a UX exigir.
+- [x] **Template da aula é mutável (19-05-2026):** admin pode trocar `pdf` ↔ `video_pdf` após criar. `pdf → video_pdf` exige `youtube_url` no mesmo submit. `video_pdf → pdf` limpa o `youtube_url`. PDF mantém-se em ambos. Coerente com SPEC_1.md §15 ("Manter os fluxos de admin simples"). Validado em PR4b.
+- [x] **PR4 dividida em PR4a (módulos) + PR4b (aulas) (19-05-2026):** cada uma ship-able sozinha, com preview Vercel testável em mobile antes de avançar. Não introduz âmbito novo — só reduz risco de PR gigante.
 
 ---
 
