@@ -1,7 +1,7 @@
 # architecture.md — Logos
 
 > **Quando atualizar:** após mudanças estruturais (novo serviço, alteração de modelo de dados, nova fronteira de segurança, mudança de stack).
-> **Última atualização:** 12-05-2026 (Vercel bootstrap + Preview→logos-dev formalizado)
+> **Última atualização:** 19-05-2026 (V3 PR1+PR2 — schema completo de tags/cursos/módulos/aulas + bucket `lesson-pdfs`, em `logos-dev`; estratégia de 3 camadas main/v2.5/v3 documentada em `feature-docs/branch-strategy.md`)
 
 ## 1. Visão de alto nível
 
@@ -88,6 +88,30 @@ profiles  -- fonte de verdade do Logos para o utilizador
 
 **Fronteira de identidade (regra dura):** `profiles.external_auth_id` é o único campo do Logos que aponta para o sistema de identidade externo. Hoje aponta para `auth.users.id` (Supabase Auth). No futuro pode apontar para o ID que uma shell partilhada CCLX vier a entregar — quando essa shell existir, **muda-se apenas este campo (e a função `current_profile_id()`); nenhuma outra tabela é afetada**. Nada mais no Logos referencia `auth.users` diretamente: todas as FKs apontam para `profiles.id`. Detalhes em `feature-docs/auth-architecture.md`.
 
+**Estado actual do schema** (após V3 PR1+PR2, em `logos-dev`):
+
+| Tabela | Migration | Estado em `logos-prod` |
+|---|---|---|
+| `profiles` + trigger sync | `20260514002002`, `20260514015528` | ✅ aplicada |
+| `profiles` RLS fixes (recursão) | `20260514022124`, `20260514022734` | ✅ aplicada |
+| `profiles` role mutation authority | `20260514030344` | ✅ aplicada |
+| `tags` + `user_tags` + helper `current_profile_has_tag` | `20260518120000` | ⏳ pendente (V3) |
+| `courses`/`modules`/`lessons`/`*_completions`/`*_log` + helper `course_is_visible` + bucket `lesson-pdfs` | `20260519020000` | ⏳ pendente (V3) |
+
+Migrations V3 sobem a `logos-prod` apenas no dia do lançamento (01-07-2026). Ver `feature-docs/branch-strategy.md`.
+
+**Helpers SQL (SECURITY DEFINER + STABLE) — única forma de policies tocarem `profiles`/`user_tags`:**
+
+| Helper | Devolve | Usado em |
+|---|---|---|
+| `current_profile_id()` | uuid | Toda a policy que precisa do profile actual |
+| `current_profile_role()` | text (`user`/`admin`/`super_admin`) | Gating de admin em tags, user_tags, courses, modules, lessons, completions, storage |
+| `current_profile_has_tag(uuid[])` | boolean | Helper de visibilidade de cursos restritos |
+| `course_is_visible(courses)` | boolean | Unifica regra de visibilidade em policies de `courses`/`modules`/`lessons` |
+| `set_updated_at()` | trigger row | Anexado a `courses`/`modules`/`lessons` para gerir `updated_at` |
+
+Todos `SECURITY DEFINER` (previnem recursão RLS — problema visto 3× em V2 PR2, resolvido com este padrão).
+
 ## 3. Camadas e responsabilidades
 
 | Camada | Responsabilidade |
@@ -122,7 +146,11 @@ Se a shell partilhada CCLX vier a oferecer email/password ou outros providers no
 - V4: avaliada recursivamente em `courses → modules → lessons`
 - Itens-pai vazios desaparecem do catálogo
 
-**Estado "rascunho":** V3 não tem flag de publicação separada em `modules`/`lessons` (apenas `courses.published_at`). Quando o admin precisa de construir conteúdo sem o expor, anexa ao curso uma etiqueta WIP (ex.: `rascunho`) e atribui-a apenas a si próprio. Remove a etiqueta quando o curso fica pronto. Reutiliza o sistema de etiquetas; sem coluna nova.
+**Implementação (V3 PR2):** a regra acima vive numa **única função SQL** `course_is_visible(courses) → boolean` (STABLE + SECURITY DEFINER). Tanto as policies SELECT de `courses` como as de `modules` e `lessons` chamam este helper (estas últimas via subquery `EXISTS (SELECT 1 FROM courses c WHERE c.id = … AND course_is_visible(c))`). admin/super_admin saltam o filtro (vêem cursos draft + restritos para gerir). Quando V4 introduzir `required_tags` em módulos/aulas, a regra estende-se nesta função (não há tabelas a tocar nas policies).
+
+**Estado "rascunho":** V3 separa estado de visibilidade em duas dimensões:
+1. **`courses.published_at` nullable.** NULL = draft (invisível para users; visível para admin/super_admin). Set para `now()` ao publicar.
+2. **Etiqueta WIP opcional** se o admin quiser draft mesmo *publicado* — anexa ao curso uma tag tipo `rascunho` e atribui-a só a si. Reutiliza o sistema de etiquetas, sem coluna nova.
 
 ## 6. Estado de conclusão
 
@@ -132,28 +160,33 @@ Se a shell partilhada CCLX vier a oferecer email/password ou outros providers no
 
 ## 7. Storage de PDFs
 
-- Bucket `lesson-pdfs` (privado)
-- URLs **assinados** com TTL curto (ex. 5 min) gerados em Server Action quando o utilizador clica em "Descarregar"
-- A política RLS do bucket reflete a visibilidade da aula
+- Bucket `lesson-pdfs` privado, **provisionado em V3 PR2** (migration `20260519020000`). Limites configurados: `file_size_limit = 20 MB`, `allowed_mime_types = ['application/pdf']`.
+- URLs **assinados** com TTL curto (5 min) gerados em Server Action quando o utilizador clica em "Descarregar" (implementação fica em V3 PR6 onde mora a lógica de acesso por curso).
+- Policies em `storage.objects` (já activas):
+  - **SELECT** authenticated (qualquer profile com sessão) — fronteira fina (saber se este user pode descarregar este PDF específico) fica na Server Action que valida `course_is_visible` antes de gerar URL assinado. Esta divisão mantém RLS simples (sem joins para path) e protege via TTL.
+  - **INSERT / UPDATE / DELETE** apenas admin/super_admin.
+- Convenção de path: `<courseId>/<lessonId>.pdf` (PR4 vai aplicar).
 
 ## 8. Deploy e ambientes
 
 | Ambiente | Branch | Frontend | Supabase | Notas |
 |---|---|---|---|---|
-| Produção | `main` | `logos.cclx.pt` (Vercel scope Production) | `logos-prod` | `NEXT_PUBLIC_SUPABASE_*` deliberadamente unset até checkpoint V2 |
-| Preview | feature branches | `logos-<hash>-jcrninjas-projects.vercel.app` (Vercel scope Preview) | **`logos-dev`** | Aponta para `logos-dev` — PRs testam migrations + mutações sem poluir prod |
+| Produção | `main` | `logos.cclx.pt` | `logos-prod` | V2 live (auth + papéis + hub `/conteudos`). `NEXT_PUBLIC_SUPABASE_*` activos desde 14-05-2026. |
+| V2.5 stored | `v2.5-copy-ux` | `logos-git-v2.5-copy-ux-jcrninjas-projects.vercel.app` | `logos-dev` | Aguarda testemunhos finais + títulos dos cards de `/conteudos` para mergear em `main`. |
+| V3 dev | `v3-cursos` | `logos-git-v3-cursos-jcrninjas-projects.vercel.app` | `logos-dev` | Inteira a desenvolver-se aqui até 01-07-2026. Não mergea em `main` em parciais. |
+| Outras previews | feature branches | `logos-<hash>-jcrninjas-projects.vercel.app` (Vercel scope Preview) | `logos-dev` | Vercel cria automático por push. |
 | Local | — | `localhost:3000` | `logos-dev` | `.env.local` (gitignored); espelhado em Vercel scope Development para `vercel env pull` |
 
-Detalhes do bootstrap Vercel (env vars por scope, mudança de visibilidade do repo, gotcha do CLI em Claude Code) em `feature-docs/vercel.md`.
+Estratégia de 3 camadas (com regras de promoção V2→V2.5→V3 e workflow de teste em outros dispositivos) em `feature-docs/branch-strategy.md`. Bootstrap Vercel (env vars por scope, visibilidade do repo, gotcha do CLI em Claude Code) em `feature-docs/vercel.md`.
 
 **DNS (Hostinger):**
-- CNAME `logos.cclx.pt → cname.vercel-dns.com` (pendente — depende de contacto Hostinger)
-- TXT (SPF) e CNAME (DKIM) para Resend — adiado para V5+ (login agora é só Google OAuth; Resend não é dependência V2)
+- CNAME `logos.cclx.pt → 00f4337193415fe7.vercel-dns-017.com` activo desde 12-05-2026.
+- TXT (SPF) e CNAME (DKIM) para Resend — adiado para V5+ (login agora é só Google OAuth; Resend não é dependência V2).
 
 **Migrations:**
-- `supabase/migrations/*.sql` no Git (Supabase CLI)
-- `supabase db push --project-ref <ref>` aplicado primeiro a `logos-dev`, depois a `logos-prod` após PR merged
-- Sem auto-apply em prod — passo manual e deliberado
+- `supabase/migrations/*.sql` no Git (Supabase CLI).
+- `pnpm dlx supabase db push` aplica a `logos-dev` (CLI está linkada via `supabase/.temp/`).
+- Aplicação a `logos-prod` é **manual e deliberada**, **só** após PR mergear em `main`. Migrations V3 (PR1+PR2 e futuras) ficam **apenas** em `logos-dev` até 01-07-2026; vão a `logos-prod` no merge final de V3.
 
 ## 9. Decisões adiadas
 

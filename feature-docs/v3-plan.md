@@ -3,7 +3,7 @@
 > **Branch:** `v3-cursos` (base: `v2.5-copy-ux`, próxima base: `main` quando V2.5 mergear).
 > **Prazo absoluto:** 01-07-2026 (ver `SPEC_1.md` §1, §9).
 > **Fonte:** `SPEC_1.md` §9 (V3), `architecture.md` §2 (modelo de dados), §5 (visibilidade), §6 (conclusão), §7 (storage).
-> **Estado:** plano fechado em 18-05-2026; nenhuma PR começada.
+> **Estado:** PR1 + PR2 concluídas em 19-05-2026 (commits `3afb750`, `502f139`). 7 PRs restantes. Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
 
 ## 0. Resumo
 
@@ -13,38 +13,32 @@ V2 PR4 (etiquetas, fundação) ainda não foi construída — fica absorvida em 
 
 Trabalhamos em 9 PRs pequenas e sequenciais, cada uma ship-able sozinha (testes verdes, CI verde, preview Vercel funcional). A ordem é deliberada: cada PR é um pré-requisito da seguinte.
 
-| # | PR | Tema | Bloqueia |
-|---|---|---|---|
-| 1 | V3 PR1 | Etiquetas (DB + admin CRUD + assign a utilizadores) | tudo o resto |
-| 2 | V3 PR2 | Schema cursos/módulos/aulas + Storage `lesson-pdfs` + RLS | PR3-7 |
-| 3 | V3 PR3 | Admin: CRUD de Cursos (com `required_tags`) | PR4 |
-| 4 | V3 PR4 | Admin: CRUD de Módulos + Aulas (PDF upload, YouTube URL) | PR5 |
-| 5 | V3 PR5 | Catálogo público em `/conteudos` (substitui o "Em breve") | PR6 |
-| 6 | V3 PR6 | Página de curso + página de aula (YouTube + PDF + nav) | PR7 |
-| 7 | V3 PR7 | Conclusão binária + ecrã "Curso Concluído" | PR8 |
-| 8 | V3 PR8 | `course_access_log` + stats admin básicas | — |
-| 9 | V3 PR9 | Vercel Analytics + Playwright E2E (happy-path) | — |
+| # | PR | Tema | Estado | Bloqueia |
+|---|---|---|---|---|
+| 1 | V3 PR1 | Etiquetas (DB + admin CRUD + assign a utilizadores) | ✅ 19-05-2026 | tudo o resto |
+| 2 | V3 PR2 | Schema cursos/módulos/aulas + Storage `lesson-pdfs` + RLS | ✅ 19-05-2026 | PR3-7 |
+| 3 | V3 PR3 | Admin: CRUD de Cursos (com `required_tags`) | ⏳ próximo | PR4 |
+| 4 | V3 PR4 | Admin: CRUD de Módulos + Aulas (PDF upload, YouTube URL) | ⏳ | PR5 |
+| 5 | V3 PR5 | Catálogo público em `/conteudos` (substitui o "Em breve") | ⏳ | PR6 |
+| 6 | V3 PR6 | Página de curso + página de aula (YouTube + PDF + nav) | ⏳ | PR7 |
+| 7 | V3 PR7 | Conclusão binária + ecrã "Curso Concluído" | ⏳ | PR8 |
+| 8 | V3 PR8 | `course_access_log` + stats admin básicas | ⏳ *(polish)* | — |
+| 9 | V3 PR9 | Vercel Analytics + Playwright E2E (happy-path) | ⏳ *(polish)* | — |
 
 PRs 1-7 são *gates* para o prazo: sem elas, V3 não existe. PRs 8-9 são *polish*: se o prazo apertar, V3 abre com PR7 funcional e PR8-9 caem para V3.1.
 
 ---
 
-## 1. V3 PR1 — Etiquetas (fundação)
+## 1. V3 PR1 — Etiquetas (fundação) ✅ 19-05-2026
 
-**Antes:** absorve o trabalho descrito em `feature-docs/v2-auth.md` §4 (V2 PR4).
+**Concluída em** commit `3afb750`. Migration `20260518120000_tags_and_user_tags.sql` em `logos-dev`. Absorveu o trabalho de `feature-docs/v2-auth.md` §4 (V2 PR4).
 
-### DB
-- Migration `tags` (id uuid, slug unique, label text, created_by FK profiles, created_at).
-- Migration `user_tags` (user_id FK profiles, tag_id FK tags, assigned_by FK profiles, assigned_at, PK composta).
-- RLS: super_admin + admin lêem tudo; user lê apenas as suas próprias (`current_profile_id()`); só super_admin escreve em `tags`; super_admin + admin escrevem em `user_tags`.
-
-### UI admin
-- `/admin/etiquetas` — listagem + create/edit/delete (slug auto-gerado, editável).
-- `/admin/utilizadores/[id]/etiquetas` ou painel inline em `/admin/utilizadores` — atribuir/remover etiquetas a um utilizador.
-
-### Testes
-- Server Actions cobertas (create/update/delete/assign/unassign + defesas de papel).
-- Layout gating (`/admin/etiquetas` redirect/notFound para user).
+### Entregue
+- DB: `tags` (slug unique CHECK 2-64 kebab-case, label 1-80, created_by → profiles restrict), `user_tags` (PK composta, assigned_by, cascade em user_id/tag_id), helper `current_profile_has_tag(uuid[])` STABLE + SECURITY DEFINER (usado em PR2).
+- RLS: super_admin escreve em `tags`; admin+super_admin escrevem em `user_tags`. User vê apenas as suas etiquetas (mantém invisibilidade de tags que não possui).
+- UI: `/admin/etiquetas` super_admin-only (create + edit `?editar=<id>` + delete `?apagar=<id>`, server-side puro). `/admin/utilizadores` relaxa para admin+super_admin com coluna de pills + select nativo para assign/unassign.
+- Server Actions: `createTagAction`/`updateTagAction`/`deleteTagAction` (super_admin); `assignTagAction`/`unassignTagAction` (admin+super_admin, upsert idempotente).
+- 21 testes (12 em `etiquetas/actions.test.ts`, 8 em `utilizadores/actions.test.ts`, 1 ajuste em `layout.test.tsx`).
 
 ### Não-âmbito
 - Atribuir etiquetas a cursos — esse passo entra na V3 PR3.
@@ -52,25 +46,29 @@ PRs 1-7 são *gates* para o prazo: sem elas, V3 não existe. PRs 8-9 são *polis
 
 ---
 
-## 2. V3 PR2 — Schema base + storage
+## 2. V3 PR2 — Schema base + storage ✅ 19-05-2026
 
-### DB
-- Migration `courses` (id uuid, slug unique, title, description, icon nullable, required_tags uuid[] default '{}', created_at, updated_at, published_at nullable).
-- Migration `modules` (id uuid, course_id FK courses ON DELETE CASCADE, position int, title, description nullable, created_at, updated_at).
-- Migration `lessons` (id uuid, module_id FK modules ON DELETE CASCADE, position int, title, description nullable, template text CHECK in ('pdf','video_pdf'), youtube_url nullable, pdf_storage_path nullable, created_at, updated_at).
-- Migration `lesson_completions` (user_id FK profiles, lesson_id FK lessons, completed_at, PK composta).
-- Migration `course_completions` (user_id, course_id, completed_at, PK composta).
-- Migration `course_access_log` (user_id, course_id, accessed_at — sem unique para permitir múltiplos acessos).
+**Concluída em** commit `502f139`. Migration `20260519020000_v3_courses_schema_and_storage.sql` em `logos-dev`. **NÃO** aplicada a `logos-prod` (V3 sobe a prod só no merge final).
 
-### RLS
-- `courses` SELECT: visível se `published_at IS NOT NULL AND (required_tags = '{}' OR user_has_overlap_tag())`. Helper SQL `current_profile_has_tag(uuid[])` STABLE.
-- `modules`/`lessons` SELECT: derivar do curso (`exists(select 1 from courses c where c.id = course_id and …)`).
-- `lesson_completions`/`course_completions` SELECT/INSERT: utilizador só lê e escreve as suas próprias.
-- Admin/super_admin têm SELECT/INSERT/UPDATE/DELETE em tudo.
+### Entregue
+- DB:
+  - `courses` (slug unique CHECK 2-80, title 1-120, `required_tags uuid[]` default `{}`, `published_at` nullable, created_by → profiles restrict, índice parcial em `published_at IS NOT NULL`).
+  - `modules` (course CASCADE, position int>=0, índice composto `(course_id, position)`).
+  - `lessons` (module CASCADE, template CHECK `pdf|video_pdf`, youtube_url nullable, `pdf_storage_path` **not null** — V3 exige apostila, CHECK `video_pdf ⇒ youtube_url IS NOT NULL`).
+  - `lesson_completions` PK composta (idempotente).
+  - `course_completions` PK composta, **imutável** (sem policy UPDATE/DELETE — `SPEC_1.md` §9 V3 exige preservar data).
+  - `course_access_log` sem unique, índices em `course_id` e `accessed_at desc` para stats em PR8.
+- Trigger genérico `set_updated_at()` anexado a courses/modules/lessons.
+- Helper `course_is_visible(courses) → boolean` STABLE + SECURITY DEFINER unifica a regra (admin tudo; user só `published_at IS NOT NULL` E `required_tags = '{}' OR current_profile_has_tag(...)`). Reutilizado em policies de `courses`, `modules` e `lessons` (estas duas via subquery `EXISTS`).
+- RLS:
+  - `courses`/`modules`/`lessons` SELECT via `course_is_visible`; INSERT/UPDATE/DELETE admin+super_admin.
+  - `lesson_completions` SELECT próprias ou admin/super_admin; INSERT/DELETE **só o próprio** (conclusão é acto pessoal — admin não marca por outros).
+  - `course_completions` SELECT próprias ou admin/super_admin; INSERT só o próprio; sem UPDATE/DELETE (imutável).
+  - `course_access_log` SELECT só admin/super_admin (auditoria); INSERT só o próprio; sem UPDATE/DELETE.
+- Storage: bucket `lesson-pdfs` privado, `file_size_limit = 20 MB`, `allowed_mime_types = ['application/pdf']`. Policies em `storage.objects`: SELECT authenticated qualquer profile (acesso fino fica na Server Action de PR6 que valida `course_is_visible` antes de `createSignedUrl`); INSERT/UPDATE/DELETE só admin+super_admin.
 
-### Storage
-- Bucket `lesson-pdfs` privado.
-- Policy: admin/super_admin escreve; utilizador autenticado lê via URL assinado por Server Action.
+### Sem código novo
+73/73 testes continuam verdes (PR é puramente DB/storage). Validação RLS acontece em PR3-PR7 quando a UI existir.
 
 ### Não-âmbito
 - UI alguma — esta PR é apenas schema + storage, ship-able sem mudar a UI.
@@ -183,7 +181,7 @@ PRs 1-7 são *gates* para o prazo: sem elas, V3 não existe. PRs 8-9 são *polis
 
 ## 12. Riscos identificados
 
-- **Prazo apertado:** 6 PRs *gate* em ~6 semanas. Mitigação: PR1 (etiquetas) já está scoped em `v2-auth.md` §4, pode arrancar imediatamente. PR2 (schema) é puro SQL, alto valor / baixo risco.
+- **Prazo apertado:** 6 PRs *gate* em ~6 semanas. Estado em 19-05-2026: PR1+PR2 fechadas no mesmo dia, 5 *gates* restantes em ~6 semanas. Folga confortável para PR3-PR7 + polish PR8-PR9.
 - **Google OAuth em CI:** Playwright contra OAuth real não é viável. Usar uma das: (a) cookie de sessão pré-preparado fixado por um script de setup; (b) flag `E2E_AUTH_BYPASS` que injecta `getCurrentUser()` mock só em ambientes E2E. Decidir antes de PR9.
-- **Visibilidade RLS recursiva:** já se viu em V2 PR2 (3 fixes). Cuidado em `modules`/`lessons` SELECT — usar função helper `current_profile_id()` + `current_profile_has_tag()`, nunca subqueries directas a `profiles`.
-- **PDF storage:** plano free Supabase tem ~1 GB. 50 aulas × 5 MB = 250 MB. Aceitável V3; reavaliar V5.
+- **Visibilidade RLS recursiva:** ~~já se viu em V2 PR2 (3 fixes)~~. **Mitigado em PR2** via helper `course_is_visible(courses)` STABLE + SECURITY DEFINER reutilizado em modules/lessons. Padrão a manter: nunca subqueries directas a `profiles` em policies; usar sempre os helpers `current_profile_*`.
+- **PDF storage:** plano free Supabase tem ~1 GB. 50 aulas × 5 MB = 250 MB. Limite de bucket fixado em **20 MB por PDF** em PR2; se ministério pedir maior, ajustar `file_size_limit` do `storage.buckets`. Aceitável V3; reavaliar V5.
