@@ -3,7 +3,7 @@
 > **Branch:** `v3-cursos` (base: `v2.5-copy-ux`, próxima base: `main` quando V2.5 mergear).
 > **Prazo absoluto:** 01-07-2026 (ver `SPEC_1.md` §1, §9).
 > **Fonte:** `SPEC_1.md` §9 (V3), `architecture.md` §2 (modelo de dados), §5 (visibilidade), §6 (conclusão), §7 (storage).
-> **Estado:** PR1 + PR2 + PR3 + PR4 (a + IA + b) concluídas em 19-05-2026. 4 PRs restantes (PR5–PR7 gate, PR8–PR9 polish). Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
+> **Estado:** PR1 + PR2 + PR3 + PR4 (a + IA + b) + PR5 concluídas em 19-05-2026. 3 PRs restantes (PR6+PR7 gate, PR8+PR9 polish). Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
 
 ## 0. Resumo
 
@@ -21,7 +21,7 @@ Trabalhamos em 9 PRs pequenas e sequenciais, cada uma ship-able sozinha (testes 
 | 4a | V3 PR4a | Admin: CRUD de Módulos (dentro de `/admin/conteudos/[courseId]`, setas ↑↓) | ✅ 19-05-2026 | PR4-IA |
 | 4-IA | V3 PR4-IA | Restructure admin: `/admin/cursos*` → `/admin/conteudos*` (drill-down) | ✅ 19-05-2026 | PR4b |
 | 4b | V3 PR4b | Admin: CRUD de Aulas (PDF upload, YouTube URL, coerência de template) | ✅ 19-05-2026 | PR5 |
-| 5 | V3 PR5 | Catálogo público em `/conteudos` (substitui o "Em breve") | ⏳ | PR6 |
+| 5 | V3 PR5 | Catálogo público em `/conteudos` (substitui o "Em breve") | ✅ 19-05-2026 | PR6 |
 | 6 | V3 PR6 | Página de curso + página de aula (YouTube + PDF + nav) | ⏳ | PR7 |
 | 7 | V3 PR7 | Conclusão binária + ecrã "Curso Concluído" | ⏳ | PR8 |
 | 8 | V3 PR8 | `course_access_log` + stats admin básicas | ⏳ *(polish)* | — |
@@ -159,14 +159,25 @@ Mudança de informação-arquitectura. A área admin perde `/admin/cursos*` e ga
 
 ---
 
-## 5. V3 PR5 — Catálogo público
+## 5. V3 PR5 — Catálogo público ✅ 19-05-2026
 
-- `/conteudos` deixa de ser placeholder "Em breve" e passa a renderizar cursos via `getVisibleCoursesForUser(profileId)` (server component).
-- Cards de curso (icon Lucide + título + descrição curta + tag "em breve" se sem aulas publicadas).
-- Estado vazio: mostrar o mesmo "Em breve" actual se não há cursos visíveis para o user.
-- Pesquisa: input com `useTransition` + Server Action que aceita query string, filtra por `title ILIKE '%query%'`.
-- Não há "categoria" em V3 — apenas pesquisa textual.
-- Helper canónico `src/lib/courses/visibility.ts` com `getVisibleCoursesForUser()`. Testes unitários cobrem: sem etiquetas (público), com etiquetas (utilizador sem → invisível, com 1 match → visível).
+**Concluída em** `v3-cursos` (sem migrations novas — só UI + helper por cima da RLS da PR2).
+
+### Entregue
+- Helper canónico `src/lib/courses/visibility.ts` com `getVisibleCoursesForUser({ query? })`. **Não duplica** a regra de visibilidade — delega na policy `course_is_visible(courses)` criada em PR2. Só agrega: nome, descrição, ícone, `hasLessons` (via embed PostgREST `modules ( lessons ( count ) )` em um único round-trip). Pesquisa opcional via `.ilike('title', '%q%')`, trimmed + máximo 80 chars; vazio/whitespace ignora o filtro. Wildcards `%`/`_` no input são pattern-matching intencional.
+- Registry de ícones extraído de `icon-picker.tsx` para `src/lib/courses/icons.tsx` partilhado. `<CourseIcon slug={...} className={...} />` renderiza o Lucide correcto (fallback BookOpen para slugs desconhecidos). `IconPicker` no admin agora importa `COURSE_ICONS` da nova fonte (sem duplicação).
+- `/conteudos/page.tsx` deixa de ser placeholder e passa a Server Component: lê `searchParams.q`, chama o helper, passa `courses + query` ao `<ConteudosContent />`.
+- `/conteudos/conteudos-content.tsx` (`'use client'`, mantém animações `motion/react`): intro do ministério + form `<motion.form method="get" action="/conteudos">` com `<input type="search" name="q">` e botão "Pesquisar" (+ link "Limpar" quando filtro activo). Grid responsivo 1 / 2 / 3 colunas (mobile / sm / lg) de cards com ícone, título, descrição (line-clamp-4) e — quando `hasLessons = true` — CTA "Ver curso →"; cards sem aulas ficam `aria-disabled` + `tabIndex=-1` + `pointer-events-none` + badge `Em breve`. Estado vazio: bloco grande com `Sparkles` e título `Em breve` (sem filtro) ou `Sem resultados` com termo entre aspas (com filtro).
+
+### Decisões durante a PR
+- **GET form em vez de `useTransition` + Server Action.** Plano original (§5 antiga) previa instant search com `useTransition`. Para um catálogo pequeno e server-rendered, `<form method="get">` é mais simples, acessível sem JS, e cacheável por Vercel. Revisitar se UX exigir filtro instantâneo após termos catálogo > 30 cursos.
+- **RLS é fonte única.** O helper não passa `profileId` nem aplica filtro de visibilidade em JS — toda a regra (admin tudo; user `published_at IS NOT NULL` + tags match) vive na policy SQL `course_is_visible(courses)` criada em PR2. Testes unitários verificam que o helper passa a query correcta ao Supabase; o que RLS faz testa-se em PR9 (Playwright contra DB real).
+- **Cards sem aulas são desabilitados, não removidos.** Estado intermédio admin (curso criado mas sem aulas ainda) deve continuar visível para dar sinal — o badge `Em breve` substitui o redirect-loop que seria abrir um curso sem aulas. Decisão consistente com SPEC §15 ("manter fluxos simples").
+- **Cards 2/3 colunas com gap-5, ícone em quadrado laranja.** Layout consciente da paleta cream + orange definida em `branding.md`. Sem categoria/tab — PR só mostra search; categorias entram em V4+ se ministério pedir.
+
+### Testes (124 → 147)
+- 14 em `visibility.test.ts`: empty/error paths, `hasLessons` agregação (modules com/sem lessons, modules null/empty, lessons null), `.ilike` aplicação (skip se vazio/whitespace, trim, limite 80 chars), order asc, select embed correcto.
+- 12 em `conteudos/page.test.tsx` (substituindo 3 antigos): heading + intro + search form acessíveis; estado vazio sem filtro (badge "Em breve", sem link Limpar); estado vazio com filtro ("Sem resultados", link Limpar, input pré-populado); cards com link para slug; badge `Em breve` + `aria-disabled` quando `hasLessons = false`; sem badge quando `hasLessons = true`; descrição omitida quando null.
 
 ---
 

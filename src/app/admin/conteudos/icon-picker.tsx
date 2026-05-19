@@ -1,54 +1,6 @@
-import {
-  Anchor,
-  Book,
-  BookMarked,
-  BookOpen,
-  Bookmark,
-  Calendar,
-  Church,
-  Clock,
-  Compass,
-  Cross,
-  FileText,
-  Flame,
-  Footprints,
-  GraduationCap,
-  HandHeart,
-  Handshake,
-  Headphones,
-  Heart,
-  HelpCircle,
-  Home,
-  Hourglass,
-  Key,
-  Leaf,
-  Library,
-  Lightbulb,
-  Map,
-  MapPin,
-  Megaphone,
-  MessageCircle,
-  Mic,
-  Moon,
-  Mountain,
-  Music,
-  Notebook,
-  Pencil,
-  Quote,
-  Route,
-  ScrollText,
-  Shield,
-  Sparkles,
-  Sprout,
-  Star,
-  Sun,
-  TreePine,
-  UserPlus,
-  Users,
-  Wheat,
-  Wine,
-  type LucideIcon,
-} from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
+
+import { COURSE_ICONS } from '@/lib/courses/icons';
 
 /**
  * IconPicker — seletor visual de ícone para CourseForm (e futuras entidades
@@ -60,71 +12,16 @@ import {
  * (ex.: `book-open`) — mesmo formato que a coluna `courses.icon` já guardava.
  * Se o curso tem um valor pré-existente fora da lista curada (legacy ou
  * digitado manualmente), preserva-se como entrada extra "Personalizado".
+ *
+ * A lista de ícones disponíveis vive em `src/lib/courses/icons.tsx` —
+ * partilhada com o catálogo público (`CourseIcon`).
  */
-type IconDef = {
-  /** Valor kebab-case guardado em DB. */
-  slug: string;
-  /** Componente Lucide a renderizar. */
-  Component: LucideIcon;
-  /** Etiqueta acessível PT-PT (tooltip + sr-only). */
-  label: string;
-};
-
-const ICONS: IconDef[] = [
-  { slug: 'book-open', Component: BookOpen, label: 'Livro aberto' },
-  { slug: 'book', Component: Book, label: 'Livro' },
-  { slug: 'book-marked', Component: BookMarked, label: 'Livro marcado' },
-  { slug: 'library', Component: Library, label: 'Biblioteca' },
-  { slug: 'scroll-text', Component: ScrollText, label: 'Pergaminho' },
-  { slug: 'file-text', Component: FileText, label: 'Documento' },
-  { slug: 'notebook', Component: Notebook, label: 'Caderno' },
-  { slug: 'pencil', Component: Pencil, label: 'Lápis' },
-  { slug: 'cross', Component: Cross, label: 'Cruz' },
-  { slug: 'church', Component: Church, label: 'Igreja' },
-  { slug: 'heart', Component: Heart, label: 'Coração' },
-  { slug: 'hand-heart', Component: HandHeart, label: 'Mão e coração' },
-  { slug: 'sparkles', Component: Sparkles, label: 'Brilho' },
-  { slug: 'flame', Component: Flame, label: 'Chama' },
-  { slug: 'sun', Component: Sun, label: 'Sol' },
-  { slug: 'moon', Component: Moon, label: 'Lua' },
-  { slug: 'star', Component: Star, label: 'Estrela' },
-  { slug: 'users', Component: Users, label: 'Comunidade' },
-  { slug: 'user-plus', Component: UserPlus, label: 'Boas-vindas' },
-  { slug: 'handshake', Component: Handshake, label: 'Aperto de mão' },
-  { slug: 'shield', Component: Shield, label: 'Escudo' },
-  { slug: 'compass', Component: Compass, label: 'Bússola' },
-  { slug: 'anchor', Component: Anchor, label: 'Âncora' },
-  { slug: 'map', Component: Map, label: 'Mapa' },
-  { slug: 'map-pin', Component: MapPin, label: 'Localização' },
-  { slug: 'mountain', Component: Mountain, label: 'Montanha' },
-  { slug: 'footprints', Component: Footprints, label: 'Pegadas' },
-  { slug: 'route', Component: Route, label: 'Caminho' },
-  { slug: 'megaphone', Component: Megaphone, label: 'Megafone' },
-  { slug: 'message-circle', Component: MessageCircle, label: 'Mensagem' },
-  { slug: 'mic', Component: Mic, label: 'Microfone' },
-  { slug: 'lightbulb', Component: Lightbulb, label: 'Ideia' },
-  { slug: 'calendar', Component: Calendar, label: 'Calendário' },
-  { slug: 'clock', Component: Clock, label: 'Relógio' },
-  { slug: 'hourglass', Component: Hourglass, label: 'Ampulheta' },
-  { slug: 'home', Component: Home, label: 'Casa' },
-  { slug: 'music', Component: Music, label: 'Música' },
-  { slug: 'headphones', Component: Headphones, label: 'Auscultadores' },
-  { slug: 'graduation-cap', Component: GraduationCap, label: 'Formatura' },
-  { slug: 'wine', Component: Wine, label: 'Vinho' },
-  { slug: 'sprout', Component: Sprout, label: 'Rebento' },
-  { slug: 'tree-pine', Component: TreePine, label: 'Árvore' },
-  { slug: 'wheat', Component: Wheat, label: 'Trigo' },
-  { slug: 'leaf', Component: Leaf, label: 'Folha' },
-  { slug: 'quote', Component: Quote, label: 'Citação' },
-  { slug: 'bookmark', Component: Bookmark, label: 'Marcador' },
-  { slug: 'key', Component: Key, label: 'Chave' },
-];
 
 type Props = { selected: string | null };
 
 export function IconPicker({ selected }: Props) {
   const trimmed = selected?.trim() ?? '';
-  const isKnown = trimmed.length > 0 && ICONS.some((icon) => icon.slug === trimmed);
+  const isKnown = trimmed.length > 0 && COURSE_ICONS.some((icon) => icon.slug === trimmed);
   const showCustom = trimmed.length > 0 && !isKnown;
 
   return (
@@ -158,7 +55,7 @@ export function IconPicker({ selected }: Props) {
           <span className="sr-only">Sem ícone</span>
         </label>
 
-        {ICONS.map(({ slug, Component, label }) => (
+        {COURSE_ICONS.map(({ slug, Component, label }) => (
           <label
             key={slug}
             title={label}

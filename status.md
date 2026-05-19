@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 19-05-2026 (V3 PR4b Admin CRUD de Aulas local em `v3-cursos`; 124/124 testes verdes)
+> **Última atualização:** 19-05-2026 (V3 PR5 Catálogo público local em `v3-cursos`; 147/147 testes verdes)
 
 ## 🎯 Milestone atual
 **V3 em desenvolvimento local em `v3-cursos`, V2.5 em hold no preview.** Detalhes da estratégia + workflow de teste em outros dispositivos: [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
@@ -59,9 +59,10 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
 - [x] **V3 PR4a — Admin CRUD de Módulos + reordenar** (19-05-2026, local em `v3-cursos`, NÃO mergeado) — Server Actions em `src/app/admin/conteudos/modules-actions.ts` com CRUD + setas ↑↓ (swap de `position` com vizinho imediato, no-op nos extremos). Secção "Módulos" dentro de `/admin/conteudos/[courseId]` com form "Novo módulo" + lista numerada (edit inline via `?editar=`, delete inline via `?apagar=`). 18 testes novos (89 → 107).
 - [x] **V3 PR4-IA — Restructure admin para Conteúdos (drill-down)** (19-05-2026) — `/admin/cursos*` → `/admin/conteudos*` com modelo Finder columns: `CoursesColumn` à esquerda (`md:block`), drill-down em `/admin/conteudos/[courseId]`, breadcrumb mobile. Server Actions renomeadas para `courses-actions.ts` e `modules-actions.ts` no top-level. Sem testes novos (107/107).
 - [x] **V3 PR4b — Admin CRUD de Aulas** (19-05-2026, local em `v3-cursos`, NÃO mergeado) — Server Actions em `src/app/admin/conteudos/lessons-actions.ts` com CRUD + reordenar + upload de PDF (`lesson-pdfs/<courseId>/<lessonId>.pdf`, MIME `application/pdf`, ≤ 20 MB, `upsert: true`) + validação `youtube_url` (`youtu.be/<id>` ou `youtube.com/watch?v=<id>`). Insert primeiro com placeholder em `pdf_storage_path` (NOT NULL DB), substituído pelo path real após upload bem-sucedido; rollback do row em falha de upload. Coerência de template: `pdf → video_pdf` exige `youtube_url` no mesmo submit; `video_pdf → pdf` limpa `youtube_url`. Página `/admin/conteudos/[courseId]/[moduleId]` (drill-down de aulas) com form "Nova aula" (`encType="multipart/form-data"`, radios de template, file `accept="application/pdf"`) + listagem ordenada por `position` (pill do template + URL YouTube linkado) + edit inline (`?editar=`, PDF opcional — vazio mantém o actual) + confirm delete inline (`?apagar=`) + setas ↑↓. `ConteudosBreadcrumb` estendido para `Cursos › Curso › Módulo`. Linha de módulo na página do curso ganha botão **Aulas →**. 17 testes novos em `lessons-actions.test.ts` (107 → 124).
+- [x] **V3 PR5 — Catálogo público em `/conteudos`** (19-05-2026, local em `v3-cursos`, NÃO mergeado) — `/conteudos` deixa de ser placeholder "Em breve" e passa a renderizar cursos visíveis via `getVisibleCoursesForUser({ query? })` (server component). RLS em `courses` (criada em PR2) é quem filtra por role + visibilidade; o helper apenas centraliza a query + lesson count via embed `modules ( lessons ( count ) )` e aplica `.ilike` opcional no título. Registry de ícones extraído de `icon-picker.tsx` para `src/lib/courses/icons.tsx` partilhado com `<CourseIcon slug={...} />` usado no catálogo. Cards com ícone Lucide, título, descrição (line-clamp-4) e badge **Em breve** se `hasLessons = false` (cards sem aulas ficam `aria-disabled` + `tabIndex=-1` + `pointer-events-none`). Estado vazio mostra **Em breve** (sem filtro) ou **Sem resultados** com o termo pesquisado (com filtro) + link "Limpar". Pesquisa via form GET `<form method="get" action="/conteudos">` com `<input type="search" name="q" maxLength={80}>` — sem `useTransition` nem Client Component dedicado (decisão para simplicidade; revisitar se UX exigir instant search). 26 testes novos (14 em `visibility.test.ts` + 12 em `conteudos/page.test.tsx`, substituindo 3 antigos). 124 → 147.
 
 ## 🚧 Em progresso
-- **V3 PR5 — Catálogo público em `/conteudos`** (próxima PR de V3). Detalhes em `feature-docs/v3-plan.md` §5: substituir placeholder "Em breve" por cards de cursos via `getVisibleCoursesForUser(profileId)`, pesquisa textual com `useTransition`, helper canónico em `src/lib/courses/visibility.ts`. Testes de visibilidade (sem etiquetas / com etiquetas / utilizador sem match).
+- **V3 PR6 — Página de curso + página de aula** (próxima PR de V3). Detalhes em `feature-docs/v3-plan.md` §6: `/conteudos/[curso-slug]` com lista de módulos+aulas e botão "Começar/Continuar curso"; `/conteudos/[curso-slug]/[aula-slug]` com YouTube embed + botão "Descarregar PDF" via signed URL de 5 min + sidebar + nav anterior/próxima.
 
 ## ⏭️ V2.x — Copy + UX (implementado localmente, 16-05-2026)
 - [x] **PR-A** — Copy & branding global: LOGOS maiúsculo, capitalizações (Bíblico, Fé, Enraizada, Connosco), em dashes fora, aspas `"..."` em vez de `«»`, lema do ministério em itálico (3 linhas em `home-motto.tsx`), parágrafos longos justificados.
@@ -88,7 +89,7 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
 - [x] **V3 PR4a — Admin CRUD de Módulos + reordenar** (19-05-2026).
 - [x] **V3 PR4-IA — Restructure admin para Conteúdos drill-down** (19-05-2026).
 - [x] **V3 PR4b — Admin CRUD de Aulas** (19-05-2026) — PDF upload (`lesson-pdfs`) + YouTube URL + coerência de template.
-- [ ] **V3 PR5 — Catálogo público em `/conteudos`**. §5.
+- [x] **V3 PR5 — Catálogo público em `/conteudos`** (19-05-2026) — cards + pesquisa + badge "Em breve".
 - [ ] **V3 PR6 — Página de curso + página de aula**. §6.
 - [ ] **V3 PR7 — Conclusão binária + ecrã Curso Concluído**. §7.
 - [ ] *(polish, prazo permite)* **V3 PR8 — Access log + admin stats**. §8.

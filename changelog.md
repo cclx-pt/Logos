@@ -16,6 +16,33 @@
 
 ---
 
+## [19-05-2026] — V3 PR5: Catálogo público em `/conteudos` — local em `v3-cursos`
+
+Sexta PR de V3 (1ª UI pública depois das 4 admin). `/conteudos` deixa de ser placeholder "Em breve" e passa a renderizar o catálogo real de cursos, com pesquisa textual e badge "Em breve" para cursos sem aulas. Continua só em `logos-dev`; nada vai a `main`/`logos-prod` antes de 01-07-2026.
+
+### add
+- add: `src/lib/courses/visibility.ts` com `getVisibleCoursesForUser({ query? })`. Não duplica regras: delega visibilidade na RLS policy `course_is_visible(courses)` criada em PR2; só agrega `hasLessons` via embed PostgREST `modules ( lessons ( count ) )` num único round-trip. Pesquisa opcional via `.ilike('title', '%q%')`, trim + 80 char max, vazio/whitespace é ignorado.
+- add: `src/lib/courses/icons.tsx` — registry partilhado de ícones Lucide para cursos + componente `<CourseIcon slug={…} className={…} />` (fallback `book-open` para slugs desconhecidos). Substitui o array local de `icon-picker.tsx`.
+- update: `src/app/admin/conteudos/icon-picker.tsx` passa a importar `COURSE_ICONS` do registry partilhado (sem duplicação entre admin e catálogo).
+- update: `src/app/conteudos/page.tsx` reescrita como Server Component que lê `searchParams.q`, chama o helper de visibilidade e passa `courses + query` ao componente cliente.
+- update: `src/app/conteudos/conteudos-content.tsx` (continua `'use client'` para manter as animações `motion/react`) — form GET de pesquisa (`role="search"` + input com ícone Lucide e botão "Pesquisar" + link "Limpar" quando filtro activo); grid responsivo 1 / 2 / 3 colunas de cards com ícone laranja, título, descrição (line-clamp-4), badge `Em breve` se `hasLessons = false` (com `aria-disabled` + `tabIndex=-1` + `pointer-events-none`). Estado vazio reusa o bloco Sparkles, com título dinâmico `Em breve` vs `Sem resultados`.
+
+### decisions
+- GET form em vez de `useTransition` + Server Action — mais simples, acessível sem JS, cacheável; revisitar se UX exigir instant search.
+- RLS é fonte única de visibilidade — helper não passa `profileId` nem filtra em JS; toda a regra vive em `course_is_visible(courses)`.
+- Cards sem aulas continuam visíveis mas desactivados — dão sinal ao utilizador em vez de desaparecerem.
+
+### test
+- add: `src/lib/courses/visibility.test.ts` com 14 testes (empty/error, `hasLessons` em todos os shapes possíveis, `.ilike` com trim/limit/skip, ordering, embed select).
+- update: `src/app/conteudos/page.test.tsx` reescrita com 12 testes (sempre-presente: heading + intro + search form; vazio sem filtro: "Em breve" sem Limpar; vazio com filtro: "Sem resultados" + Limpar + input pré-populado; cards: link para slug, badge + `aria-disabled` quando sem aulas, sem badge quando há aulas, descrição nula omitida).
+- 147/147 testes verdes (124 → 147, +23 nesta PR: 14 visibility + 12 conteúdos novos − 3 conteúdos antigos).
+
+### docs
+- update: `status.md` move "V3 PR5" de "Em progresso" para "Concluído"; "V3 PR6 — Página de curso + página de aula" passa a próxima.
+- update: `feature-docs/v3-plan.md` tabela e §5 ticadas para PR5, com decisões e contagem de testes.
+
+---
+
 ## [19-05-2026] — V3 PR4b: Admin CRUD de Aulas — local em `v3-cursos`
 
 Quinto passo de V3 (PR4 sub-iteração b, depois de PR4a e PR4-IA). Sem migrations novas: a página de aulas vive em cima do schema da PR2 e do storage `lesson-pdfs`. Server Actions com upload PDF, validação YouTube URL e coerência de template entre `pdf` ↔ `video_pdf`. Continua só em `logos-dev`; nada vai a `main`/`logos-prod` antes de 01-07-2026.
