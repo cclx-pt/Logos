@@ -2,11 +2,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * Skeleton da página de curso público. Reflecte cabeçalho (ícone + título +
- * descrição), CTA "Começar curso", e lista de módulos com aulas.
+ * descrição), CTA "Começar curso", e lista de módulos colapsáveis.
  */
 export default function Loading() {
   return (
-    <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
+    <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
       <Skeleton className="h-3 w-48" />
 
       <header className="mt-6 flex flex-col items-start gap-6 sm:flex-row">
@@ -20,26 +20,16 @@ export default function Loading() {
 
       <Skeleton className="mt-8 h-11 w-40 rounded-md" />
 
-      <section className="mt-12 space-y-6">
+      <section className="mt-12 space-y-4">
         <Skeleton className="h-4 w-32" />
-        {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="border-border bg-card rounded-2xl border p-6">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="mt-2 h-7 w-1/2" />
-            <Skeleton className="mt-2 h-4 w-3/4" />
-            <div className="border-border mt-4 space-y-0 overflow-hidden rounded-lg border">
-              {Array.from({ length: 3 }).map((_, j) => (
-                <div
-                  key={j}
-                  className="border-border flex items-start gap-4 p-4 last:border-0 [&:not(:last-child)]:border-b"
-                >
-                  <Skeleton className="h-5 w-6" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-5 w-1/2" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                </div>
-              ))}
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="border-border bg-card rounded-xl border p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-6 w-1/2" />
+              </div>
+              <Skeleton className="h-4 w-10" />
             </div>
           </div>
         ))}

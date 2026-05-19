@@ -2,9 +2,20 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-import { getCourseDetailBySlug, getLessonDetailById, getLessonNavigation } from '@/lib/courses/detail';
+import {
+  getCourseDetailBySlug,
+  getLessonDetailById,
+  getLessonNavigation,
+} from '@/lib/courses/detail';
 import { extractYoutubeId } from '@/lib/courses/youtube';
+import { getLessonPdfSignedUrlAction } from '@/lib/courses/access-actions';
+import {
+  getCompletedLessonIds,
+  getNextModuleWithLessons,
+  isModuleComplete,
+} from '@/lib/courses/completion';
 import { PdfDownloadButton } from './pdf-download-button';
+import { MarkCompleteButton } from './mark-complete-button';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -42,9 +53,30 @@ export default async function LessonPage({ params }: PageProps) {
     notFound();
   }
 
+  // Estado de conclusão para esta aula + todas as do módulo actual (para
+  // detectar "módulo completo → próximo módulo").
+  const moduleLessonIds = course.modules
+    .find((m) => m.id === lesson.module.id)
+    ?.lessons.map((l) => l.id) ?? [];
+  const completed = await getCompletedLessonIds(moduleLessonIds);
+
+  const currentModule = course.modules.find((m) => m.id === lesson.module.id) ?? null;
+  const moduleDone = currentModule ? isModuleComplete(currentModule, completed) : false;
+  const isLastInModule =
+    currentModule && currentModule.lessons[currentModule.lessons.length - 1]?.id === lesson.id;
+  const nextModule = getNextModuleWithLessons(course, lesson.module.id);
+
   const nav = getLessonNavigation(course, lesson.id);
+
+  // Vídeo (template = video_pdf)
   const youtubeId =
     lesson.template === 'video_pdf' ? extractYoutubeId(lesson.youtube_url) : null;
+
+  // PDF inline: gera URL assinada server-side. Passamos ao iframe via prop.
+  // RLS já validou visibilidade no select acima; createSignedUrl não acrescenta
+  // gating mas é a forma canónica de acesso ao bucket privado.
+  const pdfResult = await getLessonPdfSignedUrlAction(lesson.id);
+  const pdfUrl = pdfResult.ok ? pdfResult.url : null;
 
   return (
     <article className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
@@ -98,9 +130,72 @@ export default async function LessonPage({ params }: PageProps) {
         </p>
       ) : null}
 
+      <section aria-labelledby="apostila-heading" className="mt-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2
+            id="apostila-heading"
+            className="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
+          >
+            Apostila
+          </h2>
+          <PdfDownloadButton lessonId={lesson.id} lessonTitle={lesson.title} />
+        </div>
+        {pdfUrl ? (
+          <div className="border-border bg-card mt-3 h-[75vh] w-full overflow-hidden rounded-2xl border">
+            <iframe
+              src={pdfUrl}
+              title={`Apostila: ${lesson.title}`}
+              className="h-full w-full"
+              // O bucket é privado; só este iframe (com URL assinada de 5 min) e o
+              // botão de download conseguem ler. Em mobile, alguns browsers ignoram
+              // o iframe e abrem o PDF na app nativa — comportamento aceitável.
+            />
+          </div>
+        ) : (
+          <p className="text-muted-foreground mt-3 inline-flex items-center rounded-md border border-dashed px-4 py-3 text-sm">
+            Não foi possível carregar a apostila. Usa o botão “Descarregar apostila” para a obter.
+          </p>
+        )}
+      </section>
+
       <div className="mt-8">
-        <PdfDownloadButton lessonId={lesson.id} lessonTitle={lesson.title} />
+        <MarkCompleteButton lessonId={lesson.id} initiallyCompleted={completed.has(lesson.id)} />
       </div>
+
+      {/* Mensagem de "módulo completo → próximo módulo" quando aplicável. */}
+      {isLastInModule && moduleDone && nextModule && nextModule.lessons[0] && (
+        <div className="border-orange-primary/30 bg-orange-primary/5 mt-10 rounded-2xl border p-6">
+          <p className="text-orange-primary text-xs font-semibold tracking-wide uppercase">
+            ✓ Módulo concluído
+          </p>
+          <p className="text-ink mt-2 text-base">
+            Parabéns — terminaste todas as aulas de <strong>{currentModule?.title}</strong>. Avança
+            para o próximo módulo: <strong>{nextModule.title}</strong>.
+          </p>
+          <Link
+            href={`/conteudos/${course.slug}/${nextModule.lessons[0].id}`}
+            className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring mt-4 inline-flex h-10 items-center justify-center rounded-md px-5 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          >
+            Próximo módulo →
+          </Link>
+        </div>
+      )}
+      {isLastInModule && moduleDone && !nextModule && (
+        <div className="border-orange-primary/30 bg-orange-primary/5 mt-10 rounded-2xl border p-6">
+          <p className="text-orange-primary text-xs font-semibold tracking-wide uppercase">
+            ✓ Curso concluído
+          </p>
+          <p className="text-ink mt-2 text-base">
+            Concluíste todas as aulas deste curso. Bem feito.
+          </p>
+          <Link
+            href={`/conteudos/${course.slug}`}
+            className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring mt-4 inline-flex h-10 items-center justify-center rounded-md px-5 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          >
+            Voltar ao curso →
+          </Link>
+        </div>
+      )}
 
       <nav
         aria-label="Navegação entre aulas"
@@ -141,67 +236,6 @@ export default async function LessonPage({ params }: PageProps) {
           </Link>
         )}
       </nav>
-
-      <section aria-labelledby="indice-curso-heading" className="mt-16">
-        <h2
-          id="indice-curso-heading"
-          className="text-muted-foreground text-sm font-semibold tracking-wide uppercase"
-        >
-          Índice do curso
-        </h2>
-        <ol className="mt-6 space-y-6">
-          {course.modules.map((module, moduleIndex) => (
-            <li key={module.id}>
-              <details
-                open={module.id === lesson.module.id}
-                className="border-border bg-card group rounded-lg border p-4"
-              >
-                <summary className="text-ink flex cursor-pointer list-none items-baseline justify-between gap-3 rounded-md outline-none">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-muted-foreground text-xs tracking-wide uppercase">
-                      Módulo {moduleIndex + 1}
-                    </p>
-                    <p className="text-ink mt-1 text-sm font-medium">{module.title}</p>
-                  </div>
-                  <span
-                    aria-hidden="true"
-                    className="text-muted-foreground transition-transform group-open:rotate-180"
-                  >
-                    ▾
-                  </span>
-                </summary>
-                {module.lessons.length === 0 ? (
-                  <p className="text-muted-foreground mt-3 text-xs">Sem aulas neste módulo.</p>
-                ) : (
-                  <ol className="mt-3 space-y-1">
-                    {module.lessons.map((l, lessonIndex) => {
-                      const isCurrent = l.id === lesson.id;
-                      return (
-                        <li key={l.id}>
-                          <Link
-                            href={`/conteudos/${course.slug}/${l.id}`}
-                            aria-current={isCurrent ? 'page' : undefined}
-                            className={
-                              isCurrent
-                                ? 'bg-orange-primary/10 text-orange-primary flex items-baseline gap-3 rounded-md px-2 py-1.5 text-sm font-medium'
-                                : 'text-ink hover:bg-muted/40 focus-visible:ring-ring flex items-baseline gap-3 rounded-md px-2 py-1.5 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none'
-                            }
-                          >
-                            <span className="text-muted-foreground min-w-[1.5rem] text-xs tabular-nums">
-                              {lessonIndex + 1}.
-                            </span>
-                            <span className="line-clamp-1">{l.title}</span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                )}
-              </details>
-            </li>
-          ))}
-        </ol>
-      </section>
     </article>
   );
 }

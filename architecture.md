@@ -1,7 +1,7 @@
 # architecture.md — Logos
 
 > **Quando atualizar:** após mudanças estruturais (novo serviço, alteração de modelo de dados, nova fronteira de segurança, mudança de stack).
-> **Última atualização:** 19-05-2026 (V3 PR1+PR2 — schema completo de tags/cursos/módulos/aulas + bucket `lesson-pdfs`, em `logos-dev`; estratégia de 3 camadas main/v2.5/v3 documentada em `feature-docs/branch-strategy.md`)
+> **Última atualização:** 20-05-2026 (V3 PR7 — conclusão binária deriva on-read de `lesson_completions`; `course_completions` schema mantido mas não escrita em V3, ver §6)
 
 ## 1. Visão de alto nível
 
@@ -154,9 +154,9 @@ Se a shell partilhada CCLX vier a oferecer email/password ou outros providers no
 
 ## 6. Estado de conclusão
 
-- `lesson_completions` é a fonte primária
-- `course_completions.completed_at` é gravado na **primeira** vez que todas as aulas visíveis estão concluídas; preservado para sempre
-- Recalculado *on-read* quando o utilizador entra na página do curso (não há cron job)
+- `lesson_completions` é a **fonte primária e única** em V3. Toggle binário (`markLessonCompleteAction` / `unmarkLessonCompleteAction`). RLS filtra por `current_profile_id()` — conclusão é acto pessoal (admin não marca por outros).
+- "Curso concluído" é **derivado *on-read*** a partir de `lesson_completions` (helpers `isModuleComplete`/`isCourseComplete` em `src/lib/courses/completion.ts`). Sem trigger, sem race entre "marca última aula" e "insere conclusão de curso".
+- `course_completions` **continua no schema** (criada em PR2) mas **não é escrita em V3**. Reservada para V3.1 se PR8 (stats) precisar da data preservada ou se o ministério pedir exibição "concluído em DD-MM-YYYY". Trade-off aceite: sem data preservada, implementação muito mais simples e idempotente.
 
 ## 7. Storage de PDFs
 

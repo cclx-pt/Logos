@@ -16,6 +16,32 @@
 
 ---
 
+## [20-05-2026] — V3 PR7: conclusão binária + ecrã "curso concluído" — local em `v3-cursos`
+
+Toggle binário de "Marcar como concluída" por aula, sem percentagens nem gamificação (CLAUDE.md §🚫). Conclusão de módulo e de curso são derivadas *on-read* a partir de `lesson_completions` — `course_completions` fica reservada para V3.1 se precisarmos da data preservada para stats da PR8.
+
+### add
+- add: `src/lib/courses/completion-actions.ts` — `markLessonCompleteAction(lessonId)` faz insert em `lesson_completions` e silencia o erro 23505 (PK duplicate → já estava marcada; clicar duas vezes não falha). `unmarkLessonCompleteAction(lessonId)` faz delete por `(user_id, lesson_id)`. UUID validado antes do round-trip à DB. Ambas revalidam `'/conteudos'` em `'layout'` para refrescar a página de curso simultânea ao toggle na página de aula.
+- add: `src/lib/courses/completion.ts` — `getCompletedLessonIds(lessonIds[])` devolve `Set<string>` carregando só as conclusões cujos `lesson_id` pertencem ao input (evita full scan da tabela); RLS filtra por `current_profile_id()`. `isModuleComplete`/`isCourseComplete` retornam `false` quando o módulo/curso não tem aulas (não há nada para concluir). `getNextModuleWithLessons` salta módulos sem aulas — não contam para a progressão.
+- add: `src/app/conteudos/[slug]/[lessonId]/mark-complete-button.tsx` — Client Component com `useOptimistic` + `startTransition`. Toggle visual imediato; `aria-pressed` reflecte estado. Em falha sem revalidate, optimistic reverte para `initiallyCompleted`. Estado pending implícito (action corre dentro do startTransition; sem spinner adicional — o feedback é a mudança imediata da label/ícone).
+
+### update
+- update: `src/app/conteudos/[slug]/page.tsx` — carrega `getCompletedLessonIds(allLessonIds)` antes de renderizar; aulas concluídas ganham ícone ✓ em círculo laranja + label `line-through`; cada módulo mostra contador `X/Y`; quando o módulo está completo, mostra `<Check>` + banner "Módulo concluído → Próximo módulo" se há próximo, ou "Último módulo concluído" se não; quando tudo está feito, banner "✓ Curso concluído" substitui o CTA principal. CTA muda label entre "Começar curso" (zero conclusões) e "Continuar curso" (≥1 conclusão).
+- update: `src/app/conteudos/[slug]/[lessonId]/page.tsx` — carrega completions só do módulo actual (`getCompletedLessonIds(moduleLessonIds)`) — não precisa de tudo aqui. `MarkCompleteButton` abaixo do PDF. Quando a aula actual é a última do módulo e o módulo fica completo, bloco "Módulo/Curso concluído" abaixo do botão com link para o próximo módulo ou de volta ao curso.
+- update: `src/app/conteudos/[slug]/loading.tsx` + `[slug]/[lessonId]/loading.tsx` — skeletons alinhados com o novo layout (botão de conclusão + banners).
+
+### test
+- 25 testes novos: 10 em `completion.test.ts` (helpers + edge cases: `Set` vazio quando sem sessão, RLS skip, módulo/curso vazio retorna false, `getNextModuleWithLessons` salta módulos vazios), 9 em `completion-actions.test.ts` (mark idempotente em 23505, mark falha em outro erro, unmark sucesso, unmark sem sessão, UUID inválido em ambos), 6 em `mark-complete-button.test.tsx` (render por initiallyCompleted, toggle visual, action correcta consoante estado, optimistic reverte em sem-action).
+- 278/278 verdes (253 → 278, +25 líquido).
+
+### decision
+- **`course_completions` não é escrita.** Schema da PR2 mantém a tabela, mas PR7 deriva o estado "curso concluído" on-read a partir de `lesson_completions`. Trade-off: sem data de conclusão preservada, mas implementação simples (sem trigger, sem race condition entre "marca última aula" e "insere conclusão de curso"). Reabrir em V3.1 se PR8 (stats) precisar da data ou se o ministério pedir exibição "concluído em DD-MM-YYYY". `architecture.md` §6 reflecte a deviação.
+
+### docs
+- update: `status.md` regista PR7 concluída e move PR8 para "Em progresso"; `architecture.md` §6 ajusta para "derivação on-read; `course_completions` não escrita em V3"; `feature-docs/v3-plan.md` §7 marcada ✅; `changelog.md` ganha esta entrada.
+
+---
+
 ## [20-05-2026] — V3 PR6: página de curso + página de aula — local em `v3-cursos`
 
 Rotas públicas para consumir conteúdo: `/conteudos/[slug]` e `/conteudos/[slug]/[lessonId]`. URL da aula usa o UUID (lessons não têm slug; adicionar slug ficou para V4 — estável e sem migration). Visibilidade fica 100% delegada na RLS de PR2 (`course_is_visible` herdada em modules/lessons via subquery).

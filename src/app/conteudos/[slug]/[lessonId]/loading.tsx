@@ -2,7 +2,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * Skeleton da página de aula. Reflecte cabeçalho (módulo + título +
- * descrição), placeholder do vídeo, botão PDF, navegação e índice do curso.
+ * descrição), placeholder do vídeo, reader de PDF inline, botão de
+ * marcar como concluída, e navegação.
  */
 export default function Loading() {
   return (
@@ -18,19 +19,20 @@ export default function Loading() {
 
       <Skeleton className="mt-8 aspect-video w-full rounded-2xl" />
 
-      <Skeleton className="mt-8 h-10 w-48 rounded-md" />
+      <div className="mt-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-10 w-48 rounded-md" />
+        </div>
+        <Skeleton className="mt-3 h-[75vh] w-full rounded-2xl" />
+      </div>
+
+      <Skeleton className="mt-8 h-10 w-56 rounded-md" />
 
       <div className="border-border mt-12 flex flex-wrap gap-3 border-t pt-6">
         <Skeleton className="h-16 flex-1 rounded-md sm:max-w-[48%]" />
         <Skeleton className="h-16 flex-1 rounded-md sm:max-w-[48%]" />
       </div>
-
-      <section className="mt-16 space-y-6">
-        <Skeleton className="h-4 w-32" />
-        {Array.from({ length: 2 }).map((_, i) => (
-          <Skeleton key={i} className="border-border h-24 w-full rounded-lg border" />
-        ))}
-      </section>
     </article>
   );
 }

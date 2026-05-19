@@ -3,7 +3,7 @@
 > **Branch:** `v3-cursos` (base: `v2.5-copy-ux`, próxima base: `main` quando V2.5 mergear).
 > **Prazo absoluto:** 01-07-2026 (ver `SPEC_1.md` §1, §9).
 > **Fonte:** `SPEC_1.md` §9 (V3), `architecture.md` §2 (modelo de dados), §5 (visibilidade), §6 (conclusão), §7 (storage).
-> **Estado:** PR1 + PR2 + PR3 + PR4 (a + IA + b) + PR5 concluídas em 19-05-2026. 3 PRs restantes (PR6+PR7 gate, PR8+PR9 polish). Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
+> **Estado:** PR1-PR7 (todos os *gates*) concluídas; PR8+PR9 (polish) restantes. Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
 
 ## 0. Resumo
 
@@ -22,8 +22,8 @@ Trabalhamos em 9 PRs pequenas e sequenciais, cada uma ship-able sozinha (testes 
 | 4-IA | V3 PR4-IA | Restructure admin: `/admin/cursos*` → `/admin/conteudos*` (drill-down) | ✅ 19-05-2026 | PR4b |
 | 4b | V3 PR4b | Admin: CRUD de Aulas (PDF upload, YouTube URL, coerência de template) | ✅ 19-05-2026 | PR5 |
 | 5 | V3 PR5 | Catálogo público em `/conteudos` (substitui o "Em breve") | ✅ 19-05-2026 | PR6 |
-| 6 | V3 PR6 | Página de curso + página de aula (YouTube + PDF + nav) | ⏳ | PR7 |
-| 7 | V3 PR7 | Conclusão binária + ecrã "Curso Concluído" | ⏳ | PR8 |
+| 6 | V3 PR6 | Página de curso + página de aula (YouTube + PDF + nav) | ✅ 20-05-2026 | PR7 |
+| 7 | V3 PR7 | Conclusão binária + ecrã "Curso Concluído" | ✅ 20-05-2026 | PR8 |
 | 8 | V3 PR8 | `course_access_log` + stats admin básicas | ⏳ *(polish)* | — |
 | 9 | V3 PR9 | Vercel Analytics + Playwright E2E (happy-path) | ⏳ *(polish)* | — |
 
@@ -193,13 +193,27 @@ Mudança de informação-arquitectura. A área admin perde `/admin/cursos*` e ga
 
 ---
 
-## 7. V3 PR7 — Conclusão + Curso Concluído
+## 7. V3 PR7 — Conclusão + Curso Concluído ✅ 20-05-2026
 
-- Botão "Marcar como concluída" na página de aula → `markLessonCompleteAction(lessonId)` → insert idempotente em `lesson_completions`.
-- Check ✓ visível na sidebar e na lista de aulas do curso.
-- *On-read* (cada visita à página do curso), recalcular: se todas as aulas visíveis estão concluídas e ainda não há `course_completions` para este (user, course), insert. Mostrar ecrã "Curso Concluído" com data.
-- "Curso Concluído" preserva data (`SPEC_1.md` §9 V3 + `architecture.md` §6).
-- Testes: lesson complete idempotente; course complete inserido apenas na primeira vez; ecrã mostra data correcta.
+**Concluída em** `v3-cursos`. Sem migrations novas — só UI + Server Actions + helpers por cima do schema da PR2.
+
+### Entregue
+- **`MarkCompleteButton`** (Client, `useOptimistic` + `startTransition`) em `/conteudos/[slug]/[lessonId]`: toggle "Marcar como concluída" ↔ "Concluída". Feedback visual imediato (label/ícone); em falha sem revalidate, optimistic reverte automaticamente para `initiallyCompleted`. `aria-pressed` reflecte estado para leitores de ecrã.
+- **Server Actions** em `src/lib/courses/completion-actions.ts`:
+  - `markLessonCompleteAction(lessonId)` — insert em `lesson_completions`, silencia 23505 (PK duplicate → já estava marcada). Idempotente.
+  - `unmarkLessonCompleteAction(lessonId)` — delete por `(user_id, lesson_id)`.
+  - RLS de PR2 garante `user_id = current_profile_id()` em ambos (conclusão é acto pessoal — admin não marca por outros). UUID validado antes do round-trip.
+- **Helpers** em `src/lib/courses/completion.ts`: `getCompletedLessonIds(lessonIds[])` carrega só as conclusões do batch (evita full scan); `isModuleComplete`/`isCourseComplete` retornam `false` se zero aulas; `getNextModuleWithLessons` salta módulos vazios.
+- **Página de curso**: check ✓ + line-through nas aulas concluídas; contador `X/Y` por módulo; banner "Módulo concluído → Próximo módulo" on-read; banner "✓ Curso concluído" no topo quando tudo está feito; CTA muda "Começar curso" → "Continuar curso" se há progresso.
+- **Página de aula**: botão Marcar/Concluída abaixo do PDF; bloco "Módulo/Curso concluído" abaixo do botão quando a aula actual é a última do módulo e o módulo fica completo.
+- **Testes**: 25 novos (10 em `completion.test.ts` + 9 em `completion-actions.test.ts` + 6 em `mark-complete-button.test.tsx`). 253 → 278.
+
+### Decisão fechada durante a PR
+- **`course_completions` *não* é escrita.** Plano original (e `architecture.md` §6 pré-PR7) previa insert "on-read" da primeira vez que todas as aulas ficam concluídas, para preservar a data. Implementação real deriva o estado on-read a partir de `lesson_completions` (sem insert na tabela `course_completions`). Trade-off: sem data preservada, mas implementação simples (sem trigger, sem race entre "marca última aula" e "insere conclusão de curso", sem necessidade de revalidatePath cuidadoso). Schema da PR2 mantém a tabela vazia para V3.1 — reabrir se PR8 (stats) precisar da data ou se o ministério pedir exibição "concluído em DD-MM-YYYY". `architecture.md` §6 reescrita para reflectir a deviação.
+
+### Não-âmbito
+- Estatísticas agregadas (quantos utilizadores concluíram cada curso) — V3 PR8.
+- Notificação por email ao concluir curso — sem âmbito V3.
 
 ---
 
