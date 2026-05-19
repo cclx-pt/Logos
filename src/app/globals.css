@@ -14,6 +14,7 @@
   --color-sage-card: #c6cdb1;
   --color-butter-card: #f6e6c4;
   --color-orange: #e36a2c;
+  --color-orange-primary: #e36a2c; /* alias canónico (branding.md §1) — usado em bg-orange-primary/text-orange-primary */
   --color-orange-hover: #c85a22;
   --color-ink: #1a1a1a;
   --color-muted: #6b6b6b;
