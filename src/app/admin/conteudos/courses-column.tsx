@@ -78,12 +78,24 @@ export async function CoursesColumn({ selectedId }: Props) {
   );
 }
 
+type BreadcrumbProps = {
+  courseTitle?: string;
+  /** ID do curso — necessário quando há `moduleTitle` para o link voltar a apontar à página do curso. */
+  courseId?: string;
+  moduleTitle?: string;
+};
+
 /**
  * Breadcrumb visível apenas em mobile (admin sidebar e CoursesColumn estão
  * `hidden md:block`, por isso em mobile o utilizador precisa de uma forma de
- * voltar a Cursos). Em desktop é redundante.
+ * voltar atrás). Em desktop é redundante.
+ *
+ * Suporta dois níveis de drill-down:
+ *   - Cursos › Curso (página do curso)
+ *   - Cursos › Curso › Módulo (página de aulas)
  */
-export function ConteudosBreadcrumb({ courseTitle }: { courseTitle?: string }) {
+export function ConteudosBreadcrumb({ courseTitle, courseId, moduleTitle }: BreadcrumbProps) {
+  const showModule = Boolean(moduleTitle && courseId);
   return (
     <nav
       aria-label="Breadcrumb"
@@ -95,7 +107,22 @@ export function ConteudosBreadcrumb({ courseTitle }: { courseTitle?: string }) {
       {courseTitle ? (
         <>
           <span aria-hidden="true">›</span>
-          <span className="text-ink line-clamp-1">{courseTitle}</span>
+          {showModule ? (
+            <Link
+              href={`/admin/conteudos/${courseId}`}
+              className="hover:text-ink line-clamp-1 transition-colors"
+            >
+              {courseTitle}
+            </Link>
+          ) : (
+            <span className="text-ink line-clamp-1">{courseTitle}</span>
+          )}
+        </>
+      ) : null}
+      {showModule ? (
+        <>
+          <span aria-hidden="true">›</span>
+          <span className="text-ink line-clamp-1">{moduleTitle}</span>
         </>
       ) : null}
     </nav>

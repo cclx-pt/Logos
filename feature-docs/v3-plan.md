@@ -3,7 +3,7 @@
 > **Branch:** `v3-cursos` (base: `v2.5-copy-ux`, próxima base: `main` quando V2.5 mergear).
 > **Prazo absoluto:** 01-07-2026 (ver `SPEC_1.md` §1, §9).
 > **Fonte:** `SPEC_1.md` §9 (V3), `architecture.md` §2 (modelo de dados), §5 (visibilidade), §6 (conclusão), §7 (storage).
-> **Estado:** PR1 + PR2 + PR3 concluídas em 19-05-2026 (commits `3afb750`, `502f139`, PR3 pending commit). 6 PRs restantes. Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
+> **Estado:** PR1 + PR2 + PR3 + PR4 (a + IA + b) concluídas em 19-05-2026. 4 PRs restantes (PR5–PR7 gate, PR8–PR9 polish). Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
 
 ## 0. Resumo
 
@@ -20,7 +20,7 @@ Trabalhamos em 9 PRs pequenas e sequenciais, cada uma ship-able sozinha (testes 
 | 3 | V3 PR3 | Admin: CRUD de Cursos (com `required_tags`) | ✅ 19-05-2026 | PR4 |
 | 4a | V3 PR4a | Admin: CRUD de Módulos (dentro de `/admin/conteudos/[courseId]`, setas ↑↓) | ✅ 19-05-2026 | PR4-IA |
 | 4-IA | V3 PR4-IA | Restructure admin: `/admin/cursos*` → `/admin/conteudos*` (drill-down) | ✅ 19-05-2026 | PR4b |
-| 4b | V3 PR4b | Admin: CRUD de Aulas (PDF upload, YouTube URL, coerência de template) | ⏳ | PR5 |
+| 4b | V3 PR4b | Admin: CRUD de Aulas (PDF upload, YouTube URL, coerência de template) | ✅ 19-05-2026 | PR5 |
 | 5 | V3 PR5 | Catálogo público em `/conteudos` (substitui o "Em breve") | ⏳ | PR6 |
 | 6 | V3 PR6 | Página de curso + página de aula (YouTube + PDF + nav) | ⏳ | PR7 |
 | 7 | V3 PR7 | Conclusão binária + ecrã "Curso Concluído" | ⏳ | PR8 |
@@ -130,14 +130,32 @@ Mudança de informação-arquitectura. A área admin perde `/admin/cursos*` e ga
 - Nova `position` ao criar = `max(position) + 1` no curso (0 se vazio). Race mínima aceitável (admin único, mutex implícito da UI).
 - 8-10 testes em `actions.test.ts` (validators, role guard, swap, no-op nos extremos).
 
-### 4b. V3 PR4b — Aulas
+### 4b. V3 PR4b — Aulas ✅ 19-05-2026
 
-- `/admin/cursos/[id]/modulos/[moduleId]/aulas` — listagem + create. Aula em modo edit via `?editar=<lessonId>`.
-- Form aula: `title`, `description` (opcional), `template` selector (`pdf` ↔ `video_pdf`), `youtube_url` (regex `youtu.be/…|youtube.com/watch?v=…`), PDF upload via multipart FormData → `lesson-pdfs/<courseId>/<lessonId>.pdf`.
-- **Regra de coerência de template** (decidida 19-05-2026): template é mutável. `pdf → video_pdf` exige `youtube_url` preenchido no mesmo submit (senão erro de validação). `video_pdf → pdf` limpa `youtube_url`. PDF mantém-se em ambos os templates (`pdf_storage_path is not null` é regra de schema).
-- Server Action `uploadLessonPdfAction` separada para isolar lógica de Storage (valida MIME, tamanho ≤ 20MB, gera path).
-- Setas ↑↓ para aulas dentro do módulo.
-- 8-12 testes (validators, template coherence, YouTube URL regex, PDF upload mockado, swap).
+**Concluída em** `v3-cursos` (sem migrations novas — só UI + Server Actions por cima do schema e bucket da PR2).
+
+#### Entregue
+- `/admin/conteudos/[courseId]/[moduleId]` — drill-down de aulas dentro do módulo (admin+super_admin). Breadcrumb mobile `Cursos › Curso › Módulo`. Header com back-link "← {curso}". Listagem ordenada por `position` com pill do template (`só pdf` / `vídeo + pdf`) e URL do YouTube linkado quando aplicável.
+- Form "Nova aula" no topo (`encType="multipart/form-data"`): `title`, `description` (opcional), `template` (radios `pdf` ↔ `video_pdf`), `youtube_url` (sempre visível com hint "obrigatório se template = Vídeo + PDF"), file `accept="application/pdf"` obrigatório.
+- Edit inline via `?editar=<lessonId>` — mesma estrutura do form de create, com file input opcional e legenda "Deixar vazio mantém a apostila actual". Cancel link volta a `/admin/conteudos/[courseId]/[moduleId]`.
+- Delete inline via `?apagar=<lessonId>` — confirm com aviso de remoção do PDF e conclusões associadas. Best-effort `storage.remove()` após delete (se falhar, fica órfão até limpeza manual).
+- Setas ↑↓ (forms server-action) com no-op nos extremos. Verificação de `module_id` recebido vs `module_id` real da aula antes de mover (`A aula não pertence ao módulo indicado.`).
+- Server Actions em `src/app/admin/conteudos/lessons-actions.ts`: `createLessonAction`, `updateLessonAction`, `deleteLessonAction`, `moveLessonUpAction`, `moveLessonDownAction`. Triple defesa: role admin+super_admin, RLS em `lessons`, CHECK constraints DB.
+- Upload PDF: insert primeiro com `pdf_storage_path = 'pending-<ts>'` (placeholder para satisfazer NOT NULL), upload para `lesson-pdfs/<courseId>/<lessonId>.pdf` com `upsert: true` e `contentType: 'application/pdf'`, depois update do path. Em falha de upload faz rollback (`delete eq id`). Em update, file vazio mantém o `pdf_storage_path` actual via lookup prévio.
+- Coerência de template como decidido a 19-05-2026: `pdf → video_pdf` rejeita sem `youtube_url`; `video_pdf → pdf` força `youtube_url = null`. PDF mantém-se em ambos.
+- Regex YouTube aceita `https://youtu.be/<id>` e `https://www.youtube.com/watch?v=<id>` (case-insensitive, id ≥ 6 chars). Domínios alternativos (Vimeo, Loom, etc.) são rejeitados.
+- `ConteudosBreadcrumb` estendido com `courseId` + `moduleTitle`; curso passa a `<Link>` quando há módulo. Linha de módulo no `[courseId]/page.tsx` ganha botão **Aulas →** em borda laranja.
+- 17 testes em `lessons-actions.test.ts` (107 → 124 verdes): create (role, template inválido, video_pdf sem URL, URL não-YouTube, PDF em falta, MIME errado, > 20 MB, happy path, falha de upload), update (role, coerência pdf→video_pdf, coerência video_pdf→pdf, novo PDF anexado), delete (apaga DB + bucket + revalida), move (swap, no-op no primeiro, rejeita module mismatch).
+
+#### Não-âmbito
+- Etiquetas a nível de aula — V4.
+- Q&A por aula — V5.
+- Limpeza periódica de PDFs órfãos do bucket — deferida; admin único, baixo risco.
+
+#### Decisões fechadas durante a PR
+- **Form server-side puro com `youtube_url` sempre visível.** Esconder/mostrar consoante o template exigiria Client Component só para um toggle. O action ignora `youtube_url` quando template = `pdf` (define `null` no DB), portanto utilizadores podem deixá-lo preenchido sem efeito.
+- **`pdf_storage_path` placeholder + rollback.** O schema PR2 exige NOT NULL e nós queremos o id real no nome do ficheiro. Insert com placeholder → upload com `<id>` → update do path → rollback em falha de upload. Alternativa seria uploadar primeiro para um path temp e renomear, mas Supabase Storage não tem rename atómico, ficaria mais frágil.
+- **`storage.remove` em delete é best-effort.** Se falhar, o registo já saiu da DB e o PDF fica órfão. Aceitável dado que admin é único voluntário; reavaliar em V8 (stats) se ficar uma colecção significativa.
 
 ---
 

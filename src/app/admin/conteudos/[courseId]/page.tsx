@@ -108,8 +108,8 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
               Módulos
             </h2>
             <p className="text-muted-foreground mt-1 max-w-prose text-sm">
-              Cada módulo agrupa um conjunto de aulas. Usa as setas para reordenar. As aulas dentro
-              de cada módulo são geridas a um nível abaixo (V3 PR4b).
+              Cada módulo agrupa um conjunto de aulas. Usa as setas para reordenar e o botão{' '}
+              <strong>Aulas</strong> para gerir as aulas de cada módulo.
             </p>
           </header>
 
@@ -319,6 +319,12 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
                             ↓
                           </button>
                         </form>
+                        <Link
+                          href={`/admin/conteudos/${course.id}/${module.id}`}
+                          className="border-orange-primary/30 text-orange-primary hover:bg-orange-primary/10 focus-visible:ring-ring inline-flex h-8 items-center justify-center rounded-md border px-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                          Aulas →
+                        </Link>
                         <Link
                           href={`/admin/conteudos/${course.id}?editar=${module.id}`}
                           className="text-orange-primary hover:text-orange-hover focus-visible:ring-ring inline-flex h-8 items-center justify-center rounded-md px-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"

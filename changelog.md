@@ -16,6 +16,27 @@
 
 ---
 
+## [19-05-2026] — V3 PR4b: Admin CRUD de Aulas — local em `v3-cursos`
+
+Quinto passo de V3 (PR4 sub-iteração b, depois de PR4a e PR4-IA). Sem migrations novas: a página de aulas vive em cima do schema da PR2 e do storage `lesson-pdfs`. Server Actions com upload PDF, validação YouTube URL e coerência de template entre `pdf` ↔ `video_pdf`. Continua só em `logos-dev`; nada vai a `main`/`logos-prod` antes de 01-07-2026.
+
+### add
+- add: `src/app/admin/conteudos/lessons-actions.ts` com 5 Server Actions — `createLessonAction`, `updateLessonAction`, `deleteLessonAction`, `moveLessonUpAction`, `moveLessonDownAction`. Triple defesa: role admin+super_admin, RLS em `lessons`, CHECK constraints DB. Upload PDF para `lesson-pdfs/<courseId>/<lessonId>.pdf` (MIME `application/pdf`, ≤ 20 MB, `upsert: true`). Insert primeiro com placeholder em `pdf_storage_path` para satisfazer o NOT NULL; substituído pelo path real após upload. Em falha de upload faz rollback do row inserido.
+- add: regra de coerência de template — `pdf → video_pdf` exige `youtube_url` no mesmo submit; `video_pdf → pdf` limpa o `youtube_url`. PDF mantém-se sempre. Validador `validateYoutubeUrl` aceita `youtu.be/<id>` e `youtube.com/watch?v=<id>`.
+- add: `src/app/admin/conteudos/[courseId]/[moduleId]/page.tsx` — drill-down de aulas dentro de um módulo (admin+super_admin). Breadcrumb mobile `Cursos › Curso › Módulo`, voltar ao curso via link no header. Form "Nova aula" no topo (`encType="multipart/form-data"`) com radios de template, URL do YouTube opcional, file input `accept="application/pdf"`. Listagem ordenada por `position` com pill do template + URL YouTube linkado. Edit inline via `?editar=<lessonId>` (PDF opcional — vazio mantém o actual), confirm delete inline via `?apagar=<lessonId>`, setas ↑↓ para reordenar.
+- update: `ConteudosBreadcrumb` ganha `moduleTitle` + `courseId` para suportar três níveis (Cursos / Curso / Módulo); curso passa a link quando há módulo selecionado.
+- update: lista de módulos em `/admin/conteudos/[courseId]` ganha botão **Aulas →** (CTA primário em borda laranja) a apontar para o drill-down. Descrição da secção actualizada (já não diz "PR4b").
+
+### test
+- add: `src/app/admin/conteudos/lessons-actions.test.ts` com 17 testes — 9 em `createLessonAction` (role guard, template inválido, video_pdf sem URL, URL fora do formato, PDF em falta, MIME errado com rollback, > 20 MB com rollback, happy path full, falha de storage com rollback), 3 em `updateLessonAction` (role, coerência pdf→video_pdf sem URL, coerência video_pdf→pdf limpa URL, novo PDF anexado), 1 em `deleteLessonAction` (apaga DB + bucket + revalida), 3 em `moveLessonUpAction` (swap, no-op no primeiro, rejeita module_id que não bate).
+- 124/124 testes verdes (107 → 124, +17 nesta PR).
+
+### docs
+- update: `status.md` move "V3 PR4b" de "Em progresso" para "Concluído"; "V3 PR5 — Catálogo público" passa a próxima.
+- update: `feature-docs/v3-plan.md` tabela e §4b ticadas para PR4b.
+
+---
+
 ## [19-05-2026] — V3 PR3: Admin CRUD de Cursos — local em `v3-cursos`
 
 Terceira PR de V3. Primeira UI por cima do schema da PR2: a área admin ganha o painel `/admin/cursos` para criar, editar e apagar cursos. Aplicada apenas a `logos-dev` (sem migrations novas — só UI). Continua sem mergear em `main` conforme estratégia de 3 camadas.
