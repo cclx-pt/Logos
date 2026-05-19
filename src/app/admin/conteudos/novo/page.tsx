@@ -28,7 +28,6 @@ export default async function NovoCursoPage() {
 
   return (
     <div className="flex gap-6">
-      <CoursesColumn />
       <div className="min-w-0 flex-1 space-y-6">
         <ConteudosBreadcrumb courseTitle="Novo curso" />
         <header>
@@ -51,6 +50,8 @@ export default async function NovoCursoPage() {
           }}
         />
       </div>
+
+      <CoursesColumn />
     </div>
   );
 }

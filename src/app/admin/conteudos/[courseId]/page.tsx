@@ -86,8 +86,6 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
 
   return (
     <div className="flex gap-6">
-      <CoursesColumn selectedId={course.id} />
-
       <div className="min-w-0 flex-1 space-y-10">
         <ConteudosBreadcrumb courseTitle={course.title} />
 
@@ -422,6 +420,8 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
           )}
         </section>
       </div>
+
+      <CoursesColumn selectedId={course.id} />
     </div>
   );
 }
