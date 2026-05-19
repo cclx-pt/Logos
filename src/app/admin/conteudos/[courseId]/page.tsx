@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { CourseForm, type CourseFormInitialData, type TagOption } from '../course-form';
 import { CoursesColumn, ConteudosBreadcrumb } from '../courses-column';
+import { CourseTree } from '../course-tree';
 import { deleteCourseAction, updateCourseAction } from '../courses-actions';
 import {
   createModuleAction,
@@ -431,6 +432,7 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
       </div>
 
       <CoursesColumn selectedId={course.id} />
+      <CourseTree courseId={course.id} />
     </div>
   );
 }

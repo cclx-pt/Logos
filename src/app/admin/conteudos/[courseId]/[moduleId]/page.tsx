@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { CoursesColumn, ConteudosBreadcrumb } from '../../courses-column';
+import { CourseTree } from '../../course-tree';
 import {
   createLessonAction,
   deleteLessonAction,
@@ -491,6 +492,7 @@ export default async function ModuloAulasPage({ params, searchParams }: PageProp
       </div>
 
       <CoursesColumn selectedId={course.id} />
+      <CourseTree courseId={course.id} currentModuleId={module.id} currentLessonId={editar} />
     </div>
   );
 }

@@ -16,6 +16,32 @@
 
 ---
 
+## [19-05-2026] — Admin UX: full-width + árvore do curso (CourseTree) — local em `v3-cursos`
+
+Iteração de UX após pedido do user em showcase: admin estava demasiado centrado no PC, e navegar entre aulas de um curso exigia voltar à página do módulo a cada salto. Sem migrations, sem mudanças funcionais — só layout + nova coluna de navegação.
+
+### update
+- update: `src/app/admin/layout.tsx` deixa de ter `mx-auto max-w-6xl` e passa a usar a largura toda do viewport (`px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14`). Sidebar admin slim em `md` (w-48) e wider em `lg+` (w-56). Páginas públicas (Home, Conhece-nos, Conteúdos, Fala connosco, Perfil) **não** são tocadas — mantêm `max-w-*` para legibilidade de texto longo.
+- update: `[courseId]/page.tsx` e `[courseId]/[moduleId]/page.tsx` ganham `<CourseTree />` como terceira coluna, sempre depois de `<CoursesColumn />`.
+
+### add
+- add: `src/app/admin/conteudos/course-tree.tsx` — Server Component que carrega módulos + aulas do curso actual via `select('id, title, position, lessons ( id, title, position )')` num único round-trip e renderiza uma árvore navegável. Detalhes:
+  - `<details>` puro para colapsar/expandir módulos (zero JS no cliente; usa `<summary>` + `group-open:rotate-90` no chevron).
+  - Visibilidade `hidden xl:block` — só aparece em ecrãs ≥1280px (mobile/md/lg continuam com layout actual).
+  - Default-open só no módulo actual (`open={isCurrentModule}`).
+  - Cada aula é um `<Link>` para `/admin/conteudos/[courseId]/[moduleId]?editar=<lessonId>` — o estado "aula em edit" vive em search param, por isso o salto entre aulas é só navegação na mesma página.
+  - Destaque `aria-current="page"` + estilo laranja no módulo activo (quando sem `?editar=`) ou na aula activa.
+  - "Sem aulas" inline em itálico quando o módulo está vazio.
+
+### test
+- add: `src/app/admin/conteudos/course-tree.test.tsx` com 16 testes — render básico (heading, estado vazio, error throw), render de árvore completa (links de módulos + aulas com URLs correctos, ordenação JS quando DB devolve desordenado, "Sem aulas" em módulo vazio), destaque do actual (default-open só no current module, sem currentModuleId nenhum abre, aria-current na aula vs. no módulo conforme `?editar=`), shape da query Supabase (eq course_id, order position asc, select embed correcto), semantics (aside com aria-label).
+- 163/163 testes verdes (147 → 163, +16 nesta iteração).
+
+### docs
+- update: `status.md` regista a iteração de admin UX como concluída em `v3-cursos`.
+
+---
+
 ## [19-05-2026] — V3 PR5: Catálogo público em `/conteudos` — local em `v3-cursos`
 
 Sexta PR de V3 (1ª UI pública depois das 4 admin). `/conteudos` deixa de ser placeholder "Em breve" e passa a renderizar o catálogo real de cursos, com pesquisa textual e badge "Em breve" para cursos sem aulas. Continua só em `logos-dev`; nada vai a `main`/`logos-prod` antes de 01-07-2026.

@@ -17,8 +17,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const canSeeCourses = user.role === 'admin' || user.role === 'super_admin';
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 gap-8 px-4 py-10 sm:px-6 lg:px-8">
-      <aside aria-label="Navegação da área admin" className="hidden w-56 shrink-0 md:block">
+    <div className="flex w-full flex-1 gap-8 px-4 py-10 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
+      <aside aria-label="Navegação da área admin" className="hidden w-48 shrink-0 md:block lg:w-56">
         <p className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
           Área admin
         </p>
