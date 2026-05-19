@@ -16,6 +16,32 @@
 
 ---
 
+## [19-05-2026] — Skeletons em falta + spinners em todos os submits — local em `v3-cursos`
+
+Resposta a queixa do user: vários botões clicados ficavam mudos (sem indicar "estou a trabalhar"), e várias rotas com queries Supabase abriam em branco antes do conteúdo aparecer. Auditoria identificou 5 rotas sem `loading.tsx` e 8 botões `<button type="submit">` sem feedback de pending. Sem migrations, sem mudanças funcionais — só visibilidade.
+
+### add
+- add: `src/app/admin/conteudos/[courseId]/[moduleId]/loading.tsx` — skeleton da página de aulas (3 colunas: conteúdo + Cursos + CourseTree).
+- add: `src/app/admin/conteudos/novo/loading.tsx` — skeleton do `CourseForm` em modo create (2 colunas).
+- add: `src/app/admin/utilizadores/loading.tsx` — skeleton da tabela de profiles (5 colunas, 5 rows).
+- add: `src/app/admin/etiquetas/loading.tsx` — skeleton do form de criar + tabela de etiquetas.
+- add: `src/app/perfil/loading.tsx` — skeleton do avatar + dl 2x2.
+- add: `src/app/admin/utilizadores/tag-pill-remove-button.tsx` — Client Component que envolve o pill `{label}×` e troca `×` por `Spinner` enquanto a Server Action corre. Necessário porque o `SubmitButton` standard tem children textuais; aqui a children é composta e precisa de reagir a `useFormStatus` numa estrutura custom.
+
+### update
+- update: `src/app/admin/utilizadores/page.tsx` — botões **Promover/Despromover** e **Adicionar etiqueta** passam de `<button type="submit">` cru para `<SubmitButton>` com `pendingLabel` apropriado. Pill `×` de remover etiqueta passa a usar `<TagPillRemoveButton>`.
+- update: `src/app/admin/etiquetas/page.tsx` — botões **Criar**, **Guardar** (edit) e **Apagar definitivamente** passam para `<SubmitButton>`. O destrutivo mantém `bg-destructive` via className.
+- update: `src/app/admin/conteudos/course-form.tsx` — botão **Criar curso / Guardar alterações** passa para `<SubmitButton>` com `pendingLabel` dinâmico por `mode`. Este era dos mais lentos (validação + slug-unique + redirect) e o mais visível.
+
+### test
+- add: `src/app/admin/utilizadores/tag-pill-remove-button.test.tsx` — 2 testes (idle mostra `×`; pending mostra `Spinner` + disable + `aria-busy`).
+- 204/204 testes verdes (202 → 204, +2 nesta iteração).
+
+### docs
+- update: `status.md` regista a iteração; `changelog.md` ganha esta entrada.
+
+---
+
 ## [19-05-2026] — Admin UX: secções colapsáveis + reorder optimistic — local em `v3-cursos`
 
 Continuação da iteração de UX admin. Páginas `/admin/conteudos/[courseId]` e `[courseId]/[moduleId]` estavam a empilhar 3–5 blocos densos (Módulos, Detalhes, Zona de perigo / Nova aula, Aulas existentes), forçando scroll longo. Reordenar módulos/aulas com ↑↓ implicava `revalidatePath` + full reload — perceptível em listas grandes. Sem migrations, sem mudanças funcionais — só extracção de componentes UI + `useOptimistic` nas listas.

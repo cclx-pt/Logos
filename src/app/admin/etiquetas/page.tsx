@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
+import { SubmitButton } from '@/components/ui/submit-button';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { createTagAction, deleteTagAction, updateTagAction } from './actions';
 
@@ -106,12 +107,7 @@ export default async function EtiquetasPage({ searchParams }: PageProps) {
               className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
             />
           </label>
-          <button
-            type="submit"
-            className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
-          >
-            Criar
-          </button>
+          <SubmitButton pendingLabel="A criar…">Criar</SubmitButton>
         </form>
       </section>
 
@@ -191,12 +187,7 @@ export default async function EtiquetasPage({ searchParams }: PageProps) {
                                 className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
                               />
                             </label>
-                            <button
-                              type="submit"
-                              className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                            >
-                              Guardar
-                            </button>
+                            <SubmitButton pendingLabel="A guardar…">Guardar</SubmitButton>
                             <Link
                               href="/admin/etiquetas"
                               className="text-muted-foreground hover:text-ink focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md px-3 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
@@ -231,12 +222,12 @@ export default async function EtiquetasPage({ searchParams }: PageProps) {
                                 }}
                               >
                                 <input type="hidden" name="id" value={tag.id} />
-                                <button
-                                  type="submit"
-                                  className="bg-destructive hover:bg-destructive/90 focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md px-3 text-xs font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                                <SubmitButton
+                                  pendingLabel="A apagar…"
+                                  className="bg-destructive hover:bg-destructive/90 h-9 px-3 text-xs"
                                 >
                                   Apagar definitivamente
-                                </button>
+                                </SubmitButton>
                               </form>
                               <Link
                                 href="/admin/etiquetas"

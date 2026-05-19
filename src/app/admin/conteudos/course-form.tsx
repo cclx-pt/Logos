@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { SubmitButton } from '@/components/ui/submit-button';
 import { IconPicker } from './icon-picker';
 
 export type TagOption = { id: string; slug: string; label: string };
@@ -23,6 +24,7 @@ type CourseFormProps = {
 
 export function CourseForm({ mode, tags, course, action }: CourseFormProps) {
   const submitLabel = mode === 'create' ? 'Criar curso' : 'Guardar alterações';
+  const pendingLabel = mode === 'create' ? 'A criar curso…' : 'A guardar…';
   const isPublished = Boolean(course?.published_at);
   const assignedTagIds = new Set(course?.required_tags ?? []);
 
@@ -130,13 +132,8 @@ export function CourseForm({ mode, tags, course, action }: CourseFormProps) {
         </span>
       </label>
 
-      <div className="flex flex-wrap gap-3">
-        <button
-          type="submit"
-          className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
-        >
-          {submitLabel}
-        </button>
+      <div className="flex flex-wrap items-start gap-3">
+        <SubmitButton pendingLabel={pendingLabel}>{submitLabel}</SubmitButton>
         <Link
           href="/admin/conteudos"
           className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"

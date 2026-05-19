@@ -1,8 +1,10 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
+import { SubmitButton } from '@/components/ui/submit-button';
 import { getCurrentUser, getServerClient, type Role } from '@/lib/auth';
 import { assignTagAction, setUserRoleAction, unassignTagAction } from './actions';
+import { TagPillRemoveButton } from './tag-pill-remove-button';
 
 export const metadata = {
   title: 'Utilizadores · Área admin · LOGOS',
@@ -171,16 +173,10 @@ export default async function UtilizadoresPage() {
                           >
                             <input type="hidden" name="userId" value={row.id} />
                             <input type="hidden" name="tagId" value={tag.id} />
-                            <button
-                              type="submit"
-                              aria-label={`Remover etiqueta ${tag.label} de ${row.display_name}`}
-                              className="border-border bg-sage-card text-ink hover:bg-destructive/10 hover:border-destructive/30 focus-visible:ring-ring inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                            >
-                              {tag.label}
-                              <span aria-hidden="true" className="text-muted-foreground">
-                                ×
-                              </span>
-                            </button>
+                            <TagPillRemoveButton
+                              label={tag.label}
+                              ariaLabel={`Remover etiqueta ${tag.label} de ${row.display_name}`}
+                            />
                           </form>
                         ))
                       )}
@@ -213,12 +209,12 @@ export default async function UtilizadoresPage() {
                             </option>
                           ))}
                         </select>
-                        <button
-                          type="submit"
-                          className="text-orange-primary hover:text-orange-hover focus-visible:ring-ring rounded-md px-2 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        <SubmitButton
+                          pendingLabel="A adicionar…"
+                          className="bg-transparent text-orange-primary hover:bg-muted/40 hover:text-orange-hover h-auto rounded-md px-2 py-1 text-xs font-medium"
                         >
                           Adicionar
-                        </button>
+                        </SubmitButton>
                       </form>
                     )}
                   </td>
@@ -234,12 +230,12 @@ export default async function UtilizadoresPage() {
                         >
                           <input type="hidden" name="targetId" value={row.id} />
                           <input type="hidden" name="newRole" value={nextRole} />
-                          <button
-                            type="submit"
-                            className="text-orange-primary hover:text-orange-hover focus-visible:ring-ring rounded-md px-2 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                          <SubmitButton
+                            pendingLabel={row.role === 'admin' ? 'A despromover…' : 'A promover…'}
+                            className="bg-transparent text-orange-primary hover:bg-muted/40 hover:text-orange-hover h-auto rounded-md px-2 py-1 text-xs font-medium"
                           >
                             {actionLabel}
-                          </button>
+                          </SubmitButton>
                         </form>
                       ) : (
                         <span className="text-muted-foreground text-xs">
