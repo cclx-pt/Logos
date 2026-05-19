@@ -47,7 +47,7 @@ vi.mock('next/cache', () => ({
   revalidatePath: mockRevalidatePath,
 }));
 
-import { createCourseAction, updateCourseAction, deleteCourseAction } from './actions';
+import { createCourseAction, updateCourseAction, deleteCourseAction } from './courses-actions';
 
 function makeProfile(role: Profile['role'], id: string): Profile {
   return {
@@ -137,7 +137,7 @@ describe('createCourseAction (V3 PR3)', () => {
       published_at: null,
       created_by: CALLER_ID,
     });
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/cursos');
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/conteudos');
     expect(mockRevalidatePath).toHaveBeenCalledWith('/conteudos');
   });
 
@@ -274,7 +274,7 @@ describe('deleteCourseAction (V3 PR3)', () => {
 
     expect(result).toEqual({ ok: true });
     expect(mockDeleteEq).toHaveBeenCalledWith('id', COURSE_ID);
-    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/cursos');
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/conteudos');
     expect(mockRevalidatePath).toHaveBeenCalledWith('/conteudos');
   });
 });

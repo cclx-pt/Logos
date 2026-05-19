@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 
 export const metadata = {
-  title: 'Cursos · Área admin · LOGOS',
+  title: 'Conteúdos · Área admin · LOGOS',
 };
 
 type CourseRow = {
@@ -26,7 +26,7 @@ function formatDate(iso: string): string {
   });
 }
 
-export default async function CursosAdminPage() {
+export default async function ConteudosPage() {
   const user = await getCurrentUser();
   if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
     notFound();
@@ -57,14 +57,14 @@ export default async function CursosAdminPage() {
     <div className="space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-ink text-3xl font-medium tracking-tight">Cursos</h1>
+          <h1 className="font-display text-ink text-3xl font-medium tracking-tight">Conteúdos</h1>
           <p className="text-muted-foreground mt-2 max-w-prose text-sm">
-            Cursos do catálogo LOGOS. Drafts (sem data de publicação) só aparecem aqui na área
-            admin. A visibilidade pública depende também das etiquetas necessárias.
+            Cursos da plataforma LOGOS. Clica num curso para gerir os seus módulos e aulas.
+            Rascunhos só aparecem aqui na área admin.
           </p>
         </div>
         <Link
-          href="/admin/cursos/novo"
+          href="/admin/conteudos/novo"
           className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
         >
           Novo curso
@@ -106,19 +106,25 @@ export default async function CursosAdminPage() {
               </thead>
               <tbody className="divide-border divide-y">
                 {courses.map((course) => {
-                  const isPublished = Boolean(course.published_at);
                   const tagLabels = course.required_tags
                     .map((id) => tagsById.get(id))
                     .filter((label): label is string => typeof label === 'string');
 
                   return (
                     <tr key={course.id} className="text-ink align-top">
-                      <td className="px-4 py-3 font-medium">{course.title}</td>
+                      <td className="px-4 py-3 font-medium">
+                        <Link
+                          href={`/admin/conteudos/${course.id}`}
+                          className="hover:text-orange-primary transition-colors"
+                        >
+                          {course.title}
+                        </Link>
+                      </td>
                       <td className="px-4 py-3">
                         <code className="text-muted-foreground text-xs">{course.slug}</code>
                       </td>
                       <td className="px-4 py-3">
-                        {isPublished ? (
+                        {course.published_at ? (
                           <span className="bg-sage-card text-ink inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium">
                             Publicado
                           </span>
@@ -147,10 +153,10 @@ export default async function CursosAdminPage() {
                       <td className="px-4 py-3">{formatDate(course.created_at)}</td>
                       <td className="px-4 py-3 text-right">
                         <Link
-                          href={`/admin/cursos/${course.id}`}
+                          href={`/admin/conteudos/${course.id}`}
                           className="text-orange-primary hover:text-orange-hover focus-visible:ring-ring rounded-md px-2 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
                         >
-                          Editar
+                          Abrir →
                         </Link>
                       </td>
                     </tr>

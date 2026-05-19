@@ -31,10 +31,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           </Link>
           {canSeeCourses && (
             <Link
-              href="/admin/cursos"
+              href="/admin/conteudos"
               className="text-ink hover:text-orange-hover focus-visible:ring-ring rounded-md px-2 py-1.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
-              Cursos
+              Conteúdos
             </Link>
           )}
           {canSeeUsers && (

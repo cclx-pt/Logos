@@ -133,7 +133,7 @@ import {
   deleteModuleAction,
   moveModuleUpAction,
   moveModuleDownAction,
-} from './actions';
+} from './modules-actions';
 
 function makeProfile(role: Profile['role'], id: string): Profile {
   return {
@@ -213,7 +213,7 @@ describe('createModuleAction (V3 PR4a)', () => {
       description: 'Primeiro módulo',
       position: 0,
     });
-    expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/cursos/${COURSE_ID}`);
+    expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/conteudos/${COURSE_ID}`);
     expect(mockRevalidatePath).toHaveBeenCalledWith('/conteudos');
   });
 
@@ -287,7 +287,7 @@ describe('updateModuleAction (V3 PR4a)', () => {
       description: 'Nova descrição',
     });
     expect(mockEq).toHaveBeenCalledWith('id', MODULE_ID);
-    expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/cursos/${COURSE_ID}`);
+    expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/conteudos/${COURSE_ID}`);
   });
 });
 
@@ -313,7 +313,7 @@ describe('deleteModuleAction (V3 PR4a)', () => {
     expect(result).toEqual({ ok: true });
     expect(mockDelete).toHaveBeenCalled();
     expect(mockEq).toHaveBeenCalledWith('id', MODULE_ID);
-    expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/cursos/${COURSE_ID}`);
+    expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/conteudos/${COURSE_ID}`);
   });
 });
 
@@ -363,7 +363,7 @@ describe('moveModuleUpAction (V3 PR4a)', () => {
     expect(mockUpdate).toHaveBeenNthCalledWith(1, { position: 1 });
     expect(mockUpdate).toHaveBeenNthCalledWith(2, { position: 2 });
     expect(mockLt).toHaveBeenCalledWith('position', 2);
-    expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/cursos/${COURSE_ID}`);
+    expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/conteudos/${COURSE_ID}`);
   });
 
   it('é no-op quando já é o primeiro módulo (sem vizinho)', async () => {

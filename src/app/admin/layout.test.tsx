@@ -50,7 +50,7 @@ describe('AdminLayout (V2 PR3)', () => {
     expect(mockNotFound).toHaveBeenCalled();
   });
 
-  it('renderiza filhos + link Cursos quando role=admin (sem Utilizadores/Etiquetas)', async () => {
+  it('renderiza filhos + link Conteúdos quando role=admin (sem Utilizadores/Etiquetas)', async () => {
     mockGetCurrentUser.mockResolvedValue(makeUser('admin'));
     const ui = await AdminLayout({
       children: <div data-testid="children">Conteúdo</div>,
@@ -58,19 +58,19 @@ describe('AdminLayout (V2 PR3)', () => {
     render(ui);
     expect(screen.getByTestId('children')).toHaveTextContent('Conteúdo');
     expect(screen.getByRole('link', { name: /painel/i })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /cursos/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /conteúdos/i })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /utilizadores/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /etiquetas/i })).not.toBeInTheDocument();
   });
 
-  it('renderiza filhos + links Cursos/Utilizadores/Etiquetas quando role=super_admin', async () => {
+  it('renderiza filhos + links Conteúdos/Utilizadores/Etiquetas quando role=super_admin', async () => {
     mockGetCurrentUser.mockResolvedValue(makeUser('super_admin'));
     const ui = await AdminLayout({
       children: <div data-testid="children">Conteúdo</div>,
     });
     render(ui);
     expect(screen.getByTestId('children')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /cursos/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /conteúdos/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /utilizadores/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /etiquetas/i })).toBeInTheDocument();
   });

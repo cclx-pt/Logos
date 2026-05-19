@@ -18,7 +18,8 @@ Trabalhamos em 9 PRs pequenas e sequenciais, cada uma ship-able sozinha (testes 
 | 1 | V3 PR1 | Etiquetas (DB + admin CRUD + assign a utilizadores) | ✅ 19-05-2026 | tudo o resto |
 | 2 | V3 PR2 | Schema cursos/módulos/aulas + Storage `lesson-pdfs` + RLS | ✅ 19-05-2026 | PR3-7 |
 | 3 | V3 PR3 | Admin: CRUD de Cursos (com `required_tags`) | ✅ 19-05-2026 | PR4 |
-| 4a | V3 PR4a | Admin: CRUD de Módulos (dentro de `/admin/cursos/[id]`, setas ↑↓) | ⏳ | PR4b |
+| 4a | V3 PR4a | Admin: CRUD de Módulos (dentro de `/admin/conteudos/[courseId]`, setas ↑↓) | ✅ 19-05-2026 | PR4-IA |
+| 4-IA | V3 PR4-IA | Restructure admin: `/admin/cursos*` → `/admin/conteudos*` (drill-down) | ✅ 19-05-2026 | PR4b |
 | 4b | V3 PR4b | Admin: CRUD de Aulas (PDF upload, YouTube URL, coerência de template) | ⏳ | PR5 |
 | 5 | V3 PR5 | Catálogo público em `/conteudos` (substitui o "Em breve") | ⏳ | PR6 |
 | 6 | V3 PR6 | Página de curso + página de aula (YouTube + PDF + nav) | ⏳ | PR7 |
@@ -104,7 +105,19 @@ PRs 1-7 são *gates* para o prazo: sem elas, V3 não existe. PRs 8-9 são *polis
 
 ## 4. V3 PR4 — Admin CRUD de Módulos + Aulas
 
-PR4 foi dividida em duas sub-iterações sequenciais (19-05-2026, ver `branch-strategy.md` §4 — cada uma ship-able sozinha em `v3-cursos` com preview Vercel testável em telemóvel antes de avançar).
+PR4 foi dividida em sub-iterações sequenciais (19-05-2026, ver `branch-strategy.md` §4 — cada uma ship-able sozinha em `v3-cursos` com preview Vercel testável em telemóvel antes de avançar). Entre PR4a e PR4b entrou um passo de IA (PR4-IA) a pedido do user porque o admin não estava intuitivo: drill-down estilo Finder com cursos sempre visíveis na coluna esquerda.
+
+### 4-IA. V3 PR4-IA — Restructure para Conteúdos (drill-down) ✅ 19-05-2026
+
+Mudança de informação-arquitectura. A área admin perde `/admin/cursos*` e ganha `/admin/conteudos*` com modelo drill-down:
+
+- **Sidebar admin:** "Cursos" → "Conteúdos" (`/admin/conteudos`).
+- **`/admin/conteudos`** — landing: lista de cursos em tabela, botão "Novo curso" no topo, link de cada curso navega para `/admin/conteudos/<id>`.
+- **`/admin/conteudos/novo`** — form `CourseForm` em modo create, com `CoursesColumn` à esquerda em desktop (e breadcrumb `Cursos › Novo curso` em mobile).
+- **`/admin/conteudos/[courseId]`** — drill-down: à esquerda `CoursesColumn` com o curso actual destacado (`md:block`, escondido em mobile); à direita secção "Módulos" (form novo + lista numerada com ↑↓/editar/apagar) + secção "Detalhes do curso" (CourseForm em modo edit) + "Zona de perigo".
+- **Mobile:** colunas escondem (`md:hidden`/`md:block`); breadcrumb dá navegação para trás. Aceita-se um pouco de aperto em ecrãs ≥768 mas <1024 (sidebar admin 224 + coluna cursos 224 + main flex-1; gap-6).
+- **Server Actions:** mantêm-se intactas (criadas na PR4a). Renomeadas para `courses-actions.ts` e `modules-actions.ts` no top-level de `/admin/conteudos` (em vez de `actions.ts` por subdirectório) porque a página `[courseId]/page.tsx` usa ambas. Strings `revalidatePath('/admin/cursos*')` → `/admin/conteudos*`. Imports nos testes actualizados (`from './actions'` → `from './courses-actions'` ou `'./modules-actions'`). Assertions sobre revalidatePath actualizadas.
+- **Tests:** 18 testes da PR4a continuam verdes com paths novos (107/107).
 
 ### 4a. V3 PR4a — Módulos
 

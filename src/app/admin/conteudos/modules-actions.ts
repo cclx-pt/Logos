@@ -73,7 +73,7 @@ function callerIsAdmin(role: string): boolean {
 }
 
 function revalidateCoursePages(courseId: string): void {
-  revalidatePath(`/admin/cursos/${courseId}`);
+  revalidatePath(`/admin/conteudos/${courseId}`);
   revalidatePath('/conteudos');
 }
 

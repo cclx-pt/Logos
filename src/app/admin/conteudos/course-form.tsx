@@ -148,7 +148,7 @@ export function CourseForm({ mode, tags, course, action }: CourseFormProps) {
           {submitLabel}
         </button>
         <Link
-          href="/admin/cursos"
+          href="/admin/conteudos"
           className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
         >
           Cancelar

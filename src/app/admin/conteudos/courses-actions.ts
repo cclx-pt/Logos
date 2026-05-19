@@ -141,7 +141,7 @@ export async function createCourseAction(formData: FormData): Promise<CreateCour
     return { ok: false, error: `Falha a criar curso: ${error.message}` };
   }
 
-  revalidatePath('/admin/cursos');
+  revalidatePath('/admin/conteudos');
   revalidatePath('/conteudos');
   return { ok: true, id: data.id };
 }
@@ -217,8 +217,8 @@ export async function updateCourseAction(formData: FormData): Promise<CourseActi
     return { ok: false, error: `Falha a atualizar curso: ${updateError.message}` };
   }
 
-  revalidatePath('/admin/cursos');
-  revalidatePath(`/admin/cursos/${idRaw}`);
+  revalidatePath('/admin/conteudos');
+  revalidatePath(`/admin/conteudos/${idRaw}`);
   revalidatePath('/conteudos');
   return { ok: true };
 }
@@ -241,7 +241,7 @@ export async function deleteCourseAction(formData: FormData): Promise<CourseActi
     return { ok: false, error: `Falha a apagar curso: ${error.message}` };
   }
 
-  revalidatePath('/admin/cursos');
+  revalidatePath('/admin/conteudos');
   revalidatePath('/conteudos');
   return { ok: true };
 }
