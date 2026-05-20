@@ -2,10 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import { AdminBadgeLink } from './admin-badge-link';
 import { NavLinks } from './nav-links';
 import { cn } from '@/lib/utils';
 
-export function MobileNav() {
+type MobileNavProps = {
+  showAdminLink?: boolean;
+};
+
+export function MobileNav({ showAdminLink = false }: MobileNavProps) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -47,6 +52,11 @@ export function MobileNav() {
           )}
         >
           <NavLinks orientation="vertical" onNavigate={() => setOpen(false)} />
+          {showAdminLink && (
+            <div className="border-border mt-6 border-t pt-6">
+              <AdminBadgeLink onNavigate={() => setOpen(false)} />
+            </div>
+          )}
         </div>
       )}
     </>
