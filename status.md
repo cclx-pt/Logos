@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 20-05-2026 (V3 PR9a: Vercel Analytics em `v3-cursos`; 284/284 testes verdes. Playwright E2E (PR9b) por fazer.)
+> **Última atualização:** 20-05-2026 (V3 fechada: PR1-PR8 + PR9a Analytics em `v3-cursos`; 284/284 testes verdes. PR9b Playwright E2E adiada para V3.1.)
 
 ## 🎯 Milestone atual
 **V3 em desenvolvimento local em `v3-cursos`, V2.5 em hold no preview.** Detalhes da estratégia + workflow de teste em outros dispositivos: [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
@@ -114,7 +114,7 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
   - **Loading states**: novos componentes `Spinner` (Lucide Loader2 + `role="status"` + sr-only), `Skeleton` (`aria-hidden`, `animate-pulse`), `ProgressBar` indeterminada (keyframe `indeterminate` em `globals.css`), `SubmitButton` Client Component que usa `useFormStatus` para mostrar spinner + opcional ProgressBar enquanto a Server Action corre. Aplicado nos forms de criar/editar aula (uploads de PDF lentos). `loading.tsx` em `/admin/conteudos`, `/admin/conteudos/[courseId]` e `/conteudos` com skeletons que reflectem o layout real. 15 testes novos (163 → 178).
 
 ## 🚧 Em progresso
-- **V3 PR9b — Playwright E2E (happy-path)** (polish — opcional para 01-07-2026). Detalhes em `feature-docs/v3-plan.md` §9. Bloqueado por decisão de OAuth bypass: (a) cookie de sessão pré-preparado vs (b) flag `E2E_AUTH_BYPASS` que injecta `getCurrentUser()` mock só em ambientes E2E.
+- **V3 inteira fechada** (PR1-PR8 + PR9a). PR9b (Playwright E2E) **adiada para V3.1** — decisão do user 20-05-2026: setup de ~2 dias (cookie pré-preparado para satisfazer RLS) não justifica o ROI quando o smoke manual de §11 do `v3-plan.md` já cobre o happy-path. Reabrir se aparecerem regressões frequentes que mocks Vitest não apanhem.
 
 ## ⏭️ V2.x — Copy + UX (implementado localmente, 16-05-2026)
 - [x] **PR-A** — Copy & branding global: LOGOS maiúsculo, capitalizações (Bíblico, Fé, Enraizada, Connosco), em dashes fora, aspas `"..."` em vez de `«»`, lema do ministério em itálico (3 linhas em `home-motto.tsx`), parágrafos longos justificados.

@@ -3,7 +3,7 @@
 > **Branch:** `v3-cursos` (base: `v2.5-copy-ux`, próxima base: `main` quando V2.5 mergear).
 > **Prazo absoluto:** 01-07-2026 (ver `SPEC_1.md` §1, §9).
 > **Fonte:** `SPEC_1.md` §9 (V3), `architecture.md` §2 (modelo de dados), §5 (visibilidade), §6 (conclusão), §7 (storage).
-> **Estado:** PR1-PR8 + PR9a (Analytics) concluídas; PR9b (Playwright E2E) por fazer. Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
+> **Estado:** V3 fechada — PR1-PR8 + PR9a (Analytics) concluídas; PR9b (Playwright E2E) **adiada para V3.1** (decisão do user 20-05-2026 — ver §9b). Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
 
 ## 0. Resumo
 
@@ -26,7 +26,7 @@ Trabalhamos em 9 PRs pequenas e sequenciais, cada uma ship-able sozinha (testes 
 | 7 | V3 PR7 | Conclusão binária + ecrã "Curso Concluído" | ✅ 20-05-2026 | PR8 |
 | 8 | V3 PR8 | `course_access_log` + stats admin básicas | ✅ 20-05-2026 | — |
 | 9a | V3 PR9a | Vercel Analytics no root layout | ✅ 20-05-2026 | — |
-| 9b | V3 PR9b | Playwright E2E (happy-path) + CI job | ⏳ *(polish)* | — |
+| 9b | V3 PR9b | Playwright E2E (happy-path) + CI job | ⏭️ adiada para V3.1 | — |
 
 PRs 1-7 são *gates* para o prazo: sem elas, V3 não existe. PRs 8-9 são *polish*: se o prazo apertar, V3 abre com PR7 funcional e PR8-9 caem para V3.1.
 
@@ -243,18 +243,28 @@ Mudança de informação-arquitectura. A área admin perde `/admin/cursos*` e ga
 
 **Concluída em** `v3-cursos`. `@vercel/analytics@2.0.1` adicionado às `dependencies`; `<Analytics />` (`@vercel/analytics/next`) inserido no root `src/app/layout.tsx` antes de `</body>`, depois do `<Footer />`. Sem testes novos — o componente é um wrapper client-side que injecta `/_vercel/insights/script.js`; Vercel handle a recolha. Cookieless por design (não acrescenta banner de cookies). Activo automaticamente no preview e production.
 
-### 9b. Playwright E2E ⏳
+### 9b. Playwright E2E ⏭️ adiada para V3.1
+
+**Decisão do user 20-05-2026:** PR9b skip para o lançamento de 01-07-2026. Razões:
+
+- **PR9 inteira é polish, não gate.** §0 da tabela já o diz; o prazo cumpre-se sem E2E.
+- **Custo real ~2 dias.** O bypass de OAuth com flag (b) parecia simples mas é ilusório: `getCurrentUser()` mock devolve um `Profile` falso, mas RLS Supabase filtra por `auth.uid()` do JWT real — queries protegidas por RLS (todas as relevantes em V3: `lesson_completions`, `course_access_log`, `tags`, `user_tags`, `course_completions`) devolvem zero. Logo a única estratégia honesta é (a) cookie de sessão pré-preparado — `playwright/global-setup.ts` que chama `supabase.auth.admin.generateLink` + segue o link + guarda `sb-<ref>-auth-token` em `.auth/user.json` + secrets em CI + refresh entre runs. Setup ~2 dias para dev único.
+- **Smoke manual cobre o gap.** §11 já lista o happy-path como critério de pronto: utilizador novo → vê cursos públicos → super_admin atribui etiqueta → utilizador vê curso restrito → conclui aulas → ecrã Curso Concluído. 5 min em vez de 2 dias.
+- **284 testes Vitest** dão cobertura unitária + componente. O risco que E2E apanharia (integração entre Server Components, RLS, Storage, redirects) é gerível com smoke manual enquanto o ministério tem volume baixo de utilizadores.
+
+**Reabrir quando:** (1) regressões de integração começarem a aparecer entre smoke tests, ou (2) o ministério expandir o ritmo de releases (mais churn = mais valor em automação). Estratégia escolhida nessa altura: (a) cookie pré-preparado (ver acima — opção (b) descartada pelas razões de RLS).
+
+### 9b. Plano original (preservado para quando reabrir)
 
 - Playwright instalado (`pnpm dlx create-playwright`), config para correr contra preview URL.
 - 4-6 testes happy-path:
-  1. Login Google (mock ou skip — Google OAuth real não corre em CI, ver se Playwright auth fixture com cookie pré-preparado).
+  1. Login Google (cookie pré-preparado por `global-setup.ts`).
   2. Browse `/conteudos` autenticado.
   3. Abrir um curso visível.
   4. Abrir uma aula, simular play do iframe (não verificar conteúdo do YouTube), descarregar PDF.
   5. Marcar aula como concluída.
   6. Concluir todas as aulas → ver ecrã Curso Concluído.
 - `.github/workflows/ci.yml` ganha job `e2e` paralelo a `quality`.
-- **Bloqueado por decisão:** OAuth bypass — (a) cookie de sessão pré-preparado fixado por um script de setup vs (b) flag `E2E_AUTH_BYPASS` que injecta `getCurrentUser()` mock só em ambientes E2E.
 
 ---
 
