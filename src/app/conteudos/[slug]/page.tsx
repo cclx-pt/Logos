@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Check } from 'lucide-react';
 
 import { CourseIcon } from '@/lib/courses/icons';
@@ -11,6 +11,7 @@ import {
   isCourseComplete,
   isModuleComplete,
 } from '@/lib/courses/completion';
+import { logCourseAccessAction } from '@/lib/courses/access-actions';
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -77,12 +78,24 @@ export default async function CoursePage({ params }: PageProps) {
           </p>
         </div>
       ) : firstLesson ? (
-        <Link
-          href={`/conteudos/${course.slug}/${firstLesson.id}`}
-          className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring mt-8 inline-flex h-11 items-center justify-center rounded-md px-6 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+        <form
+          action={async () => {
+            'use server';
+            // Log de acesso é best-effort — falha (sem sessão / RLS deny)
+            // não bloqueia a navegação. A página da aula filtra acesso por
+            // RLS à sua vez.
+            await logCourseAccessAction(course.id);
+            redirect(`/conteudos/${course.slug}/${firstLesson.id}`);
+          }}
+          className="mt-8 inline-block"
         >
-          {completed.size > 0 ? 'Continuar curso' : 'Começar curso'} →
-        </Link>
+          <button
+            type="submit"
+            className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-11 items-center justify-center rounded-md px-6 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          >
+            {completed.size > 0 ? 'Continuar curso' : 'Começar curso'} →
+          </button>
+        </form>
       ) : (
         <p className="text-muted-foreground mt-8 inline-flex items-center rounded-md border border-dashed px-4 py-3 text-sm">
           Em breve — este curso ainda não tem aulas publicadas.

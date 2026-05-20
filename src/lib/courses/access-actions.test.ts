@@ -2,26 +2,37 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import type { Profile } from '@/lib/auth';
 
-const { mockGetCurrentUser, mockSelect, mockEq, mockMaybeSingle, mockCreateSignedUrl } = vi.hoisted(
-  () => ({
-    mockGetCurrentUser: vi.fn(),
-    mockSelect: vi.fn(),
-    mockEq: vi.fn(),
-    mockMaybeSingle: vi.fn(),
-    mockCreateSignedUrl: vi.fn(),
-  }),
-);
+const {
+  mockGetCurrentUser,
+  mockSelect,
+  mockEq,
+  mockMaybeSingle,
+  mockInsert,
+  mockCreateSignedUrl,
+} = vi.hoisted(() => ({
+  mockGetCurrentUser: vi.fn(),
+  mockSelect: vi.fn(),
+  mockEq: vi.fn(),
+  mockMaybeSingle: vi.fn(),
+  mockInsert: vi.fn(),
+  mockCreateSignedUrl: vi.fn(),
+}));
 
 type Response = { data: unknown; error: unknown };
 let dbResponse: Response = { data: null, error: null };
+let insertResponse: { error: unknown } = { error: null };
 function setDbResponse(r: Response): void {
   dbResponse = r;
+}
+function setInsertResponse(r: { error: unknown }): void {
+  insertResponse = r;
 }
 
 type Builder = {
   select: (...args: unknown[]) => Builder;
   eq: (...args: unknown[]) => Builder;
   maybeSingle: () => Promise<Response>;
+  insert: (row: unknown) => Promise<{ error: unknown }>;
 };
 
 function makeBuilder(): Builder {
@@ -37,6 +48,10 @@ function makeBuilder(): Builder {
     maybeSingle: () => {
       mockMaybeSingle();
       return Promise.resolve(dbResponse);
+    },
+    insert: (row) => {
+      mockInsert(row);
+      return Promise.resolve(insertResponse);
     },
   };
   return builder;
@@ -137,28 +152,46 @@ describe('getLessonPdfSignedUrlAction', () => {
   });
 });
 
-describe('logCourseAccessAction (no-op em PR6)', () => {
+describe('logCourseAccessAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    setInsertResponse({ error: null });
   });
 
   it('recusa quando não há sessão', async () => {
     mockGetCurrentUser.mockResolvedValue(null);
     const result = await logCourseAccessAction(VALID_COURSE_ID);
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/iniciar sessão/i) });
+    expect(mockInsert).not.toHaveBeenCalled();
   });
 
   it('recusa courseId não-UUID', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile());
     const result = await logCourseAccessAction('not-a-uuid');
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/curso inválido/i) });
+    expect(mockInsert).not.toHaveBeenCalled();
   });
 
-  it('devolve ok sem escrever na DB (stub PR6)', async () => {
-    mockGetCurrentUser.mockResolvedValue(makeProfile());
+  it('insere user_id + course_id em course_access_log e devolve ok', async () => {
+    const profile = makeProfile();
+    mockGetCurrentUser.mockResolvedValue(profile);
+    setInsertResponse({ error: null });
+
     const result = await logCourseAccessAction(VALID_COURSE_ID);
+
+    expect(mockInsert).toHaveBeenCalledWith({
+      user_id: profile.id,
+      course_id: VALID_COURSE_ID,
+    });
     expect(result).toEqual({ ok: true });
-    // PR8 vai destapar o insert; aqui confirmamos que não há escrita.
-    expect(mockSelect).not.toHaveBeenCalled();
+  });
+
+  it('propaga erro do insert', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile());
+    setInsertResponse({ error: { message: 'rls deny' } });
+
+    const result = await logCourseAccessAction(VALID_COURSE_ID);
+
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/rls deny/) });
   });
 });

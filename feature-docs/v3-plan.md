@@ -3,7 +3,7 @@
 > **Branch:** `v3-cursos` (base: `v2.5-copy-ux`, próxima base: `main` quando V2.5 mergear).
 > **Prazo absoluto:** 01-07-2026 (ver `SPEC_1.md` §1, §9).
 > **Fonte:** `SPEC_1.md` §9 (V3), `architecture.md` §2 (modelo de dados), §5 (visibilidade), §6 (conclusão), §7 (storage).
-> **Estado:** PR1-PR7 (todos os *gates*) concluídas; PR8+PR9 (polish) restantes. Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
+> **Estado:** PR1-PR8 concluídas; só PR9 (Analytics + Playwright E2E) por fazer. Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
 
 ## 0. Resumo
 
@@ -24,7 +24,7 @@ Trabalhamos em 9 PRs pequenas e sequenciais, cada uma ship-able sozinha (testes 
 | 5 | V3 PR5 | Catálogo público em `/conteudos` (substitui o "Em breve") | ✅ 19-05-2026 | PR6 |
 | 6 | V3 PR6 | Página de curso + página de aula (YouTube + PDF + nav) | ✅ 20-05-2026 | PR7 |
 | 7 | V3 PR7 | Conclusão binária + ecrã "Curso Concluído" | ✅ 20-05-2026 | PR8 |
-| 8 | V3 PR8 | `course_access_log` + stats admin básicas | ⏳ *(polish)* | — |
+| 8 | V3 PR8 | `course_access_log` + stats admin básicas | ✅ 20-05-2026 | — |
 | 9 | V3 PR9 | Vercel Analytics + Playwright E2E (happy-path) | ⏳ *(polish)* | — |
 
 PRs 1-7 são *gates* para o prazo: sem elas, V3 não existe. PRs 8-9 são *polish*: se o prazo apertar, V3 abre com PR7 funcional e PR8-9 caem para V3.1.
@@ -217,12 +217,22 @@ Mudança de informação-arquitectura. A área admin perde `/admin/cursos*` e ga
 
 ---
 
-## 8. V3 PR8 — Access logging + admin stats
+## 8. V3 PR8 — Access logging + admin stats ✅ 20-05-2026
 
-- Server Action `logCourseAccessAction(courseId)` chamada no clique do "Começar curso" / "Continuar curso".
-- Página `/admin/cursos/[id]/stats` (super_admin + admin): contagem distinta de utilizadores que acederam ao curso, contagem de conclusões.
-- View SQL `course_stats` (count distinct user_id from access_log + count from completions) com permissões só para admin.
-- Testes mínimos.
+**Concluída em** `v3-cursos`. Sem migrations novas — `course_access_log` foi criada em PR2 com índices em `course_id` e `accessed_at desc`. Esta PR só activa a action e adiciona a UI.
+
+### Entregue
+- **`logCourseAccessAction(courseId)`** deixa de ser stub (PR6) e passa a inserir `{ user_id: caller.id, course_id }` em `course_access_log`. RLS da PR2 garante que só o próprio insere (`user_id = current_profile_id()`).
+- **CTA "Começar/Continuar curso"** em `/conteudos/[slug]` converte de `<Link>` para `<form>` server-side: chama a action, depois `redirect(...)` para a primeira aula. Erro do insert (sessão expirada, RLS deny) **não bloqueia navegação** — log é best-effort telemetria. ~200ms extra por submit, sem JS no cliente.
+- **Helper** `src/lib/courses/stats.ts` — `getCourseStats(courseId, lessonIds[])` devolve `{ totalAccesses, uniqueUsers, lessonCompletions }`. Distinct via `Set` client-side (volumes pequenos, evita RPC); `lessonCompletions` via `count: 'exact', head: true` filtrado por `lesson_id IN (...)`.
+- **Página** `/admin/conteudos/[courseId]/stats` — gated admin+super_admin (`notFound()` caso contrário); breadcrumb 3 níveis; 3 cards (`StatCard`) com ícone Lucide + número grande + hint; rodapé "Notas" explica origem dos números e a deviação de PR7 (sem `course_completions`). Skeleton em `loading.tsx`.
+- **Link "Ver estatísticas →"** no header de `/admin/conteudos/[courseId]` (à direita do título).
+- **Testes**: 5 novos em `stats.test.ts` (zeros, total+distinct, propagação de erros, count null) + 1 net em `access-actions.test.ts` (stub removido, insert real testado). 278 → 284.
+
+### Decisões fechadas durante a PR
+- **Distinct via Set client-side, não view SQL.** Plano original previa view `course_stats` com `count distinct`; para volumes pequenos é overkill. Reabrir se a tabela crescer a milhares de linhas por curso.
+- **Action falha → log perde-se, redirect mantém-se.** Bloquear navegação por causa de telemetria seria pior UX. Trade-off aceite.
+- **Sem "utilizadores que concluíram o curso inteiro" em V3.** Exige query mais cara (group by user_id + match contra Set de lessonIds). Adiada para V3.1 ou pedido do ministério.
 
 ---
 

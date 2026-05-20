@@ -164,10 +164,16 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
       <div className="min-w-0 flex-1 space-y-6">
         <ConteudosBreadcrumb courseTitle={course.title} />
 
-        <header>
+        <header className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="font-display text-ink text-3xl font-medium tracking-tight">
             {course.title}
           </h1>
+          <Link
+            href={`/admin/conteudos/${course.id}/stats`}
+            className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          >
+            Ver estatísticas →
+          </Link>
         </header>
 
         <CollapsibleSection

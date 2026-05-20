@@ -1,19 +1,20 @@
 'use server';
 
 /**
- * Server Actions para acesso a conteúdo de cursos — V3 PR6.
+ * Server Actions para acesso a conteúdo de cursos.
  *
- * 1. `getLessonPdfSignedUrlAction`: gera URL assinada de 5 minutos para o
- *    PDF da aula. Defesa em profundidade: RLS em `lessons` filtra
+ * 1. `getLessonPdfSignedUrlAction` (PR6): gera URL assinada de 5 minutos
+ *    para o PDF da aula. Defesa em profundidade: RLS em `lessons` filtra
  *    visibilidade; se o select devolver nada, recusamos. A política de
  *    Storage permite `authenticated` ler qualquer objecto do bucket — a
  *    fronteira fina (saber se este utilizador pode ver este PDF) é feita
  *    aqui antes do `createSignedUrl`.
  *
- * 2. `logCourseAccessAction`: regista clique em "Começar/Continuar curso"
- *    na tabela `course_access_log`. **No-op em PR6** (apenas valida
- *    sessão) — PR8 vai destapar o insert quando a página de stats existir.
- *    Schema já existe.
+ * 2. `logCourseAccessAction` (PR8): regista clique em "Começar/Continuar
+ *    curso" na tabela `course_access_log`. INSERT só do próprio (RLS de
+ *    PR2). Falha no insert não é fatal para o utilizador — devolvemos
+ *    `{ ok: false }` mas a UI redirecciona à mesma para a aula. O
+ *    objectivo é ter telemetria leve para o admin (não bloquear).
  */
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
@@ -63,11 +64,6 @@ export async function getLessonPdfSignedUrlAction(lessonId: string): Promise<Sig
 
 export type LogAccessResult = { ok: true } | { ok: false; error: string };
 
-/**
- * Stub para o access log. PR6 não escreve nada — a UI de stats só existe
- * em PR8. Manter a action como ponto de chamada estável evita ter de
- * tocar nos call sites quando PR8 mergear.
- */
 export async function logCourseAccessAction(courseId: string): Promise<LogAccessResult> {
   const caller = await getCurrentUser();
   if (!caller) {
@@ -76,6 +72,14 @@ export async function logCourseAccessAction(courseId: string): Promise<LogAccess
   if (!UUID_RE.test(courseId)) {
     return { ok: false, error: 'Curso inválido.' };
   }
-  // PR8: insert em course_access_log aqui.
+
+  const supabase = await getServerClient();
+  const { error } = await supabase
+    .from('course_access_log')
+    .insert({ user_id: caller.id, course_id: courseId });
+
+  if (error) {
+    return { ok: false, error: `Falha a registar acesso: ${error.message}` };
+  }
   return { ok: true };
 }

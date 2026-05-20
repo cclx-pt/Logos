@@ -16,6 +16,34 @@
 
 ---
 
+## [20-05-2026] — V3 PR8: access log activo + stats admin — local em `v3-cursos`
+
+`logCourseAccessAction` deixa de ser stub (PR6) e passa a inserir em `course_access_log`. Página de stats por curso em `/admin/conteudos/[courseId]/stats` com 3 números essenciais. RLS da PR2 já restringia tudo — nada novo no schema; só UI + activação da action.
+
+### add
+- add: `src/lib/courses/stats.ts` — `getCourseStats(courseId, lessonIds[])` devolve `{ totalAccesses, uniqueUsers, lessonCompletions }`. Total + distintos a partir das linhas de `course_access_log` (Set client-side, evita RPC para uma plataforma pequena). `lessonCompletions` via `count: 'exact', head: true` filtrado por `lesson_id IN (...)`. Sem `lessonIds` (curso sem aulas), salta a segunda query.
+- add: `src/app/admin/conteudos/[courseId]/stats/page.tsx` — Server Component gated admin+super_admin; breadcrumb 3 níveis; 3 `StatCard` (acessos totais, utilizadores únicos, aulas concluídas) com ícones Lucide (`BarChart3`, `Users`, `CheckCircle2`); rodapé "Notas" explica origem dos números e a deviação de PR7 (`course_completions` não escrita).
+- add: `src/app/admin/conteudos/[courseId]/stats/loading.tsx` — skeleton match com layout dos 3 cards.
+- add: link "Ver estatísticas →" no header de `/admin/conteudos/[courseId]` (à direita do título do curso, mesmo estilo dos botões secundários do admin).
+
+### update
+- update: `src/lib/courses/access-actions.ts` — `logCourseAccessAction` deixa de ser no-op. Insert em `course_access_log` com `{ user_id: caller.id, course_id }`. Erro do insert é propagado (não silenciado) para que call sites possam diagnosticar, mas a UI ignora o resultado (best-effort). Comentário do ficheiro reescrito para reflectir que já não é stub.
+- update: `src/app/conteudos/[slug]/page.tsx` — CTA "Começar/Continuar curso" passa de `<Link>` para `<form action={async () => { 'use server'; await logCourseAccessAction(course.id); redirect(...); }}>`. Custo: ~200ms extra por submit/redirect; benefício: telemetria sem JS no cliente. Falha do log não bloqueia o redirect — RLS deny ou sessão expirada continua a abrir a aula (que tem o seu próprio gating por RLS de `lessons`).
+
+### test
+- 6 testes novos: 5 em `stats.test.ts` (zeros sem dados, total + distinct via Set, propagação de erro do select de acessos, propagação de erro do count, count null → 0) + 1 net em `access-actions.test.ts` (3 reescritos: stub removido, insert correcto, propagação de erro do insert).
+- 284/284 verdes (278 → 284, +6 líquido).
+
+### decision
+- **Distinct via `Set` client-side, não RPC.** Para volumes pequenos (admin único, dezenas-centenas de linhas por curso) é mais simples carregar a coluna e dedupe em JS do que criar uma função `get_course_unique_users()` em SQL. Reabrir se `course_access_log` crescer a milhares de linhas por curso — ainda há margem de muitos meses.
+- **Action falha não bloqueia redirect.** Log de acesso é best-effort. Bloquear a navegação por causa de um insert falhado em telemetria seria pior UX. A consequência: utilizador pode chegar à aula sem acesso registado se RLS recusar (sessão expirada entre carregar a página e clicar) — aceitável.
+- **Sem contagem de "utilizadores que concluíram o curso inteiro"** — exigiria query mais cara (group by user_id + comparar com Set de lessonIds do curso). Adiada para V3.1 ou para quando o ministério pedir uma métrica concreta.
+
+### docs
+- update: `status.md` regista PR8 concluída e move PR9 para "Em progresso"; `feature-docs/v3-plan.md` §8 marcada ✅ + tabela actualizada.
+
+---
+
 ## [20-05-2026] — V3 PR7: conclusão binária + ecrã "curso concluído" — local em `v3-cursos`
 
 Toggle binário de "Marcar como concluída" por aula, sem percentagens nem gamificação (CLAUDE.md §🚫). Conclusão de módulo e de curso são derivadas *on-read* a partir de `lesson_completions` — `course_completions` fica reservada para V3.1 se precisarmos da data preservada para stats da PR8.
