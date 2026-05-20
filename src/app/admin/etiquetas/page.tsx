@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 
 import { SubmitButton } from '@/components/ui/submit-button';
@@ -62,7 +62,12 @@ export default async function EtiquetasPage({ searchParams }: PageProps) {
         <form
           action={async (formData: FormData) => {
             'use server';
-            await createTagAction(formData);
+            const result = await createTagAction(formData);
+            redirect(
+              result.ok
+                ? '/admin/etiquetas?guardado=etiqueta_criada'
+                : '/admin/etiquetas?erro=generico',
+            );
           }}
           className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end"
         >

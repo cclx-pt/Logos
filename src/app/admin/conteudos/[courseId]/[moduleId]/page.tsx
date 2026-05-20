@@ -79,8 +79,10 @@ export default async function ModuloAulasPage({ params, searchParams }: PageProp
       <form
         action={async (formData: FormData) => {
           'use server';
-          await updateLessonAction(formData);
-          redirect(backHref);
+          const result = await updateLessonAction(formData);
+          redirect(
+            result.ok ? `${backHref}?guardado=aula_atualizada` : `${backHref}?erro=generico`,
+          );
         }}
         encType="multipart/form-data"
         className="space-y-3"
@@ -195,8 +197,8 @@ export default async function ModuloAulasPage({ params, searchParams }: PageProp
         <form
           action={async (formData: FormData) => {
             'use server';
-            await deleteLessonAction(formData);
-            redirect(backHref);
+            const result = await deleteLessonAction(formData);
+            redirect(result.ok ? `${backHref}?guardado=aula_apagada` : `${backHref}?erro=generico`);
           }}
         >
           <input type="hidden" name="id" value={deletingLesson.id} />
@@ -255,7 +257,10 @@ export default async function ModuloAulasPage({ params, searchParams }: PageProp
           <form
             action={async (formData: FormData) => {
               'use server';
-              await createLessonAction(formData);
+              const result = await createLessonAction(formData);
+              redirect(
+                result.ok ? `${backHref}?guardado=aula_criada` : `${backHref}?erro=generico`,
+              );
             }}
             encType="multipart/form-data"
             className="space-y-4"

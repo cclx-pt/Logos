@@ -16,6 +16,13 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('next/navigation', () => ({
   notFound: mockNotFound,
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  usePathname: () => '/admin',
+}));
+
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
 }));
 
 import AdminLayout from './layout';

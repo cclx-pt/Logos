@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 
 import { getCurrentUser } from '@/lib/auth';
+import { SaveToastListener } from '@/components/ui/save-toast-listener';
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
@@ -56,6 +57,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </nav>
       </aside>
       <main className="min-w-0 flex-1">{children}</main>
+      <Suspense fallback={null}>
+        <SaveToastListener />
+      </Suspense>
     </div>
   );
 }

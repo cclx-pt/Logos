@@ -1,6 +1,7 @@
 'use client';
 
 import { startTransition, useOptimistic, useRef } from 'react';
+import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
 import { assignTagAction, unassignTagAction } from './actions';
@@ -53,17 +54,28 @@ export function UserTagsCell({ userId, userName, assigned, allTags }: Props) {
       const fd = new FormData();
       fd.set('userId', userId);
       fd.set('tagId', tagId);
-      await assignTagAction(fd);
+      const result = await assignTagAction(fd);
+      if (result.ok) {
+        toast.success(`Etiqueta "${tag.label}" atribuída.`);
+      } else {
+        toast.error('Algo correu mal. Tenta de novo.');
+      }
     });
   }
 
   function handleRemove(tagId: string) {
+    const tag = allTags.find((t) => t.id === tagId);
     startTransition(async () => {
       applyOptimistic({ type: 'remove', tagId });
       const fd = new FormData();
       fd.set('userId', userId);
       fd.set('tagId', tagId);
-      await unassignTagAction(fd);
+      const result = await unassignTagAction(fd);
+      if (result.ok) {
+        toast.success(tag ? `Etiqueta "${tag.label}" removida.` : 'Etiqueta removida.');
+      } else {
+        toast.error('Algo correu mal. Tenta de novo.');
+      }
     });
   }
 

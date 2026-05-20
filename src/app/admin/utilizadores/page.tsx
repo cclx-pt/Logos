@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 
 import { SubmitButton } from '@/components/ui/submit-button';
@@ -170,7 +170,12 @@ export default async function UtilizadoresPage() {
                         <form
                           action={async (formData: FormData) => {
                             'use server';
-                            await setUserRoleAction(formData);
+                            const result = await setUserRoleAction(formData);
+                            redirect(
+                              result.ok
+                                ? '/admin/utilizadores?guardado=papel_atualizado'
+                                : '/admin/utilizadores?erro=generico',
+                            );
                           }}
                         >
                           <input type="hidden" name="targetId" value={row.id} />

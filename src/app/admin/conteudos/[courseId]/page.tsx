@@ -82,8 +82,12 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
       <form
         action={async (formData: FormData) => {
           'use server';
-          await updateModuleAction(formData);
-          redirect(`/admin/conteudos/${course.id}`);
+          const result = await updateModuleAction(formData);
+          redirect(
+            result.ok
+              ? `/admin/conteudos/${course.id}?guardado=modulo_atualizado`
+              : `/admin/conteudos/${course.id}?erro=generico`,
+          );
         }}
         className="space-y-3"
       >
@@ -136,8 +140,12 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
         <form
           action={async (formData: FormData) => {
             'use server';
-            await deleteModuleAction(formData);
-            redirect(`/admin/conteudos/${course.id}`);
+            const result = await deleteModuleAction(formData);
+            redirect(
+              result.ok
+                ? `/admin/conteudos/${course.id}?guardado=modulo_apagado`
+                : `/admin/conteudos/${course.id}?erro=generico`,
+            );
           }}
         >
           <input type="hidden" name="id" value={deletingModule.id} />
@@ -194,7 +202,12 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
               <form
                 action={async (formData: FormData) => {
                   'use server';
-                  await createModuleAction(formData);
+                  const result = await createModuleAction(formData);
+                  redirect(
+                    result.ok
+                      ? `/admin/conteudos/${course.id}?guardado=modulo_criado`
+                      : `/admin/conteudos/${course.id}?erro=generico`,
+                  );
                 }}
                 className="mt-4 space-y-3"
               >
@@ -256,7 +269,12 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
             course={course}
             action={async (formData: FormData) => {
               'use server';
-              await updateCourseAction(formData);
+              const result = await updateCourseAction(formData);
+              redirect(
+                result.ok
+                  ? `/admin/conteudos/${course.id}?guardado=curso_atualizado`
+                  : `/admin/conteudos/${course.id}?erro=generico`,
+              );
             }}
           />
         </CollapsibleSection>
@@ -279,7 +297,7 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
                     'use server';
                     const result = await deleteCourseAction(formData);
                     if (result.ok) {
-                      redirect('/admin/conteudos');
+                      redirect('/admin/conteudos?guardado=curso_apagado');
                     }
                   }}
                 >

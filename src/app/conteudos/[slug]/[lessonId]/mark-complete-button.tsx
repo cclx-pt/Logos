@@ -2,6 +2,7 @@
 
 import { startTransition, useOptimistic } from 'react';
 import { Check } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
 import {
@@ -30,10 +31,13 @@ export function MarkCompleteButton({ lessonId, initiallyCompleted }: Props) {
     const next = !completed;
     startTransition(async () => {
       applyOptimistic(next);
-      if (next) {
-        await markLessonCompleteAction(lessonId);
+      const result = next
+        ? await markLessonCompleteAction(lessonId)
+        : await unmarkLessonCompleteAction(lessonId);
+      if (result.ok) {
+        toast.success(next ? 'Aula marcada como concluída.' : 'Marcação removida.');
       } else {
-        await unmarkLessonCompleteAction(lessonId);
+        toast.error('Algo correu mal. Tenta de novo.');
       }
     });
   }

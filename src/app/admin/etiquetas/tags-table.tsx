@@ -2,6 +2,7 @@
 
 import { startTransition, useOptimistic } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 import { SubmitButton } from '@/components/ui/submit-button';
 import { deleteTagAction, updateTagAction } from './actions';
@@ -50,7 +51,12 @@ export function TagsTable({ initial, editingId, confirmingDeleteId }: Props) {
       applyOptimistic(id);
       const fd = new FormData();
       fd.set('id', id);
-      await deleteTagAction(fd);
+      const result = await deleteTagAction(fd);
+      if (result.ok) {
+        toast.success('Etiqueta apagada.');
+      } else {
+        toast.error('Algo correu mal. Tenta de novo.');
+      }
     });
   }
 
@@ -88,8 +94,15 @@ export function TagsTable({ initial, editingId, confirmingDeleteId }: Props) {
                 <tr key={tag.id} className="bg-muted/20">
                   <td colSpan={3} className="px-4 py-3">
                     <form
-                      action={async (formData) => {
-                        await updateTagAction(formData);
+                      action={(formData) => {
+                        startTransition(async () => {
+                          const result = await updateTagAction(formData);
+                          if (result.ok) {
+                            toast.success('Etiqueta guardada.');
+                          } else {
+                            toast.error('Algo correu mal. Tenta de novo.');
+                          }
+                        });
                       }}
                       className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end"
                     >

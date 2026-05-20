@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Analytics } from '@vercel/analytics/next';
+import { Toaster } from 'sonner';
 import { Header } from '@/components/site/header';
 import { Footer } from '@/components/site/footer';
 import { SkipLink } from '@/components/site/skip-link';
@@ -29,6 +30,12 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
+        <Toaster
+          position="top-right"
+          richColors
+          closeButton
+          toastOptions={{ classNames: { toast: 'font-sans' } }}
+        />
         <Analytics />
       </body>
     </html>

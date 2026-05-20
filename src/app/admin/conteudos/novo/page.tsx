@@ -44,7 +44,7 @@ export default async function NovoCursoPage() {
           'use server';
           const result = await createCourseAction(formData);
           if (result.ok) {
-            redirect(`/admin/conteudos/${result.id}`);
+            redirect(`/admin/conteudos/${result.id}?guardado=curso_criado`);
           }
         }}
       />
