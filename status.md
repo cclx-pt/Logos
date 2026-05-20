@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 20-05-2026 (V3 PR8: access log activo + stats admin em `v3-cursos`; 284/284 testes verdes)
+> **Última atualização:** 20-05-2026 (V3 PR9a: Vercel Analytics em `v3-cursos`; 284/284 testes verdes. Playwright E2E (PR9b) por fazer.)
 
 ## 🎯 Milestone atual
 **V3 em desenvolvimento local em `v3-cursos`, V2.5 em hold no preview.** Detalhes da estratégia + workflow de teste em outros dispositivos: [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
@@ -114,7 +114,7 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
   - **Loading states**: novos componentes `Spinner` (Lucide Loader2 + `role="status"` + sr-only), `Skeleton` (`aria-hidden`, `animate-pulse`), `ProgressBar` indeterminada (keyframe `indeterminate` em `globals.css`), `SubmitButton` Client Component que usa `useFormStatus` para mostrar spinner + opcional ProgressBar enquanto a Server Action corre. Aplicado nos forms de criar/editar aula (uploads de PDF lentos). `loading.tsx` em `/admin/conteudos`, `/admin/conteudos/[courseId]` e `/conteudos` com skeletons que reflectem o layout real. 15 testes novos (163 → 178).
 
 ## 🚧 Em progresso
-- **V3 PR9 — Vercel Analytics + Playwright E2E** (polish — opcional para 01-07-2026). Detalhes em `feature-docs/v3-plan.md` §9.
+- **V3 PR9b — Playwright E2E (happy-path)** (polish — opcional para 01-07-2026). Detalhes em `feature-docs/v3-plan.md` §9. Bloqueado por decisão de OAuth bypass: (a) cookie de sessão pré-preparado vs (b) flag `E2E_AUTH_BYPASS` que injecta `getCurrentUser()` mock só em ambientes E2E.
 
 ## ⏭️ V2.x — Copy + UX (implementado localmente, 16-05-2026)
 - [x] **PR-A** — Copy & branding global: LOGOS maiúsculo, capitalizações (Bíblico, Fé, Enraizada, Connosco), em dashes fora, aspas `"..."` em vez de `«»`, lema do ministério em itálico (3 linhas em `home-motto.tsx`), parágrafos longos justificados.
@@ -145,6 +145,7 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
 - [x] **V3 PR6 — Página de curso + página de aula** (20-05-2026) — `/conteudos/[slug]` + `/conteudos/[slug]/[lessonId]`. YouTube embed, PDF signed URL 5 min, navegação anterior/próxima, índice do curso.
 - [x] **V3 PR7 — Conclusão binária + ecrã Curso Concluído** (20-05-2026) — `MarkCompleteButton` optimistic toggle; helpers `getCompletedLessonIds`/`isModuleComplete`/`isCourseComplete`; check ✓ + contadores X/Y nas páginas de curso e aula; banners "Módulo concluído → Próximo módulo" e "Curso concluído". `course_completions` *não* é escrita (derivação on-read a partir de `lesson_completions`); ficou reservada para V3.1 se precisarmos de data preservada. 25 testes novos (253 → 278).
 - [x] **V3 PR8 — Access log + admin stats** (20-05-2026) — `logCourseAccessAction` deixa de ser no-op (insert real em `course_access_log`); CTA "Começar/Continuar curso" em `/conteudos/[slug]` converte de `<Link>` para `<form>` com Server Action que loga + redirect (falha do insert não bloqueia navegação — best-effort telemetria). Página `/admin/conteudos/[courseId]/stats` (admin+super_admin) com 3 cards: acessos totais, utilizadores únicos, aulas concluídas. Helper `getCourseStats(courseId, lessonIds)`. Link "Ver estatísticas" no header da página de curso admin. 6 testes novos (278 → 284).
+- [x] **V3 PR9a — Vercel Analytics** (20-05-2026) — `@vercel/analytics@2.0.1` instalado; `<Analytics />` adicionado ao root `layout.tsx` (antes de `</body>`, depois do `<Footer />`). Sem testes novos (componente é um wrapper que injecta script — Vercel handle o resto). Página `/_vercel/insights/event` activa no preview e production. Cookieless por design — não acrescenta banner de cookies.
 - [ ] *(polish, prazo permite)* **V3 PR9 — Vercel Analytics + Playwright E2E**. §9.
 - [ ] Substituir copy placeholder de Conhece-nos por texto final do ministério. *Bloqueado por: ministério.*
 - [ ] Acrescentar morada + horários da igreja a Fala connosco. *Bloqueado por: ministério.*

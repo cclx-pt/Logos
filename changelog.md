@@ -16,6 +16,25 @@
 
 ---
 
+## [20-05-2026] — V3 PR9a: Vercel Analytics — local em `v3-cursos`
+
+`@vercel/analytics@2.0.1` adicionado às dependências; `<Analytics />` (`@vercel/analytics/next`) inserido no root `src/app/layout.tsx` antes de `</body>`, depois do `<Footer />`. Cookieless por design — não acrescenta banner de cookies. Activo automaticamente no preview e production.
+
+### add
+- add: dependência `@vercel/analytics@^2.0.1` em `package.json`.
+- add: `<Analytics />` no root layout (`src/app/layout.tsx`) com import de `@vercel/analytics/next`. Posicionamento depois do `<Footer />` para não competir com layout shift inicial; o componente injecta o script client-side via Next.js dynamic import.
+
+### test
+- Sem testes novos. O componente é um wrapper que injecta `/_vercel/insights/script.js`; testar o efeito exigiria mock do `window` + interceptar a request, baixo retorno vs custo. 284/284 mantêm-se verdes.
+
+### decision
+- **`<Analytics />` no root layout vs em páginas específicas.** Plataforma quer cobrir todas as rotas (incluindo `/admin`) para perceber padrões de uso interno. Sem opt-out condicional — Vercel Analytics é cookieless por design e o site já cumpre RGPD (não há cookies de tracking de terceiros).
+
+### docs
+- update: `status.md` regista PR9a concluída e abre PR9b (Playwright E2E) como "Em progresso"; `feature-docs/v3-plan.md` §9 dividida em 9a (✅) e 9b (⏳, bloqueada por decisão de OAuth bypass).
+
+---
+
 ## [20-05-2026] — V3 PR8: access log activo + stats admin — local em `v3-cursos`
 
 `logCourseAccessAction` deixa de ser stub (PR6) e passa a inserir em `course_access_log`. Página de stats por curso em `/admin/conteudos/[courseId]/stats` com 3 números essenciais. RLS da PR2 já restringia tudo — nada novo no schema; só UI + activação da action.

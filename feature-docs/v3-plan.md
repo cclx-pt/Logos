@@ -3,7 +3,7 @@
 > **Branch:** `v3-cursos` (base: `v2.5-copy-ux`, próxima base: `main` quando V2.5 mergear).
 > **Prazo absoluto:** 01-07-2026 (ver `SPEC_1.md` §1, §9).
 > **Fonte:** `SPEC_1.md` §9 (V3), `architecture.md` §2 (modelo de dados), §5 (visibilidade), §6 (conclusão), §7 (storage).
-> **Estado:** PR1-PR8 concluídas; só PR9 (Analytics + Playwright E2E) por fazer. Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
+> **Estado:** PR1-PR8 + PR9a (Analytics) concluídas; PR9b (Playwright E2E) por fazer. Aplicado apenas a `logos-dev`; `logos-prod` continua schema V2 conforme `feature-docs/branch-strategy.md`.
 
 ## 0. Resumo
 
@@ -25,7 +25,8 @@ Trabalhamos em 9 PRs pequenas e sequenciais, cada uma ship-able sozinha (testes 
 | 6 | V3 PR6 | Página de curso + página de aula (YouTube + PDF + nav) | ✅ 20-05-2026 | PR7 |
 | 7 | V3 PR7 | Conclusão binária + ecrã "Curso Concluído" | ✅ 20-05-2026 | PR8 |
 | 8 | V3 PR8 | `course_access_log` + stats admin básicas | ✅ 20-05-2026 | — |
-| 9 | V3 PR9 | Vercel Analytics + Playwright E2E (happy-path) | ⏳ *(polish)* | — |
+| 9a | V3 PR9a | Vercel Analytics no root layout | ✅ 20-05-2026 | — |
+| 9b | V3 PR9b | Playwright E2E (happy-path) + CI job | ⏳ *(polish)* | — |
 
 PRs 1-7 são *gates* para o prazo: sem elas, V3 não existe. PRs 8-9 são *polish*: se o prazo apertar, V3 abre com PR7 funcional e PR8-9 caem para V3.1.
 
@@ -238,7 +239,12 @@ Mudança de informação-arquitectura. A área admin perde `/admin/cursos*` e ga
 
 ## 9. V3 PR9 — Analytics + E2E
 
-- Vercel Analytics: `@vercel/analytics` instalado, componente `<Analytics />` no `layout.tsx` root. Verificar opt-out em DNT.
+### 9a. Vercel Analytics ✅ 20-05-2026
+
+**Concluída em** `v3-cursos`. `@vercel/analytics@2.0.1` adicionado às `dependencies`; `<Analytics />` (`@vercel/analytics/next`) inserido no root `src/app/layout.tsx` antes de `</body>`, depois do `<Footer />`. Sem testes novos — o componente é um wrapper client-side que injecta `/_vercel/insights/script.js`; Vercel handle a recolha. Cookieless por design (não acrescenta banner de cookies). Activo automaticamente no preview e production.
+
+### 9b. Playwright E2E ⏳
+
 - Playwright instalado (`pnpm dlx create-playwright`), config para correr contra preview URL.
 - 4-6 testes happy-path:
   1. Login Google (mock ou skip — Google OAuth real não corre em CI, ver se Playwright auth fixture com cookie pré-preparado).
@@ -248,6 +254,7 @@ Mudança de informação-arquitectura. A área admin perde `/admin/cursos*` e ga
   5. Marcar aula como concluída.
   6. Concluir todas as aulas → ver ecrã Curso Concluído.
 - `.github/workflows/ci.yml` ganha job `e2e` paralelo a `quality`.
+- **Bloqueado por decisão:** OAuth bypass — (a) cookie de sessão pré-preparado fixado por um script de setup vs (b) flag `E2E_AUTH_BYPASS` que injecta `getCurrentUser()` mock só em ambientes E2E.
 
 ---
 
