@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 20-05-2026 (V3 fechada: PR1-PR8 + PR9a Analytics em `v3-cursos`; 284/284 testes verdes. PR9b Playwright E2E adiada para V3.1.)
+> **Última atualização:** 20-05-2026 (V3 fechada: PR1-PR8 + PR9a + iteração PR7+ a activar escrita em `course_completions`; 289/289 testes verdes. PR9b Playwright E2E adiada para V3.1.)
 
 ## 🎯 Milestone atual
 **V3 fechada dev-side em `v3-cursos`.** À espera de testemunhos finais do ministério para abrir PR `v3-cursos` → `main` e fazer deploy a `logos.cclx.pt`. Detalhes da estratégia em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
@@ -74,7 +74,7 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
   - **Helpers** em `src/lib/courses/completion.ts`: `getCompletedLessonIds(lessonIds[])` devolve `Set<string>` limitado ao input (evita carregar conclusões de outros cursos); `isModuleComplete`/`isCourseComplete` (false se zero aulas); `getNextModuleWithLessons` salta módulos vazios.
   - **Página de curso** (`/conteudos/[slug]`): check ✓ + line-through nas aulas concluídas; contador X/Y por módulo; banner "Módulo concluído → Próximo módulo" quando o módulo está completo e há próximo; banner "Curso concluído" no topo quando tudo está feito; CTA muda "Começar curso" → "Continuar curso" se há progresso.
   - **Página de aula** (`/conteudos/[slug]/[lessonId]`): `MarkCompleteButton` abaixo do PDF; bloco "Módulo/Curso concluído" quando se completa a última aula do módulo/curso.
-  - **`course_completions` *não* é escrita**. Decisão: derivação on-read a partir de `lesson_completions` (simples, sem race conditions, sem trigger). Schema da PR2 mantido; row + data preservada ficam reservadas para V3.1 se precisarmos para stats da PR8 ou para exibir "concluído em DD-MM-YYYY". O ecrã "Curso concluído" mostra o estado, não a data.
+  - **`course_completions` escrita on-read** (iteração da tarde 20-05-2026, depois de inicialmente adiada). Novo helper `getOrCreateCourseCompletion(courseId)` em `completion.ts` faz select-then-insert idempotente; 23505 trap para race entre dois renders. Página de curso passa a mostrar `em DD/MM/YYYY` no banner — data preservada pela RLS imutável de PR2 (sem UPDATE/DELETE). Desmarcar uma aula depois não apaga a conclusão original do curso. 5 testes novos sobre o helper (284 → 289).
   - **Testes**: 25 novos (10 em `completion.test.ts` + 9 em `completion-actions.test.ts` + 6 em `mark-complete-button.test.tsx`). 253 → 278.
 
 - [x] **V3 PR6 — Página de curso + página de aula** (20-05-2026, local em `v3-cursos`, NÃO mergeado) — Rotas `/conteudos/[slug]` (curso) e `/conteudos/[slug]/[lessonId]` (aula). URL da aula usa UUID (lessons não têm slug; V4 se prioridade). Visibilidade 100% via RLS de PR2 (sem duplicação de regra cá). Detalhes:

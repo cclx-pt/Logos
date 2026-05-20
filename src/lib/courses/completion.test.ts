@@ -2,15 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import type { Profile } from '@/lib/auth';
 
-const { mockGetCurrentUser, mockSelect, mockIn, mockReturns } = vi.hoisted(() => ({
-  mockGetCurrentUser: vi.fn(),
-  mockSelect: vi.fn(),
-  mockIn: vi.fn(),
-  mockReturns: vi.fn(),
-}));
+const { mockGetCurrentUser, mockSelect, mockIn, mockEq, mockReturns, mockMaybeSingle, mockInsert } =
+  vi.hoisted(() => ({
+    mockGetCurrentUser: vi.fn(),
+    mockSelect: vi.fn(),
+    mockIn: vi.fn(),
+    mockEq: vi.fn(),
+    mockReturns: vi.fn(),
+    mockMaybeSingle: vi.fn(),
+    mockInsert: vi.fn(),
+  }));
 
 type Response = { data: unknown; error: unknown };
 let response: Response = { data: [], error: null };
+
 function setResponse(r: Response): void {
   response = r;
 }
@@ -18,7 +23,14 @@ function setResponse(r: Response): void {
 type Builder = {
   select: (...args: unknown[]) => Builder;
   in: (...args: unknown[]) => Builder;
+  eq: (...args: unknown[]) => Builder;
   returns: () => Promise<Response>;
+  // maybeSingle e insert delegam directamente para mocks vi.fn — assim os
+  // testes podem usar mockResolvedValueOnce() para sequenciar respostas
+  // (necessário para o teste de race condition do getOrCreateCourseCompletion,
+  // onde select → null, insert → 23505, refetch → row encontrado).
+  maybeSingle: () => Promise<Response>;
+  insert: (row: unknown) => Builder;
 };
 
 function makeBuilder(): Builder {
@@ -31,9 +43,18 @@ function makeBuilder(): Builder {
       mockIn(...args);
       return builder;
     },
+    eq: (...args) => {
+      mockEq(...args);
+      return builder;
+    },
     returns: () => {
       mockReturns();
       return Promise.resolve(response);
+    },
+    maybeSingle: () => mockMaybeSingle() as Promise<Response>,
+    insert: (row) => {
+      mockInsert(row);
+      return builder;
     },
   };
   return builder;
@@ -49,6 +70,7 @@ vi.mock('@/lib/auth', () => ({
 import {
   getCompletedLessonIds,
   getNextModuleWithLessons,
+  getOrCreateCourseCompletion,
   isCourseComplete,
   isModuleComplete,
 } from './completion';
@@ -180,5 +202,79 @@ describe('isCourseComplete', () => {
   it('é false quando falta pelo menos uma', () => {
     const course = makeCourse([makeModule('m1', ['l1', 'l2'])]);
     expect(isCourseComplete(course, new Set(['l1']))).toBe(false);
+  });
+});
+
+describe('getOrCreateCourseCompletion', () => {
+  const COURSE_ID = 'c1';
+  const EXISTING_DATE = '2026-05-19T10:30:00Z';
+  const NEW_DATE = '2026-05-20T15:45:00Z';
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Default: empty responses; cada teste sequencia o que precisa.
+    mockMaybeSingle.mockResolvedValue({ data: null, error: null });
+  });
+
+  it('devolve null quando não há sessão (sem leitura nem escrita)', async () => {
+    mockGetCurrentUser.mockResolvedValue(null);
+    const result = await getOrCreateCourseCompletion(COURSE_ID);
+    expect(result).toBeNull();
+    expect(mockSelect).not.toHaveBeenCalled();
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it('devolve a data existente sem inserir quando o row já existe', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile());
+    mockMaybeSingle.mockResolvedValueOnce({ data: { completed_at: EXISTING_DATE }, error: null });
+
+    const result = await getOrCreateCourseCompletion(COURSE_ID);
+
+    expect(result).toBe(EXISTING_DATE);
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it('insere e devolve a nova data quando não há row', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile());
+    // 1º maybeSingle (select existing) → null. 2º maybeSingle (insert returning) → nova data.
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: null, error: null })
+      .mockResolvedValueOnce({ data: { completed_at: NEW_DATE }, error: null });
+
+    const result = await getOrCreateCourseCompletion(COURSE_ID);
+
+    expect(mockInsert).toHaveBeenCalledWith({
+      user_id: '11111111-1111-4111-8111-111111111111',
+      course_id: COURSE_ID,
+    });
+    expect(result).toBe(NEW_DATE);
+  });
+
+  it('em race condition (23505), faz refetch e devolve a data inserida pelo outro request', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile());
+    // 1º maybeSingle (select existing) → null.
+    // 2º maybeSingle (insert returning) → erro 23505.
+    // 3º maybeSingle (refetch após race) → encontra a data.
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: null, error: null })
+      .mockResolvedValueOnce({ data: null, error: { code: '23505', message: 'duplicate key' } })
+      .mockResolvedValueOnce({ data: { completed_at: NEW_DATE }, error: null });
+
+    const result = await getOrCreateCourseCompletion(COURSE_ID);
+
+    expect(result).toBe(NEW_DATE);
+    expect(mockInsert).toHaveBeenCalled();
+  });
+
+  it('devolve null se insert falha com erro não-23505 (não bloqueia o render)', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile());
+    mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null }).mockResolvedValueOnce({
+      data: null,
+      error: { code: '42501', message: 'permission denied' },
+    });
+
+    const result = await getOrCreateCourseCompletion(COURSE_ID);
+
+    expect(result).toBeNull();
   });
 });

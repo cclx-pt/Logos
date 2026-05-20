@@ -8,10 +8,19 @@ import { getCourseDetailBySlug, getFirstLessonOfCourse } from '@/lib/courses/det
 import {
   getCompletedLessonIds,
   getNextModuleWithLessons,
+  getOrCreateCourseCompletion,
   isCourseComplete,
   isModuleComplete,
 } from '@/lib/courses/completion';
 import { logCourseAccessAction } from '@/lib/courses/access-actions';
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('pt-PT', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -41,6 +50,12 @@ export default async function CoursePage({ params }: PageProps) {
 
   const firstLesson = getFirstLessonOfCourse(course);
   const courseDone = isCourseComplete(course, completed);
+  // Se o curso está concluído, garantimos que existe row em course_completions
+  // (insert idempotente; RLS de PR2 torna-a imutável depois de inserida).
+  // A data ali preservada é a primeira vez que o utilizador concluiu — mesmo
+  // que depois desmarque uma aula e o `courseDone` fique false em visitas
+  // subsequentes, a row continua na DB.
+  const completedAt = courseDone ? await getOrCreateCourseCompletion(course.id) : null;
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
@@ -77,7 +92,14 @@ export default async function CoursePage({ params }: PageProps) {
             ✓ Curso concluído
           </p>
           <p className="text-ink mt-2 text-base">
-            Parabéns — concluíste todas as aulas deste curso.
+            Parabéns — concluíste todas as aulas deste curso
+            {completedAt ? (
+              <>
+                {' '}
+                em <strong>{formatDate(completedAt)}</strong>
+              </>
+            ) : null}
+            .
           </p>
         </div>
       ) : firstLesson ? (

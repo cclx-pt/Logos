@@ -155,9 +155,9 @@ Se a shell partilhada CCLX vier a oferecer email/password ou outros providers no
 
 ## 6. Estado de conclusão
 
-- `lesson_completions` é a **fonte primária e única** em V3. Toggle binário (`markLessonCompleteAction` / `unmarkLessonCompleteAction`). RLS filtra por `current_profile_id()` — conclusão é acto pessoal (admin não marca por outros).
-- "Curso concluído" é **derivado *on-read*** a partir de `lesson_completions` (helpers `isModuleComplete`/`isCourseComplete` em `src/lib/courses/completion.ts`). Sem trigger, sem race entre "marca última aula" e "insere conclusão de curso".
-- `course_completions` **continua no schema** (criada em PR2) mas **não é escrita em V3**. Reservada para V3.1 se PR8 (stats) precisar da data preservada ou se o ministério pedir exibição "concluído em DD-MM-YYYY". Trade-off aceite: sem data preservada, implementação muito mais simples e idempotente.
+- `lesson_completions` é a fonte primária para conclusão por aula. Toggle binário (`markLessonCompleteAction` / `unmarkLessonCompleteAction`). RLS filtra por `current_profile_id()` — conclusão é acto pessoal (admin não marca por outros).
+- "Curso concluído" é **detectado on-read** via `isCourseComplete(course, completedLessonIds)` (helper em `src/lib/courses/completion.ts`). Quando todas as aulas visíveis estão concluídas E não há row em `course_completions`, a página de curso insere uma — `completed_at` fica preservado para sempre. RLS de PR2 torna a row imutável (sem UPDATE/DELETE policies); desmarcar uma aula depois não apaga a conclusão original do curso.
+- Helper `getOrCreateCourseCompletion(courseId)` faz select-then-insert idempotente, com 23505 trap para race entre dois page renders simultâneos. Falha silenciosa (retorna `null`) para não partir o render do banner.
 
 ## 7. Storage de PDFs
 

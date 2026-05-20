@@ -209,8 +209,8 @@ Mudança de informação-arquitectura. A área admin perde `/admin/cursos*` e ga
 - **Página de aula**: botão Marcar/Concluída abaixo do PDF; bloco "Módulo/Curso concluído" abaixo do botão quando a aula actual é a última do módulo e o módulo fica completo.
 - **Testes**: 25 novos (10 em `completion.test.ts` + 9 em `completion-actions.test.ts` + 6 em `mark-complete-button.test.tsx`). 253 → 278.
 
-### Decisão fechada durante a PR
-- **`course_completions` *não* é escrita.** Plano original (e `architecture.md` §6 pré-PR7) previa insert "on-read" da primeira vez que todas as aulas ficam concluídas, para preservar a data. Implementação real deriva o estado on-read a partir de `lesson_completions` (sem insert na tabela `course_completions`). Trade-off: sem data preservada, mas implementação simples (sem trigger, sem race entre "marca última aula" e "insere conclusão de curso", sem necessidade de revalidatePath cuidadoso). Schema da PR2 mantém a tabela vazia para V3.1 — reabrir se PR8 (stats) precisar da data ou se o ministério pedir exibição "concluído em DD-MM-YYYY". `architecture.md` §6 reescrita para reflectir a deviação.
+### Iteração PR7+ (20-05-2026): escrita em `course_completions` activada
+A primeira entrega de PR7 (manhã 20-05-2026) deixou `course_completions` por escrever — derivação on-read a partir de `lesson_completions` chegava para o banner. Na sessão da tarde reabriu-se a escrita (em vez de adiar para V3.1) porque o custo era baixo: novo helper `getOrCreateCourseCompletion(courseId)` em `completion.ts` faz select-then-insert idempotente (23505 trap em caso de race entre dois renders); página de curso passa a chamar `formatDate(completedAt)` no banner "✓ Curso concluído em DD/MM/YYYY". Imutabilidade garantida por RLS (sem UPDATE/DELETE policies em `course_completions`): desmarcar aula depois não apaga a conclusão original do curso. 5 testes novos (284 → 289).
 
 ### Não-âmbito
 - Estatísticas agregadas (quantos utilizadores concluíram cada curso) — V3 PR8.

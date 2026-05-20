@@ -1,11 +1,11 @@
 /**
- * Helpers de conclusão de aulas. RLS em `lesson_completions` (PR2)
- * garante que cada utilizador só vê os seus registos — `current_profile_id()`
- * filtra no server.
+ * Helpers de conclusão de aulas e curso. RLS em `lesson_completions` e
+ * `course_completions` (PR2) garante que cada utilizador só vê os seus
+ * registos — `current_profile_id()` filtra no server.
  *
- * Estes helpers vivem em `src/lib/courses/` (não no `app/`) porque vão ser
- * reutilizados pela página de curso, página de aula e (futura) página
- * "Curso Concluído" da PR7.
+ * Estes helpers vivem em `src/lib/courses/` (não no `app/`) porque são
+ * reutilizados pela página de curso, página de aula e ecrã "Curso
+ * Concluído".
  */
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
@@ -69,10 +69,62 @@ export function getNextModuleWithLessons(
 
 /**
  * Verdadeiro se todas as aulas (de todos os módulos) do curso estão
- * concluídas. Usado para o ecrã "Curso Concluído" (a finalizar em PR7).
+ * concluídas. Usado para o ecrã "Curso Concluído".
  */
 export function isCourseComplete(course: CourseDetail, completedLessonIds: Set<string>): boolean {
   const allLessons = course.modules.flatMap((m) => m.lessons);
   if (allLessons.length === 0) return false;
   return allLessons.every((l) => completedLessonIds.has(l.id));
+}
+
+/**
+ * Devolve a data de conclusão do curso para o utilizador actual. Se ainda
+ * não existir row em `course_completions`, insere uma agora — `completed_at`
+ * fica preservado para sempre (RLS de PR2 garante imutabilidade: sem
+ * UPDATE/DELETE policies).
+ *
+ * **Confia no caller**: só deve ser chamado depois de `isCourseComplete()`
+ * devolver `true`. A regra "todas as aulas concluídas" não está em RLS — é
+ * responsabilidade do caller server-side (a página de curso) verificar
+ * antes de invocar este helper.
+ *
+ * Race condition entre dois page renders simultâneos é mitigada via 23505
+ * trap (PK composta `(user_id, course_id)`): se outro request inseriu
+ * entre o nosso select e o insert, fazemos refetch.
+ *
+ * Retorna `null` apenas se não houver sessão ou em erro inesperado —
+ * nunca lança, para não partir o render do banner.
+ */
+export async function getOrCreateCourseCompletion(courseId: string): Promise<string | null> {
+  const caller = await getCurrentUser();
+  if (!caller) return null;
+
+  const supabase = await getServerClient();
+
+  const { data: existing } = await supabase
+    .from('course_completions')
+    .select('completed_at')
+    .eq('user_id', caller.id)
+    .eq('course_id', courseId)
+    .maybeSingle<{ completed_at: string }>();
+
+  if (existing) return existing.completed_at;
+
+  const { data: inserted, error } = await supabase
+    .from('course_completions')
+    .insert({ user_id: caller.id, course_id: courseId })
+    .select('completed_at')
+    .maybeSingle<{ completed_at: string }>();
+
+  if (error?.code === '23505') {
+    const { data: raced } = await supabase
+      .from('course_completions')
+      .select('completed_at')
+      .eq('user_id', caller.id)
+      .eq('course_id', courseId)
+      .maybeSingle<{ completed_at: string }>();
+    return raced?.completed_at ?? null;
+  }
+  if (error) return null;
+  return inserted?.completed_at ?? null;
 }
