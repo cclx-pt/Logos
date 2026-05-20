@@ -21,7 +21,10 @@ type Props = {
  * o `initiallyCompleted` original.
  */
 export function MarkCompleteButton({ lessonId, initiallyCompleted }: Props) {
-  const [completed, applyOptimistic] = useOptimistic(initiallyCompleted, (_state, next: boolean) => next);
+  const [completed, applyOptimistic] = useOptimistic(
+    initiallyCompleted,
+    (_state, next: boolean) => next,
+  );
 
   function handleToggle() {
     const next = !completed;

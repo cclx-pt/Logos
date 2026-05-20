@@ -61,7 +61,7 @@ export function CollapsibleSection({
     >
       <summary
         className={cn(
-          'flex cursor-pointer list-none items-start justify-between gap-4 rounded-md outline-none transition-colors',
+          'flex cursor-pointer list-none items-start justify-between gap-4 rounded-md transition-colors outline-none',
           'focus-visible:ring-ring focus-visible:ring-2',
         )}
       >

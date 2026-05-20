@@ -18,10 +18,7 @@ export type CourseStats = {
   lessonCompletions: number;
 };
 
-export async function getCourseStats(
-  courseId: string,
-  lessonIds: string[],
-): Promise<CourseStats> {
+export async function getCourseStats(courseId: string, lessonIds: string[]): Promise<CourseStats> {
   const supabase = await getServerClient();
 
   const { data: accessRows, error: accessError } = await supabase

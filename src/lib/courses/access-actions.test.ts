@@ -2,21 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import type { Profile } from '@/lib/auth';
 
-const {
-  mockGetCurrentUser,
-  mockSelect,
-  mockEq,
-  mockMaybeSingle,
-  mockInsert,
-  mockCreateSignedUrl,
-} = vi.hoisted(() => ({
-  mockGetCurrentUser: vi.fn(),
-  mockSelect: vi.fn(),
-  mockEq: vi.fn(),
-  mockMaybeSingle: vi.fn(),
-  mockInsert: vi.fn(),
-  mockCreateSignedUrl: vi.fn(),
-}));
+const { mockGetCurrentUser, mockSelect, mockEq, mockMaybeSingle, mockInsert, mockCreateSignedUrl } =
+  vi.hoisted(() => ({
+    mockGetCurrentUser: vi.fn(),
+    mockSelect: vi.fn(),
+    mockEq: vi.fn(),
+    mockMaybeSingle: vi.fn(),
+    mockInsert: vi.fn(),
+    mockCreateSignedUrl: vi.fn(),
+  }));
 
 type Response = { data: unknown; error: unknown };
 let dbResponse: Response = { data: null, error: null };

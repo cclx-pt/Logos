@@ -32,16 +32,8 @@ export default async function CourseStatsPage({ params }: PageProps) {
   const supabase = await getServerClient();
   const [{ data: course, error: courseError }, { data: modules, error: modulesError }] =
     await Promise.all([
-      supabase
-        .from('courses')
-        .select('id, title')
-        .eq('id', courseId)
-        .maybeSingle<CourseRow>(),
-      supabase
-        .from('modules')
-        .select('id')
-        .eq('course_id', courseId)
-        .returns<{ id: string }[]>(),
+      supabase.from('courses').select('id, title').eq('id', courseId).maybeSingle<CourseRow>(),
+      supabase.from('modules').select('id').eq('course_id', courseId).returns<{ id: string }[]>(),
     ]);
 
   if (courseError) {
@@ -77,11 +69,15 @@ export default async function CourseStatsPage({ params }: PageProps) {
         <Link href="/admin/conteudos" className="hover:text-ink transition-colors">
           Conteúdos
         </Link>
-        <span aria-hidden="true" className="mx-2">›</span>
+        <span aria-hidden="true" className="mx-2">
+          ›
+        </span>
         <Link href={`/admin/conteudos/${course.id}`} className="hover:text-ink transition-colors">
           {course.title}
         </Link>
-        <span aria-hidden="true" className="mx-2">›</span>
+        <span aria-hidden="true" className="mx-2">
+          ›
+        </span>
         <span className="text-ink">Estatísticas</span>
       </nav>
 
@@ -125,8 +121,8 @@ export default async function CourseStatsPage({ params }: PageProps) {
         <h2 className="text-ink text-sm font-semibold tracking-wide uppercase">Notas</h2>
         <ul className="text-muted-foreground mt-3 list-inside list-disc space-y-1 text-sm">
           <li>
-            Acessos e utilizadores únicos vêm de <code>course_access_log</code> (RLS dá SELECT só
-            a admin/super_admin).
+            Acessos e utilizadores únicos vêm de <code>course_access_log</code> (RLS dá SELECT só a
+            admin/super_admin).
           </li>
           <li>
             Aulas concluídas vêm de <code>lesson_completions</code> e contam toggles activos —

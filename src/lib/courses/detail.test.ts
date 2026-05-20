@@ -176,9 +176,9 @@ describe('getLessonDetailById', () => {
 
   it('lança Error quando supabase devolve error', async () => {
     setResponse({ data: null, error: { message: 'boom' } });
-    await expect(
-      getLessonDetailById('00000000-0000-4000-8000-000000000000'),
-    ).rejects.toThrow(/boom/);
+    await expect(getLessonDetailById('00000000-0000-4000-8000-000000000000')).rejects.toThrow(
+      /boom/,
+    );
   });
 });
 
@@ -205,9 +205,7 @@ function fakeCourse(): CourseDetail {
         title: 'M2',
         description: null,
         position: 1,
-        lessons: [
-          { id: 'l3', title: 'L3', description: null, template: 'pdf', position: 0 },
-        ],
+        lessons: [{ id: 'l3', title: 'L3', description: null, template: 'pdf', position: 0 }],
       },
     ],
   };

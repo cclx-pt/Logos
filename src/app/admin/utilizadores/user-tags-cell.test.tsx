@@ -34,9 +34,7 @@ describe('UserTagsCell — render', () => {
   });
 
   it('mostra cada etiqueta atribuída como pill com botão remover', () => {
-    render(
-      <UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[TAG_M]} allTags={ALL} />,
-    );
+    render(<UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[TAG_M]} allTags={ALL} />);
     expect(
       screen.getByRole('button', { name: /remover etiqueta mentoria de joão/i }),
     ).toBeInTheDocument();
@@ -48,16 +46,12 @@ describe('UserTagsCell — render', () => {
     );
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
 
-    rerender(
-      <UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[]} allTags={ALL} />,
-    );
+    rerender(<UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[]} allTags={ALL} />);
     expect(screen.getByRole('combobox')).toBeInTheDocument();
   });
 
   it('options do select excluem as etiquetas já atribuídas', () => {
-    render(
-      <UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[TAG_M]} allTags={ALL} />,
-    );
+    render(<UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[TAG_M]} allTags={ALL} />);
     const select = screen.getByRole('combobox') as HTMLSelectElement;
     const optionLabels = Array.from(select.options).map((o) => o.label);
     expect(optionLabels).toContain('Aluno');
@@ -75,9 +69,7 @@ describe('UserTagsCell — optimistic add/remove', () => {
 
   it('clicar numa pill chama unassignTagAction com userId+tagId', async () => {
     const user = userEvent.setup();
-    render(
-      <UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[TAG_M]} allTags={ALL} />,
-    );
+    render(<UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[TAG_M]} allTags={ALL} />);
     const pill = screen.getByRole('button', { name: /remover etiqueta mentoria/i });
     await act(async () => {
       await user.click(pill);
@@ -90,9 +82,7 @@ describe('UserTagsCell — optimistic add/remove', () => {
 
   it('submeter o select chama assignTagAction com tagId escolhido', async () => {
     const user = userEvent.setup();
-    render(
-      <UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[]} allTags={ALL} />,
-    );
+    render(<UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[]} allTags={ALL} />);
     const select = screen.getByRole('combobox');
     await user.selectOptions(select, TAG_A.id);
     const addBtn = screen.getByRole('button', { name: /adicionar/i });
@@ -108,9 +98,7 @@ describe('UserTagsCell — optimistic add/remove', () => {
   it('a pill desaparece imediatamente ao clicar (optimistic; mock pending)', async () => {
     mockUnassign.mockReturnValue(new Promise(() => {}));
     const user = userEvent.setup();
-    render(
-      <UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[TAG_M]} allTags={ALL} />,
-    );
+    render(<UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[TAG_M]} allTags={ALL} />);
     expect(screen.getByRole('button', { name: /remover etiqueta mentoria/i })).toBeInTheDocument();
     const pill = screen.getByRole('button', { name: /remover etiqueta mentoria/i });
     await act(async () => {
@@ -125,9 +113,7 @@ describe('UserTagsCell — optimistic add/remove', () => {
   it('a pill aparece imediatamente ao adicionar (optimistic; mock pending)', async () => {
     mockAssign.mockReturnValue(new Promise(() => {}));
     const user = userEvent.setup();
-    render(
-      <UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[]} allTags={ALL} />,
-    );
+    render(<UserTagsCell userId={USER_ID} userName={USER_NAME} assigned={[]} allTags={ALL} />);
     const select = screen.getByRole('combobox');
     await user.selectOptions(select, TAG_A.id);
     const addBtn = screen.getByRole('button', { name: /^adicionar$/i });

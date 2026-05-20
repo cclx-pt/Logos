@@ -55,9 +55,8 @@ export default async function LessonPage({ params }: PageProps) {
 
   // Estado de conclusão para esta aula + todas as do módulo actual (para
   // detectar "módulo completo → próximo módulo").
-  const moduleLessonIds = course.modules
-    .find((m) => m.id === lesson.module.id)
-    ?.lessons.map((l) => l.id) ?? [];
+  const moduleLessonIds =
+    course.modules.find((m) => m.id === lesson.module.id)?.lessons.map((l) => l.id) ?? [];
   const completed = await getCompletedLessonIds(moduleLessonIds);
 
   const currentModule = course.modules.find((m) => m.id === lesson.module.id) ?? null;
@@ -69,8 +68,7 @@ export default async function LessonPage({ params }: PageProps) {
   const nav = getLessonNavigation(course, lesson.id);
 
   // Vídeo (template = video_pdf)
-  const youtubeId =
-    lesson.template === 'video_pdf' ? extractYoutubeId(lesson.youtube_url) : null;
+  const youtubeId = lesson.template === 'video_pdf' ? extractYoutubeId(lesson.youtube_url) : null;
 
   // PDF inline: gera URL assinada server-side. Passamos ao iframe via prop.
   // RLS já validou visibilidade no select acima; createSignedUrl não acrescenta

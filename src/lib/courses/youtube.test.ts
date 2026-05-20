@@ -16,9 +16,9 @@ describe('extractYoutubeId', () => {
   });
 
   it('ignora query params extra mantendo o v=', () => {
-    expect(
-      extractYoutubeId('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42s'),
-    ).toBe('dQw4w9WgXcQ');
+    expect(extractYoutubeId('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=42s')).toBe(
+      'dQw4w9WgXcQ',
+    );
   });
 
   it('devolve null para id com formato inválido (curto demais)', () => {

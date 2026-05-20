@@ -177,7 +177,7 @@ export default async function UtilizadoresPage() {
                           <input type="hidden" name="newRole" value={nextRole} />
                           <SubmitButton
                             pendingLabel={row.role === 'admin' ? 'A despromover…' : 'A promover…'}
-                            className="bg-transparent text-orange-primary hover:bg-muted/40 hover:text-orange-hover h-auto rounded-md px-2 py-1 text-xs font-medium"
+                            className="text-orange-primary hover:bg-muted/40 hover:text-orange-hover h-auto rounded-md bg-transparent px-2 py-1 text-xs font-medium"
                           >
                             {actionLabel}
                           </SubmitButton>

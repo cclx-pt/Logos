@@ -92,11 +92,7 @@ export function UserTagsCell({ userId, userName, assigned, allTags }: Props) {
         )}
       </div>
       {available.length > 0 && (
-        <form
-          ref={formRef}
-          action={handleAdd}
-          className="mt-2 flex flex-wrap items-center gap-2"
-        >
+        <form ref={formRef} action={handleAdd} className="mt-2 flex flex-wrap items-center gap-2">
           <label className="sr-only" htmlFor={`tag-select-${userId}`}>
             Adicionar etiqueta a {userName}
           </label>

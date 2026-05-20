@@ -44,7 +44,10 @@ export default async function CoursePage({ params }: PageProps) {
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-      <nav aria-label="Breadcrumb" className="text-muted-foreground mb-6 flex items-center gap-2 text-xs">
+      <nav
+        aria-label="Breadcrumb"
+        className="text-muted-foreground mb-6 flex items-center gap-2 text-xs"
+      >
         <Link href="/conteudos" className="hover:text-ink transition-colors">
           Conteúdos
         </Link>
@@ -181,7 +184,7 @@ export default async function CoursePage({ params }: PageProps) {
                                   aria-hidden="true"
                                   className={
                                     isDone
-                                      ? 'bg-orange-primary text-white flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs'
+                                      ? 'bg-orange-primary flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs text-white'
                                       : 'border-border text-muted-foreground flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs tabular-nums'
                                   }
                                 >
@@ -208,9 +211,7 @@ export default async function CoursePage({ params }: PageProps) {
 
                     {moduleDone && firstOfNext && (
                       <div className="border-orange-primary/30 bg-orange-primary/5 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border p-4">
-                        <p className="text-ink text-sm">
-                          Módulo concluído. Pronto para o próximo?
-                        </p>
+                        <p className="text-ink text-sm">Módulo concluído. Pronto para o próximo?</p>
                         <Link
                           href={`/conteudos/${course.slug}/${firstOfNext.id}`}
                           className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md px-4 text-xs font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
@@ -220,9 +221,7 @@ export default async function CoursePage({ params }: PageProps) {
                       </div>
                     )}
                     {moduleDone && !firstOfNext && !courseDone && (
-                      <p className="text-muted-foreground mt-4 text-sm">
-                        Último módulo concluído.
-                      </p>
+                      <p className="text-muted-foreground mt-4 text-sm">Último módulo concluído.</p>
                     )}
                   </details>
                 </li>

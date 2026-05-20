@@ -35,10 +35,7 @@ vi.mock('next/cache', () => ({
   revalidatePath: mockRevalidatePath,
 }));
 
-import {
-  markLessonCompleteAction,
-  unmarkLessonCompleteAction,
-} from './completion-actions';
+import { markLessonCompleteAction, unmarkLessonCompleteAction } from './completion-actions';
 
 function makeProfile(): Profile {
   return {

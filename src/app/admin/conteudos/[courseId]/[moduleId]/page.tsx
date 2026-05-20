@@ -6,11 +6,7 @@ import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { ConteudosBreadcrumb } from '../../conteudos-breadcrumb';
 import { CourseTree } from '../../course-tree';
-import {
-  createLessonAction,
-  deleteLessonAction,
-  updateLessonAction,
-} from '../../lessons-actions';
+import { createLessonAction, deleteLessonAction, updateLessonAction } from '../../lessons-actions';
 import { LessonList, type LessonListItem } from '../../lesson-list';
 
 export const metadata = {
@@ -192,8 +188,8 @@ export default async function ModuloAulasPage({ params, searchParams }: PageProp
   const deletingNode = deletingLesson ? (
     <div className="border-l-destructive bg-destructive/10 border-l-4 p-4">
       <p className="text-ink text-sm">
-        Apagar a aula <strong>{deletingLesson.title}</strong>? Esta ação remove também o PDF e
-        todas as conclusões associadas. Não pode ser revertida.
+        Apagar a aula <strong>{deletingLesson.title}</strong>? Esta ação remove também o PDF e todas
+        as conclusões associadas. Não pode ser revertida.
       </p>
       <div className="mt-3 flex flex-wrap items-start gap-2">
         <form
@@ -234,7 +230,10 @@ export default async function ModuloAulasPage({ params, searchParams }: PageProp
 
         <header>
           <p className="text-muted-foreground text-xs tracking-wide uppercase">
-            <Link href={`/admin/conteudos/${course.id}`} className="hover:text-ink transition-colors">
+            <Link
+              href={`/admin/conteudos/${course.id}`}
+              className="hover:text-ink transition-colors"
+            >
               ← {course.title}
             </Link>
           </p>
@@ -351,10 +350,7 @@ export default async function ModuloAulasPage({ params, searchParams }: PageProp
           </form>
         </CollapsibleSection>
 
-        <CollapsibleSection
-          id="lista-aulas"
-          title={`Aulas existentes (${lessons.length})`}
-        >
+        <CollapsibleSection id="lista-aulas" title={`Aulas existentes (${lessons.length})`}>
           <LessonList
             initial={lessons}
             courseId={course.id}
