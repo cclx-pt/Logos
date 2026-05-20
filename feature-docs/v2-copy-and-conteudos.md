@@ -1,8 +1,8 @@
 # V2.x — Copy, UX do hero, rota Conteúdos e dropdown
 
-> **Estado:** implementada localmente (PR-A a PR-F ✅, 49/49 testes verdes). Falta E2E manual em preview Vercel + abrir PRs.
+> **Estado:** PR-A a PR-F implementadas, validadas em preview Vercel (`logos-git-v2.5-copy-ux-...`). Os commits V2.5 foram absorvidos em `v3-cursos`; já não há PR separada V2.5 → main — tudo sobe junto com V3 no dia do lançamento (ver `feature-docs/branch-strategy.md` §1.2). Único bloqueador residual: 4-5 testemunhos finais do ministério para substituir os placeholders do carrossel.
 > **Fonte:** lista de 19 pedidos do ministério (sessão 16-05-2026).
-> **Última atualização:** 16-05-2026
+> **Última atualização:** 20-05-2026 (estado de absorção em V3).
 
 ## 0. Resumo
 

@@ -233,7 +233,7 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 - Página inicial com o logótipo Logos e a marca da CCLX (paleta creme + laranja vivo)
 - Página *Conhece-nos*
 - Página *Fala connosco*
-- Página *Conteúdos* — hub de topo do ensino, com dois cartões: *Cursos* e *Escola Bíblica*. Cada cartão leva a uma sub-página placeholder "em breve" (`/conteudos/cursos`, `/conteudos/escola-biblica`). O catálogo real de cursos é construído na V3; a Escola Bíblica (transmissões em direto) na V6. A entrega ao público de um esqueleto "em construção" é deliberada — sinaliza o que virá.
+- Página *Conteúdos* — placeholder "em breve" em V1. V3 substitui pelo catálogo real de cursos com pesquisa textual (PR5: filtragem por título via `?q=`, badge "Em breve" para cursos sem aulas, RLS filtra por etiqueta). Escola Bíblica (transmissões em direto) entra em V6 como rota dedicada se o ministério fizer transmissões — não há sub-página dedicada em V3.
 - Identidade visual aplicada em todo o site
 - Disponível em `logos.cclx.pt`
 - **Sem login, sem base de dados** — a V1 pode ser inteiramente estática.

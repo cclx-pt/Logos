@@ -95,8 +95,9 @@ profiles  -- fonte de verdade do Logos para o utilizador
 | `profiles` + trigger sync | `20260514002002`, `20260514015528` | ✅ aplicada |
 | `profiles` RLS fixes (recursão) | `20260514022124`, `20260514022734` | ✅ aplicada |
 | `profiles` role mutation authority | `20260514030344` | ✅ aplicada |
-| `tags` + `user_tags` + helper `current_profile_has_tag` | `20260518120000` | ⏳ pendente (V3) |
-| `courses`/`modules`/`lessons`/`*_completions`/`*_log` + helper `course_is_visible` + bucket `lesson-pdfs` | `20260519020000` | ⏳ pendente (V3) |
+| `tags` + `user_tags` + helper `current_profile_has_tag` | `20260518120000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
+| `courses`/`modules`/`lessons`/`*_completions`/`*_log` + helper `course_is_visible` + bucket `lesson-pdfs` | `20260519020000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
+| Drop `tags.slug` (UUID interno é suficiente) | `20260520120000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 
 Migrations V3 sobem a `logos-prod` apenas no dia do lançamento (01-07-2026). Ver `feature-docs/branch-strategy.md`.
 

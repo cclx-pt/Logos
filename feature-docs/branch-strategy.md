@@ -16,33 +16,33 @@ Em qualquer momento entre 19-05-2026 e 01-07-2026, o repositório vive em três 
 ### O que cada camada contém
 
 - **`main`** — V1 (shell público) + V2 (auth Google + papéis + área admin). Inclui o hub `/conteudos` (PR #32). **Não inclui** o copy final do ministério para o home/hero, lema, carrossel, `/perfil`, ou `/conteudos` flat — isso é V2.5.
-- **`v2.5-copy-ux`** — `main` + dois commits V2.5: copy & UX do ministério (hero LOGOS, lema em itálico, carrossel de testemunhos placeholder, `/conteudos` flat, `/perfil`, dropdown user expandido) + fix 404 Base UI. **Espera por:** testemunhos finais + títulos provisórios dos cards de `/conteudos`. Quando esses textos chegarem, V2.5 mergea em `main` via PR e fica a Production.
-- **`v3-cursos`** — `v2.5-copy-ux` + commits V3 (plano + PRs 1-9 conforme `feature-docs/v3-plan.md`). **Não mergea em `main` até 01-07-2026.** V3 é construída inteira aqui antes de subir.
+- **`v2.5-copy-ux`** — `main` + dois commits V2.5: copy & UX do ministério (hero LOGOS, lema em itálico, carrossel de testemunhos placeholder, `/conteudos` flat, `/perfil`, dropdown user expandido) + fix 404 Base UI. **Espera por:** testemunhos finais do ministério. *(Update 20-05-2026 — V2.5 já não merga em `main` separadamente: `v3-cursos` carrega os commits V2.5 e tudo sobe numa só PR no dia do lançamento; ver §1.2.)*
+- **`v3-cursos`** — `v2.5-copy-ux` + commits V3 (plano + PR1-PR8 + PR9a Analytics). **Fechada dev-side em 20-05-2026** (PR9b Playwright E2E adiada para V3.1). Não mergea em `main` até 01-07-2026.
 
-### Promoções esperadas
+### Promoções esperadas — plano actual (20-05-2026)
+
+V3 fechada dev-side, V2.5 ainda à espera de testemunhos do ministério. Em vez do plano original de 2 promoções, hoje **a promoção é única** porque `v3-cursos` já carrega os commits V2.5:
 
 ```
-hoje                     V2.5 ready                01-07-2026
-─────────────────────────┬────────────────────────┬──────────────►
-                         │                        │
-main = V2 ────────────►  main = V2.5 ──────────►  main = V3
-v2.5-copy-ux             v2.5-copy-ux ──merged─►  (apagar branch)
-v3-cursos ───rebase em main, continuar V3 ───►   (apagar branch)
+hoje                                              dia do lançamento
+─────────────────────────────────────────────────┬──────────────►
+                                                 │
+main = V2 ──────────────────────────────────►   main = V2.5 + V3
+v3-cursos (contém V2.5 + V3) ──single PR────►   (apagar branch)
+v2.5-copy-ux ───absorvida em v3-cursos────────  (apagar branch)
 ```
 
-**Promoção 1 (V2 → V2.5):** quando ministério mandar testemunhos.
-1. Abrir PR `v2.5-copy-ux` → `main`.
-2. CI verde + merge (squash).
-3. Apagar `v2.5-copy-ux` no GitHub.
-4. **Rebase do `v3-cursos` em `main`** (substitui a base, é a mesma árvore — sem conflitos esperados).
-5. `git push --force-with-lease origin v3-cursos`.
+**Promoção única (V2 → V2.5 + V3):** quando ministério mandar testemunhos finais.
+1. (Em `v3-cursos`) Substituir os 5 placeholders do carrossel pelos testemunhos reais. Commit + push.
+2. Aplicar migrations V3 a `logos-prod` na ordem por timestamp.
+3. Confirmar bucket `lesson-pdfs` em `logos-prod` (criado pela migration `20260519020000`).
+4. Abrir PR `v3-cursos` → `main`.
+5. CI verde + smoke test manual + merge.
+6. Apagar `v3-cursos` e `v2.5-copy-ux` no GitHub.
 
-**Promoção 2 (V2.5 → V3):** dia do lançamento (01-07-2026).
-1. Abrir PR `v3-cursos` → `main`.
-2. CI verde + smoke test manual + merge (squash ou merge commit — preservar histórico de V3).
-3. Apagar `v3-cursos`.
-4. Aplicar migrations V3 a `logos-prod` na ordem por timestamp.
-5. Bucket `lesson-pdfs` criado em `logos-prod` (se não foi feito antes via setup).
+### Plano original (preservado para contexto histórico)
+
+O plano de 19-05-2026 era promover em duas fases: V2.5 → `main` quando testemunhos chegarem, depois rebase de `v3-cursos` em cima da nova `main` e promover V3 mais tarde. Tornou-se redundante quando V3 fechou (20-05-2026) antes da V2.5 desbloquear — fazer dois merges com a mesma base é mais trabalho do que um. O "Promoções esperadas — plano actual" acima é o que se vai executar.
 
 ## 2. Regras duras
 
@@ -51,7 +51,7 @@ Estas regras existem para que não acidentemente subamos V3 incompleta à Produc
 - **Nunca push directo para `main`.** Sempre via PR (já garantido por branch protection — ver `SPEC_1.md` §16 e `feature-docs/ci.md`).
 - **Nunca mergear PR de feature de V3 directamente em `main`.** Todas as PRs de V3 são internas (mergeadas via fast-forward / squash em `v3-cursos`).
 - **Nunca aplicar migrations V3 a `logos-prod` antes do dia do lançamento.** `logos-prod` continua com o schema V2 até 01-07-2026. Migrations V3 ficam apenas em `logos-dev` durante todo o desenvolvimento V3.
-- **A branch `v3-cursos` pode ser rebasada em `main` quando V2.5 mergear** (operação técnica de housekeeping, não promoção).
+- ~~A branch `v3-cursos` pode ser rebasada em `main` quando V2.5 mergear~~ — **obsoleto:** V2.5 já não merga separadamente (absorvida em `v3-cursos`).
 - **Vercel previews automáticos** — qualquer push para `v2.5-copy-ux` ou `v3-cursos` cria um Preview deploy contra `logos-dev`. Production só é tocada por merges em `main`.
 
 ## 3. Testar V3 noutros dispositivos
@@ -64,7 +64,7 @@ Estas regras existem para que não acidentemente subamos V3 incompleta à Produc
 |---|---|---|
 | Production | `https://logos.cclx.pt/` | `https://logos-<hash>.vercel.app/` |
 | V2.5 preview | `https://logos-git-v2.5-copy-ux-jcrninjas-projects.vercel.app/` | `https://logos-mh9qlw9ok-jcrninjas-projects.vercel.app/` (último em 19-05) |
-| V3 preview | `https://logos-git-v3-cursos-jcrninjas-projects.vercel.app/` | `https://logos-jr1xogh3h-jcrninjas-projects.vercel.app/` (commit V3 PR1) |
+| V3 preview | `https://logos-git-v3-cursos-jcrninjas-projects.vercel.app/` | per-deploy hash muda a cada push — usar `vercel ls` |
 
 **Como obter o URL per-deploy mais recente:**
 

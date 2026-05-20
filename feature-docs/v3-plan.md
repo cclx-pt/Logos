@@ -9,9 +9,9 @@
 
 V3 entrega o **conteúdo** do LOGOS: Cursos → Módulos → Aulas com vídeo YouTube embebido e apostila em PDF, restrição de acesso por etiqueta (apenas a nível de curso em V3; módulo/aula em V4), conclusão binária por aula, ecrã "Curso Concluído" e contabilização leve de acessos.
 
-V2 PR4 (etiquetas, fundação) ainda não foi construída — fica absorvida em V3 PR1 porque V3 depende dela.
+V2 PR4 (etiquetas, fundação) absorvida em V3 PR1 porque V3 depende dela.
 
-Trabalhamos em 9 PRs pequenas e sequenciais, cada uma ship-able sozinha (testes verdes, CI verde, preview Vercel funcional). A ordem é deliberada: cada PR é um pré-requisito da seguinte.
+A V3 foi entregue em 9 PRs pequenas e sequenciais (PR4 dividida em 4a + 4-IA + 4b durante a iteração), cada uma ship-able sozinha (testes verdes, CI verde, preview Vercel funcional). PR1-PR8 + PR9a fechadas; PR9b adiada para V3.1 (ver §9b).
 
 | # | PR | Tema | Estado | Bloqueia |
 |---|---|---|---|---|
@@ -282,20 +282,24 @@ Mudança de informação-arquitectura. A área admin perde `/admin/cursos*` e ga
 
 ## 11. Critérios de pronto (V3 inteiro)
 
-- [ ] PRs 1-7 mergeadas em `v3-cursos`, branch limpa.
-- [ ] `pnpm test`, `pnpm lint --max-warnings 0`, `pnpm typecheck`, `pnpm format:check` todos verdes.
-- [ ] Migrations aplicadas em `logos-dev` e `logos-prod`.
-- [ ] Bucket `lesson-pdfs` criado em `logos-prod`.
-- [ ] E2E Playwright happy-path verdes em preview.
-- [ ] Smoke test manual: utilizador novo abre conta → vê apenas cursos públicos → super_admin atribui etiqueta `mentoria-cclx` → utilizador vê curso restrito → conclui aulas → vê ecrã Curso Concluído.
-- [ ] `changelog.md`, `status.md`, `architecture.md` atualizados.
-- [ ] Rebase de `v3-cursos` em cima de `main` actualizado; PR aberta para `main`.
+- [x] PRs 1-8 + PR9a mergeadas em `v3-cursos`, branch limpa. (PR9b adiada para V3.1 — ver §9b.)
+- [x] `pnpm test` (284/284), `pnpm lint --max-warnings 0`, `pnpm typecheck` todos verdes em 20-05-2026.
+- [x] `changelog.md`, `status.md`, `architecture.md`, `feature-docs/v3-plan.md` atualizados.
+- [x] Migrations aplicadas em `logos-dev`.
+- [ ] **Migrations aplicadas em `logos-prod`** (sobe no dia do lançamento).
+- [ ] **Bucket `lesson-pdfs` confirmado em `logos-prod`** (criado pela migration `20260519020000`).
+- [ ] **Smoke test manual** em production após deploy: utilizador novo abre conta → vê apenas cursos públicos → super_admin atribui etiqueta → utilizador vê curso restrito → conclui aulas → vê banner "Curso concluído".
+- [ ] **`pnpm format:check`** verde (não corrido ainda nesta sessão; verificar antes do PR).
+- [ ] **PR `v3-cursos` → `main` aberta + mergeada** (1 PR única; V2.5 absorvida — ver `branch-strategy.md` §1.2).
+
+**Bloqueadores externos** (ministério, não código): 4-5 testemunhos finais do carrossel V2.5. Copy de Conhece-nos e Fala connosco também em hold mas não-gate (já estão em placeholder funcional).
 
 ---
 
 ## 12. Riscos identificados
 
-- **Prazo apertado:** 6 PRs *gate* em ~6 semanas. Estado em 19-05-2026: PR1+PR2 fechadas no mesmo dia, 5 *gates* restantes em ~6 semanas. Folga confortável para PR3-PR7 + polish PR8-PR9.
-- **Google OAuth em CI:** Playwright contra OAuth real não é viável. Usar uma das: (a) cookie de sessão pré-preparado fixado por um script de setup; (b) flag `E2E_AUTH_BYPASS` que injecta `getCurrentUser()` mock só em ambientes E2E. Decidir antes de PR9.
+- **Prazo apertado:** ~~6 PRs *gate* em ~6 semanas~~ — **resolvido em 20-05-2026:** PR1-PR8 fechadas em 2 dias (19-05 e 20-05); PR9a Analytics no mesmo dia. ~5 semanas de folga até 01-07-2026 para bloqueadores externos (testemunhos do ministério) e smoke em prod.
+- **Google OAuth em CI** — opção (b) `E2E_AUTH_BYPASS` mostrou-se ilusória porque RLS filtra por `auth.uid()` do JWT real, não pelo profile mock. Estratégia escolhida para reabrir em V3.1: (a) cookie de sessão pré-preparado via `playwright/global-setup.ts`. Ver `feature-docs/v3-plan.md` §9b.
 - **Visibilidade RLS recursiva:** ~~já se viu em V2 PR2 (3 fixes)~~. **Mitigado em PR2** via helper `course_is_visible(courses)` STABLE + SECURITY DEFINER reutilizado em modules/lessons. Padrão a manter: nunca subqueries directas a `profiles` em policies; usar sempre os helpers `current_profile_*`.
 - **PDF storage:** plano free Supabase tem ~1 GB. 50 aulas × 5 MB = 250 MB. Limite de bucket fixado em **20 MB por PDF** em PR2; se ministério pedir maior, ajustar `file_size_limit` do `storage.buckets`. Aceitável V3; reavaliar V5.
+- **Migrations V3 nunca aplicadas a `logos-prod`** — `logos-prod` tem schema V2 puro. As 3 migrations vão correr pela primeira vez contra prod no dia do lançamento. Mitigação: aplicar uma de cada vez via Supabase MCP (`apply_migration`) com checkpoint manual entre cada — se a primeira falhar, parar e diagnosticar antes de continuar. O schema de `logos-dev` é estruturalmente igual (mesmas extensões + roles), por isso o risco é baixo, mas vale o cuidado.

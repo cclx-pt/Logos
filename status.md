@@ -4,21 +4,21 @@
 > **Última atualização:** 20-05-2026 (V3 fechada: PR1-PR8 + PR9a Analytics em `v3-cursos`; 284/284 testes verdes. PR9b Playwright E2E adiada para V3.1.)
 
 ## 🎯 Milestone atual
-**V3 em desenvolvimento local em `v3-cursos`, V2.5 em hold no preview.** Detalhes da estratégia + workflow de teste em outros dispositivos: [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
+**V3 fechada dev-side em `v3-cursos`.** À espera de testemunhos finais do ministério para abrir PR `v3-cursos` → `main` e fazer deploy a `logos.cclx.pt`. Detalhes da estratégia em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
 
-### Mapa de 3 camadas (19-05-2026 → 01-07-2026)
+### Mapa de 3 camadas (estado 20-05-2026)
 
 | Camada | Branch | Onde está visível | Conteúdo |
 |---|---|---|---|
-| **Live** | `main` | `https://logos.cclx.pt/` | V1 shell + V2 auth/roles + hub `/conteudos` |
-| **Stored** | `v2.5-copy-ux` | `https://logos-git-v2.5-copy-ux-jcrninjas-projects.vercel.app/` | `main` + copy do ministério (hero LOGOS, lema, carrossel, /perfil). À espera de testemunhos finais para mergear em `main`. |
-| **Dev** | `v3-cursos` | `https://logos-git-v3-cursos-jcrninjas-projects.vercel.app/` | `v2.5-copy-ux` + V3 PR1 (etiquetas). PR2-PR9 vêm aqui. Mergea em `main` no dia do lançamento. |
+| **Live** | `main` | `https://logos.cclx.pt/` | V1 shell + V2 auth/roles + hub `/conteudos` (V2 puro) |
+| **Stored** | `v2.5-copy-ux` | `https://logos-git-v2.5-copy-ux-jcrninjas-projects.vercel.app/` | `main` + copy do ministério (hero LOGOS, lema, carrossel placeholder, `/perfil`). **Absorvida em `v3-cursos`** — já não mergea em `main` separadamente. |
+| **Dev** | `v3-cursos` | `https://logos-git-v3-cursos-jcrninjas-projects.vercel.app/` | `v2.5-copy-ux` + V3 PR1-PR8 + PR9a Analytics. **Fechada dev-side.** Mergea em `main` (1 PR) no dia do lançamento. |
 
-Previews Vercel estão atrás de Vercel Authentication — login com a conta `joaocanelasribeiro@gmail.com`. Ambos os previews lêem de `logos-dev` (que já tem schema V3 PR1). Production lê de `logos-prod` (schema V2 puro).
+Previews Vercel estão atrás de Vercel Authentication — login com a conta `joaocanelasribeiro@gmail.com`. Ambos os previews lêem de `logos-dev` (schema V3 completo). Production lê de `logos-prod` (schema V2 puro — migrations V3 sobem no lançamento).
 
-V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3-plan.md` (9 PRs).
+V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3-plan.md` (PR1-PR9a ✅; PR9b adiada para V3.1).
 
-**Prazo absoluto V3:** 1 de julho de 2026.
+**Prazo absoluto V3:** 1 de julho de 2026. **Único bloqueador residual:** 4-5 testemunhos finais do ministério para o carrossel.
 
 ## ✅ Concluído
 - [x] Especificação `SPEC_1.md` v2.2 fechada
@@ -129,8 +129,8 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
 - [x] **Fix 404 Base UI** (18-05-2026) — `not-found-content.tsx` passa de `<Button render={<Link/>}>` para `<Link className={buttonVariants(...)}>`.
 - [ ] E2E completo no preview a partir de outro dispositivo (login no Vercel com a conta `joaocanelasribeiro@gmail.com`): hero (autenticado e não autenticado) → carrossel → /conteudos → /perfil → dropdown completo. Confirmar redirect 308 de /cursos.
 - [ ] Pedir ao ministério os 4–5 testemunhos finais para substituir os placeholders.
-- [ ] Pedir ao ministério títulos provisórios para os cards de cursos em `/conteudos`.
-- [ ] Quando testemunhos chegarem: substituir, abrir PR de `v2.5-copy-ux` → `main`, merge, apagar branch.
+
+> **Nota (20-05-2026):** com V3 fechada do lado de dev, a promoção V2.5 → main separada deixa de ser necessária — `v3-cursos` carrega os commits de V2.5 e mergea tudo numa só PR no dia do lançamento. A linha "abrir PR de v2.5-copy-ux → main" do plano original em `feature-docs/branch-strategy.md` §1 fica obsoleta na prática.
 
 ## ⏭️ Próximas tarefas (V3)
 - [x] **Aplicar migrations V2 a `logos-prod`** (14-05-2026) — 5 migrations em ar via `pnpm dlx supabase db push --include-all`.
