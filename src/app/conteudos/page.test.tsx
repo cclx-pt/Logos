@@ -7,7 +7,6 @@ import type { VisibleCourse } from '@/lib/courses/visibility';
 function makeCourse(overrides: Partial<VisibleCourse> = {}): VisibleCourse {
   return {
     id: 'c1',
-    slug: 'marcos-introducao',
     title: 'Marcos — Introdução',
     description: 'Uma jornada de seis semanas pelo Evangelho de Marcos.',
     icon: 'book-open',
@@ -71,20 +70,14 @@ describe('ConteudosContent — estado vazio com filtro', () => {
 });
 
 describe('ConteudosContent — cards de cursos', () => {
-  it('renderiza um card por curso visível com link para o slug', () => {
+  it('renderiza um card por curso visível com link para o courseId (UUID)', () => {
     const courses = [
-      makeCourse({ id: 'a', slug: 'marcos', title: 'Marcos', description: null }),
-      makeCourse({ id: 'b', slug: 'romanos', title: 'Romanos', description: null }),
+      makeCourse({ id: 'a', title: 'Marcos', description: null }),
+      makeCourse({ id: 'b', title: 'Romanos', description: null }),
     ];
     render(<ConteudosContent courses={courses} query="" />);
-    expect(screen.getByRole('link', { name: /marcos/i })).toHaveAttribute(
-      'href',
-      '/conteudos/marcos',
-    );
-    expect(screen.getByRole('link', { name: /romanos/i })).toHaveAttribute(
-      'href',
-      '/conteudos/romanos',
-    );
+    expect(screen.getByRole('link', { name: /marcos/i })).toHaveAttribute('href', '/conteudos/a');
+    expect(screen.getByRole('link', { name: /romanos/i })).toHaveAttribute('href', '/conteudos/b');
   });
 
   it('mostra badge "Em breve" e desativa o card quando hasLessons = false', () => {

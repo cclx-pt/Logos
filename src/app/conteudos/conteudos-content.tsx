@@ -91,7 +91,7 @@ export function ConteudosContent({ courses, query }: Props) {
           {courses.map((course) => (
             <li key={course.id}>
               <Link
-                href={`/conteudos/${course.slug}`}
+                href={`/conteudos/${course.id}`}
                 aria-disabled={!course.hasLessons}
                 tabIndex={course.hasLessons ? undefined : -1}
                 className={

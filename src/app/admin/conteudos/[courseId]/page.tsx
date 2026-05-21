@@ -44,7 +44,7 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
   ] = await Promise.all([
     supabase
       .from('courses')
-      .select('id, slug, title, description, icon, required_tags, published_at')
+      .select('id, title, description, icon, required_tags, published_at')
       .eq('id', courseId)
       .maybeSingle<CourseFormInitialData>(),
     supabase

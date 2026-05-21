@@ -75,42 +75,35 @@ function formDataOf(
   return fd;
 }
 
-describe('createCourseAction (V3 PR3)', () => {
+describe('createCourseAction (V3 PR3 + V3.1 sem slug)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('recusa quando não há sessão', async () => {
     mockGetCurrentUser.mockResolvedValue(null);
-    const result = await createCourseAction(formDataOf({ slug: 'marcos', title: 'Marcos' }));
+    const result = await createCourseAction(formDataOf({ title: 'Marcos' }));
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/admin/i) });
     expect(mockInsertPayload).not.toHaveBeenCalled();
   });
 
   it('recusa quando caller é user', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('user', CALLER_ID));
-    const result = await createCourseAction(formDataOf({ slug: 'marcos', title: 'Marcos' }));
+    const result = await createCourseAction(formDataOf({ title: 'Marcos' }));
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/admin/i) });
-    expect(mockInsertPayload).not.toHaveBeenCalled();
-  });
-
-  it('recusa slug com caracteres inválidos', async () => {
-    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
-    const result = await createCourseAction(formDataOf({ slug: 'Marcos Intro', title: 'Marcos' }));
-    expect(result).toEqual({ ok: false, error: expect.stringMatching(/slug/i) });
     expect(mockInsertPayload).not.toHaveBeenCalled();
   });
 
   it('recusa título vazio', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
-    const result = await createCourseAction(formDataOf({ slug: 'marcos', title: '   ' }));
+    const result = await createCourseAction(formDataOf({ title: '   ' }));
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/título/i) });
   });
 
   it('recusa required_tags com valor que não é UUID', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     const result = await createCourseAction(
-      formDataOf({ slug: 'marcos', title: 'Marcos' }, { required_tags: ['not-a-uuid'] }),
+      formDataOf({ title: 'Marcos' }, { required_tags: ['not-a-uuid'] }),
     );
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/required_tags/i) });
     expect(mockInsertPayload).not.toHaveBeenCalled();
@@ -122,14 +115,13 @@ describe('createCourseAction (V3 PR3)', () => {
 
     const result = await createCourseAction(
       formDataOf(
-        { slug: 'marcos', title: 'Marcos', description: 'Curso intro', icon: 'book-open' },
+        { title: 'Marcos', description: 'Curso intro', icon: 'book-open' },
         { required_tags: [TAG_ID] },
       ),
     );
 
     expect(result).toEqual({ ok: true, id: COURSE_ID });
     expect(mockInsertPayload).toHaveBeenCalledWith({
-      slug: 'marcos',
       title: 'Marcos',
       description: 'Curso intro',
       icon: 'book-open',
@@ -145,48 +137,42 @@ describe('createCourseAction (V3 PR3)', () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', CALLER_ID));
     mockInsertSingle.mockResolvedValue({ data: { id: COURSE_ID }, error: null });
 
-    const result = await createCourseAction(
-      formDataOf({ slug: 'marcos', title: 'Marcos', published: 'on' }),
-    );
+    const result = await createCourseAction(formDataOf({ title: 'Marcos', published: 'on' }));
 
     expect(result).toEqual({ ok: true, id: COURSE_ID });
     const payload = mockInsertPayload.mock.calls[0][0] as { published_at: string | null };
     expect(payload.published_at).toEqual(expect.stringMatching(/T.*Z$/));
   });
 
-  it('reporta slug duplicado (Postgres 23505) com mensagem clara', async () => {
+  it('propaga erro genérico do Supabase em insert', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     mockInsertSingle.mockResolvedValue({
       data: null,
-      error: { code: '23505', message: 'duplicate key' },
+      error: { code: '42501', message: 'permission denied for relation courses' },
     });
 
-    const result = await createCourseAction(formDataOf({ slug: 'marcos', title: 'Marcos' }));
+    const result = await createCourseAction(formDataOf({ title: 'Marcos' }));
 
-    expect(result).toEqual({ ok: false, error: expect.stringMatching(/já existe/i) });
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/falha a criar/i) });
     expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 });
 
-describe('updateCourseAction (V3 PR3)', () => {
+describe('updateCourseAction (V3 PR3 + V3.1 sem slug)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('recusa quando caller é user', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('user', CALLER_ID));
-    const result = await updateCourseAction(
-      formDataOf({ id: COURSE_ID, slug: 'marcos', title: 'Marcos' }),
-    );
+    const result = await updateCourseAction(formDataOf({ id: COURSE_ID, title: 'Marcos' }));
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/admin/i) });
     expect(mockUpdatePayload).not.toHaveBeenCalled();
   });
 
   it('recusa quando id não é UUID', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
-    const result = await updateCourseAction(
-      formDataOf({ id: 'not-uuid', slug: 'marcos', title: 'Marcos' }),
-    );
+    const result = await updateCourseAction(formDataOf({ id: 'not-uuid', title: 'Marcos' }));
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/id/i) });
   });
 
@@ -199,7 +185,7 @@ describe('updateCourseAction (V3 PR3)', () => {
     mockUpdateEq.mockResolvedValue({ error: null });
 
     const result = await updateCourseAction(
-      formDataOf({ id: COURSE_ID, slug: 'marcos', title: 'Marcos', published: 'on' }),
+      formDataOf({ id: COURSE_ID, title: 'Marcos', published: 'on' }),
     );
 
     expect(result).toEqual({ ok: true });
@@ -215,9 +201,7 @@ describe('updateCourseAction (V3 PR3)', () => {
     });
     mockUpdateEq.mockResolvedValue({ error: null });
 
-    const result = await updateCourseAction(
-      formDataOf({ id: COURSE_ID, slug: 'marcos', title: 'Marcos' }),
-    );
+    const result = await updateCourseAction(formDataOf({ id: COURSE_ID, title: 'Marcos' }));
 
     expect(result).toEqual({ ok: true });
     const payload = mockUpdatePayload.mock.calls[0][0] as { published_at: string | null };
@@ -233,7 +217,7 @@ describe('updateCourseAction (V3 PR3)', () => {
     mockUpdateEq.mockResolvedValue({ error: null });
 
     const result = await updateCourseAction(
-      formDataOf({ id: COURSE_ID, slug: 'marcos', title: 'Marcos', published: 'on' }),
+      formDataOf({ id: COURSE_ID, title: 'Marcos', published: 'on' }),
     );
 
     expect(result).toEqual({ ok: true });
@@ -245,9 +229,7 @@ describe('updateCourseAction (V3 PR3)', () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
 
-    const result = await updateCourseAction(
-      formDataOf({ id: COURSE_ID, slug: 'marcos', title: 'Marcos' }),
-    );
+    const result = await updateCourseAction(formDataOf({ id: COURSE_ID, title: 'Marcos' }));
 
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/não encontrado/i) });
     expect(mockUpdatePayload).not.toHaveBeenCalled();

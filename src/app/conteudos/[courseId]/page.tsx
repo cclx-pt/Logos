@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { Check } from 'lucide-react';
 
 import { CourseIcon } from '@/lib/courses/icons';
-import { getCourseDetailBySlug, getFirstLessonOfCourse } from '@/lib/courses/detail';
+import { getCourseDetailById, getFirstLessonOfCourse } from '@/lib/courses/detail';
 import {
   getCompletedLessonIds,
   getNextModuleWithLessons,
@@ -22,13 +22,18 @@ function formatDate(iso: string): string {
   });
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 type PageProps = {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ courseId: string }>;
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const course = await getCourseDetailBySlug(slug);
+  const { courseId } = await params;
+  if (!UUID_RE.test(courseId)) {
+    return { title: 'Curso não encontrado · LOGOS' };
+  }
+  const course = await getCourseDetailById(courseId);
   if (!course) {
     return { title: 'Curso não encontrado · LOGOS' };
   }
@@ -39,8 +44,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function CoursePage({ params }: PageProps) {
-  const { slug } = await params;
-  const course = await getCourseDetailBySlug(slug);
+  const { courseId } = await params;
+  if (!UUID_RE.test(courseId)) {
+    notFound();
+  }
+  const course = await getCourseDetailById(courseId);
   if (!course) {
     notFound();
   }
@@ -110,7 +118,7 @@ export default async function CoursePage({ params }: PageProps) {
             // não bloqueia a navegação. A página da aula filtra acesso por
             // RLS à sua vez.
             await logCourseAccessAction(course.id);
-            redirect(`/conteudos/${course.slug}/${firstLesson.id}`);
+            redirect(`/conteudos/${course.id}/${firstLesson.id}`);
           }}
           className="mt-8 inline-block"
         >
@@ -199,7 +207,7 @@ export default async function CoursePage({ params }: PageProps) {
                           return (
                             <li key={lesson.id}>
                               <Link
-                                href={`/conteudos/${course.slug}/${lesson.id}`}
+                                href={`/conteudos/${course.id}/${lesson.id}`}
                                 className="hover:bg-orange-primary/5 focus-visible:ring-ring flex items-center gap-3 p-3 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                               >
                                 <span
@@ -235,7 +243,7 @@ export default async function CoursePage({ params }: PageProps) {
                       <div className="border-orange-primary/30 bg-orange-primary/5 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border p-4">
                         <p className="text-ink text-sm">Módulo concluído. Pronto para o próximo?</p>
                         <Link
-                          href={`/conteudos/${course.slug}/${firstOfNext.id}`}
+                          href={`/conteudos/${course.id}/${firstOfNext.id}`}
                           className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md px-4 text-xs font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
                         >
                           Próximo módulo →

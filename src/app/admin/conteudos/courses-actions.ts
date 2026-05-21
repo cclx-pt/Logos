@@ -1,15 +1,16 @@
 'use server';
 
 /**
- * Server Actions de gestão de cursos — V3 PR3.
+ * Server Actions de gestão de cursos — V3 PR3 + V3.1 (sem slug).
  *
  * Admin e super_admin podem criar/editar/apagar cursos. Defesa em profundidade:
  *
  *   1. Esta action recusa se o caller não for admin nem super_admin.
  *   2. RLS em `courses` (policies courses_insert/update/delete_admin) garante
  *      que escritas por outro role nunca tocam dados.
- *   3. CHECK constraints na DB (slug regex + length, title length) defendem
- *      contra inputs maliciosos via service role.
+ *   3. CHECK constraints na DB (title length) defendem contra inputs maliciosos
+ *      via service role. Coluna `slug` foi removida em V3.1 — URLs públicas
+ *      passam a `/conteudos/<uuid>`.
  *
  * `published_at` é gerido como "data da primeira publicação preservada": ao
  * publicar pela primeira vez, fixa `now()`; ao despublicar volta a NULL;
@@ -25,9 +26,6 @@ export type CreateCourseResult = { ok: true; id: string } | { ok: false; error: 
 export type CourseActionResult = { ok: true } | { ok: false; error: string };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const SLUG_MIN = 2;
-const SLUG_MAX = 80;
 const TITLE_MIN = 1;
 const TITLE_MAX = 120;
 const DESCRIPTION_MAX = 4000;
@@ -35,24 +33,6 @@ const ICON_MAX = 64;
 
 type Ok<T> = { ok: true; value: T };
 type Err = { ok: false; error: string };
-
-function validateSlug(raw: unknown): Ok<string> | Err {
-  if (typeof raw !== 'string') return { ok: false, error: 'Slug inválido.' };
-  const value = raw.trim();
-  if (value.length < SLUG_MIN || value.length > SLUG_MAX) {
-    return {
-      ok: false,
-      error: `Slug tem de ter entre ${SLUG_MIN} e ${SLUG_MAX} caracteres.`,
-    };
-  }
-  if (!SLUG_RE.test(value)) {
-    return {
-      ok: false,
-      error: 'Slug só pode ter letras minúsculas, dígitos e hífens (ex.: introducao-ao-evangelho).',
-    };
-  }
-  return { ok: true, value };
-}
 
 function validateTitle(raw: unknown): Ok<string> | Err {
   if (typeof raw !== 'string') return { ok: false, error: 'Título inválido.' };
@@ -102,8 +82,6 @@ export async function createCourseAction(formData: FormData): Promise<CreateCour
     return { ok: false, error: 'Apenas admin ou super_admin pode criar cursos.' };
   }
 
-  const slug = validateSlug(formData.get('slug'));
-  if (!slug.ok) return slug;
   const title = validateTitle(formData.get('title'));
   if (!title.ok) return title;
   const description = validateOptionalText(
@@ -123,7 +101,6 @@ export async function createCourseAction(formData: FormData): Promise<CreateCour
   const { data, error } = await supabase
     .from('courses')
     .insert({
-      slug: slug.value,
       title: title.value,
       description: description.value,
       icon: icon.value,
@@ -135,9 +112,6 @@ export async function createCourseAction(formData: FormData): Promise<CreateCour
     .single<{ id: string }>();
 
   if (error) {
-    if (error.code === '23505') {
-      return { ok: false, error: `Já existe um curso com o slug "${slug.value}".` };
-    }
     return { ok: false, error: `Falha a criar curso: ${error.message}` };
   }
 
@@ -157,8 +131,6 @@ export async function updateCourseAction(formData: FormData): Promise<CourseActi
     return { ok: false, error: 'id inválido.' };
   }
 
-  const slug = validateSlug(formData.get('slug'));
-  if (!slug.ok) return slug;
   const title = validateTitle(formData.get('title'));
   if (!title.ok) return title;
   const description = validateOptionalText(
@@ -201,7 +173,6 @@ export async function updateCourseAction(formData: FormData): Promise<CourseActi
   const { error: updateError } = await supabase
     .from('courses')
     .update({
-      slug: slug.value,
       title: title.value,
       description: description.value,
       icon: icon.value,
@@ -211,9 +182,6 @@ export async function updateCourseAction(formData: FormData): Promise<CourseActi
     .eq('id', idRaw);
 
   if (updateError) {
-    if (updateError.code === '23505') {
-      return { ok: false, error: `Já existe um curso com o slug "${slug.value}".` };
-    }
     return { ok: false, error: `Falha a atualizar curso: ${updateError.message}` };
   }
 

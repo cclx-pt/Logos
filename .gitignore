@@ -53,6 +53,10 @@ next-env.d.ts
 .claude/settings.local.json
 .claude/worktrees/
 
+# ---- Outras ferramentas de agentes (config local por máquina) ----
+.agents/
+.codex/
+
 # ---- Notas pessoais soltas (não fazem parte do projeto) ----
 claude-code-psb-guide.md
 

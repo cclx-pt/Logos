@@ -44,35 +44,37 @@ vi.mock('@/lib/auth', () => ({
 }));
 
 import {
-  getCourseDetailBySlug,
+  getCourseDetailById,
   getLessonDetailById,
   getLessonNavigation,
   getFirstLessonOfCourse,
   type CourseDetail,
 } from './detail';
 
-describe('getCourseDetailBySlug', () => {
+const COURSE_ID = '11111111-1111-4111-8111-111111111111';
+const LESSON_ID = '00000000-0000-4000-8000-000000000000';
+
+describe('getCourseDetailById', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setResponse({ data: null, error: null });
   });
 
-  it('devolve null quando o slug não existe', async () => {
+  it('devolve null quando o id não existe', async () => {
     setResponse({ data: null, error: null });
-    const result = await getCourseDetailBySlug('inexistente');
+    const result = await getCourseDetailById(COURSE_ID);
     expect(result).toBeNull();
   });
 
   it('lança Error quando supabase devolve error', async () => {
     setResponse({ data: null, error: { message: 'rls denied' } });
-    await expect(getCourseDetailBySlug('marcos')).rejects.toThrow(/rls denied/);
+    await expect(getCourseDetailById(COURSE_ID)).rejects.toThrow(/rls denied/);
   });
 
   it('ordena módulos e aulas por position', async () => {
     setResponse({
       data: {
-        id: 'c1',
-        slug: 'marcos',
+        id: COURSE_ID,
         title: 'Marcos',
         description: null,
         icon: null,
@@ -98,16 +100,16 @@ describe('getCourseDetailBySlug', () => {
       },
       error: null,
     });
-    const result = await getCourseDetailBySlug('marcos');
+    const result = await getCourseDetailById(COURSE_ID);
     expect(result).not.toBeNull();
     expect(result!.modules.map((m) => m.id)).toEqual(['m1', 'm2']);
     expect(result!.modules[1]!.lessons.map((l) => l.id)).toEqual(['l1', 'l2']);
   });
 
-  it('filtra por slug correcto', async () => {
+  it('filtra por id correcto', async () => {
     setResponse({ data: null, error: null });
-    await getCourseDetailBySlug('marcos');
-    expect(mockEq).toHaveBeenCalledWith('slug', 'marcos');
+    await getCourseDetailById(COURSE_ID);
+    expect(mockEq).toHaveBeenCalledWith('id', COURSE_ID);
   });
 });
 
@@ -119,7 +121,7 @@ describe('getLessonDetailById', () => {
 
   it('devolve null quando o id não existe', async () => {
     setResponse({ data: null, error: null });
-    const result = await getLessonDetailById('00000000-0000-4000-8000-000000000000');
+    const result = await getLessonDetailById(LESSON_ID);
     expect(result).toBeNull();
   });
 
@@ -137,7 +139,7 @@ describe('getLessonDetailById', () => {
       },
       error: null,
     });
-    const result = await getLessonDetailById('00000000-0000-4000-8000-000000000000');
+    const result = await getLessonDetailById(LESSON_ID);
     expect(result).toBeNull();
   });
 
@@ -155,12 +157,12 @@ describe('getLessonDetailById', () => {
           id: 'm1',
           title: 'M1',
           position: 1,
-          course: { id: 'c1', slug: 'marcos', title: 'Marcos', icon: 'book-open' },
+          course: { id: COURSE_ID, title: 'Marcos', icon: 'book-open' },
         },
       },
       error: null,
     });
-    const result = await getLessonDetailById('00000000-0000-4000-8000-000000000000');
+    const result = await getLessonDetailById(LESSON_ID);
     expect(result).toEqual({
       id: 'l1',
       title: 'L1',
@@ -170,22 +172,19 @@ describe('getLessonDetailById', () => {
       pdf_storage_path: 'c1/l1.pdf',
       position: 2,
       module: { id: 'm1', title: 'M1', position: 1 },
-      course: { id: 'c1', slug: 'marcos', title: 'Marcos', icon: 'book-open' },
+      course: { id: COURSE_ID, title: 'Marcos', icon: 'book-open' },
     });
   });
 
   it('lança Error quando supabase devolve error', async () => {
     setResponse({ data: null, error: { message: 'boom' } });
-    await expect(getLessonDetailById('00000000-0000-4000-8000-000000000000')).rejects.toThrow(
-      /boom/,
-    );
+    await expect(getLessonDetailById(LESSON_ID)).rejects.toThrow(/boom/);
   });
 });
 
 function fakeCourse(): CourseDetail {
   return {
-    id: 'c1',
-    slug: 'marcos',
+    id: COURSE_ID,
     title: 'Marcos',
     description: null,
     icon: null,
@@ -256,8 +255,7 @@ describe('getFirstLessonOfCourse', () => {
 
   it('devolve null se nenhum módulo tem aulas', () => {
     const c: CourseDetail = {
-      id: 'c1',
-      slug: 'x',
+      id: COURSE_ID,
       title: 'X',
       description: null,
       icon: null,

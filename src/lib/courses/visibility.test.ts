@@ -53,7 +53,6 @@ import { getVisibleCoursesForUser } from './visibility';
 
 const baseRow = {
   id: 'c1',
-  slug: 'reino-de-deus',
   title: 'O Reino de Deus',
   description: 'Curso introdutório',
   icon: 'cross',
@@ -90,7 +89,6 @@ describe('getVisibleCoursesForUser', () => {
     expect(result).toEqual([
       {
         id: 'c1',
-        slug: 'reino-de-deus',
         title: 'O Reino de Deus',
         description: 'Curso introdutório',
         icon: 'cross',
@@ -176,7 +174,7 @@ describe('getVisibleCoursesForUser', () => {
   it('seleciona campos + embed modules/lessons(count) num único query', async () => {
     await getVisibleCoursesForUser();
     expect(mockSelect).toHaveBeenCalledWith(
-      'id, slug, title, description, icon, modules ( lessons ( count ) )',
+      'id, title, description, icon, modules ( lessons ( count ) )',
     );
   });
 });

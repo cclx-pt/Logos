@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * Skeleton da página de novo curso. Reflecte o `CourseForm` real (título +
- * slug + descrição + picker + tags + checkbox de publicado + botões).
+ * descrição + picker + tags + checkbox de publicado + botões).
  */
 export default function Loading() {
   return (
@@ -15,11 +15,7 @@ export default function Loading() {
       </header>
 
       <div className="space-y-6">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
-        </div>
-
+        <Skeleton className="h-16 w-full" />
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-24 w-full rounded-md" />
         <Skeleton className="h-32 w-full rounded-md" />

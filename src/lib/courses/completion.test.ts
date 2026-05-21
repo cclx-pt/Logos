@@ -105,7 +105,6 @@ function makeModule(id: string, lessonIds: string[]): ModuleWithLessons {
 function makeCourse(modules: ModuleWithLessons[]): CourseDetail {
   return {
     id: 'c1',
-    slug: 'curso',
     title: 'Curso',
     description: null,
     icon: null,

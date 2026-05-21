@@ -9,7 +9,6 @@ export const metadata = {
 
 type CourseRow = {
   id: string;
-  slug: string;
   title: string;
   published_at: string | null;
   required_tags: string[];
@@ -37,7 +36,7 @@ export default async function ConteudosPage() {
     await Promise.all([
       supabase
         .from('courses')
-        .select('id, slug, title, published_at, required_tags, created_at')
+        .select('id, title, published_at, required_tags, created_at')
         .order('created_at', { ascending: false })
         .returns<CourseRow[]>(),
       supabase.from('tags').select('id, label').returns<TagRow[]>(),
@@ -88,9 +87,6 @@ export default async function ConteudosPage() {
                     Título
                   </th>
                   <th scope="col" className="px-4 py-2 font-medium">
-                    Slug
-                  </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
                     Estado
                   </th>
                   <th scope="col" className="px-4 py-2 font-medium">
@@ -119,9 +115,6 @@ export default async function ConteudosPage() {
                         >
                           {course.title}
                         </Link>
-                      </td>
-                      <td className="px-4 py-3">
-                        <code className="text-muted-foreground text-xs">{course.slug}</code>
                       </td>
                       <td className="px-4 py-3">
                         {course.published_at ? (

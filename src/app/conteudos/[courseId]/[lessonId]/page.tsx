@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import {
-  getCourseDetailBySlug,
+  getCourseDetailById,
   getLessonDetailById,
   getLessonNavigation,
 } from '@/lib/courses/detail';
@@ -20,7 +20,7 @@ import { MarkCompleteButton } from './mark-complete-button';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type PageProps = {
-  params: Promise<{ slug: string; lessonId: string }>;
+  params: Promise<{ courseId: string; lessonId: string }>;
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -39,17 +39,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function LessonPage({ params }: PageProps) {
-  const { slug, lessonId } = await params;
-  if (!UUID_RE.test(lessonId)) {
+  const { courseId, lessonId } = await params;
+  if (!UUID_RE.test(courseId) || !UUID_RE.test(lessonId)) {
     notFound();
   }
 
   const [lesson, course] = await Promise.all([
     getLessonDetailById(lessonId),
-    getCourseDetailBySlug(slug),
+    getCourseDetailById(courseId),
   ]);
 
-  if (!lesson || !course || lesson.course.slug !== slug) {
+  if (!lesson || !course || lesson.course.id !== courseId) {
     notFound();
   }
 
@@ -87,7 +87,7 @@ export default async function LessonPage({ params }: PageProps) {
         </Link>
         <span aria-hidden="true">›</span>
         <Link
-          href={`/conteudos/${course.slug}`}
+          href={`/conteudos/${course.id}`}
           className="hover:text-ink line-clamp-1 transition-colors"
         >
           {course.title}
@@ -171,7 +171,7 @@ export default async function LessonPage({ params }: PageProps) {
             para o próximo módulo: <strong>{nextModule.title}</strong>.
           </p>
           <Link
-            href={`/conteudos/${course.slug}/${nextModule.lessons[0].id}`}
+            href={`/conteudos/${course.id}/${nextModule.lessons[0].id}`}
             className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring mt-4 inline-flex h-10 items-center justify-center rounded-md px-5 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
           >
             Próximo módulo →
@@ -187,7 +187,7 @@ export default async function LessonPage({ params }: PageProps) {
             Concluíste todas as aulas deste curso. Bem feito.
           </p>
           <Link
-            href={`/conteudos/${course.slug}`}
+            href={`/conteudos/${course.id}`}
             className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring mt-4 inline-flex h-10 items-center justify-center rounded-md px-5 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
           >
             Voltar ao curso →
@@ -201,7 +201,7 @@ export default async function LessonPage({ params }: PageProps) {
       >
         {nav.previous ? (
           <Link
-            href={`/conteudos/${course.slug}/${nav.previous.id}`}
+            href={`/conteudos/${course.id}/${nav.previous.id}`}
             className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex max-w-full flex-1 flex-col items-start gap-1 rounded-md border px-4 py-3 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none sm:max-w-[48%]"
           >
             <span className="text-muted-foreground text-[10px] tracking-wide uppercase">
@@ -214,7 +214,7 @@ export default async function LessonPage({ params }: PageProps) {
         )}
         {nav.next ? (
           <Link
-            href={`/conteudos/${course.slug}/${nav.next.id}`}
+            href={`/conteudos/${course.id}/${nav.next.id}`}
             className="border-orange-primary/30 bg-orange-primary/5 text-ink hover:bg-orange-primary/10 focus-visible:ring-ring inline-flex max-w-full flex-1 flex-col items-end gap-1 rounded-md border px-4 py-3 text-right transition-colors focus-visible:ring-2 focus-visible:outline-none sm:max-w-[48%]"
           >
             <span className="text-orange-primary text-[10px] tracking-wide uppercase">
@@ -224,7 +224,7 @@ export default async function LessonPage({ params }: PageProps) {
           </Link>
         ) : (
           <Link
-            href={`/conteudos/${course.slug}`}
+            href={`/conteudos/${course.id}`}
             className="border-orange-primary/30 bg-orange-primary/5 text-ink hover:bg-orange-primary/10 focus-visible:ring-ring inline-flex max-w-full flex-1 flex-col items-end gap-1 rounded-md border px-4 py-3 text-right transition-colors focus-visible:ring-2 focus-visible:outline-none sm:max-w-[48%]"
           >
             <span className="text-orange-primary text-[10px] tracking-wide uppercase">

@@ -1,6 +1,6 @@
 /**
- * Helpers de detalhe de curso/aula para `/conteudos/[slug]` e
- * `/conteudos/[slug]/[lessonId]`. RLS filtra visibilidade (helper SQL
+ * Helpers de detalhe de curso/aula para `/conteudos/[courseId]` e
+ * `/conteudos/[courseId]/[lessonId]`. RLS filtra visibilidade (helper SQL
  * `course_is_visible(courses)` herdado em modules/lessons via subquery),
  * por isso estes helpers apenas agregam o resultado.
  */
@@ -25,7 +25,6 @@ export type ModuleWithLessons = {
 
 export type CourseDetail = {
   id: string;
-  slug: string;
   title: string;
   description: string | null;
   icon: string | null;
@@ -33,19 +32,19 @@ export type CourseDetail = {
 };
 
 /**
- * Carrega um curso pelo slug, com os seus módulos e aulas ordenados por
- * `position`. Devolve `null` se o slug não existir OU se o curso não for
+ * Carrega um curso pelo id, com os seus módulos e aulas ordenados por
+ * `position`. Devolve `null` se o id não existir OU se o curso não for
  * visível para o utilizador actual (RLS decide). Modules sem lessons
  * aparecem na lista; lessons vazias vêm como `[]`.
  */
-export async function getCourseDetailBySlug(slug: string): Promise<CourseDetail | null> {
+export async function getCourseDetailById(courseId: string): Promise<CourseDetail | null> {
   const supabase = await getServerClient();
   const { data, error } = await supabase
     .from('courses')
     .select(
-      'id, slug, title, description, icon, modules ( id, title, description, position, lessons ( id, title, description, template, position ) )',
+      'id, title, description, icon, modules ( id, title, description, position, lessons ( id, title, description, template, position ) )',
     )
-    .eq('slug', slug)
+    .eq('id', courseId)
     .maybeSingle<CourseDetail>();
 
   if (error) {
@@ -70,7 +69,7 @@ export type LessonDetail = {
   pdf_storage_path: string;
   position: number;
   module: { id: string; title: string; position: number };
-  course: { id: string; slug: string; title: string; icon: string | null };
+  course: { id: string; title: string; icon: string | null };
 };
 
 type LessonRow = {
@@ -85,7 +84,7 @@ type LessonRow = {
     id: string;
     title: string;
     position: number;
-    course: { id: string; slug: string; title: string; icon: string | null };
+    course: { id: string; title: string; icon: string | null };
   } | null;
 };
 
@@ -99,7 +98,7 @@ export async function getLessonDetailById(lessonId: string): Promise<LessonDetai
   const { data, error } = await supabase
     .from('lessons')
     .select(
-      'id, title, description, template, youtube_url, pdf_storage_path, position, module:modules!inner ( id, title, position, course:courses!inner ( id, slug, title, icon ) )',
+      'id, title, description, template, youtube_url, pdf_storage_path, position, module:modules!inner ( id, title, position, course:courses!inner ( id, title, icon ) )',
     )
     .eq('id', lessonId)
     .maybeSingle<LessonRow>();

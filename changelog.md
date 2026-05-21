@@ -16,6 +16,36 @@
 
 ---
 
+## [21-05-2026] — V3.1 followup: drop `courses.slug` — URLs públicas por UUID — local em `v3-cursos`
+
+Cursos passam a ser referenciados por `id` (uuid) nas URLs públicas (`/conteudos/<uuid>` e `/conteudos/<uuid>/<lessonId>`). Coluna `courses.slug` removida da DB; UNIQUE index e CHECK constraint do regex caem com a coluna. Coerente com `tags`, já sem slug (migration `20260520120000_drop_tags_slug.sql`). Sem custo de redirects — V3 ainda não tem cursos em produção.
+
+### infra
+- add: `supabase/migrations/20260520140000_drop_courses_slug.sql` — `alter table public.courses drop column slug;`. Comment da tabela actualizado para reflectir "Identificação interna e em URLs públicas por id (uuid); UI mostra title". RLS, helper `course_is_visible(courses)` e FKs (`modules.course_id`, `course_access_log.course_id`) ficam intactos — não dependiam de slug.
+- update: `.gitignore` — `.agents/` e `.codex/` (config local de outras ferramentas de agentes, por máquina; mesmo princípio que `.claude/settings.local.json`).
+
+### update
+- update: directório de rota renomeado `src/app/conteudos/[slug]/...` → `src/app/conteudos/[courseId]/...` (8 ficheiros movidos: `page.tsx`, `loading.tsx`, `[lessonId]/page.tsx`, `[lessonId]/loading.tsx`, `[lessonId]/mark-complete-button.tsx`, `[lessonId]/pdf-download-button.tsx` + 2 testes correspondentes).
+- update: `src/lib/courses/detail.ts` — `getCourseDetailBySlug(slug)` → `getCourseDetailById(courseId)`; `.eq('slug', ...)` → `.eq('id', ...)`; campo `slug` removido de `CourseDetail`, `LessonDetail.course` e dos select strings. JSDoc actualizado para `[courseId]`.
+- update: `src/lib/courses/visibility.ts` — `slug` removido de `VisibleCourse`, `CourseRow` e select string.
+- update: `src/app/conteudos/conteudos-content.tsx` — links do hub passam a usar `course.id`.
+- update: `src/app/admin/conteudos/courses-actions.ts` — `validateSlug`, regex e constantes `SLUG_MIN/MAX` removidos; create/update deixa de aceitar/escrever `slug`; mensagens de erro para `23505` (unique violation) removidas (já não há constraint UNIQUE em slug).
+- update: `src/app/admin/conteudos/course-form.tsx` — input `slug` removido do grid; layout colapsa para coluna única com apenas "Título". `CourseFormInitialData` perde campo `slug`.
+- update: admin pages (`page.tsx`, `[courseId]/page.tsx`, `novo/page.tsx`, `novo/loading.tsx`) sem referências residuais a slug.
+
+### test
+- update: `courses-actions.test.ts`, `detail.test.ts`, `visibility.test.ts`, `completion.test.ts`, `page.test.tsx`, `mark-complete-button.test.tsx`, `pdf-download-button.test.tsx` — fixtures e expects sem `slug`; helpers renomeados (`...BySlug` → `...ById`).
+- 296/296 verdes. Lint + typecheck + format:check clean.
+
+### decision
+- **Remover slug em vez de derivar de title.** Em V3 ainda não há cursos em produção, por isso o custo de redirects é zero. Manter slug obrigava o admin a inventar um nome estável separado do título e duplicava defesa em profundidade (UNIQUE + CHECK + regex client + regex server). UUID nas URLs é menos amigável de partilhar, mas hoje a partilha é interna ao ministério — pode evoluir para slug derivado em V4 sem migration custosa (FKs continuam por id).
+- **`.agents/` e `.codex/` em `.gitignore`, não commit.** São config de ferramentas de agentes que vivem por máquina (à semelhança de `.claude/settings.local.json`/`.claude/worktrees/`); não fazem parte do projecto partilhado.
+
+### docs
+- update: `changelog.md` ganha esta entrada. `status.md` não precisa de update — milestone ("V3 fechada à espera de testemunhos") mantém-se; isto é cleanup V3.1, não muda o mapa de 3 camadas nem desbloqueia/bloqueia o PR `v3-cursos` → `main`.
+
+---
+
 ## [20-05-2026] — V3 PR9a: Vercel Analytics — local em `v3-cursos`
 
 `@vercel/analytics@2.0.1` adicionado às dependências; `<Analytics />` (`@vercel/analytics/next`) inserido no root `src/app/layout.tsx` antes de `</body>`, depois do `<Footer />`. Cookieless por design — não acrescenta banner de cookies. Activo automaticamente no preview e production.

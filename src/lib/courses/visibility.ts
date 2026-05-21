@@ -22,7 +22,6 @@ import { getServerClient } from '@/lib/auth';
 
 export type VisibleCourse = {
   id: string;
-  slug: string;
   title: string;
   description: string | null;
   icon: string | null;
@@ -32,7 +31,6 @@ export type VisibleCourse = {
 
 type CourseRow = {
   id: string;
-  slug: string;
   title: string;
   description: string | null;
   icon: string | null;
@@ -59,7 +57,7 @@ export async function getVisibleCoursesForUser(
 
   let request = supabase
     .from('courses')
-    .select('id, slug, title, description, icon, modules ( lessons ( count ) )')
+    .select('id, title, description, icon, modules ( lessons ( count ) )')
     .order('title', { ascending: true });
 
   if (trimmedQuery.length > 0) {
@@ -75,7 +73,6 @@ export async function getVisibleCoursesForUser(
   const rows = data ?? [];
   return rows.map((row) => ({
     id: row.id,
-    slug: row.slug,
     title: row.title,
     description: row.description,
     icon: row.icon,

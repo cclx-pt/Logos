@@ -7,7 +7,6 @@ export type TagOption = { id: string; label: string };
 
 export type CourseFormInitialData = {
   id: string;
-  slug: string;
   title: string;
   description: string | null;
   icon: string | null;
@@ -32,37 +31,18 @@ export function CourseForm({ mode, tags, course, action }: CourseFormProps) {
     <form action={action} className="space-y-6">
       {mode === 'edit' && course && <input type="hidden" name="id" value={course.id} />}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block">
-          <span className="text-muted-foreground text-xs font-medium">Título</span>
-          <input
-            type="text"
-            name="title"
-            required
-            maxLength={120}
-            defaultValue={course?.title ?? ''}
-            placeholder="Ex.: Introdução ao Evangelho de Marcos"
-            className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-          />
-        </label>
-
-        <label className="block">
-          <span className="text-muted-foreground text-xs font-medium">
-            Slug (kebab-case, estável)
-          </span>
-          <input
-            type="text"
-            name="slug"
-            required
-            pattern="[a-z0-9]+(-[a-z0-9]+)*"
-            minLength={2}
-            maxLength={80}
-            defaultValue={course?.slug ?? ''}
-            placeholder="ex.: marcos-introducao"
-            className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-          />
-        </label>
-      </div>
+      <label className="block">
+        <span className="text-muted-foreground text-xs font-medium">Título</span>
+        <input
+          type="text"
+          name="title"
+          required
+          maxLength={120}
+          defaultValue={course?.title ?? ''}
+          placeholder="Ex.: Introdução ao Evangelho de Marcos"
+          className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
+        />
+      </label>
 
       <label className="block">
         <span className="text-muted-foreground text-xs font-medium">Descrição (texto puro)</span>
