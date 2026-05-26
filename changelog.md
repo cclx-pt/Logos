@@ -16,6 +16,25 @@
 
 ---
 
+## [26-05-2026] — V3.1: migrations alinhadas em `logos-dev` (push + repair)
+
+Aplicadas as 2 migrations pendentes a `logos-dev` (PR V3.1 T4/T6 ficam totalmente funcionais no preview Vercel):
+
+- `20260520140000_drop_courses_slug.sql` — drop column `courses.slug`
+- `20260526180000_course_access_log_select_own.sql` — policy SELECT permissiva no `course_access_log` (V3.1 T4)
+
+Durante o push apareceu uma migration órfã no remote: `20260519230230` (drop `tags.slug`, conteúdo idêntico ao nosso local `20260520120000_drop_tags_slug.sql`). Vinha da outra máquina onde a operação foi aplicada a 19-05 antes de a versão definitiva ser commited a 20-05 com timestamp diferente. Estado real do schema já estava correcto desde 19-05 — só faltava limpar o tracking.
+
+### infra
+- repair: `supabase migration repair --status reverted 20260519230230` — limpa órfão (sem tocar no schema; coluna `slug` continua dropped).
+- repair: `supabase migration repair --status applied 20260520120000` — alinha tracking com o schema real (operação já aconteceu, só por outro nome).
+- push: `supabase db push` aplicou as 2 migrations realmente pendentes. `migration list` agora mostra 11 entradas Local + Remote alinhadas.
+
+### decision
+- `repair` em vez de `db pull` para resolver a divergência: pull traria o conteúdo da migration órfã como ficheiro local novo, duplicando a nossa `20260520120000_drop_tags_slug.sql` (mesmo SQL, timestamp diferente). Repair preserva a história limpa que já tínhamos commited.
+
+---
+
 ## [26-05-2026] — V3.1 T6: badges "Em curso" / "Concluído" no catálogo `/conteudos` — local em `v3-cursos`
 
 Cards do catálogo passam a mostrar o estado do utilizador para cada curso: badge sage "Concluído ✓" se está em `course_completions`; badge laranja claro "Começado" se está em `course_access_log` mas não concluído; nada se nunca foi iniciado. Anónimos não vêem badges. Cards "Em breve" (sem aulas) também não — não faz sentido badge de progresso num curso vazio.
