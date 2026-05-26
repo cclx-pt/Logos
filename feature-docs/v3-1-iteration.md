@@ -85,7 +85,7 @@ Depois da V3 estar fechada dev-side (PR1-PR8 + PR9a + iteração PR7+, 289/289 t
 2. **T3** ✅ (20-05-2026, commit `4e99d44`) — toasts sonner.
 3. **T2** ✅ (21-05-2026, commit `83a3d06`) — drop slug + URLs UUID.
 4. **T7** ✅ (26-05-2026) — login-gate em "Começar curso" + redirect anónimo na rota de aula. `StartCourseCta` extraído; 5 testes novos (296 → 301). Detalhes no `changelog.md` `[26-05-2026]`.
-5. **T4** ⏳ — rota `/meus-cursos` (depende de T2).
+5. **T4** ✅ (26-05-2026) — rota `/meus-cursos`: helper `getStartedCoursesForUser` + `MeusCursosContent` com 3 estados (anónimo / vazio / com cursos) + migration `20260526180000_course_access_log_select_own.sql` (pending push a `logos-dev`). 15 testes novos (301 → 316).
 6. **T5** ⏳ — CTA hero aponta a `/meus-cursos` (depende de T4).
 7. **T6** ⏳ — indicadores em `/conteudos` (depende de T4, helper `getStartedCoursesForUser`).
 

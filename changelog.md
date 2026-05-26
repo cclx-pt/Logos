@@ -16,6 +16,31 @@
 
 ---
 
+## [26-05-2026] — V3.1 T4: rota `/meus-cursos` — local em `v3-cursos`
+
+Nova rota pessoal: lista os cursos que o utilizador começou (≥1 row em `course_access_log`), ordenados pelo último acesso. Cada card mostra badge "Em curso" ou "Concluído ✓" e leva à página do curso (onde o "Continuar curso" já leva à primeira aula incompleta). Anónimos vêem um CTA de login com `next=/meus-cursos`.
+
+### infra
+- add: `supabase/migrations/20260526180000_course_access_log_select_own.sql` — nova policy SELECT permissiva `course_access_log_select_own` (`user_id = current_profile_id()`). Compõe OR com a `course_access_log_select_admin` de PR2 (admin/super_admin continua a ver tudo para stats). Sem mudança a INSERT/UPDATE/DELETE. **Não aplicada a `logos-dev` automaticamente** — pede `pnpm dlx supabase login` interactivo. Versionada e pronta para `pnpm dlx supabase db push` na próxima sessão.
+
+### add
+- add: `src/lib/courses/started.ts` — helper `getStartedCoursesForUser()` retorna `StartedCourse[]` (`VisibleCourse` + `completed: boolean` + `lastAccessedAt: string`). Faz 2 queries: `course_access_log` (ordered desc, dedup client-side por `course_id`, filtra acessos a cursos despublicados) + `course_completions` (limitado ao set de course ids actual via `.in()`).
+- add: `src/lib/courses/started.test.ts` (9 testes — sem sessão, sem acessos, dedup, dropped courses, completed flag, ambos erros, hasLessons=false).
+- add: `src/app/meus-cursos/page.tsx` — server component. Sem sessão → `<MeusCursosContent isAuthenticated={false}>`; com sessão → busca cursos e passa para o content.
+- add: `src/app/meus-cursos/meus-cursos-content.tsx` — client component com 3 estados: anónimo (CTA Google + `next=/meus-cursos`), autenticado vazio (link "Ver catálogo"), autenticado com cursos (grid de cards estilo `/conteudos` + badges Concluído/Em curso).
+- add: `src/app/meus-cursos/meus-cursos-content.test.tsx` (6 testes — heading sempre, CTA anónimo + hidden next, estado vazio com link, grid + href correcto, badges para os 2 estados).
+- add: `src/app/meus-cursos/loading.tsx` — skeleton do caminho mais comum (3 cards).
+
+### test
+- 301 → 316 verdes. Lint + typecheck verdes.
+
+### decision
+- Card aponta a `/conteudos/[courseId]` (página do curso), não directamente à primeira aula incompleta. Razão: a página do curso já calcula a primeira aula incompleta no botão "Continuar curso" (PR7), e expor isso no helper exigiria carregar modules + lessons + completions de todos os cursos começados (N+1 ou query pesada). 1 clique extra para uma feature secundária — aceitável.
+- RLS policy adicionada em vez de SECURITY DEFINER function — mesmo padrão de `lesson_completions` ("own OR admin" composto via 2 policies SELECT). Mais simples e idiomático em Postgres.
+- Sem sessão renderiza inline em vez de redireccionar — a rota `/meus-cursos` é descobrível via link do `UserMenu`; mostrar o que ela faz + CTA de login é melhor UX que redirect cego.
+
+---
+
 ## [26-05-2026] — V3.1 T7: login-gate em "Começar curso" + proteger rota de aula — local em `v3-cursos`
 
 Anónimos deixam de poder abrir aulas directamente. CTA "Começar/Continuar curso" no detalhe do curso muda para "Inicia sessão para começar →" quando não há sessão; clicar dispara `signInWithGoogleAction` com `next` apontado à primeira aula (mesmo padrão do hero "Meus cursos" em `home-hero.tsx`). A rota `/conteudos/[courseId]/[lessonId]` ganha um early-return: sem sessão redirige para `/conteudos/[courseId]`, onde o utilizador encontra o CTA de sign-in.
