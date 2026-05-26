@@ -5,7 +5,7 @@ export const siteConfig = {
     'Plataforma de estudo Bíblico da CCLX. Cursos para crescer no conhecimento das Escrituras.',
   organization: {
     name: 'CCLX',
-    fullName: 'Comunidade Cristã Lisboa',
+    fullName: 'Comunidade Cristã de Lisboa',
     website: 'https://cclx.pt',
     email: 'logos@cclx.pt',
   },

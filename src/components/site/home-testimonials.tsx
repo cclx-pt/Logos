@@ -8,40 +8,16 @@ import { cn } from '@/lib/utils';
 
 type Testimonial = {
   quote: string;
-  author: string;
-  role: string;
 };
 
 const testimonials: readonly Testimonial[] = [
   {
     quote:
-      'Os cursos do LOGOS ajudaram-me a ler a Bíblia com mais profundidade. Sinto-me melhor preparado para servir na igreja.',
-    author: 'Membro da CCLX',
-    role: 'Pequeno grupo',
+      'O ministério LOGOS está a ser uma benção na minha vida. Faz-me sair da zona de conforto e ir mais fundo nas Escrituras. Muito obrigado a todos os envolvidos! Deus vos abençoe.',
   },
   {
     quote:
-      'Material claro, gratuito e acessível. Voltei várias vezes às aulas para rever e estudar mais devagar.',
-    author: 'Aluno do curso',
-    role: 'Estudo pessoal',
-  },
-  {
-    quote:
-      'Para quem dá um pequeno grupo, é uma ferramenta valiosa. Junta ensino sólido a materiais práticos.',
-    author: 'Líder de pequeno grupo',
-    role: 'CCLX',
-  },
-  {
-    quote:
-      'Comecei sem saber por onde pegar nas Escrituras. Hoje tenho um plano de estudo e consigo aplicá-lo no dia a dia.',
-    author: 'Nova convertida',
-    role: 'CCLX',
-  },
-  {
-    quote:
-      'A combinação de vídeo, apostila e ritmo próprio funciona muito bem para os jovens que acompanho.',
-    author: 'Líder de jovens',
-    role: 'CCLX',
+      'O LOGOS tem servido para somar mais proximidade com a Palavra, descobrir novos detalhes, repensar na Sua mensagem e aplicá-la no meu dia-a-dia. Uma forma simples, leve mas profunda para estudar a Bíblia. Uma hora que voa e que nos deixa com vontade de mais! Prefiro as aulas presenciais, que são também excelentes oportunidades para fazer em casal. Obrigada aos professores!',
   },
 ] as const;
 
@@ -96,10 +72,6 @@ export function HomeTestimonials() {
                 <blockquote className="text-ink mt-4 font-sans text-base leading-relaxed">
                   &ldquo;{t.quote}&rdquo;
                 </blockquote>
-                <figcaption className="mt-6 font-sans text-sm">
-                  <span className="text-ink font-medium">{t.author}</span>
-                  <span className="text-muted-foreground"> · {t.role}</span>
-                </figcaption>
               </figure>
             </li>
           ))}

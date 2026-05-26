@@ -26,10 +26,11 @@ export function FalaConnoscoContent() {
         variants={staggerItem}
         className="text-muted-foreground mt-8 text-justify font-sans text-lg leading-relaxed hyphens-auto"
       >
-        Queres falar Connosco ou descobrir melhor o que fazemos na CCLX? Estamos disponíveis para
-        esclarecer dúvidas, dar-nos a conhecer ou ajudar no que precisares. Podes entrar em contacto
-        Connosco através do nosso email ou visitar o nosso website, onde encontrarás mais
-        informações sobre a CCLX, os nossos projetos e outros contactos úteis.
+        Queres falar Connosco ou descobrir melhor o que fazemos na CCLX - Comunidade Cristã de
+        Lisboa? Estamos disponíveis para esclarecer dúvidas, dar-nos a conhecer ou ajudar no que
+        precisares. Podes entrar em contacto Connosco através do nosso email ou visitar o nosso
+        website, onde encontrarás mais informações sobre a CCLX - Comunidade Cristã de Lisboa, os
+        nossos projetos e outros contactos úteis.
       </motion.p>
 
       <motion.div variants={staggerItem} className="mt-12 grid gap-4 sm:grid-cols-2">
