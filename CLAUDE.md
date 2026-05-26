@@ -1,6 +1,8 @@
 # CLAUDE.md — Logos
 
 > **Lê primeiro `SPEC_1.md`.** É a fonte de verdade do projeto. Se a realidade divergir, atualiza a spec — não o silêncio.
+>
+> **Antes de cada sessão, verifica se existe algum `feature-docs/*-handoff.md`.** Esses ficheiros documentam trabalho em curso entre sessões — o estado WIP, decisões fechadas, e o que falta. Se existir um, lê-o antes de tocar em qualquer ficheiro. Quando o trabalho fechar, apaga o handoff (ou substitui-o pela entrada definitiva em `feature-docs/`).
 
 ## 🎯 Objetivo
 Plataforma online de estudo bíblico da **CCLX** (igreja em Portugal). Cursos → Módulos → Aulas (vídeo YouTube embebido + PDF descarregável). Utilizadores autenticados marcam aulas como concluídas.
