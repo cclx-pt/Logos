@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 26-05-2026 (V3.1 T7 + T4 fechadas — login-gate em "Começar curso" + redirect anónimo; rota `/meus-cursos` com helper + 3-state content + migration pending push a `logos-dev`. 316/316 testes verdes. T1/T2/T3/T4/T7 ✅; faltam T5 → T6.)
+> **Última atualização:** 26-05-2026 (V3.1 T7 + T4 + T5 fechadas — login-gate, rota `/meus-cursos`, hero e dropdown apontam-lhe. 316/316 testes verdes. T1-T5 + T7 ✅; falta só T6 — badges Concluído/Em curso no catálogo `/conteudos`.)
 
 ## 🎯 Milestone atual
 **V3 fechada dev-side em `v3-cursos`.** À espera de testemunhos finais do ministério para abrir PR `v3-cursos` → `main` e fazer deploy a `logos.cclx.pt`. Detalhes da estratégia em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
@@ -114,7 +114,7 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
   - **Loading states**: novos componentes `Spinner` (Lucide Loader2 + `role="status"` + sr-only), `Skeleton` (`aria-hidden`, `animate-pulse`), `ProgressBar` indeterminada (keyframe `indeterminate` em `globals.css`), `SubmitButton` Client Component que usa `useFormStatus` para mostrar spinner + opcional ProgressBar enquanto a Server Action corre. Aplicado nos forms de criar/editar aula (uploads de PDF lentos). `loading.tsx` em `/admin/conteudos`, `/admin/conteudos/[courseId]` e `/conteudos` com skeletons que reflectem o layout real. 15 testes novos (163 → 178).
 
 ## 🚧 Em progresso
-- **V3.1 iteração** — T1/T2/T3 ✅ (20-21 maio). T7 + T4 ✅ (26-05-2026): login-gate em "Começar curso", redirect anónimo na rota de aula, rota `/meus-cursos`. Migration `20260526180000_course_access_log_select_own.sql` versionada mas **pending push a `logos-dev`** (requer `pnpm dlx supabase login` interactivo). **Próximo: T5** (CTA hero aponta a `/meus-cursos`) → T6 (badges Concluído/Em curso em `/conteudos`). Plano completo em `feature-docs/v3-1-iteration.md`.
+- **V3.1 iteração** — T1/T2/T3 ✅ (20-21 maio). T7 + T4 + T5 ✅ (26-05-2026): login-gate em "Começar curso", redirect anónimo na rota de aula, rota `/meus-cursos`, hero e dropdown apontam-lhe. Migration `20260526180000_course_access_log_select_own.sql` versionada mas **pending push a `logos-dev`** (requer `pnpm dlx supabase login` interactivo). **Próximo: T6** (badges Concluído/Em curso em `/conteudos`). Plano completo em `feature-docs/v3-1-iteration.md`.
 - **V3 inteira fechada** (PR1-PR8 + PR9a). PR9b (Playwright E2E) **adiada para V3.1** — decisão do user 20-05-2026: setup de ~2 dias (cookie pré-preparado para satisfazer RLS) não justifica o ROI quando o smoke manual de §11 do `v3-plan.md` já cobre o happy-path. Reabrir se aparecerem regressões frequentes que mocks Vitest não apanhem.
 
 ## ⏭️ V2.x — Copy + UX (implementado localmente, 16-05-2026)

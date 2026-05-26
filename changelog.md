@@ -16,6 +16,20 @@
 
 ---
 
+## [26-05-2026] — V3.1 T5: CTA hero e dropdown apontam a `/meus-cursos` — local em `v3-cursos`
+
+Trivial: o hero "Meus cursos" e o item "Os meus cursos" no dropdown do utilizador deixam de apontar a `/conteudos` (catálogo) e passam a apontar a `/meus-cursos` (rota pessoal criada em T4). Mais coerente com o label.
+
+### update
+- update: `src/app/page.tsx` — `<HomeHero ctaHref="/meus-cursos" />` (era `/conteudos`).
+- update: `src/components/site/user-menu.tsx` — `DropdownMenuItem` "Os meus cursos" agora `href="/meus-cursos"` (era `/conteudos`).
+- update: `src/app/page.test.tsx` — 5 occurrences de `'/conteudos'` actualizadas para `'/meus-cursos'`. Testes continuam a verificar o contrato do `HomeHero` (prop flows through); valor da prop alinhado com produção.
+
+### test
+- 316/316 verdes (sem testes novos — testes existentes do `HomeHero` cobrem o contrato). Lint + typecheck verdes.
+
+---
+
 ## [26-05-2026] — V3.1 T4: rota `/meus-cursos` — local em `v3-cursos`
 
 Nova rota pessoal: lista os cursos que o utilizador começou (≥1 row em `course_access_log`), ordenados pelo último acesso. Cada card mostra badge "Em curso" ou "Concluído ✓" e leva à página do curso (onde o "Continuar curso" já leva à primeira aula incompleta). Anónimos vêem um CTA de login com `next=/meus-cursos`.

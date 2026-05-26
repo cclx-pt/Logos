@@ -45,7 +45,7 @@ export function UserMenu({ user }: { user: Profile }) {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem render={<Link href="/conteudos" />}>
+        <DropdownMenuItem render={<Link href="/meus-cursos" />}>
           <BookMarked className="h-4 w-4" aria-hidden="true" />
           Os meus cursos
         </DropdownMenuItem>
