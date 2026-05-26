@@ -29,7 +29,7 @@ export function ConheceNosContent() {
         className="text-ink/85 mt-10 space-y-6 font-sans text-lg leading-relaxed"
       >
         <p className="text-justify hyphens-auto">
-          O LOGOS é o ministério de ensino da CCLX &mdash; Comunidade Cristã de Lisboa. Nasce com um
+          O LOGOS é o ministério de ensino da CCLX - Comunidade Cristã de Lisboa. Nasce com um
           propósito simples, mas essencial: levar a igreja a conhecer, amar e viver a Palavra de
           Deus.
         </p>
