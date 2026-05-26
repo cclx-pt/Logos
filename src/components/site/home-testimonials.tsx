@@ -19,6 +19,10 @@ const testimonials: readonly Testimonial[] = [
     quote:
       'O LOGOS tem servido para somar mais proximidade com a Palavra, descobrir novos detalhes, repensar na Sua mensagem e aplicá-la no meu dia-a-dia. Uma forma simples, leve mas profunda para estudar a Bíblia. Uma hora que voa e que nos deixa com vontade de mais! Prefiro as aulas presenciais, que são também excelentes oportunidades para fazer em casal. Obrigada aos professores!',
   },
+  {
+    quote:
+      'Este tempo no LOGOS foi extremamente proveitoso e edificante para mim. Aprendi muito sobre a Bíblia e tive contacto com temas e curiosidades que eu nunca tinha estudado com profundidade. Foi um conteúdo muito enriquecedor!',
+  },
 ] as const;
 
 export function HomeTestimonials() {
