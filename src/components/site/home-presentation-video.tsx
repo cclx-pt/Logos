@@ -5,10 +5,8 @@ import { PlayCircle } from 'lucide-react';
 
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 
-// TODO(v2.5): preencher com o ID do vídeo do YouTube depois do upload (modo "não listado")
-// ao canal LOGOS / CCLX. Apenas o ID de 11 caracteres, ex.: "dQw4w9WgXcQ" — não o URL completo.
-// Enquanto vazio, é renderizado o placeholder "em preparação".
-const DEFAULT_VIDEO_ID = '';
+// ID do vídeo de apresentação do LOGOS (YouTube, canal CCLX). 11 chars, sem URL completo.
+const DEFAULT_VIDEO_ID = 'k1G_bB_O_4E';
 
 const VIDEO_TITLE = 'Vídeo de apresentação do LOGOS';
 

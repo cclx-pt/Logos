@@ -8,10 +8,10 @@ describe('HomeTestimonials', () => {
     expect(screen.getByLabelText(/testemunhos de quem usa o LOGOS/i)).toBeInTheDocument();
   });
 
-  it('renderiza pelo menos 4 slides', () => {
+  it('renderiza pelo menos 2 slides (testemunhos reais do ministério)', () => {
     render(<HomeTestimonials />);
     const slides = screen.getAllByRole('listitem', { hidden: false });
-    expect(slides.length).toBeGreaterThanOrEqual(4);
+    expect(slides.length).toBeGreaterThanOrEqual(2);
   });
 
   it('expõe controlos de navegação anterior/seguinte', () => {

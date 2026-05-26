@@ -8,9 +8,11 @@ describe('ConheceNosContent', () => {
     expect(screen.getByRole('heading', { level: 1, name: /conhece-nos/i })).toBeInTheDocument();
   });
 
-  it('identifica LOGOS como ministério de ensino da CCLX', () => {
+  it('identifica LOGOS como ministério de ensino da CCLX — Comunidade Cristã de Lisboa', () => {
     render(<ConheceNosContent />);
-    expect(screen.getByText(/O LOGOS é o ministério de ensino da CCLX/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/ministério de ensino da CCLX.*Comunidade Cristã de Lisboa/i),
+    ).toBeInTheDocument();
   });
 
   it('explica a etimologia do nome a partir do grego', () => {
@@ -27,5 +29,10 @@ describe('ConheceNosContent', () => {
   it('fecha com a despedida "Deus ricamente te abençoe,"', () => {
     render(<ConheceNosContent />);
     expect(screen.getByText(/Deus ricamente te abençoe/i)).toBeInTheDocument();
+  });
+
+  it('assina como "Ministério LOGOS"', () => {
+    render(<ConheceNosContent />);
+    expect(screen.getByText(/^Ministério LOGOS$/)).toBeInTheDocument();
   });
 });
