@@ -16,6 +16,29 @@
 
 ---
 
+## [26-05-2026] — V3.1 T6: badges "Em curso" / "Concluído" no catálogo `/conteudos` — local em `v3-cursos`
+
+Cards do catálogo passam a mostrar o estado do utilizador para cada curso: badge sage "Concluído ✓" se está em `course_completions`; badge laranja claro "Começado" se está em `course_access_log` mas não concluído; nada se nunca foi iniciado. Anónimos não vêem badges. Cards "Em breve" (sem aulas) também não — não faz sentido badge de progresso num curso vazio.
+
+### add
+- add: `src/lib/courses/progress.ts` — helper `getCourseProgressForUser(courseIds)` devolve `Record<string, {started, completed}>` para o set fornecido. 2 queries em paralelo (`course_access_log` + `course_completions` filtrados por `IN`), dedup client-side. Anónimos ou input vazio ⇒ `{}` sem touch à DB.
+- add: `src/lib/courses/progress.test.ts` (7 testes — input vazio, anónimo, sem progresso, started=true, completed=true, ambos erros).
+- add: tipo exportado `VisibleCourseWithProgress = VisibleCourse & CourseProgress` em `conteudos-content.tsx` — usado pela page e pelos testes.
+
+### update
+- update: `src/app/conteudos/page.tsx` — chama `getCourseProgressForUser(courses.map(c => c.id))` e faz o merge com defaults `{started: false, completed: false}` antes de passar a `<ConteudosContent />`. RLS de `course_access_log` (V3.1 T4 migration) garante que só vê os próprios acessos.
+- update: `src/app/conteudos/conteudos-content.tsx` — Props aceita `VisibleCourseWithProgress[]`; cards renderizam badge condicional (completed > started > nenhum). Cards `hasLessons=false` mantêm só "Em breve" (sem progresso).
+- update: `src/app/conteudos/page.test.tsx` — fixture `makeCourse` actualizada para o tipo augmentado (defaults `started: false, completed: false`); import passa de `VisibleCourse` para `VisibleCourseWithProgress`.
+
+### test
+- 4 testes novos em `page.test.tsx` (nenhum badge, "Começado", prioridade "Concluído", cards "Em breve" sem badges). 316 → 327 verdes (+7 helper + 4 content). Lint + typecheck verdes.
+
+### decision
+- Helper separado de `getVisibleCoursesForUser` em vez de mergear: mantém `VisibleCourse` minimal (sem campos opcionais) e separa responsabilidades. Page faz o join. `Record` em vez de `Map` para serialização limpa entre Server Component e Client Component (Next.js).
+- "Concluído" tem prioridade sobre "Começado" no card. Razão: um curso concluído é tipicamente também started (clicou para começar, depois concluiu); mostrar apenas o estado mais avançado. Trade-off aceite: se o user concluir sem nunca clicar "Começar curso" (entrou directo via aula), o badge mostra "Concluído" sem ter visto "Começado" — comportamento correcto.
+
+---
+
 ## [26-05-2026] — V3.1 T5: CTA hero e dropdown apontam a `/meus-cursos` — local em `v3-cursos`
 
 Trivial: o hero "Meus cursos" e o item "Os meus cursos" no dropdown do utilizador deixam de apontar a `/conteudos` (catálogo) e passam a apontar a `/meus-cursos` (rota pessoal criada em T4). Mais coerente com o label.

@@ -2,14 +2,19 @@
 
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { Search, Sparkles } from 'lucide-react';
+import { Check, Search, Sparkles } from 'lucide-react';
 
 import { CourseIcon } from '@/lib/courses/icons';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 import type { VisibleCourse } from '@/lib/courses/visibility';
+import type { CourseProgress } from '@/lib/courses/progress';
+
+/** `VisibleCourse` enriquecido com flags do utilizador actual (V3.1 T6).
+ *  Anónimos: `started` e `completed` são sempre `false`. */
+export type VisibleCourseWithProgress = VisibleCourse & CourseProgress;
 
 type Props = {
-  courses: VisibleCourse[];
+  courses: VisibleCourseWithProgress[];
   /** Termo de pesquisa actual (trimmed). Vazio se não há filtro. */
   query: string;
 };
@@ -112,6 +117,16 @@ export function ConteudosContent({ courses, query }: Props) {
                       Em breve
                     </span>
                   )}
+                  {course.hasLessons && course.completed ? (
+                    <span className="border-sage-card bg-sage-card/40 text-ink inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+                      <Check className="h-3 w-3" aria-hidden="true" />
+                      Concluído
+                    </span>
+                  ) : course.hasLessons && course.started ? (
+                    <span className="border-orange-primary/30 bg-orange-primary/10 text-orange-primary inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+                      Começado
+                    </span>
+                  ) : null}
                 </div>
                 {course.description ? (
                   <p className="text-muted-foreground mt-2 line-clamp-4 text-sm leading-relaxed">

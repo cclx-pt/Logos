@@ -87,7 +87,9 @@ Depois da V3 estar fechada dev-side (PR1-PR8 + PR9a + iteração PR7+, 289/289 t
 4. **T7** ✅ (26-05-2026) — login-gate em "Começar curso" + redirect anónimo na rota de aula. `StartCourseCta` extraído; 5 testes novos (296 → 301). Detalhes no `changelog.md` `[26-05-2026]`.
 5. **T4** ✅ (26-05-2026) — rota `/meus-cursos`: helper `getStartedCoursesForUser` + `MeusCursosContent` com 3 estados (anónimo / vazio / com cursos) + migration `20260526180000_course_access_log_select_own.sql` (pending push a `logos-dev`). 15 testes novos (301 → 316).
 6. **T5** ✅ (26-05-2026) — `<HomeHero ctaHref>` e dropdown "Os meus cursos" apontam agora a `/meus-cursos`. Sem testes novos (contrato do HomeHero já era coberto; 5 occurrences em `page.test.tsx` actualizadas).
-7. **T6** ⏳ — indicadores em `/conteudos` (depende de T4, helper `getStartedCoursesForUser`).
+7. **T6** ✅ (26-05-2026) — badges "Em curso" / "Concluído ✓" nos cards de `/conteudos`. Novo helper `getCourseProgressForUser` (separado de `getStartedCoursesForUser` para evitar acoplamento). 11 testes novos (316 → 327).
+
+**V3.1 fechada do lado do código.** Restantes pré-merge (executável fora desta task): aplicar migration `20260526180000` a `logos-dev` (pede `pnpm dlx supabase login`); smoke test manual no preview Vercel; quando testemunhos do ministério chegarem, abrir PR `v3-cursos → main`.
 
 Cada tarefa termina com `pnpm test + lint + typecheck + format:check` verdes e commit separado.
 
