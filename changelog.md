@@ -16,6 +16,26 @@
 
 ---
 
+## [26-05-2026] — V2.5: vídeo de apresentação na home (antes dos testemunhos) + copy final
+
+Acrescento à home — um vídeo de apresentação único do LOGOS posicionado **entre `HomeMotto` e `HomeTestimonials`**. Hosting decidido como **YouTube em modo "não listado"** no canal LOGOS / CCLX, embebido por iframe (`youtube-nocookie.com`, `loading="lazy"`, `referrerPolicy="strict-origin-when-cross-origin"`). Mantém-se a regra dura de `CLAUDE.md` §🚫: sem ficheiros de vídeo no sistema. A configuração reduz-se a uma constante `DEFAULT_VIDEO_ID` no componente; vazio renderiza placeholder em paleta laranja.
+
+Confirmação do ministério: **toda a copy de V2.5 é final**. Único bloqueio de copy restante antes do merge a `main` é o conteúdo dos testemunhos do carrossel (`feature-docs/v2-copy-and-conteudos.md` §8 actualizado).
+
+> Nota: a primeira iteração desta sessão colocou o vídeo no topo de `/conteudos`. O utilizador corrigiu o destino para a home. `/conteudos` voltou ao estado pré-acrescento; só ficou a versão home.
+
+### add
+- add: `src/components/site/home-presentation-video.tsx` — client component `<HomePresentationVideo />` com iframe YouTube (`youtube-nocookie`) e placeholder "Vídeo de apresentação em preparação" quando o ID está vazio. `<motion.section>` com `aria-label`, max-w-5xl, `aspect-video` 16:9, integrado no stagger via `staggerContainer`/`staggerItem`.
+- add: `src/components/site/home-presentation-video.test.tsx` — cobre `aria-label` da section, placeholder com `videoId=""` e iframe com `src` correcto + `loading="lazy"` + `allowFullScreen` quando `videoId="dQw4w9WgXcQ"`.
+
+### update
+- update: `src/app/page.tsx` — renderiza `<HomePresentationVideo />` entre `<HomeMotto />` e `<HomeTestimonials />`. Sem props; usa o `DEFAULT_VIDEO_ID` do componente.
+
+### docs
+- docs: `feature-docs/v2-copy-and-conteudos.md` §9 nova (vídeo de apresentação na home — decisão de hosting YouTube unlisted, ficheiros, passo único de configuração, verificações). §8 actualizada: cards de cursos do `/conteudos` marcados como copy final; único bloqueio de copy restante é o conteúdo dos testemunhos.
+
+---
+
 ## [18-05-2026] — V2.5: rebase + fix do 404 + branch de preview
 
 Ronda V2.x (PR-A a PR-F) re-aplicada em cima de `main` após terem aterrado PR #27 (V2 PR3 roles UI), PR #32 (Cursos→Conteúdos hub) e PR #33 (copy do ministério). Conflitos resolvidos a favor do trabalho V2.x: `/conteudos` volta a ser página flat (intro justificada + bloco "Em breve" único), os sub-routes `/conteudos/cursos` e `/conteudos/escola-biblica` do hub anterior são eliminados. Branch `v2.5-copy-ux` pushed para preview-only — **não merge em `main`** enquanto os testemunhos forem placeholder.

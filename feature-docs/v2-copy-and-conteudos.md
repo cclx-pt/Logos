@@ -1,8 +1,8 @@
 # V2.x — Copy, UX do hero, rota Conteúdos e dropdown
 
-> **Estado:** implementada localmente (PR-A a PR-F ✅, 49/49 testes verdes). Falta E2E manual em preview Vercel + abrir PRs.
+> **Estado:** implementada localmente (PR-A a PR-F ✅ + acrescento §9 vídeo de apresentação, 55/55 testes verdes). Falta E2E manual em preview Vercel + abrir PRs.
 > **Fonte:** lista de 19 pedidos do ministério (sessão 16-05-2026).
-> **Última atualização:** 16-05-2026
+> **Última atualização:** 26-05-2026
 
 ## 0. Resumo
 
@@ -232,7 +232,57 @@ Após cada PR mergeada:
 
 ## 8. Pendentes do utilizador
 
+Confirmação do ministério (26-05-2026): **toda a copy de V2.5 está em forma final**, excepto os testemunhos do carrossel. Os pontos abaixo refletem o que ainda falta antes de mergear V2.5 em `main`.
+
 - **Texto pasted #1** (ponto 9): ✅ recebido — três linhas do lema, ver §1.
 - **Texto pasted #2** (ponto 12): ignorado por indicação do utilizador (era repetição).
-- **Testemunhos finais** (PR-D): aguardam ministério.
-- **Cursos placeholder concretos** (PR-C): se o ministério tiver títulos provisórios para os cards, entram aqui; caso contrário ficam genéricos.
+- **Cursos placeholder concretos** (PR-C): ✅ copy final — sem cards de cursos no `/conteudos` para já, fica intro + bloco "Em breve" único.
+- **Testemunhos finais** (PR-D): ⏳ aguardam ministério — único bloqueio de copy antes do merge a `main`.
+- **ID do vídeo YouTube** (§9): ⏳ aguarda upload "não listado" ao canal LOGOS / CCLX. Substituir `DEFAULT_VIDEO_ID` em `src/components/site/home-presentation-video.tsx` pelo ID de 11 chars.
+
+---
+
+## 9. Vídeo de apresentação na home — antes dos testemunhos (acrescento 26-05-2026)
+
+**Objectivo:** acrescentar à home um vídeo de apresentação único do LOGOS, posicionado **entre o lema (`HomeMotto`) e o carrossel de testemunhos (`HomeTestimonials`)**. Substitui a ausência de "preview" do projeto enquanto os cursos reais (V3) não chegam, e dá um momento de pausa visual entre a parte introdutória e a prova social.
+
+> Nota de histórico: a primeira proposta colocava o vídeo no topo de `/conteudos`. O utilizador corrigiu o destino para a home (antes dos testemunhos) na mesma sessão. A rota `/conteudos` voltou ao estado pré-acrescento.
+
+### Decisão de hosting
+
+- **Sempre YouTube** (em modo *não listado*) no canal LOGOS / CCLX, embebido por `<iframe>` no domínio `youtube-nocookie.com` (privacy-enhanced).
+- **Razão:** `CLAUDE.md` §🚫 e `SPEC_1.md` §3 proíbem alojar vídeo no sistema. Mesmo um vídeo único e temporário entra na regra — `.mov` no `public/` falha em três planos: formato (Safari-only), tamanho (50–500 MB inflama o repo se vai a Git; bate em limites Vercel se vai como asset estático), bandwidth (consumo de plano por entrega directa). YouTube não listado tem zero custo, zero transcoding, e já alinha com o padrão de embed que vai ser usado em V3.
+
+### Ficheiros
+
+| Ficheiro | Tipo | Notas |
+|---|---|---|
+| `src/components/site/home-presentation-video.tsx` | novo | Client component. Exporta `<HomePresentationVideo videoId?: string />`. Renderiza `<motion.section>` com `aria-label="Vídeo de apresentação do LOGOS"`, max-w-5xl, e o iframe `youtube-nocookie.com/embed/{id}?rel=0` (`loading="lazy"`, `referrerPolicy="strict-origin-when-cross-origin"`, `allowFullScreen`) dentro de `aspect-video`. Quando `videoId` é vazio, renderiza placeholder "Vídeo de apresentação em preparação" coerente com a paleta laranja (`bg-orange/5` + ícone `PlayCircle`). |
+| `src/components/site/home-presentation-video.test.tsx` | novo | Cobre três cenários: section com `aria-label` correcto; placeholder com `videoId=""`; iframe com `src` correcto, `loading="lazy"` e `allowFullScreen` quando `videoId="dQw4w9WgXcQ"`. |
+| `src/app/page.tsx` | edit | Importa e renderiza `<HomePresentationVideo />` entre `<HomeMotto />` e `<HomeTestimonials />`. Sem props — usa o `DEFAULT_VIDEO_ID` do componente, que é a única coisa a editar quando o vídeo for ao ar. |
+
+### Configuração — quando o vídeo estiver no ar
+
+Em `src/components/site/home-presentation-video.tsx`, substituir:
+
+```ts
+const DEFAULT_VIDEO_ID = '';
+```
+
+por:
+
+```ts
+const DEFAULT_VIDEO_ID = '<ID-de-11-chars-do-YouTube>';
+```
+
+O ID é a parte final de URLs `https://www.youtube.com/watch?v=<ID>` ou `https://youtu.be/<ID>`. Não usar o URL completo. Os testes vão continuar a passar porque o teste de placeholder injecta `videoId=""` explicitamente, e o teste de iframe injecta `videoId="dQw4w9WgXcQ"` — independentes do default.
+
+### Verificações pós-merge
+
+- Preview Vercel da branch `feat/v2.5-conteudos-hero-video` (mantém-se o nome da branch por simplicidade — o conteúdo é home, não `/conteudos`): placeholder visível na home, com a ordem correcta (hero → lema → vídeo → testemunhos).
+- Após substituir o `DEFAULT_VIDEO_ID`, confirmar em preview que o iframe carrega, é responsivo (16:9 em mobile e desktop), e o fullscreen funciona.
+- `pnpm test`, `pnpm typecheck`, `pnpm lint --max-warnings 0` — todos verdes (55/55 testes na altura do merge).
+
+### Reversão
+
+Apagar `<HomePresentationVideo />` de `src/app/page.tsx` e os dois ficheiros do componente. Não há migrations, env vars, nem deps novas envolvidas.

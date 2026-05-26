@@ -1,10 +1,10 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 18-05-2026 (V2.5 rebase em cima do hub `/conteudos` mergeado em `main`; branch `v2.5-copy-ux` push para preview; fix 404 Base UI; 52/52 testes verdes)
+> **Última atualização:** 26-05-2026 (V2.5 ganha vídeo de apresentação na home entre lema e testemunhos via componente `HomePresentationVideo`; ministério confirma copy final; branch `feat/v2.5-conteudos-hero-video` aberta a partir de `v2.5-copy-ux`; 55/55 testes verdes; à espera do ID YouTube + testemunhos)
 
 ## 🎯 Milestone atual
-**V2.5 — Copy + UX em preview, aguarda conteúdo final do ministério.** Ronda V2.x (PR-A a PR-F, `feature-docs/v2-copy-and-conteudos.md`) re-aplicada após PRs #27/#32/#33 terem chegado a `main`. Branch `v2.5-copy-ux` pushed (não merge) com preview Vercel acessível na conta `joaocanelasribeiro@gmail.com`. **Bloqueio antes do merge em `main`:** testemunhos finais + títulos provisórios dos cards de `/conteudos` (ver `feature-docs/v2-copy-and-conteudos.md` §8). Depois disso, retomar V2 PR4 (Etiquetas — DB + admin CRUD + atribuir a utilizadores).
+**V2.5 — Copy + UX final, em preview, à espera de testemunhos + ID YouTube.** Ronda V2.x (PR-A a PR-F, `feature-docs/v2-copy-and-conteudos.md`) re-aplicada após PRs #27/#32/#33 terem chegado a `main`. Branch `v2.5-copy-ux` pushed (não merge) com preview Vercel acessível na conta `joaocanelasribeiro@gmail.com`. Acrescento 26-05-2026: vídeo de apresentação YouTube *unlisted* na home, entre `HomeMotto` e `HomeTestimonials` (ver `feature-docs/v2-copy-and-conteudos.md` §9). Confirmação do ministério: toda a copy de V2.5 é final excepto os testemunhos. **Bloqueios restantes antes do merge em `main`:** (1) testemunhos finais para o carrossel, (2) ID YouTube de 11 chars para o vídeo de apresentação (substituir `DEFAULT_VIDEO_ID` em `src/components/site/home-presentation-video.tsx`). Depois disso, retomar V2 PR4 (Etiquetas — DB + admin CRUD + atribuir a utilizadores).
 
 **Prazo absoluto V3:** 1 de julho de 2026.
 
