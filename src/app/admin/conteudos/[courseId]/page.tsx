@@ -4,12 +4,23 @@ import { notFound, redirect } from 'next/navigation';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
-import { CourseForm, type CourseFormInitialData, type TagOption } from '../course-form';
+import { getBannerUrlForPath } from '@/lib/courses/banner';
+import { CourseForm, type TagOption } from '../course-form';
 import { ConteudosBreadcrumb } from '../conteudos-breadcrumb';
 import { CourseTree } from '../course-tree';
 import { deleteCourseAction, updateCourseAction } from '../courses-actions';
 import { createModuleAction, deleteModuleAction, updateModuleAction } from '../modules-actions';
 import { ModuleList, type ModuleListItem } from '../module-list';
+
+type CourseRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  icon: string | null;
+  required_tags: string[];
+  published_at: string | null;
+  banner_storage_path: string | null;
+};
 
 export const metadata = {
   title: 'Curso · Área admin · LOGOS',
@@ -44,9 +55,9 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
   ] = await Promise.all([
     supabase
       .from('courses')
-      .select('id, title, description, icon, required_tags, published_at')
+      .select('id, title, description, icon, required_tags, published_at, banner_storage_path')
       .eq('id', courseId)
-      .maybeSingle<CourseFormInitialData>(),
+      .maybeSingle<CourseRow>(),
     supabase
       .from('tags')
       .select('id, label')
@@ -76,6 +87,17 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
   const modules = modulesData ?? [];
   const editingModule = editar ? modules.find((m) => m.id === editar) : undefined;
   const deletingModule = apagar ? modules.find((m) => m.id === apagar) : undefined;
+
+  const bannerUrl = await getBannerUrlForPath(course.banner_storage_path);
+  const courseFormData = {
+    id: course.id,
+    title: course.title,
+    description: course.description,
+    icon: course.icon,
+    required_tags: course.required_tags,
+    published_at: course.published_at,
+    bannerUrl,
+  };
 
   const editingNode = editingModule ? (
     <div className="bg-muted/20 p-4">
@@ -266,7 +288,7 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
           <CourseForm
             mode="edit"
             tags={tagsData ?? []}
-            course={course}
+            course={courseFormData}
             action={async (formData: FormData) => {
               'use server';
               const result = await updateCourseAction(formData);

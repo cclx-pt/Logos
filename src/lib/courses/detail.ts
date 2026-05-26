@@ -7,6 +7,8 @@
 
 import { getServerClient } from '@/lib/auth';
 
+import { getBannerUrlForPath } from './banner';
+
 export type LessonSummary = {
   id: string;
   title: string;
@@ -28,7 +30,18 @@ export type CourseDetail = {
   title: string;
   description: string | null;
   icon: string | null;
+  /** Signed URL do banner (V3.2 PR1). `null` se sem banner ou se signing falhou. */
+  bannerUrl: string | null;
   modules: ModuleWithLessons[];
+};
+
+type CourseDetailRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  icon: string | null;
+  banner_storage_path: string | null;
+  modules: ModuleWithLessons[] | null;
 };
 
 /**
@@ -42,10 +55,10 @@ export async function getCourseDetailById(courseId: string): Promise<CourseDetai
   const { data, error } = await supabase
     .from('courses')
     .select(
-      'id, title, description, icon, modules ( id, title, description, position, lessons ( id, title, description, template, position ) )',
+      'id, title, description, icon, banner_storage_path, modules ( id, title, description, position, lessons ( id, title, description, template, position ) )',
     )
     .eq('id', courseId)
-    .maybeSingle<CourseDetail>();
+    .maybeSingle<CourseDetailRow>();
 
   if (error) {
     throw new Error(`Falha a carregar curso: ${error.message}`);
@@ -57,7 +70,16 @@ export async function getCourseDetailById(courseId: string): Promise<CourseDetai
     .map((m) => ({ ...m, lessons: [...(m.lessons ?? [])].sort((a, b) => a.position - b.position) }))
     .sort((a, b) => a.position - b.position);
 
-  return { ...data, modules };
+  const bannerUrl = await getBannerUrlForPath(data.banner_storage_path);
+
+  return {
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    icon: data.icon,
+    bannerUrl,
+    modules,
+  };
 }
 
 export type LessonDetail = {

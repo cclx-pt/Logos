@@ -98,6 +98,8 @@ profiles  -- fonte de verdade do Logos para o utilizador
 | `tags` + `user_tags` + helper `current_profile_has_tag` | `20260518120000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 | `courses`/`modules`/`lessons`/`*_completions`/`*_log` + helper `course_is_visible` + bucket `lesson-pdfs` | `20260519020000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 | Drop `tags.slug` (UUID interno é suficiente) | `20260520120000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
+| Drop `courses.slug` (UUID em URLs públicas) | `20260520140000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
+| Storage RLS por path em `lesson-pdfs` (`lesson_pdfs_select_visible`) | `20260521000000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 
 Migrations V3 sobem a `logos-prod` apenas no dia do lançamento (01-07-2026). Ver `feature-docs/branch-strategy.md`.
 
@@ -164,9 +166,9 @@ Se a shell partilhada CCLX vier a oferecer email/password ou outros providers no
 - Bucket `lesson-pdfs` privado, **provisionado em V3 PR2** (migration `20260519020000`). Limites configurados: `file_size_limit = 20 MB`, `allowed_mime_types = ['application/pdf']`.
 - URLs **assinados** com TTL curto (5 min) gerados em Server Action quando o utilizador clica em "Descarregar" (implementação fica em V3 PR6 onde mora a lógica de acesso por curso).
 - Policies em `storage.objects` (já activas):
-  - **SELECT** authenticated (qualquer profile com sessão) — fronteira fina (saber se este user pode descarregar este PDF específico) fica na Server Action que valida `course_is_visible` antes de gerar URL assinado. Esta divisão mantém RLS simples (sem joins para path) e protege via TTL.
+  - **SELECT** `lesson_pdfs_select_visible` (migration `20260521000000`): policy faz parsing do path (`split_part(name, '/', 1)` → `courseId`) e valida via `course_is_visible(courses)` — o mesmo helper SECURITY DEFINER que protege `lessons_select_visible`. Fecha o canal directo cliente → Storage (anon key + sessão de user já não consegue `createSignedUrl` ou `download` para PDFs de cursos invisíveis). A Server Action `getLessonPdfSignedUrlAction` mantém-se como ponto único de signing por ergonomia (TTL curto, single source), não por ser a fronteira de segurança.
   - **INSERT / UPDATE / DELETE** apenas admin/super_admin.
-- Convenção de path: `<courseId>/<lessonId>.pdf` (PR4 vai aplicar).
+- Convenção de path: `<courseId>/<lessonId>.pdf` (aplicada em `src/app/admin/conteudos/lessons-actions.ts`). O formato é agora **security-sensitive** — qualquer alteração futura à convenção tem de actualizar a policy `lesson_pdfs_select_visible`.
 
 ## 8. Deploy e ambientes
 

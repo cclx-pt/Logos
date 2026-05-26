@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { Check } from 'lucide-react';
 
 import { getCurrentUser } from '@/lib/auth';
-import { CourseIcon } from '@/lib/courses/icons';
+import { CourseImage } from '@/lib/courses/course-image';
 import { getCourseDetailById, getFirstLessonOfCourse } from '@/lib/courses/detail';
 import {
   getCompletedLessonIds,

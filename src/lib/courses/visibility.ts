@@ -7,24 +7,28 @@
  *     `published_at IS NOT NULL` E (`required_tags = '{}'` OU
  *     `current_profile_has_tag(required_tags)`). Esta função delega
  *     totalmente nessa policy — não duplica a regra cá.
- *   - Esta função **agrega**: nome, descrição, ícone, e flag `hasLessons`
- *     usada para o badge "Em breve" nos cards.
+ *   - Esta função **agrega**: nome, descrição, ícone, banner (signed URL
+ *     se existir — V3.2 PR1), e flag `hasLessons` usada para o badge
+ *     "Em breve" nos cards.
  *   - Pesquisa textual opcional (`query`) aplica `ILIKE %q%` no título,
  *     case-insensitive. Wildcards (`%`, `_`) são interpretados como
  *     pattern matching — comportamento intencional para flexibilidade.
  *
  * Mantém-se em `src/lib/courses/` (não em `src/app/conteudos/`) porque a
- * função vai ser reutilizada pela página de curso (PR6) e potencialmente
- * por uma futura página "Os meus cursos".
+ * função é reutilizada por outras rotas (página de curso, /meus-cursos).
  */
 
 import { getServerClient } from '@/lib/auth';
+
+import { getBannerUrlsByPath } from './banner';
 
 export type VisibleCourse = {
   id: string;
   title: string;
   description: string | null;
   icon: string | null;
+  /** Signed URL do banner (V3.2 PR1). `null` se curso não tem banner ou se o signing falhou. */
+  bannerUrl: string | null;
   /** `true` se o curso tem pelo menos uma aula. Usado para o badge "Em breve". */
   hasLessons: boolean;
 };
@@ -34,6 +38,7 @@ type CourseRow = {
   title: string;
   description: string | null;
   icon: string | null;
+  banner_storage_path: string | null;
   modules: ModuleRow[] | null;
 };
 
@@ -57,7 +62,9 @@ export async function getVisibleCoursesForUser(
 
   let request = supabase
     .from('courses')
-    .select('id, title, description, icon, modules ( lessons ( count ) )')
+    .select(
+      'id, title, description, icon, banner_storage_path, modules ( lessons ( count ) )',
+    )
     .order('title', { ascending: true });
 
   if (trimmedQuery.length > 0) {
@@ -71,11 +78,17 @@ export async function getVisibleCoursesForUser(
   }
 
   const rows = data ?? [];
+  const bannerPaths = rows
+    .map((r) => r.banner_storage_path)
+    .filter((p): p is string => typeof p === 'string' && p.length > 0);
+  const bannerUrls = await getBannerUrlsByPath(bannerPaths);
+
   return rows.map((row) => ({
     id: row.id,
     title: row.title,
     description: row.description,
     icon: row.icon,
+    bannerUrl: row.banner_storage_path ? (bannerUrls.get(row.banner_storage_path) ?? null) : null,
     hasLessons: (row.modules ?? []).some((m) => (m.lessons?.[0]?.count ?? 0) > 0),
   }));
 }

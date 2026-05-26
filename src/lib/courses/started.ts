@@ -18,6 +18,7 @@
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 
+import { getBannerUrlsByPath } from './banner';
 import type { VisibleCourse } from './visibility';
 
 export type StartedCourse = VisibleCourse & {
@@ -35,6 +36,7 @@ type AccessRow = {
     title: string;
     description: string | null;
     icon: string | null;
+    banner_storage_path: string | null;
     modules: { lessons: { count: number }[] | null }[] | null;
   } | null;
 };
@@ -52,7 +54,7 @@ export async function getStartedCoursesForUser(): Promise<StartedCourse[]> {
   const { data: accesses, error: accessError } = await supabase
     .from('course_access_log')
     .select(
-      'course_id, accessed_at, courses ( id, title, description, icon, modules ( lessons ( count ) ) )',
+      'course_id, accessed_at, courses ( id, title, description, icon, banner_storage_path, modules ( lessons ( count ) ) )',
     )
     .order('accessed_at', { ascending: false })
     .returns<AccessRow[]>();
@@ -61,7 +63,11 @@ export async function getStartedCoursesForUser(): Promise<StartedCourse[]> {
     throw new Error(`Falha a carregar acessos: ${accessError.message}`);
   }
 
-  const dedupe = new Map<string, StartedCourse>();
+  // Acumular paths para sign batched depois do dedupe.
+  const dedupe = new Map<
+    string,
+    Omit<StartedCourse, 'bannerUrl'> & { bannerStoragePath: string | null }
+  >();
   for (const row of accesses ?? []) {
     if (!row.courses) continue; // curso despublicado / sem visibilidade
     if (dedupe.has(row.course_id)) continue; // mantém a primeira (mais recente)
@@ -70,14 +76,25 @@ export async function getStartedCoursesForUser(): Promise<StartedCourse[]> {
       title: row.courses.title,
       description: row.courses.description,
       icon: row.courses.icon,
+      bannerStoragePath: row.courses.banner_storage_path,
       hasLessons: (row.courses.modules ?? []).some((m) => (m.lessons?.[0]?.count ?? 0) > 0),
       completed: false,
       lastAccessedAt: row.accessed_at,
     });
   }
 
-  const courses = Array.from(dedupe.values());
-  if (courses.length === 0) return [];
+  const intermediate = Array.from(dedupe.values());
+  if (intermediate.length === 0) return [];
+
+  const bannerPaths = intermediate
+    .map((c) => c.bannerStoragePath)
+    .filter((p): p is string => typeof p === 'string' && p.length > 0);
+  const bannerUrls = await getBannerUrlsByPath(bannerPaths);
+
+  const courses: StartedCourse[] = intermediate.map(({ bannerStoragePath, ...rest }) => ({
+    ...rest,
+    bannerUrl: bannerStoragePath ? (bannerUrls.get(bannerStoragePath) ?? null) : null,
+  }));
 
   // Marca os concluídos. Limita o IN ao set actual para evitar varrer
   // course_completions inteiro do user.

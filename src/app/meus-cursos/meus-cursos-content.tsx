@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 import { BookMarked, Check } from 'lucide-react';
 
-import { CourseIcon } from '@/lib/courses/icons';
+import { CourseImage } from '@/lib/courses/course-image';
 import { signInWithGoogleAction } from '@/lib/auth/actions';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 import type { StartedCourse } from '@/lib/courses/started';
@@ -103,9 +103,12 @@ export function MeusCursosContent({ isAuthenticated, courses }: Props) {
                   href={`/conteudos/${course.id}`}
                   className="border-border bg-card hover:border-orange-primary/40 hover:bg-orange-primary/5 focus-visible:ring-ring group flex h-full flex-col rounded-2xl border p-6 transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
-                  <div className="bg-orange-primary/10 text-orange-primary flex h-12 w-12 items-center justify-center rounded-xl">
-                    <CourseIcon slug={course.icon} className="h-6 w-6" />
-                  </div>
+                  <CourseImage
+                    bannerUrl={course.bannerUrl}
+                    iconSlug={course.icon}
+                    alt={course.title}
+                    variant="card"
+                  />
                   <div className="mt-5 flex flex-wrap items-start gap-2">
                     <h2 className="font-display text-ink text-2xl font-medium tracking-tight">
                       {course.title}

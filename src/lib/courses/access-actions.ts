@@ -4,11 +4,15 @@
  * Server Actions para acesso a conteúdo de cursos.
  *
  * 1. `getLessonPdfSignedUrlAction` (PR6): gera URL assinada de 5 minutos
- *    para o PDF da aula. Defesa em profundidade: RLS em `lessons` filtra
- *    visibilidade; se o select devolver nada, recusamos. A política de
- *    Storage permite `authenticated` ler qualquer objecto do bucket — a
- *    fronteira fina (saber se este utilizador pode ver este PDF) é feita
- *    aqui antes do `createSignedUrl`.
+ *    para o PDF da aula. Defesa em profundidade em duas camadas:
+ *      - RLS em `lessons` filtra visibilidade ao nível da DB; se o select
+ *        devolver nada, recusamos antes de tocar em Storage.
+ *      - RLS em `storage.objects` (policy `lesson_pdfs_select_visible`)
+ *        filtra visibilidade ao nível do bucket via path parsing
+ *        (`<courseId>/<lessonId>.pdf` → `course_is_visible(courses)`), o
+ *        que fecha o canal directo cliente → Storage. Esta Server Action
+ *        mantém-se como ponto único de signing por ergonomia, não por
+ *        ser a fronteira de segurança.
  *
  * 2. `logCourseAccessAction` (PR8): regista clique em "Começar/Continuar
  *    curso" na tabela `course_access_log`. INSERT só do próprio (RLS de

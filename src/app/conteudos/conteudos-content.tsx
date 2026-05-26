@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 import { Check, Search, Sparkles } from 'lucide-react';
 
-import { CourseIcon } from '@/lib/courses/icons';
+import { CourseImage } from '@/lib/courses/course-image';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 import type { VisibleCourse } from '@/lib/courses/visibility';
 import type { CourseProgress } from '@/lib/courses/progress';
@@ -105,9 +105,12 @@ export function ConteudosContent({ courses, query }: Props) {
                     : 'border-border bg-card pointer-events-none flex h-full flex-col rounded-2xl border p-6 opacity-70'
                 }
               >
-                <div className="bg-orange-primary/10 text-orange-primary flex h-12 w-12 items-center justify-center rounded-xl">
-                  <CourseIcon slug={course.icon} className="h-6 w-6" />
-                </div>
+                <CourseImage
+                  bannerUrl={course.bannerUrl}
+                  iconSlug={course.icon}
+                  alt={course.title}
+                  variant="card"
+                />
                 <div className="mt-5 flex flex-wrap items-start gap-2">
                   <h2 className="font-display text-ink text-2xl font-medium tracking-tight">
                     {course.title}

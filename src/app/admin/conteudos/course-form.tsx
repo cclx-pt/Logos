@@ -12,6 +12,8 @@ export type CourseFormInitialData = {
   icon: string | null;
   required_tags: string[];
   published_at: string | null;
+  /** Signed URL do banner actual (V3.2 PR1), se existir. Para preview no form. */
+  bannerUrl: string | null;
 };
 
 type CourseFormProps = {
@@ -28,7 +30,7 @@ export function CourseForm({ mode, tags, course, action }: CourseFormProps) {
   const assignedTagIds = new Set(course?.required_tags ?? []);
 
   return (
-    <form action={action} className="space-y-6">
+    <form action={action} encType="multipart/form-data" className="space-y-6">
       {mode === 'edit' && course && <input type="hidden" name="id" value={course.id} />}
 
       <label className="block">
@@ -55,6 +57,51 @@ export function CourseForm({ mode, tags, course, action }: CourseFormProps) {
           className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
         />
       </label>
+
+      <fieldset className="border-border space-y-3 rounded-md border p-4">
+        <legend className="text-muted-foreground px-1 text-xs font-medium">
+          Banner (opcional)
+        </legend>
+        {course?.bannerUrl ? (
+          <div className="space-y-2">
+            <p className="text-muted-foreground text-xs">Banner actual:</p>
+            <div className="border-border relative aspect-video w-full max-w-md overflow-hidden rounded-md border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={course.bannerUrl}
+                alt="Banner actual do curso"
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <label className="text-ink inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="remove_banner"
+                className="text-orange-primary focus-visible:ring-ring rounded focus-visible:ring-2 focus-visible:outline-none"
+              />
+              Remover banner actual
+            </label>
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-xs">
+            Sem banner — o catálogo mostra o ícone abaixo. Carrega um ficheiro para substituir.
+          </p>
+        )}
+        <label className="block">
+          <span className="text-muted-foreground text-xs font-medium">
+            {course?.bannerUrl ? 'Substituir banner' : 'Adicionar banner'}
+          </span>
+          <input
+            type="file"
+            name="banner"
+            accept="image/jpeg,image/png,image/webp"
+            className="text-muted-foreground file:border-border file:bg-muted/40 file:text-ink hover:file:bg-muted/60 mt-1 block w-full text-sm file:mr-3 file:rounded-md file:border file:px-3 file:py-1.5 file:text-sm file:font-medium"
+          />
+        </label>
+        <p className="text-muted-foreground text-xs">
+          JPEG, PNG ou WebP — máx 5 MB. Recomendação: proporção 16:9, ≤ 500 KB já comprimido.
+        </p>
+      </fieldset>
 
       <IconPicker selected={course?.icon ?? null} />
 
