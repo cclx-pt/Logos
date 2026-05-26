@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { Check } from 'lucide-react';
 
+import { getCurrentUser } from '@/lib/auth';
 import { CourseIcon } from '@/lib/courses/icons';
 import { getCourseDetailById, getFirstLessonOfCourse } from '@/lib/courses/detail';
 import {
@@ -12,7 +13,7 @@ import {
   isCourseComplete,
   isModuleComplete,
 } from '@/lib/courses/completion';
-import { logCourseAccessAction } from '@/lib/courses/access-actions';
+import { StartCourseCta } from './start-course-cta';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-PT', {
@@ -52,6 +53,8 @@ export default async function CoursePage({ params }: PageProps) {
   if (!course) {
     notFound();
   }
+
+  const user = await getCurrentUser();
 
   const allLessonIds = course.modules.flatMap((m) => m.lessons.map((l) => l.id));
   const completed = await getCompletedLessonIds(allLessonIds);
@@ -111,24 +114,12 @@ export default async function CoursePage({ params }: PageProps) {
           </p>
         </div>
       ) : firstLesson ? (
-        <form
-          action={async () => {
-            'use server';
-            // Log de acesso é best-effort — falha (sem sessão / RLS deny)
-            // não bloqueia a navegação. A página da aula filtra acesso por
-            // RLS à sua vez.
-            await logCourseAccessAction(course.id);
-            redirect(`/conteudos/${course.id}/${firstLesson.id}`);
-          }}
-          className="mt-8 inline-block"
-        >
-          <button
-            type="submit"
-            className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-11 items-center justify-center rounded-md px-6 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
-          >
-            {completed.size > 0 ? 'Continuar curso' : 'Começar curso'} →
-          </button>
-        </form>
+        <StartCourseCta
+          courseId={course.id}
+          firstLessonId={firstLesson.id}
+          hasProgress={completed.size > 0}
+          isAuthenticated={user !== null}
+        />
       ) : (
         <p className="text-muted-foreground mt-8 inline-flex items-center rounded-md border border-dashed px-4 py-3 text-sm">
           Em breve — este curso ainda não tem aulas publicadas.

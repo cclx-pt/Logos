@@ -16,6 +16,28 @@
 
 ---
 
+## [26-05-2026] — V3.1 T7: login-gate em "Começar curso" + proteger rota de aula — local em `v3-cursos`
+
+Anónimos deixam de poder abrir aulas directamente. CTA "Começar/Continuar curso" no detalhe do curso muda para "Inicia sessão para começar →" quando não há sessão; clicar dispara `signInWithGoogleAction` com `next` apontado à primeira aula (mesmo padrão do hero "Meus cursos" em `home-hero.tsx`). A rota `/conteudos/[courseId]/[lessonId]` ganha um early-return: sem sessão redirige para `/conteudos/[courseId]`, onde o utilizador encontra o CTA de sign-in.
+
+### add
+- add: `src/app/conteudos/[courseId]/start-course-cta.tsx` — server component com 3 estados: anónimo (form `signInWithGoogleAction` + hidden `next`), autenticado sem progresso ("Começar curso"), autenticado com progresso ("Continuar curso"). Server Action inline mantém o `logCourseAccessAction` + `redirect` quando autenticado.
+- add: `src/app/conteudos/[courseId]/start-course-cta.test.tsx` (3 testes).
+- add: `src/app/conteudos/[courseId]/[lessonId]/page.test.tsx` (2 testes — redirect anónimo + UUID check vem antes do auth check).
+
+### update
+- update: `src/app/conteudos/[courseId]/page.tsx` — chama `getCurrentUser()` + delega CTA ao `<StartCourseCta />` (substitui form inline `'use server'` + `redirect`). Imports de `logCourseAccessAction` e `redirect` saem (já vivem dentro do componente).
+- update: `src/app/conteudos/[courseId]/[lessonId]/page.tsx` — auth-gate entre a validação de UUID e a query Supabase. Anónimos não chegam a tocar a DB.
+
+### test
+- 296 → 301 verdes (5 novos). Lint + typecheck verdes.
+
+### decision
+- Redirect anónimo aponta para a página do curso (`/conteudos/[courseId]`), não para `/?next=...`. Razão: a página do curso já tem o login-gate com `next` correcto após T7; redireccionar para `/` exigiria adicionar consumo de `?next` no hero, fora do âmbito desta task. Trade-off: utilizador que clique num deep link de aula aterra na detalhe do curso (não na aula original após login) — aceitável dado que deep links anónimos para aulas são caso de borda.
+- Extracção do `StartCourseCta` (em vez de manter inline em `page.tsx`) para testabilidade: 3 ramos isolados, testes pequenos, sem mocks pesados do resto da página. Mantém a inline `'use server'` action dentro do componente — sem mudança ao padrão estabelecido do codebase.
+
+---
+
 ## [21-05-2026] — V3.1 followup: drop `courses.slug` — URLs públicas por UUID — local em `v3-cursos`
 
 Cursos passam a ser referenciados por `id` (uuid) nas URLs públicas (`/conteudos/<uuid>` e `/conteudos/<uuid>/<lessonId>`). Coluna `courses.slug` removida da DB; UNIQUE index e CHECK constraint do regex caem com a coluna. Coerente com `tags`, já sem slug (migration `20260520120000_drop_tags_slug.sql`). Sem custo de redirects — V3 ainda não tem cursos em produção.

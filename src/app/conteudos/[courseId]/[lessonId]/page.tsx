@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
+import { getCurrentUser } from '@/lib/auth';
 import {
   getCourseDetailById,
   getLessonDetailById,
@@ -42,6 +43,15 @@ export default async function LessonPage({ params }: PageProps) {
   const { courseId, lessonId } = await params;
   if (!UUID_RE.test(courseId) || !UUID_RE.test(lessonId)) {
     notFound();
+  }
+
+  // Login-gate (V3.1 T7): anónimos não vêem aulas. Redirige para a página do
+  // curso, que tem o CTA "Inicia sessão para começar →" com o `next` correcto.
+  // RLS de PR2 já filtra a query para anónimos, mas redireccionar antes evita
+  // queries inúteis e poupa o utilizador a uma página vazia.
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect(`/conteudos/${courseId}`);
   }
 
   const [lesson, course] = await Promise.all([

@@ -81,13 +81,13 @@ Depois da V3 estar fechada dev-side (PR1-PR8 + PR9a + iteração PR7+, 289/289 t
 
 ## Ordem de execução
 
-1. **T1** (header admin sage) — standalone, baixo risco.
-2. **T3** (toasts) — afecta muitas Server Actions; melhor antes de T2 para evitar conflito.
-3. **T2** (drop slug + URLs UUID) — mais invasivo; faz-se com todos os outros estáveis.
-4. **T7** (login-gate) — depende de T2 (URLs UUID).
-5. **T4** (rota /meus-cursos) — depende de T2.
-6. **T5** (CTA hero) — depende de T4.
-7. **T6** (indicadores em /conteudos) — depende de T4 (helper getStartedCoursesForUser).
+1. **T1** ✅ (20-05-2026, commit `18dd82b`) — header admin sage.
+2. **T3** ✅ (20-05-2026, commit `4e99d44`) — toasts sonner.
+3. **T2** ✅ (21-05-2026, commit `83a3d06`) — drop slug + URLs UUID.
+4. **T7** ✅ (26-05-2026) — login-gate em "Começar curso" + redirect anónimo na rota de aula. `StartCourseCta` extraído; 5 testes novos (296 → 301). Detalhes no `changelog.md` `[26-05-2026]`.
+5. **T4** ⏳ — rota `/meus-cursos` (depende de T2).
+6. **T5** ⏳ — CTA hero aponta a `/meus-cursos` (depende de T4).
+7. **T6** ⏳ — indicadores em `/conteudos` (depende de T4, helper `getStartedCoursesForUser`).
 
 Cada tarefa termina com `pnpm test + lint + typecheck + format:check` verdes e commit separado.
 
