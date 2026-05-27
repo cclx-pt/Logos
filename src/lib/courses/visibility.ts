@@ -62,9 +62,7 @@ export async function getVisibleCoursesForUser(
 
   let request = supabase
     .from('courses')
-    .select(
-      'id, title, description, icon, banner_storage_path, modules ( lessons ( count ) )',
-    )
+    .select('id, title, description, icon, banner_storage_path, modules ( lessons ( count ) )')
     .order('title', { ascending: true });
 
   if (trimmedQuery.length > 0) {

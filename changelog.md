@@ -16,6 +16,30 @@
 
 ---
 
+## [27-05-2026] — V3.2 PR1: Banner opcional em cursos
+
+### add
+- **Coluna `courses.banner_storage_path`** (text nullable) + bucket privado `course-banners` (5 MB, JPEG/PNG/WebP) com policy SELECT `course_banners_select_visible` que reutiliza `course_is_visible(courses)` por path (`split_part(name, '/', 1)`). Convenção de path: `<courseId>/banner` (sem extensão; MIME via Content-Type). Migration `20260527000000`.
+- **Helpers `getBannerUrlsByPath` / `getBannerUrlForPath`** em `src/lib/courses/banner.ts` — signing batched + single, TTL 30 min. Falha graciosa devolve Map vazio / null.
+- **Componente `<CourseImage variant="card"|"hero">`** em `src/lib/courses/course-image.tsx` — banner com `next/image unoptimized` (CDN directo, sem cache miss em rotação de signed URL); fallback de icon Lucide quando `bannerUrl=null`. Test ids `course-image-banner` / `course-image-icon`.
+- **Admin upload de banner** em `course-form.tsx` (form `multipart/form-data`, preview do existente, checkbox "Remover"); `createCourseAction` e `updateCourseAction` aceitam ficheiro `banner` (validação MIME + 5 MB); `updateCourseAction` aceita `remove_banner=on` (nova upload tem prioridade); `deleteCourseAction` faz cleanup best-effort do ficheiro.
+
+### update
+- **Listagens `/conteudos` e `/meus-cursos`** trocam `<CourseIcon>` por `<CourseImage variant="card">` (aspect-video no topo do card).
+- **`/conteudos/[courseId]`** ganha hero banner em `aspect-video` acima do header (icon ainda usado como fallback).
+- **Skeletons `loading.tsx`** das 3 rotas (listagens + landing de curso) reflectem o novo espaço aspect-video.
+- **`VisibleCourse`, `StartedCourse`, `CourseDetail`** ganham `bannerUrl: string | null`; selects e mapping em `visibility.ts`, `started.ts`, `detail.ts` actualizados.
+
+### docs
+- `architecture.md` §7 dividido em 7.1 PDFs + 7.2 banners; tabela de migrations recebe linha `20260527000000`.
+- `status.md` ganha bloco "V3.2 — Iteração de UI/UX e prerequisitos" (PR1 ⏳ + PR2-PR5 pendentes).
+- `feature-docs/v3-2-iteration.md` (a criar) consolida o plano dos 5 PRs e as decisões (banner opt-in + icon fallback; bucket privado + signed URL 30 min; bloqueio misto cursos-invisíveis-aulas-locked; prerequisitos opt-in por entidade).
+
+### test
+- 18 testes novos (331 → 349) — `course-image.test.tsx` (5), `banner.test.ts` (7), `courses-actions.test.ts` (6 casos de banner). Fixtures de `CourseFormInitialData`, `VisibleCourse`, `StartedCourse`, `CourseDetail` ganham `bannerUrl: null`.
+
+---
+
 ## [26-05-2026] — V3.1: migrations alinhadas em `logos-dev` (push + repair)
 
 Aplicadas as 2 migrations pendentes a `logos-dev` (PR V3.1 T4/T6 ficam totalmente funcionais no preview Vercel):

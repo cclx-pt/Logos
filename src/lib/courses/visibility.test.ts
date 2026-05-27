@@ -56,6 +56,7 @@ const baseRow = {
   title: 'O Reino de Deus',
   description: 'Curso introdutório',
   icon: 'cross',
+  banner_storage_path: null,
 };
 
 describe('getVisibleCoursesForUser', () => {
@@ -92,6 +93,7 @@ describe('getVisibleCoursesForUser', () => {
         title: 'O Reino de Deus',
         description: 'Curso introdutório',
         icon: 'cross',
+        bannerUrl: null,
         hasLessons: true,
       },
     ]);
@@ -174,7 +176,7 @@ describe('getVisibleCoursesForUser', () => {
   it('seleciona campos + embed modules/lessons(count) num único query', async () => {
     await getVisibleCoursesForUser();
     expect(mockSelect).toHaveBeenCalledWith(
-      'id, title, description, icon, modules ( lessons ( count ) )',
+      'id, title, description, icon, banner_storage_path, modules ( lessons ( count ) )',
     );
   });
 });

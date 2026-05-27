@@ -48,6 +48,7 @@ const courseEmbed = {
   title: 'Marcos',
   description: 'Curso de Marcos',
   icon: 'cross',
+  banner_storage_path: null,
   modules: [{ lessons: [{ count: 4 }] }],
 };
 
@@ -104,6 +105,7 @@ describe('getStartedCoursesForUser', () => {
         title: 'Marcos',
         description: 'Curso de Marcos',
         icon: 'cross',
+        bannerUrl: null,
         hasLessons: true,
         completed: false,
         lastAccessedAt: '2026-05-25T10:00:00Z',

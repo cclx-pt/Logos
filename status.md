@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 26-05-2026 (**V3.1 fechada do lado do código + DB** — T1-T7 ✅. Hoje: T7 + T4 + T5 + T6 numa sessão; migration `20260526180000_course_access_log_select_own` aplicada a `logos-dev` via `db push` (com `migration repair` para limpar `20260519230230` órfã + marcar `20260520120000` applied). 327/327 testes verdes. Restantes pré-merge: smoke manual em preview, testemunhos do ministério para abrir PR `v3-cursos → main`.)
+> **Última atualização:** 27-05-2026 (**V3.2 PR1 — Banner opcional em cursos**: coluna `banner_storage_path` + bucket privado `course-banners` (5 MB, JPEG/PNG/WebP) + signed URLs 30 min + componente `CourseImage` com fallback de icon. Hero banner em `/conteudos/[courseId]`, cards de `/conteudos` e `/meus-cursos` migrados, admin form com upload + remover. 349/349 testes verdes (18 novos). Migration `20260527000000` pendente de aplicação a `logos-dev`.)
 
 ## 🎯 Milestone atual
 **V3 fechada dev-side em `v3-cursos`.** À espera de testemunhos finais do ministério para abrir PR `v3-cursos` → `main` e fazer deploy a `logos.cclx.pt`. Detalhes da estratégia em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
@@ -114,6 +114,12 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
   - **Loading states**: novos componentes `Spinner` (Lucide Loader2 + `role="status"` + sr-only), `Skeleton` (`aria-hidden`, `animate-pulse`), `ProgressBar` indeterminada (keyframe `indeterminate` em `globals.css`), `SubmitButton` Client Component que usa `useFormStatus` para mostrar spinner + opcional ProgressBar enquanto a Server Action corre. Aplicado nos forms de criar/editar aula (uploads de PDF lentos). `loading.tsx` em `/admin/conteudos`, `/admin/conteudos/[courseId]` e `/conteudos` com skeletons que reflectem o layout real. 15 testes novos (163 → 178).
 
 ## 🚧 Em progresso
+- **V3.2 — Iteração de UI/UX e prerequisitos** (5 PRs). Plano em `feature-docs/v3-2-iteration.md`.
+  - **PR1 — Banner opcional em cursos** (27-05-2026) ⏳ — código completo (hero, cards, admin form, migrations, 349 testes verdes); falta aplicar migration a `logos-dev` + smoke no preview Vercel.
+  - **PR2 — Pré-requisito por aula** (locked + cadeado) — pendente.
+  - **PR3 — Pré-requisito por módulo** (locked) — pendente.
+  - **PR4 — Pré-requisito por curso** (invisível) — pendente; quebra a regra "conteúdo restrito é invisível" para aulas/módulos (cadeado em vez de invisível). Documentar em CLAUDE.md no PR2.
+  - **PR5 — "Meus cursos" na nav principal** — pendente.
 - **V3.1 fechada do lado do código + DB** — T1-T7 todas em `v3-cursos`. Hoje (26-05-2026): T7 + T4 + T5 + T6 implementados, testados (327/327), com commits separados. Migrations aplicadas a `logos-dev`: `20260520140000_drop_courses_slug` + `20260526180000_course_access_log_select_own`. Limpeza de tracking necessária: `20260519230230` (drop tags slug aplicada da outra máquina antes de a versão definitiva ser commited) marcada como `reverted`; `20260520120000_drop_tags_slug` marcada como `applied` (schema já estava na forma final). 11 migrations Local + Remote alinhadas. **Próximo (não-código):** smoke test manual no preview, esperar testemunhos do ministério antes de abrir PR `v3-cursos → main`. Plano completo em `feature-docs/v3-1-iteration.md`.
 - **V3 inteira fechada** (PR1-PR8 + PR9a). PR9b (Playwright E2E) **adiada para V3.1** — decisão do user 20-05-2026: setup de ~2 dias (cookie pré-preparado para satisfazer RLS) não justifica o ROI quando o smoke manual de §11 do `v3-plan.md` já cobre o happy-path. Reabrir se aparecerem regressões frequentes que mocks Vitest não apanhem.
 

@@ -9,13 +9,12 @@ export default function Loading() {
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
       <Skeleton className="h-3 w-48" />
 
-      <header className="mt-6 flex flex-col items-start gap-6 sm:flex-row">
-        <Skeleton className="h-16 w-16 shrink-0 rounded-2xl" />
-        <div className="min-w-0 flex-1 space-y-3">
-          <Skeleton className="h-9 w-2/3 max-w-md" />
-          <Skeleton className="h-4 w-full max-w-prose" />
-          <Skeleton className="h-4 w-3/4 max-w-prose" />
-        </div>
+      <Skeleton className="mt-6 aspect-video w-full rounded-2xl" />
+
+      <header className="mt-6 space-y-3">
+        <Skeleton className="h-9 w-2/3 max-w-md" />
+        <Skeleton className="h-4 w-full max-w-prose" />
+        <Skeleton className="h-4 w-3/4 max-w-prose" />
       </header>
 
       <Skeleton className="mt-8 h-11 w-40 rounded-md" />

@@ -21,15 +21,15 @@ export default function Loading() {
 
       <ul className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <li key={i} className="border-border bg-card flex flex-col gap-4 rounded-2xl border p-6">
-            <Skeleton className="h-12 w-12 rounded-xl" />
-            <Skeleton className="h-7 w-3/4" />
-            <div className="space-y-2">
+          <li key={i} className="border-border bg-card flex flex-col rounded-2xl border p-6">
+            <Skeleton className="aspect-video w-full rounded-xl" />
+            <Skeleton className="mt-5 h-7 w-3/4" />
+            <div className="mt-2 space-y-2">
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-5/6" />
               <Skeleton className="h-4 w-4/6" />
             </div>
-            <Skeleton className="mt-auto h-4 w-24" />
+            <Skeleton className="mt-auto h-4 w-24 pt-5" />
           </li>
         ))}
       </ul>

@@ -100,6 +100,8 @@ profiles  -- fonte de verdade do Logos para o utilizador
 | Drop `tags.slug` (UUID interno é suficiente) | `20260520120000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 | Drop `courses.slug` (UUID em URLs públicas) | `20260520140000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 | Storage RLS por path em `lesson-pdfs` (`lesson_pdfs_select_visible`) | `20260521000000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
+| `course_access_log` SELECT `select_own` (V3.1 T4) | `20260526180000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
+| Banner opcional em cursos + bucket `course-banners` + storage RLS por path | `20260527000000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 
 Migrations V3 sobem a `logos-prod` apenas no dia do lançamento (01-07-2026). Ver `feature-docs/branch-strategy.md`.
 
@@ -161,7 +163,9 @@ Se a shell partilhada CCLX vier a oferecer email/password ou outros providers no
 - "Curso concluído" é **detectado on-read** via `isCourseComplete(course, completedLessonIds)` (helper em `src/lib/courses/completion.ts`). Quando todas as aulas visíveis estão concluídas E não há row em `course_completions`, a página de curso insere uma — `completed_at` fica preservado para sempre. RLS de PR2 torna a row imutável (sem UPDATE/DELETE policies); desmarcar uma aula depois não apaga a conclusão original do curso.
 - Helper `getOrCreateCourseCompletion(courseId)` faz select-then-insert idempotente, com 23505 trap para race entre dois page renders simultâneos. Falha silenciosa (retorna `null`) para não partir o render do banner.
 
-## 7. Storage de PDFs
+## 7. Storage (PDFs e banners)
+
+### 7.1 Bucket `lesson-pdfs` (V3 PR2)
 
 - Bucket `lesson-pdfs` privado, **provisionado em V3 PR2** (migration `20260519020000`). Limites configurados: `file_size_limit = 20 MB`, `allowed_mime_types = ['application/pdf']`.
 - URLs **assinados** com TTL curto (5 min) gerados em Server Action quando o utilizador clica em "Descarregar" (implementação fica em V3 PR6 onde mora a lógica de acesso por curso).
@@ -169,6 +173,16 @@ Se a shell partilhada CCLX vier a oferecer email/password ou outros providers no
   - **SELECT** `lesson_pdfs_select_visible` (migration `20260521000000`): policy faz parsing do path (`split_part(name, '/', 1)` → `courseId`) e valida via `course_is_visible(courses)` — o mesmo helper SECURITY DEFINER que protege `lessons_select_visible`. Fecha o canal directo cliente → Storage (anon key + sessão de user já não consegue `createSignedUrl` ou `download` para PDFs de cursos invisíveis). A Server Action `getLessonPdfSignedUrlAction` mantém-se como ponto único de signing por ergonomia (TTL curto, single source), não por ser a fronteira de segurança.
   - **INSERT / UPDATE / DELETE** apenas admin/super_admin.
 - Convenção de path: `<courseId>/<lessonId>.pdf` (aplicada em `src/app/admin/conteudos/lessons-actions.ts`). O formato é agora **security-sensitive** — qualquer alteração futura à convenção tem de actualizar a policy `lesson_pdfs_select_visible`.
+
+### 7.2 Bucket `course-banners` (V3.2 PR1)
+
+- Bucket `course-banners` privado, **provisionado em V3.2 PR1** (migration `20260527000000`). Limites: `file_size_limit = 5 MB`, `allowed_mime_types = ['image/jpeg', 'image/png', 'image/webp']`.
+- Coluna `courses.banner_storage_path` (nullable) guarda o path do banner; quando NULL, a UI cai no fallback de icon Lucide (componente `CourseImage` em `src/lib/courses/course-image.tsx`).
+- URLs **assinados** com TTL de 30 min (vs 5 min do PDF, porque banners aparecem em listagens — worth caching mais tempo). Helpers em `src/lib/courses/banner.ts`: `getBannerUrlsByPath(paths)` batched para listagens, `getBannerUrlForPath(path)` para single course. Falha do signing devolve Map vazio / null (UI cai para icon, não parte).
+- Policies em `storage.objects`:
+  - **SELECT** `course_banners_select_visible`: mesma técnica do PDF — `split_part(name, '/', 1)` → `courseId` → `course_is_visible(courses)`.
+  - **INSERT / UPDATE / DELETE** apenas admin/super_admin.
+- Convenção de path: `<courseId>/banner` (sem extensão; MIME via Content-Type). Security-sensitive — qualquer mudança requer update à policy.
 
 ## 8. Deploy e ambientes
 

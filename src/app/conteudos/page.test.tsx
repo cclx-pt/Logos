@@ -9,6 +9,7 @@ function makeCourse(overrides: Partial<VisibleCourseWithProgress> = {}): Visible
     title: 'Marcos — Introdução',
     description: 'Uma jornada de seis semanas pelo Evangelho de Marcos.',
     icon: 'book-open',
+    bannerUrl: null,
     hasLessons: true,
     started: false,
     completed: false,

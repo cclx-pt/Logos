@@ -9,6 +9,8 @@ const {
   mockUpdateEq,
   mockDeleteEq,
   mockRevalidatePath,
+  mockStorageUpload,
+  mockStorageRemove,
 } = vi.hoisted(() => ({
   mockGetCurrentUser: vi.fn(),
   mockInsertSingle: vi.fn(),
@@ -16,6 +18,8 @@ const {
   mockUpdateEq: vi.fn(),
   mockDeleteEq: vi.fn(),
   mockRevalidatePath: vi.fn(),
+  mockStorageUpload: vi.fn(),
+  mockStorageRemove: vi.fn(),
 }));
 
 const mockInsertPayload = vi.fn();
@@ -40,6 +44,12 @@ vi.mock('@/lib/auth', () => ({
       },
       delete: vi.fn(() => ({ eq: mockDeleteEq })),
     })),
+    storage: {
+      from: vi.fn(() => ({
+        upload: mockStorageUpload,
+        remove: mockStorageRemove,
+      })),
+    },
   })),
 }));
 
@@ -179,7 +189,7 @@ describe('updateCourseAction (V3 PR3 + V3.1 sem slug)', () => {
   it('preserva published_at original quando o curso já estava publicado e toggle continua on', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     mockMaybeSingle.mockResolvedValue({
-      data: { published_at: '2026-04-01T10:00:00Z' },
+      data: { published_at: '2026-04-01T10:00:00Z', banner_storage_path: null },
       error: null,
     });
     mockUpdateEq.mockResolvedValue({ error: null });
@@ -196,7 +206,7 @@ describe('updateCourseAction (V3 PR3 + V3.1 sem slug)', () => {
   it('despublica (toggle off) → published_at = null', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     mockMaybeSingle.mockResolvedValue({
-      data: { published_at: '2026-04-01T10:00:00Z' },
+      data: { published_at: '2026-04-01T10:00:00Z', banner_storage_path: null },
       error: null,
     });
     mockUpdateEq.mockResolvedValue({ error: null });
@@ -211,7 +221,7 @@ describe('updateCourseAction (V3 PR3 + V3.1 sem slug)', () => {
   it('publica pela primeira vez (era null, toggle on) → published_at preenchido', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     mockMaybeSingle.mockResolvedValue({
-      data: { published_at: null },
+      data: { published_at: null, banner_storage_path: null },
       error: null,
     });
     mockUpdateEq.mockResolvedValue({ error: null });
@@ -251,12 +261,124 @@ describe('deleteCourseAction (V3 PR3)', () => {
   it('apaga e revalida quando válida (admin)', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     mockDeleteEq.mockResolvedValue({ error: null });
+    mockStorageRemove.mockResolvedValue({ error: null });
 
     const result = await deleteCourseAction(formDataOf({ id: COURSE_ID }));
 
     expect(result).toEqual({ ok: true });
     expect(mockDeleteEq).toHaveBeenCalledWith('id', COURSE_ID);
+    expect(mockStorageRemove).toHaveBeenCalledWith([`${COURSE_ID}/banner`]);
     expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/conteudos');
     expect(mockRevalidatePath).toHaveBeenCalledWith('/conteudos');
+  });
+});
+
+describe('banner uploads (V3.2 PR1)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  function bannerFile(bytes: number, type = 'image/jpeg'): File {
+    return new File([new Uint8Array(bytes)], 'banner.jpg', { type });
+  }
+
+  function fdWith(entries: Record<string, string>, banner: File): FormData {
+    const fd = formDataOf(entries);
+    fd.set('banner', banner);
+    return fd;
+  }
+
+  it('create: banner ausente → curso criado sem path de banner', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockInsertSingle.mockResolvedValue({ data: { id: COURSE_ID }, error: null });
+
+    const result = await createCourseAction(formDataOf({ title: 'Marcos' }));
+
+    expect(result).toEqual({ ok: true, id: COURSE_ID });
+    expect(mockStorageUpload).not.toHaveBeenCalled();
+    expect(mockUpdatePayload).not.toHaveBeenCalled();
+  });
+
+  it('create: banner JPEG válido → upload + update banner_storage_path', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockInsertSingle.mockResolvedValue({ data: { id: COURSE_ID }, error: null });
+    mockStorageUpload.mockResolvedValue({ error: null });
+    mockUpdateEq.mockResolvedValue({ error: null });
+
+    const result = await createCourseAction(
+      fdWith({ title: 'Marcos' }, bannerFile(1024, 'image/jpeg')),
+    );
+
+    expect(result).toEqual({ ok: true, id: COURSE_ID });
+    expect(mockStorageUpload).toHaveBeenCalledWith(
+      `${COURSE_ID}/banner`,
+      expect.any(File),
+      expect.objectContaining({ upsert: true, contentType: 'image/jpeg' }),
+    );
+    expect(mockUpdatePayload).toHaveBeenCalledWith({
+      banner_storage_path: `${COURSE_ID}/banner`,
+    });
+  });
+
+  it('create: banner com MIME não permitido → recusa antes de criar curso', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+
+    const result = await createCourseAction(
+      fdWith({ title: 'Marcos' }, bannerFile(1024, 'application/pdf')),
+    );
+
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/jpeg.*png.*webp/i) });
+    expect(mockInsertPayload).not.toHaveBeenCalled();
+    expect(mockStorageUpload).not.toHaveBeenCalled();
+  });
+
+  it('create: banner > 5 MB → recusa antes de criar curso', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+
+    const oversized = bannerFile(5 * 1024 * 1024 + 1, 'image/jpeg');
+    const result = await createCourseAction(fdWith({ title: 'Marcos' }, oversized));
+
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/5 MB/i) });
+    expect(mockInsertPayload).not.toHaveBeenCalled();
+    expect(mockStorageUpload).not.toHaveBeenCalled();
+  });
+
+  it('update: remove_banner=on → banner_storage_path vira null + storage remove chamado', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockMaybeSingle.mockResolvedValue({
+      data: { published_at: null, banner_storage_path: `${COURSE_ID}/banner` },
+      error: null,
+    });
+    mockStorageRemove.mockResolvedValue({ error: null });
+    mockUpdateEq.mockResolvedValue({ error: null });
+
+    const result = await updateCourseAction(
+      formDataOf({ id: COURSE_ID, title: 'Marcos', remove_banner: 'on' }),
+    );
+
+    expect(result).toEqual({ ok: true });
+    expect(mockStorageRemove).toHaveBeenCalledWith([`${COURSE_ID}/banner`]);
+    const payload = mockUpdatePayload.mock.calls[0][0] as { banner_storage_path: string | null };
+    expect(payload.banner_storage_path).toBeNull();
+  });
+
+  it('update: novo banner tem prioridade sobre remove_banner', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockMaybeSingle.mockResolvedValue({
+      data: { published_at: null, banner_storage_path: `${COURSE_ID}/banner` },
+      error: null,
+    });
+    mockStorageUpload.mockResolvedValue({ error: null });
+    mockUpdateEq.mockResolvedValue({ error: null });
+
+    const fd = formDataOf({ id: COURSE_ID, title: 'Marcos', remove_banner: 'on' });
+    fd.set('banner', bannerFile(2048, 'image/webp'));
+    const result = await updateCourseAction(fd);
+
+    expect(result).toEqual({ ok: true });
+    expect(mockStorageUpload).toHaveBeenCalled();
+    expect(mockStorageRemove).not.toHaveBeenCalled();
+    const payload = mockUpdatePayload.mock.calls[0][0] as { banner_storage_path: string | null };
+    expect(payload.banner_storage_path).toBe(`${COURSE_ID}/banner`);
   });
 });

@@ -191,7 +191,10 @@ export async function createCourseAction(formData: FormData): Promise<CreateCour
       .update({ banner_storage_path: upload.value })
       .eq('id', inserted.id);
     if (pathError) {
-      return { ok: false, error: `Curso criado, mas registo do banner falhou: ${pathError.message}` };
+      return {
+        ok: false,
+        error: `Curso criado, mas registo do banner falhou: ${pathError.message}`,
+      };
     }
   }
 

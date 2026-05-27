@@ -108,6 +108,7 @@ function makeCourse(modules: ModuleWithLessons[]): CourseDetail {
     title: 'Curso',
     description: null,
     icon: null,
+    bannerUrl: null,
     modules: modules.map((m, i) => ({ ...m, position: i })),
   };
 }

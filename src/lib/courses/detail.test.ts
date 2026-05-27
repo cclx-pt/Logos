@@ -188,6 +188,7 @@ function fakeCourse(): CourseDetail {
     title: 'Marcos',
     description: null,
     icon: null,
+    bannerUrl: null,
     modules: [
       {
         id: 'm1',
@@ -259,6 +260,7 @@ describe('getFirstLessonOfCourse', () => {
       title: 'X',
       description: null,
       icon: null,
+      bannerUrl: null,
       modules: [{ id: 'm1', title: 'M', description: null, position: 0, lessons: [] }],
     };
     expect(getFirstLessonOfCourse(c)).toBeNull();

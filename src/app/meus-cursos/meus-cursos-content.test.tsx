@@ -14,6 +14,7 @@ function makeCourse(overrides: Partial<StartedCourse> = {}): StartedCourse {
     title: 'Marcos',
     description: 'Curso de Marcos',
     icon: 'cross',
+    bannerUrl: null,
     hasLessons: true,
     completed: false,
     lastAccessedAt: '2026-05-25T10:00:00Z',

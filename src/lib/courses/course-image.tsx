@@ -59,17 +59,10 @@ export function CourseImage({ bannerUrl, iconSlug, alt, variant, className }: Co
 
   return (
     <div
-      className={cn(
-        wrapper,
-        'text-orange-primary flex items-center justify-center',
-        className,
-      )}
+      className={cn(wrapper, 'text-orange-primary flex items-center justify-center', className)}
       data-testid="course-image-icon"
     >
-      <CourseIcon
-        slug={iconSlug}
-        className={variant === 'hero' ? 'h-20 w-20' : 'h-12 w-12'}
-      />
+      <CourseIcon slug={iconSlug} className={variant === 'hero' ? 'h-20 w-20' : 'h-12 w-12'} />
     </div>
   );
 }

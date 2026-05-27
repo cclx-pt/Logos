@@ -81,20 +81,22 @@ export default async function CoursePage({ params }: PageProps) {
         <span className="text-ink line-clamp-1">{course.title}</span>
       </nav>
 
-      <header className="flex flex-col items-start gap-6 sm:flex-row sm:items-start">
-        <div className="bg-orange-primary/10 text-orange-primary flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl">
-          <CourseIcon slug={course.icon} className="h-8 w-8" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h1 className="font-display text-ink text-3xl font-medium tracking-tight sm:text-4xl">
-            {course.title}
-          </h1>
-          {course.description ? (
-            <p className="text-muted-foreground mt-3 max-w-3xl text-justify font-sans text-base leading-relaxed hyphens-auto">
-              {course.description}
-            </p>
-          ) : null}
-        </div>
+      <CourseImage
+        bannerUrl={course.bannerUrl}
+        iconSlug={course.icon}
+        alt={course.title}
+        variant="hero"
+        className="mb-6"
+      />
+      <header>
+        <h1 className="font-display text-ink text-3xl font-medium tracking-tight sm:text-4xl">
+          {course.title}
+        </h1>
+        {course.description ? (
+          <p className="text-muted-foreground mt-3 max-w-3xl text-justify font-sans text-base leading-relaxed hyphens-auto">
+            {course.description}
+          </p>
+        ) : null}
       </header>
 
       {courseDone ? (
