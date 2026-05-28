@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { BookMarked, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 import { CourseCard } from '@/components/site/course-card';
 import { signInWithGoogleAction } from '@/lib/auth/actions';
@@ -115,18 +115,12 @@ export function MeusCursosContent({ isAuthenticated, courses }: Props) {
           variants={staggerItem}
           className="border-orange-primary/30 bg-orange-primary/5 mt-12 flex flex-col items-center rounded-2xl border px-6 py-14 text-center sm:py-16"
         >
-          <div
-            aria-hidden="true"
-            className="bg-orange-primary/10 text-orange-primary flex h-14 w-14 items-center justify-center rounded-full"
-          >
-            <BookMarked className="h-6 w-6" />
-          </div>
-          <h2 className="font-display text-ink mt-6 text-3xl font-medium sm:text-4xl">
+          <h2 className="font-display text-ink text-3xl font-medium sm:text-4xl">
             Inicia sessão para ver os teus cursos
           </h2>
           <p className="text-muted-foreground mt-4 max-w-xl font-sans text-base leading-relaxed sm:text-lg">
-            Aqui ficam guardados os cursos que começaste, ordenados pelo mais recente. Inicia sessão
-            com a tua conta Google para começar.
+            Aqui ficam guardados os cursos que já começaste. Inicia com a tua conta Google para
+            começar.
           </p>
           <form action={signInWithGoogleAction} className="mt-8">
             <input type="hidden" name="next" value="/meus-cursos" />
@@ -143,17 +137,11 @@ export function MeusCursosContent({ isAuthenticated, courses }: Props) {
           variants={staggerItem}
           className="border-orange-primary/30 bg-orange-primary/5 mt-12 flex flex-col items-center rounded-2xl border px-6 py-14 text-center sm:py-16"
         >
-          <div
-            aria-hidden="true"
-            className="bg-orange-primary/10 text-orange-primary flex h-14 w-14 items-center justify-center rounded-full"
-          >
-            <BookMarked className="h-6 w-6" />
-          </div>
-          <h2 className="font-display text-ink mt-6 text-3xl font-medium sm:text-4xl">
+          <h2 className="font-display text-ink text-3xl font-medium sm:text-4xl">
             Ainda não começaste nenhum curso
           </h2>
           <p className="text-muted-foreground mt-4 max-w-xl font-sans text-base leading-relaxed sm:text-lg">
-            Visita o catálogo e abre um curso para começares — voltas a encontrá-lo aqui.
+            Aqui ficam guardados os cursos que começaste, ordenados pelo mais recente.
           </p>
           <Link
             href="/conteudos"

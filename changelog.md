@@ -16,6 +16,15 @@
 
 ---
 
+## [28-05-2026] — V3.3 PR3: copy /meus-cursos (ícone fora + textos novos)
+
+### update
+- **`/meus-cursos` estado anónimo**: remover ícone `BookMarked`. Subtexto passa a *"Aqui ficam guardados os cursos que já começaste. Inicia com a tua conta Google para começar."* Heading mantém-se.
+- **`/meus-cursos` estado autenticado vazio**: remover ícone `BookMarked`. Subtexto passa a *"Aqui ficam guardados os cursos que começaste, ordenados pelo mais recente."* (alinha mensagem com o que a página entrega quando há cursos.)
+- Import de `BookMarked` removido.
+
+---
+
 ## [28-05-2026] — V3.3 PR2: admin homogeneidade + estatísticas card + numeração 1.x
 
 ### add
