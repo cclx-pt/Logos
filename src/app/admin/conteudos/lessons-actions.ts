@@ -29,7 +29,15 @@
 import { revalidatePath } from 'next/cache';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
-import { UUID_RE } from '@/lib/validation';
+
+import {
+  DESCRIPTION_MAX,
+  validateOptionalText,
+  validateTitle,
+  validateUuid,
+  type Err,
+  type Ok,
+} from './_lib/validation';
 
 export type CreateLessonResult = { ok: true; id: string } | { ok: false; error: string };
 export type LessonActionResult = { ok: true } | { ok: false; error: string };
@@ -38,47 +46,7 @@ const YOUTUBE_RE =
   /^https?:\/\/(?:www\.)?(?:youtu\.be\/[A-Za-z0-9_-]{6,}|youtube\.com\/watch\?v=[A-Za-z0-9_-]{6,})\S*$/i;
 const TEMPLATES = ['pdf', 'video_pdf'] as const;
 type Template = (typeof TEMPLATES)[number];
-const TITLE_MIN = 1;
-const TITLE_MAX = 120;
-const DESCRIPTION_MAX = 4000;
 const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20 MB — alinhado com storage.buckets em PR2.
-
-type Ok<T> = { ok: true; value: T };
-type Err = { ok: false; error: string };
-
-function validateUuid(raw: unknown, fieldName: string): Ok<string> | Err {
-  if (typeof raw !== 'string' || !UUID_RE.test(raw)) {
-    return { ok: false, error: `${fieldName} inválido.` };
-  }
-  return { ok: true, value: raw };
-}
-
-function validateTitle(raw: unknown): Ok<string> | Err {
-  if (typeof raw !== 'string') return { ok: false, error: 'Título inválido.' };
-  const value = raw.trim();
-  if (value.length < TITLE_MIN || value.length > TITLE_MAX) {
-    return {
-      ok: false,
-      error: `Título tem de ter entre ${TITLE_MIN} e ${TITLE_MAX} caracteres.`,
-    };
-  }
-  return { ok: true, value };
-}
-
-function validateOptionalText(
-  raw: unknown,
-  max: number,
-  fieldName: string,
-): Ok<string | null> | Err {
-  if (raw === null || raw === undefined || raw === '') return { ok: true, value: null };
-  if (typeof raw !== 'string') return { ok: false, error: `${fieldName} inválido.` };
-  const value = raw.trim();
-  if (value === '') return { ok: true, value: null };
-  if (value.length > max) {
-    return { ok: false, error: `${fieldName} excede o limite de ${max} caracteres.` };
-  }
-  return { ok: true, value };
-}
 
 function validateTemplate(raw: unknown): Ok<Template> | Err {
   if (typeof raw !== 'string' || !TEMPLATES.includes(raw as Template)) {
