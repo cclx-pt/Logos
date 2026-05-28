@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { isAdmin } from '@/lib/auth/guards';
 import { UUID_RE } from '@/lib/validation';
 import { getBannerUrlForPath } from '@/lib/courses/banner';
 import { CourseForm, type TagOption } from '../course-form';
@@ -34,7 +35,7 @@ type PageProps = {
 
 export default async function CursoDetalhePage({ params, searchParams }: PageProps) {
   const user = await getCurrentUser();
-  if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+  if (!user || !isAdmin(user.role)) {
     notFound();
   }
 

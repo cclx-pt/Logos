@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { SubmitButton } from '@/components/ui/submit-button';
 import { getCurrentUser, getServerClient, ROLE_LABEL, type Role } from '@/lib/auth';
+import { isAdmin, isSuperAdmin } from '@/lib/auth/guards';
 import { formatDate } from '@/lib/format';
 import { setUserRoleAction } from './actions';
 import { UserTagsCell } from './user-tags-cell';
@@ -32,11 +33,11 @@ export default async function UtilizadoresPage() {
   const user = await getCurrentUser();
   // Acesso para admin e super_admin. Promover/despromover continua restrito a
   // super_admin no Server Action; a UI condiciona o botão.
-  if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+  if (!user || !isAdmin(user.role)) {
     notFound();
   }
 
-  const canMutateRoles = user.role === 'super_admin';
+  const canMutateRoles = isSuperAdmin(user.role);
 
   const supabase = await getServerClient();
   const [
@@ -130,8 +131,8 @@ export default async function UtilizadoresPage() {
           <tbody className="divide-border divide-y">
             {profiles.map((row) => {
               const isSelf = row.id === user.id;
-              const isSuperAdmin = row.role === 'super_admin';
-              const canMutateRow = canMutateRoles && !isSelf && !isSuperAdmin;
+              const targetIsSuperAdmin = isSuperAdmin(row.role);
+              const canMutateRow = canMutateRoles && !isSelf && !targetIsSuperAdmin;
               const nextRole: 'user' | 'admin' = row.role === 'admin' ? 'user' : 'admin';
               const actionLabel =
                 row.role === 'admin' ? 'Despromover a utilizador' : 'Promover a admin';

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Suspense, type ReactNode } from 'react';
 
 import { getCurrentUser } from '@/lib/auth';
+import { isAdmin, isSuperAdmin } from '@/lib/auth/guards';
 import { SaveToastListener } from '@/components/ui/save-toast-listener';
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
@@ -14,8 +15,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     notFound();
   }
 
-  const canSeeUsers = user.role === 'super_admin';
-  const canSeeCourses = user.role === 'admin' || user.role === 'super_admin';
+  const canSeeUsers = isSuperAdmin(user.role);
+  const canSeeCourses = isAdmin(user.role);
 
   return (
     <div className="flex w-full flex-1 gap-8 px-4 py-10 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">

@@ -54,7 +54,7 @@ export async function setUserRoleAction(formData: FormData): Promise<SetUserRole
     return { ok: false, error: 'Utilizador não encontrado.' };
   }
 
-  if (target.role === 'super_admin') {
+  if (isSuperAdmin(target.role)) {
     return { ok: false, error: 'Não é possível alterar o papel de um super administrador.' };
   }
 

@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { SubmitButton } from '@/components/ui/submit-button';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { isSuperAdmin } from '@/lib/auth/guards';
 import { createTagAction } from './actions';
 import { TagsTable, type TagListItem } from './tags-table';
 
@@ -16,7 +17,7 @@ type PageProps = {
 
 export default async function EtiquetasPage({ searchParams }: PageProps) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'super_admin') {
+  if (!user || !isSuperAdmin(user.role)) {
     notFound();
   }
 
