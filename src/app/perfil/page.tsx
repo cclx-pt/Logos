@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getCurrentUser, getServerClient, ROLE_LABEL, type SupabaseUser } from '@/lib/auth';
+import { formatDate } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'Perfil',
@@ -84,13 +85,7 @@ export default async function PerfilPage() {
           <dt className="text-muted-foreground font-sans text-xs tracking-wide uppercase">
             Conta criada em
           </dt>
-          <dd className="text-ink mt-1 font-sans text-sm">
-            {new Date(profile.createdAt).toLocaleDateString('pt-PT', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-            })}
-          </dd>
+          <dd className="text-ink mt-1 font-sans text-sm">{formatDate(profile.createdAt)}</dd>
         </div>
       </dl>
 

@@ -5,6 +5,7 @@ import { Check } from 'lucide-react';
 
 import { getCurrentUser } from '@/lib/auth';
 import { UUID_RE } from '@/lib/validation';
+import { formatDate } from '@/lib/format';
 import { CourseImage } from '@/lib/courses/course-image';
 import { getCourseDetailById, getFirstLessonOfCourse } from '@/lib/courses/detail';
 import {
@@ -15,14 +16,6 @@ import {
   isModuleComplete,
 } from '@/lib/courses/completion';
 import { StartCourseCta } from './start-course-cta';
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-PT', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-}
 
 type PageProps = {
   params: Promise<{ courseId: string }>;

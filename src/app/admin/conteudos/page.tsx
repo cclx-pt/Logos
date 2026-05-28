@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { formatDate } from '@/lib/format';
 
 export const metadata = {
   title: 'Conteúdos · Área admin · LOGOS',
@@ -16,14 +17,6 @@ type CourseRow = {
 };
 
 type TagRow = { id: string; label: string };
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-PT', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-}
 
 export default async function ConteudosPage() {
   const user = await getCurrentUser();

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 
 import { SubmitButton } from '@/components/ui/submit-button';
+import { formatDate } from '@/lib/format';
 import { deleteTagAction, updateTagAction } from './actions';
 
 export type TagListItem = {
@@ -20,14 +21,6 @@ type Props = {
   /** Id em modo delete confirm (`?apagar=`). Continua URL-driven. */
   confirmingDeleteId?: string;
 };
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-PT', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-}
 
 /**
  * TagsTable — Client Component que renderiza a lista de etiquetas com

@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { SubmitButton } from '@/components/ui/submit-button';
 import { getCurrentUser, getServerClient, ROLE_LABEL, type Role } from '@/lib/auth';
+import { formatDate } from '@/lib/format';
 import { setUserRoleAction } from './actions';
 import { UserTagsCell } from './user-tags-cell';
 
@@ -26,14 +27,6 @@ type UserTagRow = {
   user_id: string;
   tag_id: string;
 };
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('pt-PT', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-}
 
 export default async function UtilizadoresPage() {
   const user = await getCurrentUser();
