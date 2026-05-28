@@ -27,6 +27,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { isAdmin } from '@/lib/auth/guards';
 import { UUID_RE } from '@/lib/validation';
 
 import {
@@ -53,10 +54,6 @@ function validateRequiredTags(raws: FormDataEntryValue[]): Ok<string[]> | Err {
     if (!out.includes(raw)) out.push(raw);
   }
   return { ok: true, value: out };
-}
-
-function callerIsAdmin(role: string): boolean {
-  return role === 'admin' || role === 'super_admin';
 }
 
 function bannerPath(courseId: string): string {
@@ -100,7 +97,7 @@ async function deleteCourseBanner(courseId: string): Promise<void> {
 
 export async function createCourseAction(formData: FormData): Promise<CreateCourseResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode criar cursos.' };
   }
 
@@ -180,7 +177,7 @@ export async function createCourseAction(formData: FormData): Promise<CreateCour
 
 export async function updateCourseAction(formData: FormData): Promise<CourseActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode alterar cursos.' };
   }
 
@@ -269,7 +266,7 @@ export async function updateCourseAction(formData: FormData): Promise<CourseActi
 
 export async function deleteCourseAction(formData: FormData): Promise<CourseActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode apagar cursos.' };
   }
 

@@ -18,6 +18,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { isSuperAdmin } from '@/lib/auth/guards';
 import { UUID_RE } from '@/lib/validation';
 
 export type TagActionResult = { ok: true } | { ok: false; error: string };
@@ -39,7 +40,7 @@ function validateLabel(raw: unknown): { ok: true; value: string } | { ok: false;
 
 export async function createTagAction(formData: FormData): Promise<TagActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || caller.role !== 'super_admin') {
+  if (!caller || !isSuperAdmin(caller.role)) {
     return { ok: false, error: 'Apenas super_admin pode criar etiquetas.' };
   }
 
@@ -62,7 +63,7 @@ export async function createTagAction(formData: FormData): Promise<TagActionResu
 
 export async function updateTagAction(formData: FormData): Promise<TagActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || caller.role !== 'super_admin') {
+  if (!caller || !isSuperAdmin(caller.role)) {
     return { ok: false, error: 'Apenas super_admin pode alterar etiquetas.' };
   }
 
@@ -86,7 +87,7 @@ export async function updateTagAction(formData: FormData): Promise<TagActionResu
 
 export async function deleteTagAction(formData: FormData): Promise<TagActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || caller.role !== 'super_admin') {
+  if (!caller || !isSuperAdmin(caller.role)) {
     return { ok: false, error: 'Apenas super_admin pode apagar etiquetas.' };
   }
 

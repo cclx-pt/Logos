@@ -29,6 +29,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { isAdmin } from '@/lib/auth/guards';
 
 import {
   DESCRIPTION_MAX,
@@ -66,10 +67,6 @@ function validateYoutubeUrl(raw: unknown): Ok<string> | Err {
     };
   }
   return { ok: true, value };
-}
-
-function callerIsAdmin(role: string): boolean {
-  return role === 'admin' || role === 'super_admin';
 }
 
 function revalidateLessonPages(courseId: string, moduleId: string): void {
@@ -113,7 +110,7 @@ async function uploadLessonPdf(
 
 export async function createLessonAction(formData: FormData): Promise<CreateLessonResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode criar aulas.' };
   }
 
@@ -202,7 +199,7 @@ export async function createLessonAction(formData: FormData): Promise<CreateLess
 
 export async function updateLessonAction(formData: FormData): Promise<LessonActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode alterar aulas.' };
   }
 
@@ -284,7 +281,7 @@ export async function updateLessonAction(formData: FormData): Promise<LessonActi
 
 export async function deleteLessonAction(formData: FormData): Promise<LessonActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode apagar aulas.' };
   }
 
@@ -315,7 +312,7 @@ type Direction = 'up' | 'down';
 
 async function moveLesson(formData: FormData, direction: Direction): Promise<LessonActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode reordenar aulas.' };
   }
 

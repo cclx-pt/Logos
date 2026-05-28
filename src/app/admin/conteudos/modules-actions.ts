@@ -22,6 +22,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { isAdmin } from '@/lib/auth/guards';
 
 import {
   DESCRIPTION_MAX,
@@ -33,10 +34,6 @@ import {
 export type CreateModuleResult = { ok: true; id: string } | { ok: false; error: string };
 export type ModuleActionResult = { ok: true } | { ok: false; error: string };
 
-function callerIsAdmin(role: string): boolean {
-  return role === 'admin' || role === 'super_admin';
-}
-
 function revalidateCoursePages(courseId: string): void {
   revalidatePath(`/admin/conteudos/${courseId}`);
   revalidatePath('/conteudos');
@@ -44,7 +41,7 @@ function revalidateCoursePages(courseId: string): void {
 
 export async function createModuleAction(formData: FormData): Promise<CreateModuleResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode criar módulos.' };
   }
 
@@ -96,7 +93,7 @@ export async function createModuleAction(formData: FormData): Promise<CreateModu
 
 export async function updateModuleAction(formData: FormData): Promise<ModuleActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode alterar módulos.' };
   }
 
@@ -129,7 +126,7 @@ export async function updateModuleAction(formData: FormData): Promise<ModuleActi
 
 export async function deleteModuleAction(formData: FormData): Promise<ModuleActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode apagar módulos.' };
   }
 
@@ -153,7 +150,7 @@ type Direction = 'up' | 'down';
 
 async function moveModule(formData: FormData, direction: Direction): Promise<ModuleActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode reordenar módulos.' };
   }
 
