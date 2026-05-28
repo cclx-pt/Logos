@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 28-05-2026 (**V3.2 PR5 + cleanup de catálogo**: "Meus cursos" entra na nav principal; `/meus-cursos` ganha duas secções "Em progresso" e "Terminados" (cards terminados greyed); catálogo `/conteudos` passa a marketplace puro (sem badges de estado pessoal); helper `progress.ts` removido. 345/345 testes verdes. PR1 do banner já aplicado a `logos-dev`.)
+> **Última atualização:** 28-05-2026 (**V3.3 PR1 — collapsibles fechados**: `CollapsibleSection` arranca fechado por defeito; `/admin/conteudos/<courseId>` reordena para Detalhes → Módulos → Zona de perigo. 346/346 testes verdes. Próximo: PR2 copy /meus-cursos.)
 
 ## 🎯 Milestone atual
 **V3 fechada dev-side em `v3-cursos`.** À espera de testemunhos finais do ministério para abrir PR `v3-cursos` → `main` e fazer deploy a `logos.cclx.pt`. Detalhes da estratégia em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).

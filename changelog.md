@@ -16,6 +16,16 @@
 
 ---
 
+## [28-05-2026] — V3.3 PR1: collapsibles fechados + reorder admin/curso
+
+### update
+- **`CollapsibleSection` arranca fechado por defeito** (`defaultOpen = false`). Páginas admin densas (curso, módulo) deixam de abrir todas as secções de uma vez — o utilizador escolhe o que expandir.
+- **`/admin/conteudos/<courseId>` reordena para a forma canónica V3.3**: Detalhes do curso → Módulos → Zona de perigo. Stats continua acessível via link `Ver estatísticas →` (será absorvida em CollapsibleSection na PR3).
+- **`/admin/conteudos/<courseId>/<moduleId>`**: secções "Nova aula" e "Aulas existentes" passam a arrancar fechadas (vinha implícito do default antigo).
+- Testes de `collapsible-section.test.tsx` actualizados para o novo default.
+
+---
+
 ## [28-05-2026] — V3.2 PR5: "Meus cursos" no nav + duas secções + catálogo limpo
 
 ### add
