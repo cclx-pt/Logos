@@ -10,7 +10,7 @@ type CollapsibleSectionProps = {
   subtitle?: ReactNode;
   /** Conteúdo da secção — qualquer JSX. */
   children: ReactNode;
-  /** Estado default. `true` = aberto (default). `false` = fechado. */
+  /** Estado default. `true` = aberto. `false` = fechado (default). */
   defaultOpen?: boolean;
   /** Id usado por `aria-labelledby` da `<section>`. */
   id?: string;
@@ -41,7 +41,7 @@ export function CollapsibleSection({
   title,
   subtitle,
   children,
-  defaultOpen = true,
+  defaultOpen = false,
   id,
   className,
   variant = 'default',

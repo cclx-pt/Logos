@@ -22,9 +22,19 @@ describe('CollapsibleSection', () => {
     expect(screen.getByText(/gere os módulos do curso/i)).toBeInTheDocument();
   });
 
-  it('expõe children dentro de details aberto por defeito', () => {
+  it('arranca fechado por defeito (defaultOpen omitido)', () => {
     const { container } = render(
-      <CollapsibleSection title="Open">
+      <CollapsibleSection title="Por defeito">
+        <p>oculta</p>
+      </CollapsibleSection>,
+    );
+    const details = container.querySelector('details');
+    expect(details).not.toHaveAttribute('open');
+  });
+
+  it('respeita defaultOpen={true}', () => {
+    const { container } = render(
+      <CollapsibleSection title="Aberta" defaultOpen>
         <p>conteúdo visível</p>
       </CollapsibleSection>,
     );
@@ -33,7 +43,7 @@ describe('CollapsibleSection', () => {
     expect(screen.getByText(/conteúdo visível/i)).toBeInTheDocument();
   });
 
-  it('respeita defaultOpen=false', () => {
+  it('respeita defaultOpen={false} explícito', () => {
     const { container } = render(
       <CollapsibleSection title="Fechada" defaultOpen={false}>
         <p>oculta</p>

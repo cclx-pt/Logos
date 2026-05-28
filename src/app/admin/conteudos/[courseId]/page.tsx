@@ -207,6 +207,27 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
         </header>
 
         <CollapsibleSection
+          id="detalhes"
+          title="Detalhes do curso"
+          subtitle="Metadados visíveis no catálogo público. Despublicar não apaga — apenas esconde dos utilizadores."
+        >
+          <CourseForm
+            mode="edit"
+            tags={tagsData ?? []}
+            course={courseFormData}
+            action={async (formData: FormData) => {
+              'use server';
+              const result = await updateCourseAction(formData);
+              redirect(
+                result.ok
+                  ? `/admin/conteudos/${course.id}?guardado=curso_atualizado`
+                  : `/admin/conteudos/${course.id}?erro=generico`,
+              );
+            }}
+          />
+        </CollapsibleSection>
+
+        <CollapsibleSection
           id="modulos"
           title="Módulos"
           subtitle={
@@ -279,34 +300,7 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
           </div>
         </CollapsibleSection>
 
-        <CollapsibleSection
-          id="detalhes"
-          title="Detalhes do curso"
-          subtitle="Metadados visíveis no catálogo público. Despublicar não apaga — apenas esconde dos utilizadores."
-          defaultOpen={false}
-        >
-          <CourseForm
-            mode="edit"
-            tags={tagsData ?? []}
-            course={courseFormData}
-            action={async (formData: FormData) => {
-              'use server';
-              const result = await updateCourseAction(formData);
-              redirect(
-                result.ok
-                  ? `/admin/conteudos/${course.id}?guardado=curso_atualizado`
-                  : `/admin/conteudos/${course.id}?erro=generico`,
-              );
-            }}
-          />
-        </CollapsibleSection>
-
-        <CollapsibleSection
-          id="zona-perigo"
-          title="Zona de perigo"
-          variant="danger"
-          defaultOpen={false}
-        >
+        <CollapsibleSection id="zona-perigo" title="Zona de perigo" variant="danger">
           {isConfirmingCourseDelete ? (
             <div className="space-y-3">
               <p className="text-ink text-sm">
