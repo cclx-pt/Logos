@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { UUID_RE } from '@/lib/validation';
 import { getBannerUrlForPath } from '@/lib/courses/banner';
 import { CourseForm, type TagOption } from '../course-form';
 import { ConteudosBreadcrumb } from '../conteudos-breadcrumb';
@@ -25,8 +26,6 @@ type CourseRow = {
 export const metadata = {
   title: 'Curso · Área admin · LOGOS',
 };
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type PageProps = {
   params: Promise<{ courseId: string }>;

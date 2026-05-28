@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { Check } from 'lucide-react';
 
 import { getCurrentUser } from '@/lib/auth';
+import { UUID_RE } from '@/lib/validation';
 import { CourseImage } from '@/lib/courses/course-image';
 import { getCourseDetailById, getFirstLessonOfCourse } from '@/lib/courses/detail';
 import {
@@ -22,8 +23,6 @@ function formatDate(iso: string): string {
     year: 'numeric',
   });
 }
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type PageProps = {
   params: Promise<{ courseId: string }>;

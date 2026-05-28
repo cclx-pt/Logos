@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { getCurrentUser } from '@/lib/auth';
+import { UUID_RE } from '@/lib/validation';
 import {
   getCourseDetailById,
   getLessonDetailById,
@@ -17,8 +18,6 @@ import {
 } from '@/lib/courses/completion';
 import { PdfDownloadButton } from './pdf-download-button';
 import { MarkCompleteButton } from './mark-complete-button';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type PageProps = {
   params: Promise<{ courseId: string; lessonId: string }>;

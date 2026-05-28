@@ -17,10 +17,9 @@
 import { revalidatePath } from 'next/cache';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { UUID_RE } from '@/lib/validation';
 
 export type SetUserRoleResult = { ok: true } | { ok: false; error: string };
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function setUserRoleAction(formData: FormData): Promise<SetUserRoleResult> {
   const caller = await getCurrentUser();

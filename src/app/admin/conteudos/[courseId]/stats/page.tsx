@@ -3,13 +3,12 @@ import { notFound } from 'next/navigation';
 import { BarChart3, Users, CheckCircle2 } from 'lucide-react';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { UUID_RE } from '@/lib/validation';
 import { getCourseStats } from '@/lib/courses/stats';
 
 export const metadata = {
   title: 'Estatísticas · Área admin · LOGOS',
 };
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type PageProps = {
   params: Promise<{ courseId: string }>;

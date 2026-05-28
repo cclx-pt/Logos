@@ -22,8 +22,8 @@
  */
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { UUID_RE } from '@/lib/validation';
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SIGNED_URL_TTL_SECONDS = 300;
 
 export type SignedUrlResult = { ok: true; url: string } | { ok: false; error: string };

@@ -27,11 +27,11 @@
 import { revalidatePath } from 'next/cache';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { UUID_RE } from '@/lib/validation';
 
 export type CreateCourseResult = { ok: true; id: string } | { ok: false; error: string };
 export type CourseActionResult = { ok: true } | { ok: false; error: string };
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TITLE_MIN = 1;
 const TITLE_MAX = 120;
 const DESCRIPTION_MAX = 4000;

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { UUID_RE } from '@/lib/validation';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { ConteudosBreadcrumb } from '../../conteudos-breadcrumb';
@@ -12,8 +13,6 @@ import { LessonList, type LessonListItem } from '../../lesson-list';
 export const metadata = {
   title: 'Aulas · Área admin · LOGOS',
 };
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type CourseRow = { id: string; title: string };
 type ModuleRow = { id: string; title: string; course_id: string };
