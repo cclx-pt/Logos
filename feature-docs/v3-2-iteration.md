@@ -73,9 +73,14 @@ V3.1 fechada em 26-05-2026 (T1-T7, 327/327 testes). Esta iteração adiciona uma
 - `CourseForm` ganha select de curso-prerequisito (exclui o próprio).
 - **Prevenir ciclos** no validador da Server Action (DFS no DB ou check de profundidade ≤ 5).
 
-### PR5 — "Meus cursos" na nav principal
+### PR5 — "Meus cursos" no nav + duas secções + catálogo limpo ✅ (28-05-2026)
 
-- `Header` / `MobileNav` — item "Meus cursos" entre "Conteúdos" e o lugar do dropdown do utilizador. Talvez só visível se `getCurrentUser()` retornar profile (decidir).
+**Decidido:** item sempre visível (anónimos caem no CTA de login já existente). Bumped ahead dos PRs 2-4 por ser puramente UI e desbloquear validação no preview.
+
+- `src/lib/site-config.ts` — `{ href: '/meus-cursos', label: 'Meus cursos' }` entre "Conteúdos" e "Fala Connosco". `NavLinks` / `MobileNav` herdam automaticamente.
+- `/meus-cursos` passa a duas secções: **"Em progresso"** (não-completed) e **"Terminados"** (completed). Cards terminados ganham `opacity-60` (hover restaura). Quando o user só tem terminados, a secção "Em progresso" mostra mensagem + link para `/conteudos`.
+- **Catálogo `/conteudos` limpo** — cards já não exibem badges "Começado"/"Concluído"; estado pessoal vive exclusivamente em `/meus-cursos`. Mantém-se "Em breve" para `hasLessons=false`. `page.tsx` deixa de chamar `getCourseProgressForUser`; helper `progress.ts` (+ test) removido por ficar órfão.
+- Testes: 5 novos em `meus-cursos-content.test.tsx` (secções, mensagem com link, opacity); `conteudos/page.test.tsx` bloco "badges de progresso" reduzido a asserção negativa + "Em breve" preservado.
 
 ## Notas para futuras sessões
 

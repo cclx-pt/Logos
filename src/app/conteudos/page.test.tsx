@@ -1,9 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 
-import { ConteudosContent, type VisibleCourseWithProgress } from './conteudos-content';
+import type { VisibleCourse } from '@/lib/courses/visibility';
+import { ConteudosContent } from './conteudos-content';
 
-function makeCourse(overrides: Partial<VisibleCourseWithProgress> = {}): VisibleCourseWithProgress {
+function makeCourse(overrides: Partial<VisibleCourse> = {}): VisibleCourse {
   return {
     id: 'c1',
     title: 'Marcos — Introdução',
@@ -11,8 +12,6 @@ function makeCourse(overrides: Partial<VisibleCourseWithProgress> = {}): Visible
     icon: 'book-open',
     bannerUrl: null,
     hasLessons: true,
-    started: false,
-    completed: false,
     ...overrides,
   };
 }
@@ -103,36 +102,15 @@ describe('ConteudosContent — cards de cursos', () => {
   });
 });
 
-describe('ConteudosContent — badges de progresso (V3.1 T6)', () => {
-  it('nenhum badge quando started=false e completed=false', () => {
+describe('ConteudosContent — catálogo sem estado pessoal (V3.2)', () => {
+  it('nunca mostra badge "Começado" nem "Concluído" (estado pessoal vive em /meus-cursos)', () => {
     render(<ConteudosContent courses={[makeCourse()]} query="" />);
     expect(screen.queryByText(/^começado$/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/^concluído$/i)).not.toBeInTheDocument();
   });
 
-  it('badge "Começado" quando started=true e completed=false', () => {
-    render(<ConteudosContent courses={[makeCourse({ started: true })]} query="" />);
-    expect(screen.getByText(/^começado$/i)).toBeInTheDocument();
-    expect(screen.queryByText(/^concluído$/i)).not.toBeInTheDocument();
-  });
-
-  it('badge "Concluído" tem prioridade quando started=true e completed=true', () => {
-    render(
-      <ConteudosContent courses={[makeCourse({ started: true, completed: true })]} query="" />,
-    );
-    expect(screen.getByText(/^concluído$/i)).toBeInTheDocument();
-    expect(screen.queryByText(/^começado$/i)).not.toBeInTheDocument();
-  });
-
-  it('cards "Em breve" (hasLessons=false) não mostram badges de progresso', () => {
-    render(
-      <ConteudosContent
-        courses={[makeCourse({ hasLessons: false, started: true, completed: true })]}
-        query=""
-      />,
-    );
+  it('mantém badge "Em breve" quando hasLessons=false', () => {
+    render(<ConteudosContent courses={[makeCourse({ hasLessons: false })]} query="" />);
     expect(screen.getByText(/^em breve$/i)).toBeInTheDocument();
-    expect(screen.queryByText(/^começado$/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/^concluído$/i)).not.toBeInTheDocument();
   });
 });

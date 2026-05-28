@@ -16,6 +16,26 @@
 
 ---
 
+## [28-05-2026] — V3.2 PR5: "Meus cursos" no nav + duas secções + catálogo limpo
+
+### add
+- **Item "Meus cursos" na navegação principal** (`src/lib/site-config.ts`). Sempre visível, entre "Conteúdos" e "Fala Connosco". Anónimos caem no CTA "Inicia sessão" da página `/meus-cursos` (já existente).
+- **`/meus-cursos` ganha duas secções**: "Em progresso" (cursos com `completed=false`) e "Terminados" (`completed=true`). A secção "Terminados" só renderiza quando há terminados. Cards terminados ganham `opacity-60` (hover repõe).
+- **Mensagem + link "Ver catálogo →"** dentro da secção "Em progresso" quando o utilizador só tem cursos terminados (não tem nada em curso).
+
+### update
+- **Catálogo `/conteudos` passa a marketplace puro** — cards já não mostram badges "Começado" / "Concluído". Estado pessoal vive exclusivamente em `/meus-cursos`. Mantém-se "Em breve" para cursos sem aulas.
+- `src/app/conteudos/page.tsx` deixa de chamar `getCourseProgressForUser` — render simplificado.
+- `ConteudosContent` recebe `courses: VisibleCourse[]` em vez de `VisibleCourseWithProgress[]`.
+
+### remove
+- `src/lib/courses/progress.ts` e `progress.test.ts` apagados (helpers `getCourseProgressForUser` / `CourseProgress` ficaram órfãos depois de o catálogo deixar de mostrar estado pessoal).
+
+### test
+- 345 testes (340 → 345). `/meus-cursos`: 5 testes novos (secções, mensagem com link, opacity). `/conteudos`: bloco "badges de progresso" reduzido a 2 testes (asserção negativa + "Em breve" preservado). Fixture `makeCourse` no catálogo passa a `VisibleCourse` simples.
+
+---
+
 ## [27-05-2026] — V3.2 PR1: Banner opcional em cursos
 
 ### add
