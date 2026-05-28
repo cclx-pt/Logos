@@ -16,6 +16,27 @@
 
 ---
 
+## [28-05-2026] — V3.3 PR2: admin homogeneidade + estatísticas card + numeração 1.x
+
+### add
+- **Página de módulo (`/admin/conteudos/<courseId>/<moduleId>`) ganha forma canónica V3.3**:
+  - **Detalhes do módulo** (CollapsibleSection nova — form para editar título/descrição usando `updateModuleAction`).
+  - **Aulas (N)** (CollapsibleSection — count vai para o título da secção). Form "Nova aula" passa a viver dentro desta secção, no topo. Sub-heading "Aulas existentes" eliminada.
+  - **Zona de perigo** (CollapsibleSection nova — flow `?confirmar=apagar` para apagar módulo de dentro da sua própria página, em vez de ter de subir ao curso).
+- **Modo edição de aula (`?editar=<lessonId>`)**: a página colapsa para uma única CollapsibleSection "Detalhes da aula" com o form. Detalhes do módulo / Aulas / Zona de perigo ficam escondidos. CourseTree à direita mantém-se visível.
+- **Estatísticas como CollapsibleSection** em `/admin/conteudos/<courseId>` (entre Módulos e Zona de perigo). Componente `course-stats-content.tsx` partilhado.
+- **CourseTree (sidebar Estrutura) ganha header com nome do curso actual** — utilizador vê em que curso está mesmo sem olhar para o breadcrumb.
+
+### update
+- **Numeração de aulas passa a `{módulo}.{aula}`** — módulo 1 → aulas 1.1, 1.2, 1.3; módulo 2 → 2.1, 2.2... Aplicado em `CourseTree` (sidebar) e `LessonList` (admin).
+- **Header da página de módulo mostra `{n}. {título}`** com o número 1-based do módulo no curso.
+- **Secção "Módulos" no curso ganha contador no título**: `Módulos (N)`. Sub-heading "Módulos existentes" eliminada.
+
+### remove
+- **Rota `/admin/conteudos/<courseId>/stats` removida**. Estatísticas vivem só dentro da secção do curso. Link "Ver estatísticas →" no header do curso eliminado.
+
+---
+
 ## [28-05-2026] — V3.3 PR1: collapsibles fechados + reorder admin/curso
 
 ### update

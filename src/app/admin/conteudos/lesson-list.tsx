@@ -20,6 +20,8 @@ type Props = {
   initial: LessonListItem[];
   courseId: string;
   moduleId: string;
+  /** 1-based index do módulo no curso — usado para numeração `{mod}.{lesson}`. */
+  modulePosition: number;
   editingId?: string;
   editingNode?: ReactNode;
   deletingId?: string;
@@ -44,6 +46,7 @@ export function LessonList({
   initial,
   courseId,
   moduleId,
+  modulePosition,
   editingId,
   editingNode,
   deletingId,
@@ -85,7 +88,7 @@ export function LessonList({
         const isDeleting = deletingId === lesson.id;
         const isFirst = index === 0;
         const isLast = index === lessons.length - 1;
-        const lessonNumber = index + 1;
+        const lessonNumber = `${modulePosition}.${index + 1}`;
 
         if (isEditing && editingNode) {
           return <li key={lesson.id}>{editingNode}</li>;
@@ -96,8 +99,8 @@ export function LessonList({
 
         return (
           <li key={lesson.id} className="flex flex-wrap items-start gap-4 p-4">
-            <div className="text-muted-foreground min-w-[2rem] text-sm font-medium tabular-nums">
-              {lessonNumber}.
+            <div className="text-muted-foreground min-w-[2.5rem] text-sm font-medium tabular-nums">
+              {lessonNumber}
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-ink font-medium">{lesson.title}</p>

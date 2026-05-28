@@ -9,6 +9,7 @@ import { UUID_RE } from '@/lib/validation';
 import { getBannerUrlForPath } from '@/lib/courses/banner';
 import { CourseForm, type TagOption } from '../course-form';
 import { ConteudosBreadcrumb } from '../conteudos-breadcrumb';
+import { CourseStatsContent } from '../course-stats-content';
 import { CourseTree } from '../course-tree';
 import { deleteCourseAction, updateCourseAction } from '../courses-actions';
 import { createModuleAction, deleteModuleAction, updateModuleAction } from '../modules-actions';
@@ -194,16 +195,10 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
       <div className="min-w-0 flex-1 space-y-6">
         <ConteudosBreadcrumb courseTitle={course.title} />
 
-        <header className="flex flex-wrap items-start justify-between gap-3">
+        <header>
           <h1 className="font-display text-ink text-3xl font-medium tracking-tight">
             {course.title}
           </h1>
-          <Link
-            href={`/admin/conteudos/${course.id}/stats`}
-            className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
-          >
-            Ver estatísticas →
-          </Link>
         </header>
 
         <CollapsibleSection
@@ -229,7 +224,7 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
 
         <CollapsibleSection
           id="modulos"
-          title="Módulos"
+          title={`Módulos (${modules.length})`}
           subtitle={
             <>
               Cada módulo agrupa um conjunto de aulas. Usa as setas para reordenar e o botão{' '}
@@ -285,10 +280,6 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
               </form>
             </div>
 
-            <h3 className="text-ink text-sm font-semibold tracking-wide uppercase">
-              Módulos existentes ({modules.length})
-            </h3>
-
             <ModuleList
               initial={modules}
               courseId={course.id}
@@ -298,6 +289,14 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
               deletingNode={deletingNode}
             />
           </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          id="estatisticas"
+          title="Estatísticas"
+          subtitle="Telemetria de acessos e conclusões. Só admin/super_admin vê."
+        >
+          <CourseStatsContent courseId={course.id} />
         </CollapsibleSection>
 
         <CollapsibleSection id="zona-perigo" title="Zona de perigo" variant="danger">
@@ -350,7 +349,7 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
         </CollapsibleSection>
       </div>
 
-      <CourseTree courseId={course.id} />
+      <CourseTree courseId={course.id} courseTitle={course.title} />
     </div>
   );
 }
