@@ -4,6 +4,8 @@ import { notFound, redirect } from 'next/navigation';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { isAdmin } from '@/lib/auth/guards';
+import { UUID_RE } from '@/lib/validation';
 import { getBannerUrlForPath } from '@/lib/courses/banner';
 import { CourseForm, type TagOption } from '../course-form';
 import { ConteudosBreadcrumb } from '../conteudos-breadcrumb';
@@ -26,8 +28,6 @@ export const metadata = {
   title: 'Curso · Área admin · LOGOS',
 };
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 type PageProps = {
   params: Promise<{ courseId: string }>;
   searchParams: Promise<{ confirmar?: string; editar?: string; apagar?: string }>;
@@ -35,7 +35,7 @@ type PageProps = {
 
 export default async function CursoDetalhePage({ params, searchParams }: PageProps) {
   const user = await getCurrentUser();
-  if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+  if (!user || !isAdmin(user.role)) {
     notFound();
   }
 

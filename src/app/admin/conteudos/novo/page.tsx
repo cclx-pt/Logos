@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { isAdmin } from '@/lib/auth/guards';
 import { createCourseAction } from '../courses-actions';
 import { CourseForm, type TagOption } from '../course-form';
 import { ConteudosBreadcrumb } from '../conteudos-breadcrumb';
@@ -11,7 +12,7 @@ export const metadata = {
 
 export default async function NovoCursoPage() {
   const user = await getCurrentUser();
-  if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+  if (!user || !isAdmin(user.role)) {
     notFound();
   }
 

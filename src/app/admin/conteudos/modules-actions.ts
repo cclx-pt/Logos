@@ -22,55 +22,17 @@
 import { revalidatePath } from 'next/cache';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { isAdmin } from '@/lib/auth/guards';
+
+import {
+  DESCRIPTION_MAX,
+  validateOptionalText,
+  validateTitle,
+  validateUuid,
+} from './_lib/validation';
 
 export type CreateModuleResult = { ok: true; id: string } | { ok: false; error: string };
 export type ModuleActionResult = { ok: true } | { ok: false; error: string };
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const TITLE_MIN = 1;
-const TITLE_MAX = 120;
-const DESCRIPTION_MAX = 4000;
-
-type Ok<T> = { ok: true; value: T };
-type Err = { ok: false; error: string };
-
-function validateUuid(raw: unknown, fieldName: string): Ok<string> | Err {
-  if (typeof raw !== 'string' || !UUID_RE.test(raw)) {
-    return { ok: false, error: `${fieldName} inválido.` };
-  }
-  return { ok: true, value: raw };
-}
-
-function validateTitle(raw: unknown): Ok<string> | Err {
-  if (typeof raw !== 'string') return { ok: false, error: 'Título inválido.' };
-  const value = raw.trim();
-  if (value.length < TITLE_MIN || value.length > TITLE_MAX) {
-    return {
-      ok: false,
-      error: `Título tem de ter entre ${TITLE_MIN} e ${TITLE_MAX} caracteres.`,
-    };
-  }
-  return { ok: true, value };
-}
-
-function validateOptionalText(
-  raw: unknown,
-  max: number,
-  fieldName: string,
-): Ok<string | null> | Err {
-  if (raw === null || raw === undefined || raw === '') return { ok: true, value: null };
-  if (typeof raw !== 'string') return { ok: false, error: `${fieldName} inválido.` };
-  const value = raw.trim();
-  if (value === '') return { ok: true, value: null };
-  if (value.length > max) {
-    return { ok: false, error: `${fieldName} excede o limite de ${max} caracteres.` };
-  }
-  return { ok: true, value };
-}
-
-function callerIsAdmin(role: string): boolean {
-  return role === 'admin' || role === 'super_admin';
-}
 
 function revalidateCoursePages(courseId: string): void {
   revalidatePath(`/admin/conteudos/${courseId}`);
@@ -79,7 +41,7 @@ function revalidateCoursePages(courseId: string): void {
 
 export async function createModuleAction(formData: FormData): Promise<CreateModuleResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode criar módulos.' };
   }
 
@@ -131,7 +93,7 @@ export async function createModuleAction(formData: FormData): Promise<CreateModu
 
 export async function updateModuleAction(formData: FormData): Promise<ModuleActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode alterar módulos.' };
   }
 
@@ -164,7 +126,7 @@ export async function updateModuleAction(formData: FormData): Promise<ModuleActi
 
 export async function deleteModuleAction(formData: FormData): Promise<ModuleActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode apagar módulos.' };
   }
 
@@ -188,7 +150,7 @@ type Direction = 'up' | 'down';
 
 async function moveModule(formData: FormData, direction: Direction): Promise<ModuleActionResult> {
   const caller = await getCurrentUser();
-  if (!caller || !callerIsAdmin(caller.role)) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode reordenar módulos.' };
   }
 

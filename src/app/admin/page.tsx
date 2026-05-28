@@ -1,12 +1,8 @@
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, ROLE_LABEL } from '@/lib/auth';
+import { isSuperAdmin } from '@/lib/auth/guards';
 
 export const metadata = {
   title: 'Área admin · LOGOS',
-};
-
-const ROLE_LABEL: Record<'admin' | 'super_admin', string> = {
-  admin: 'Administrador',
-  super_admin: 'Super administrador',
 };
 
 export default async function AdminHomePage() {
@@ -31,7 +27,7 @@ export default async function AdminHomePage() {
           ferramentas para criar cursos, módulos e aulas, atribuir etiquetas a utilizadores, e rever
           estatísticas de uso.
         </p>
-        {user.role === 'super_admin' && (
+        {isSuperAdmin(user.role) && (
           <p>
             Como super administrador, podes ainda promover outros utilizadores a administradores em{' '}
             <span className="font-medium">Utilizadores</span>.

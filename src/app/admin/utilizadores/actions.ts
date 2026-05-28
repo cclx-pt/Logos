@@ -17,14 +17,14 @@
 import { revalidatePath } from 'next/cache';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { isAdmin, isSuperAdmin } from '@/lib/auth/guards';
+import { UUID_RE } from '@/lib/validation';
 
 export type SetUserRoleResult = { ok: true } | { ok: false; error: string };
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export async function setUserRoleAction(formData: FormData): Promise<SetUserRoleResult> {
   const caller = await getCurrentUser();
-  if (!caller || caller.role !== 'super_admin') {
+  if (!caller || !isSuperAdmin(caller.role)) {
     return { ok: false, error: 'Apenas super_admin pode alterar papéis.' };
   }
 
@@ -54,7 +54,7 @@ export async function setUserRoleAction(formData: FormData): Promise<SetUserRole
     return { ok: false, error: 'Utilizador não encontrado.' };
   }
 
-  if (target.role === 'super_admin') {
+  if (isSuperAdmin(target.role)) {
     return { ok: false, error: 'Não é possível alterar o papel de um super administrador.' };
   }
 
@@ -90,7 +90,7 @@ export type AssignTagResult = { ok: true } | { ok: false; error: string };
 
 export async function assignTagAction(formData: FormData): Promise<AssignTagResult> {
   const caller = await getCurrentUser();
-  if (!caller || (caller.role !== 'admin' && caller.role !== 'super_admin')) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode atribuir etiquetas.' };
   }
 
@@ -122,7 +122,7 @@ export async function assignTagAction(formData: FormData): Promise<AssignTagResu
 
 export async function unassignTagAction(formData: FormData): Promise<AssignTagResult> {
   const caller = await getCurrentUser();
-  if (!caller || (caller.role !== 'admin' && caller.role !== 'super_admin')) {
+  if (!caller || !isAdmin(caller.role)) {
     return { ok: false, error: 'Apenas admin ou super_admin pode remover etiquetas.' };
   }
 

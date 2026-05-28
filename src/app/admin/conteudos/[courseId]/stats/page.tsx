@@ -3,13 +3,13 @@ import { notFound } from 'next/navigation';
 import { BarChart3, Users, CheckCircle2 } from 'lucide-react';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { isAdmin } from '@/lib/auth/guards';
+import { UUID_RE } from '@/lib/validation';
 import { getCourseStats } from '@/lib/courses/stats';
 
 export const metadata = {
   title: 'Estatísticas · Área admin · LOGOS',
 };
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type PageProps = {
   params: Promise<{ courseId: string }>;
@@ -20,7 +20,7 @@ type LessonRow = { id: string };
 
 export default async function CourseStatsPage({ params }: PageProps) {
   const user = await getCurrentUser();
-  if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+  if (!user || !isAdmin(user.role)) {
     notFound();
   }
 

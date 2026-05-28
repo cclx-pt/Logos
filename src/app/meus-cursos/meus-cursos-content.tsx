@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { BookMarked, Check, Sparkles } from 'lucide-react';
+import { BookMarked, Sparkles } from 'lucide-react';
 
-import { CourseImage } from '@/lib/courses/course-image';
+import { CourseCard } from '@/components/site/course-card';
 import { signInWithGoogleAction } from '@/lib/auth/actions';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 import type { StartedCourse } from '@/lib/courses/started';
@@ -13,49 +13,6 @@ type Props = {
   isAuthenticated: boolean;
   courses: StartedCourse[];
 };
-
-function CourseCard({ course, completed }: { course: StartedCourse; completed: boolean }) {
-  return (
-    <Link
-      href={`/conteudos/${course.id}`}
-      className={
-        completed
-          ? 'border-border bg-card hover:border-orange-primary/40 focus-visible:ring-ring group flex h-full flex-col rounded-2xl border p-6 opacity-60 transition-all hover:opacity-100 focus-visible:ring-2 focus-visible:outline-none'
-          : 'border-border bg-card hover:border-orange-primary/40 hover:bg-orange-primary/5 focus-visible:ring-ring group flex h-full flex-col rounded-2xl border p-6 transition-colors focus-visible:ring-2 focus-visible:outline-none'
-      }
-    >
-      <CourseImage
-        bannerUrl={course.bannerUrl}
-        iconSlug={course.icon}
-        alt={course.title}
-        variant="card"
-      />
-      <div className="mt-5 flex flex-wrap items-start gap-2">
-        <h2 className="font-display text-ink text-2xl font-medium tracking-tight">
-          {course.title}
-        </h2>
-        {completed ? (
-          <span className="border-sage-card bg-sage-card/40 text-ink inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
-            <Check className="h-3 w-3" aria-hidden="true" />
-            Concluído
-          </span>
-        ) : (
-          <span className="border-orange-primary/30 bg-orange-primary/10 text-orange-primary inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
-            Em curso
-          </span>
-        )}
-      </div>
-      {course.description ? (
-        <p className="text-muted-foreground mt-2 line-clamp-4 text-sm leading-relaxed">
-          {course.description}
-        </p>
-      ) : null}
-      <span className="text-orange-primary mt-auto pt-5 text-xs font-medium tracking-wide uppercase">
-        {completed ? 'Rever curso →' : 'Continuar →'}
-      </span>
-    </Link>
-  );
-}
 
 function CoursesGroups({ courses }: { courses: StartedCourse[] }) {
   const inProgress = courses.filter((c) => !c.completed);
@@ -81,7 +38,7 @@ function CoursesGroups({ courses }: { courses: StartedCourse[] }) {
           >
             {inProgress.map((course) => (
               <li key={course.id}>
-                <CourseCard course={course} completed={false} />
+                <CourseCard course={course} variant="in-progress" />
               </li>
             ))}
           </ul>
@@ -126,7 +83,7 @@ function CoursesGroups({ courses }: { courses: StartedCourse[] }) {
           >
             {completed.map((course) => (
               <li key={course.id}>
-                <CourseCard course={course} completed={true} />
+                <CourseCard course={course} variant="completed" />
               </li>
             ))}
           </ul>

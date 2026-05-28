@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 import { Search, Sparkles } from 'lucide-react';
 
-import { CourseImage } from '@/lib/courses/course-image';
+import { CourseCard } from '@/components/site/course-card';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 import type { VisibleCourse } from '@/lib/courses/visibility';
 
@@ -90,43 +90,7 @@ export function ConteudosContent({ courses, query }: Props) {
         >
           {courses.map((course) => (
             <li key={course.id}>
-              <Link
-                href={`/conteudos/${course.id}`}
-                aria-disabled={!course.hasLessons}
-                tabIndex={course.hasLessons ? undefined : -1}
-                className={
-                  course.hasLessons
-                    ? 'border-border bg-card hover:border-orange-primary/40 hover:bg-orange-primary/5 focus-visible:ring-ring group flex h-full flex-col rounded-2xl border p-6 transition-colors focus-visible:ring-2 focus-visible:outline-none'
-                    : 'border-border bg-card pointer-events-none flex h-full flex-col rounded-2xl border p-6 opacity-70'
-                }
-              >
-                <CourseImage
-                  bannerUrl={course.bannerUrl}
-                  iconSlug={course.icon}
-                  alt={course.title}
-                  variant="card"
-                />
-                <div className="mt-5 flex flex-wrap items-start gap-2">
-                  <h2 className="font-display text-ink text-2xl font-medium tracking-tight">
-                    {course.title}
-                  </h2>
-                  {!course.hasLessons && (
-                    <span className="border-orange-primary/30 bg-orange-primary/10 text-orange-primary inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
-                      Em breve
-                    </span>
-                  )}
-                </div>
-                {course.description ? (
-                  <p className="text-muted-foreground mt-2 line-clamp-4 text-sm leading-relaxed">
-                    {course.description}
-                  </p>
-                ) : null}
-                {course.hasLessons ? (
-                  <span className="text-orange-primary mt-auto pt-5 text-xs font-medium tracking-wide uppercase">
-                    Ver curso →
-                  </span>
-                ) : null}
-              </Link>
+              <CourseCard course={course} variant="catalog" />
             </li>
           ))}
         </motion.ul>
