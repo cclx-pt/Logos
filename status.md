@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 28-05-2026 (**V3.3 PR3 — copy /meus-cursos**: ícone `BookMarked` removido dos dois estados vazios; subtextos alinhados com a forma final V3.3. 346/346 testes verdes. Próximo: PR4 CourseCard split.)
+> **Última atualização:** 28-05-2026 (**V3.3 PR4 — CourseCard split 50/50**: cards no catálogo e em /meus-cursos passam a imagem-esquerda/texto-direita em desktop; mobile mantém empilhado. `CourseImage` ganha variant `card-split`. 347/347 testes verdes. Próximo: PR5 search em listagens admin.)
 
 ## 🎯 Milestone atual
 **V3 fechada dev-side em `v3-cursos`.** À espera de testemunhos finais do ministério para abrir PR `v3-cursos` → `main` e fazer deploy a `logos.cclx.pt`. Detalhes da estratégia em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).

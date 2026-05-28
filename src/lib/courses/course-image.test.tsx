@@ -44,6 +44,18 @@ describe('CourseImage', () => {
     expect(wrapper.className).toMatch(/rounded-xl/);
   });
 
+  it('aplica wrapper de card-split: aspect-video em mobile, sm:aspect-auto + sm:h-full em desktop', () => {
+    const { container } = render(
+      <CourseImage bannerUrl={null} iconSlug="cross" alt="Marcos" variant="card-split" />,
+    );
+    const wrapper = container.firstChild as HTMLElement;
+    expect(wrapper.className).toMatch(/aspect-video/);
+    expect(wrapper.className).toMatch(/sm:aspect-auto/);
+    expect(wrapper.className).toMatch(/sm:h-full/);
+    // card-split não arredonda — o pai CourseCard é que clipa via overflow-hidden.
+    expect(wrapper.className).not.toMatch(/rounded-/);
+  });
+
   it('passa className extra para o wrapper', () => {
     const { container } = render(
       <CourseImage

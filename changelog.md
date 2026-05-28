@@ -16,6 +16,19 @@
 
 ---
 
+## [28-05-2026] — V3.3 PR4: CourseCard split 50/50
+
+### update
+- **`CourseCard` passa a layout split 50/50** — em desktop (`sm:` ≥ 640px) a imagem fica à esquerda, o texto à direita. Em mobile mantém empilhado (imagem em cima, texto em baixo).
+- Container do card ganha `overflow-hidden` para os cantos arredondados clipar a imagem; padding migra do card para a coluna de texto.
+- `CourseImage` ganha variant `card-split`: mobile = `aspect-video w-full`, desktop = `aspect-auto h-full`, sem cantos arredondados próprios (o card clipa).
+- Icon fallback do `card-split` cresce ligeiramente (`h-14 w-14` vs `h-12 w-12` do `card`) para preencher a metade visual em desktop.
+
+### add
+- Test novo em `course-image.test.tsx` cobrindo o wrapper do `card-split`.
+
+---
+
 ## [28-05-2026] — V3.3 PR3: copy /meus-cursos (ícone fora + textos novos)
 
 ### update

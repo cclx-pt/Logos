@@ -27,32 +27,45 @@ type CourseImageProps = {
   iconSlug: string | null;
   /** Texto alternativo. Geralmente `course.title`. */
   alt: string;
-  /** Tamanho/proporção. `card` para listagens, `hero` para landing. */
-  variant: 'card' | 'hero';
+  /**
+   * Tamanho/proporção.
+   *   - `card` — vertical, aspect-video em cima do texto (mantido para compat).
+   *   - `card-split` — banner em mobile (aspect-video), painel à esquerda
+   *     a preencher a altura do card em desktop. Cantos não-arredondados;
+   *     o pai (`CourseCard`) tem `overflow-hidden` para cortar.
+   *   - `hero` — landing page do curso.
+   */
+  variant: 'card' | 'card-split' | 'hero';
   className?: string;
 };
 
 export function CourseImage({ bannerUrl, iconSlug, alt, variant, className }: CourseImageProps) {
-  const wrapper =
-    variant === 'hero'
-      ? 'relative aspect-video w-full overflow-hidden rounded-2xl bg-orange-primary/5'
-      : 'relative aspect-video w-full overflow-hidden rounded-xl bg-orange-primary/5';
+  const wrapper = (() => {
+    if (variant === 'hero') {
+      return 'relative aspect-video w-full overflow-hidden rounded-2xl bg-orange-primary/5';
+    }
+    if (variant === 'card-split') {
+      return 'relative aspect-video w-full overflow-hidden bg-orange-primary/5 sm:aspect-auto sm:h-full';
+    }
+    return 'relative aspect-video w-full overflow-hidden rounded-xl bg-orange-primary/5';
+  })();
+
+  const sizes = (() => {
+    if (variant === 'hero') return '(min-width: 1024px) 720px, 100vw';
+    if (variant === 'card-split') return '(min-width: 1024px) 200px, (min-width: 640px) 33vw, 100vw';
+    return '(min-width: 1024px) 300px, (min-width: 640px) 50vw, 100vw';
+  })();
+
+  const iconSize = (() => {
+    if (variant === 'hero') return 'h-20 w-20';
+    if (variant === 'card-split') return 'h-14 w-14';
+    return 'h-12 w-12';
+  })();
 
   if (bannerUrl) {
     return (
       <div className={cn(wrapper, className)} data-testid="course-image-banner">
-        <Image
-          src={bannerUrl}
-          alt={alt}
-          fill
-          sizes={
-            variant === 'hero'
-              ? '(min-width: 1024px) 720px, 100vw'
-              : '(min-width: 1024px) 300px, (min-width: 640px) 50vw, 100vw'
-          }
-          className="object-cover"
-          unoptimized
-        />
+        <Image src={bannerUrl} alt={alt} fill sizes={sizes} className="object-cover" unoptimized />
       </div>
     );
   }
@@ -62,7 +75,7 @@ export function CourseImage({ bannerUrl, iconSlug, alt, variant, className }: Co
       className={cn(wrapper, 'text-orange-primary flex items-center justify-center', className)}
       data-testid="course-image-icon"
     >
-      <CourseIcon slug={iconSlug} className={variant === 'hero' ? 'h-20 w-20' : 'h-12 w-12'} />
+      <CourseIcon slug={iconSlug} className={iconSize} />
     </div>
   );
 }
