@@ -19,6 +19,8 @@ type LessonRow = {
 
 export type CourseTreeProps = {
   courseId: string;
+  /** Título do curso — mostrado no header da árvore para situar o utilizador. */
+  courseTitle: string;
   /** Módulo actualmente em foco (página `/admin/conteudos/[courseId]/[moduleId]`). */
   currentModuleId?: string;
   /** Aula actualmente em edit (search param `?editar=<lessonId>`). */
@@ -41,7 +43,12 @@ export type CourseTreeProps = {
  * — o estado "aula" no admin vive em search param, por isso o salto entre
  * aulas é uma simples navegação na mesma página de módulo.
  */
-export async function CourseTree({ courseId, currentModuleId, currentLessonId }: CourseTreeProps) {
+export async function CourseTree({
+  courseId,
+  courseTitle,
+  currentModuleId,
+  currentLessonId,
+}: CourseTreeProps) {
   const supabase = await getServerClient();
   const { data, error } = await supabase
     .from('modules')
@@ -59,7 +66,17 @@ export async function CourseTree({ courseId, currentModuleId, currentLessonId }:
   return (
     <aside aria-label="Estrutura do curso" className="hidden w-60 shrink-0 xl:block">
       <div className="border-border bg-card rounded-lg border p-4">
-        <h2 className="text-ink mb-3 text-sm font-semibold tracking-wide uppercase">Estrutura</h2>
+        <header className="border-border mb-3 border-b pb-2">
+          <h2 className="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase">
+            Estrutura
+          </h2>
+          <p
+            className="font-display text-ink mt-0.5 truncate text-base font-medium"
+            title={courseTitle}
+          >
+            {courseTitle}
+          </p>
+        </header>
         {modules.length === 0 ? (
           <p className="text-muted-foreground text-xs">Ainda não há módulos neste curso.</p>
         ) : (
@@ -115,7 +132,7 @@ export async function CourseTree({ courseId, currentModuleId, currentLessonId }:
                                 )}
                               >
                                 <span className="text-muted-foreground tabular-nums">
-                                  {lessonIndex + 1}.
+                                  {moduleIndex + 1}.{lessonIndex + 1}
                                 </span>{' '}
                                 {lesson.title}
                               </Link>

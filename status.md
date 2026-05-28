@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 28-05-2026 (**V3.3 PR1 — collapsibles fechados**: `CollapsibleSection` arranca fechado por defeito; `/admin/conteudos/<courseId>` reordena para Detalhes → Módulos → Zona de perigo. 346/346 testes verdes. Próximo: PR2 copy /meus-cursos.)
+> **Última atualização:** 28-05-2026 (**V3.3 PR2 — admin homogeneidade**: módulo ganha forma canónica (Detalhes/Aulas/Zona); modo `?editar=<lessonId>` colapsa para só "Detalhes da aula"; estatísticas vira CollapsibleSection e rota `/stats` removida; CourseTree mostra curso actual no header; aulas numeradas `1.1`, `1.2`, `2.1`. 346/346 testes verdes.)
 
 ## 🎯 Milestone atual
 **V3 fechada dev-side em `v3-cursos`.** À espera de testemunhos finais do ministério para abrir PR `v3-cursos` → `main` e fazer deploy a `logos.cclx.pt`. Detalhes da estratégia em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).

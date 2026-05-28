@@ -86,26 +86,26 @@ describe('CourseTree — render', () => {
   });
 
   it('mostra heading "Estrutura"', async () => {
-    const tree = await CourseTree({ courseId: COURSE_ID });
+    const tree = await CourseTree({ courseId: COURSE_ID, courseTitle: 'Curso de teste' });
     render(tree);
     expect(screen.getByRole('heading', { level: 2, name: /^estrutura$/i })).toBeInTheDocument();
   });
 
   it('mostra mensagem quando não há módulos', async () => {
     setResponse({ data: [], error: null });
-    const tree = await CourseTree({ courseId: COURSE_ID });
+    const tree = await CourseTree({ courseId: COURSE_ID, courseTitle: 'Curso de teste' });
     render(tree);
     expect(screen.getByText(/ainda não há módulos/i)).toBeInTheDocument();
   });
 
   it('lança Error quando o Supabase devolve error', async () => {
     setResponse({ data: null, error: { message: 'rls denied' } });
-    await expect(CourseTree({ courseId: COURSE_ID })).rejects.toThrow(/rls denied/i);
+    await expect(CourseTree({ courseId: COURSE_ID, courseTitle: 'Curso de teste' })).rejects.toThrow(/rls denied/i);
   });
 
   it('renderiza cada módulo com link para a sua página', async () => {
     setResponse({ data: basicTree(), error: null });
-    const tree = await CourseTree({ courseId: COURSE_ID });
+    const tree = await CourseTree({ courseId: COURSE_ID, courseTitle: 'Curso de teste' });
     render(tree);
 
     const moduleALink = screen.getByRole('link', { name: /1\. Módulo A/i });
@@ -116,15 +116,15 @@ describe('CourseTree — render', () => {
 
   it('renderiza aulas com links que abrem em modo edit (?editar=…)', async () => {
     setResponse({ data: basicTree(), error: null });
-    const tree = await CourseTree({ courseId: COURSE_ID });
+    const tree = await CourseTree({ courseId: COURSE_ID, courseTitle: 'Curso de teste' });
     render(tree);
 
-    const aulaA1 = screen.getByRole('link', { name: /1\. Aula A1/i });
+    const aulaA1 = screen.getByRole('link', { name: /1\.1\s+Aula A1/i });
     expect(aulaA1).toHaveAttribute(
       'href',
       `/admin/conteudos/${COURSE_ID}/${MODULE_A}?editar=${LESSON_A1}`,
     );
-    const aulaB1 = screen.getByRole('link', { name: /1\. Aula B1/i });
+    const aulaB1 = screen.getByRole('link', { name: /2\.1\s+Aula B1/i });
     expect(aulaB1).toHaveAttribute(
       'href',
       `/admin/conteudos/${COURSE_ID}/${MODULE_B}?editar=${LESSON_B1}`,
@@ -146,14 +146,14 @@ describe('CourseTree — render', () => {
       ],
       error: null,
     });
-    const tree = await CourseTree({ courseId: COURSE_ID });
+    const tree = await CourseTree({ courseId: COURSE_ID, courseTitle: 'Curso de teste' });
     render(tree);
     const links = screen
       .getAllByRole('link')
       .map((el) => el.textContent?.trim() ?? '')
       .filter((t) => /Aula/i.test(t));
-    expect(links[0]).toMatch(/1\. Aula A1/i);
-    expect(links[1]).toMatch(/2\. Aula A2/i);
+    expect(links[0]).toMatch(/1\.1\s+Aula A1/i);
+    expect(links[1]).toMatch(/1\.2\s+Aula A2/i);
   });
 
   it('mostra "Sem aulas" quando módulo está vazio', async () => {
@@ -161,7 +161,7 @@ describe('CourseTree — render', () => {
       data: [{ id: MODULE_A, title: 'Módulo Vazio', position: 0, lessons: [] }],
       error: null,
     });
-    const tree = await CourseTree({ courseId: COURSE_ID });
+    const tree = await CourseTree({ courseId: COURSE_ID, courseTitle: 'Curso de teste' });
     render(tree);
     expect(screen.getByText(/sem aulas/i)).toBeInTheDocument();
   });
@@ -174,7 +174,11 @@ describe('CourseTree — destaque do módulo/aula actual', () => {
   });
 
   it('default-open: só o módulo actual abre sozinho', async () => {
-    const tree = await CourseTree({ courseId: COURSE_ID, currentModuleId: MODULE_A });
+    const tree = await CourseTree({
+      courseId: COURSE_ID,
+      courseTitle: 'Curso de teste',
+      currentModuleId: MODULE_A,
+    });
     const { container } = render(tree);
     const detailsList = container.querySelectorAll('details');
     expect(detailsList).toHaveLength(2);
@@ -183,7 +187,7 @@ describe('CourseTree — destaque do módulo/aula actual', () => {
   });
 
   it('sem currentModuleId, nenhum módulo abre por defeito', async () => {
-    const tree = await CourseTree({ courseId: COURSE_ID });
+    const tree = await CourseTree({ courseId: COURSE_ID, courseTitle: 'Curso de teste' });
     const { container } = render(tree);
     const detailsList = container.querySelectorAll('details');
     expect(detailsList[0]).not.toHaveAttribute('open');
@@ -193,17 +197,19 @@ describe('CourseTree — destaque do módulo/aula actual', () => {
   it('quando há currentLessonId mas estamos no módulo certo, marca aria-current na aula', async () => {
     const tree = await CourseTree({
       courseId: COURSE_ID,
+      courseTitle: 'Curso de teste',
       currentModuleId: MODULE_A,
       currentLessonId: LESSON_A2,
     });
     render(tree);
-    const lessonLink = screen.getByRole('link', { name: /2\. Aula A2/i });
+    const lessonLink = screen.getByRole('link', { name: /1\.2\s+Aula A2/i });
     expect(lessonLink).toHaveAttribute('aria-current', 'page');
   });
 
   it('o link do título do módulo só é aria-current quando NÃO há aula em edit', async () => {
     const tree = await CourseTree({
       courseId: COURSE_ID,
+      courseTitle: 'Curso de teste',
       currentModuleId: MODULE_A,
       currentLessonId: LESSON_A2,
     });
@@ -213,7 +219,11 @@ describe('CourseTree — destaque do módulo/aula actual', () => {
   });
 
   it('o link do módulo é aria-current quando estamos só na página do módulo (sem ?editar)', async () => {
-    const tree = await CourseTree({ courseId: COURSE_ID, currentModuleId: MODULE_A });
+    const tree = await CourseTree({
+      courseId: COURSE_ID,
+      courseTitle: 'Curso de teste',
+      currentModuleId: MODULE_A,
+    });
     render(tree);
     const moduleLink = screen.getByRole('link', { name: /1\. Módulo A/i });
     expect(moduleLink).toHaveAttribute('aria-current', 'page');
@@ -222,11 +232,12 @@ describe('CourseTree — destaque do módulo/aula actual', () => {
   it('aulas fora do módulo actual não recebem aria-current mesmo com currentLessonId', async () => {
     const tree = await CourseTree({
       courseId: COURSE_ID,
+      courseTitle: 'Curso de teste',
       currentModuleId: MODULE_A,
       currentLessonId: 'inexistente',
     });
     render(tree);
-    const aulaA1 = screen.getByRole('link', { name: /1\. Aula A1/i });
+    const aulaA1 = screen.getByRole('link', { name: /1\.1\s+Aula A1/i });
     expect(aulaA1).not.toHaveAttribute('aria-current');
   });
 });
@@ -238,13 +249,13 @@ describe('CourseTree — query Supabase', () => {
   });
 
   it('filtra por course_id e ordena por position asc', async () => {
-    await CourseTree({ courseId: COURSE_ID });
+    await CourseTree({ courseId: COURSE_ID, courseTitle: 'Curso de teste' });
     expect(mockEq).toHaveBeenCalledWith('course_id', COURSE_ID);
     expect(mockOrder).toHaveBeenCalledWith('position', { ascending: true });
   });
 
   it('select embed inclui lessons (id, title, position)', async () => {
-    await CourseTree({ courseId: COURSE_ID });
+    await CourseTree({ courseId: COURSE_ID, courseTitle: 'Curso de teste' });
     expect(mockSelect).toHaveBeenCalledWith('id, title, position, lessons ( id, title, position )');
   });
 });
@@ -258,7 +269,7 @@ describe('CourseTree — semantics', () => {
   });
 
   it('renderiza-se dentro de um <aside aria-label="Estrutura do curso">', async () => {
-    const tree = await CourseTree({ courseId: COURSE_ID });
+    const tree = await CourseTree({ courseId: COURSE_ID, courseTitle: 'Curso de teste' });
     render(tree);
     const aside = screen.getByRole('complementary', { name: /estrutura do curso/i });
     expect(aside).toBeInTheDocument();
