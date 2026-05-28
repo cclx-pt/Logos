@@ -1,12 +1,7 @@
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, ROLE_LABEL } from '@/lib/auth';
 
 export const metadata = {
   title: 'Área admin · LOGOS',
-};
-
-const ROLE_LABEL: Record<'admin' | 'super_admin', string> = {
-  admin: 'Administrador',
-  super_admin: 'Super administrador',
 };
 
 export default async function AdminHomePage() {

@@ -19,6 +19,16 @@ export type { SupabaseUser };
 
 export type Role = 'user' | 'admin' | 'super_admin';
 
+/**
+ * Etiqueta PT-PT canónica para cada `Role`. Usada em `/perfil`, `/admin` e
+ * `/admin/utilizadores` — manter sincronizado.
+ */
+export const ROLE_LABEL: Record<Role, string> = {
+  user: 'Utilizador',
+  admin: 'Administrador',
+  super_admin: 'Super administrador',
+};
+
 export type Profile = {
   id: string;
   externalAuthId: string;

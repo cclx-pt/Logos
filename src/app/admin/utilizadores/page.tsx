@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 
 import { SubmitButton } from '@/components/ui/submit-button';
-import { getCurrentUser, getServerClient, type Role } from '@/lib/auth';
+import { getCurrentUser, getServerClient, ROLE_LABEL, type Role } from '@/lib/auth';
 import { setUserRoleAction } from './actions';
 import { UserTagsCell } from './user-tags-cell';
 
@@ -25,12 +25,6 @@ type TagRow = {
 type UserTagRow = {
   user_id: string;
   tag_id: string;
-};
-
-const ROLE_LABEL: Record<Role, string> = {
-  user: 'Utilizador',
-  admin: 'Administrador',
-  super_admin: 'Super administrador',
 };
 
 function formatDate(iso: string): string {

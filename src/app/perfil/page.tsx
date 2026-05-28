@@ -1,16 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getCurrentUser, getServerClient, type Role, type SupabaseUser } from '@/lib/auth';
+import { getCurrentUser, getServerClient, ROLE_LABEL, type SupabaseUser } from '@/lib/auth';
 
 export const metadata: Metadata = {
   title: 'Perfil',
   description: 'A tua área pessoal no LOGOS.',
-};
-
-const ROLE_LABEL: Record<Role, string> = {
-  user: 'Utilizador',
-  admin: 'Administrador',
-  super_admin: 'Super administrador',
 };
 
 function initials(displayName: string): string {
