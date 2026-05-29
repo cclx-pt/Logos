@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { ArrowDownAZ, ArrowUpAZ, Check, ChevronDown, Search, Sparkles } from 'lucide-react';
+import { ArrowDownAZ, ArrowUpAZ, ChevronDown, Search, Sparkles } from 'lucide-react';
 
 import {
   DropdownMenu,
@@ -165,10 +165,7 @@ export function ConteudosContent({
             <DropdownMenuRadioGroup value={sortKey} onValueChange={handleSortChange}>
               {visibleSortOptions.map((opt) => (
                 <DropdownMenuRadioItem key={opt.value} value={opt.value}>
-                  <span className="flex-1">{opt.label}</span>
-                  {sortKey === opt.value ? (
-                    <Check aria-hidden="true" className="text-orange-primary h-4 w-4" />
-                  ) : null}
+                  {opt.label}
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>
