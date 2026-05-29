@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { Sparkles } from 'lucide-react';
 
 import { CourseCard } from '@/components/site/course-card';
 import { signInWithGoogleAction } from '@/lib/auth/actions';
@@ -44,17 +43,9 @@ function CoursesGroups({ courses }: { courses: StartedCourse[] }) {
           </ul>
         ) : (
           <div className="border-orange-primary/30 bg-orange-primary/5 mt-6 flex flex-col items-start gap-4 rounded-2xl border p-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-4">
-              <div
-                aria-hidden="true"
-                className="bg-orange-primary/10 text-orange-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-              >
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <p className="text-muted-foreground max-w-prose font-sans text-sm leading-relaxed sm:text-base">
-                Não tens cursos em progresso. Visita o catálogo para começares mais um.
-              </p>
-            </div>
+            <p className="text-muted-foreground max-w-prose font-sans text-sm leading-relaxed sm:text-base">
+              Não tens cursos em progresso. Visita o catálogo para começares mais um.
+            </p>
             <Link
               href="/conteudos"
               className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-10 shrink-0 items-center justify-center rounded-md px-5 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"

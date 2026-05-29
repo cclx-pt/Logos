@@ -16,6 +16,22 @@
 
 ---
 
+## [29-05-2026] — V3.3 PR7: smoothness pass — view transitions, transições, polish do estado vazio
+
+### add
+- **View Transitions API** activado via `experimental.viewTransition: true` em `next.config.ts` — Next.js 16 + React 19 fazem crossfade automático entre rotas. Browsers sem suporte caem para navegação instantânea, sem regressão.
+- **Transição suave de `<details>`** via `interpolate-size: allow-keywords` + `::details-content` em `globals.css` — `CollapsibleSection` abre e fecha com fade de 250 ms em vez de salto instantâneo. Inclui fallback `prefers-reduced-motion`.
+- **Baseline de transições em `<a>`, `<button>`, `<summary>`, `[role='button']`** — 150 ms ease-out em `color` / `background-color` / `border-color` / `opacity`. Cobre todos os hovers que não tinham `transition-colors` explícito, sem precisar de auditar dezenas de ficheiros. Components com transições próprias sobrepõem o default sem conflito.
+
+### update
+- **`/meus-cursos`: ícone `Sparkles` removido** da mensagem "Não tens cursos em progresso" quando o utilizador só tem cursos terminados. Mesma direcção dos restantes estados vazios (PR3).
+- Import de `Sparkles` em `meus-cursos-content.tsx` removido.
+
+### infra
+- `interpolate-size`, `::details-content` e `viewTransition` são features modernas de browser/framework. Compatibilidade: Chrome 129+ / Safari 18.2+ / Firefox 137+ (interpolate-size); navegadores antigos degradam para o comportamento instantâneo de sempre.
+
+---
+
 ## [29-05-2026] — V3.3 PR6: search admin + linha clicável em `/admin/conteudos`
 
 ### add

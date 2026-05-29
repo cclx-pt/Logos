@@ -157,6 +157,64 @@
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
   }
+
+  /*
+   * Smoothness pass V3.3 PR7 — animar transições size-keyword (`auto`).
+   * Permite que `<details>` e outros elementos com `block-size: auto`
+   * façam transição limpa em vez de salto. Suportado em Chrome 129+,
+   * Safari 18.2+, Firefox 137+. Browsers antigos ignoram e ficam com
+   * o comportamento instantâneo de sempre.
+   */
+  :root {
+    interpolate-size: allow-keywords;
+  }
+
+  /*
+   * `<details>` ganha abertura suave via `::details-content` (a parte
+   * "filhos" do details, isolada do `<summary>`). Browsers sem suporte
+   * caem para abertura instantânea — sem regressão funcional.
+   */
+  details::details-content {
+    block-size: 0;
+    overflow: hidden;
+    transition:
+      block-size 250ms ease-out,
+      content-visibility 250ms ease-out allow-discrete;
+  }
+  details[open]::details-content {
+    block-size: auto;
+  }
+
+  /*
+   * Smoothness pass V3.3 PR7 — baseline de transições suaves em todos os
+   * elementos interactivos. Cobre os spots onde `hover:bg-*` / `hover:text-*`
+   * existe sem `transition-colors` explícito, sem precisar de auditar
+   * dezenas de ficheiros. Componentes que já têm `transition-colors`
+   * próprio sobrepõem este default sem conflito.
+   */
+  a,
+  button,
+  summary,
+  [role='button'] {
+    transition-property: color, background-color, border-color, opacity;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+  }
+
+  /*
+   * Respeita `prefers-reduced-motion`: desliga animações pesadas para
+   * utilizadores que pedem menos movimento (sistema operativo).
+   */
+  @media (prefers-reduced-motion: reduce) {
+    details::details-content,
+    details[open]::details-content,
+    a,
+    button,
+    summary,
+    [role='button'] {
+      transition: none;
+    }
+  }
 }
 
 /*
