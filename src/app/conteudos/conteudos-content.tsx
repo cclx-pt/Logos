@@ -1,12 +1,21 @@
 'use client';
 
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { Search, Sparkles } from 'lucide-react';
+import { ArrowDownAZ, ArrowUpAZ, Check, ChevronDown, Search, Sparkles } from 'lucide-react';
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { CourseCard } from '@/components/site/course-card';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 import type { VisibleCourse } from '@/lib/courses/visibility';
+import type { SortKey } from '@/lib/courses/sort';
 
 type Props = {
   courses: VisibleCourse[];
@@ -25,6 +34,32 @@ type Props = {
    * conclusões.
    */
   completedCourseIds: string[];
+  /**
+   * Chave de ordenação activa (já aplicada no server). Controla o estado
+   * inicial do dropdown.
+   */
+  sortKey: SortKey;
+};
+
+type SortOption = {
+  value: SortKey;
+  label: string;
+  /** Se `authOnly`, só aparece para utilizadores autenticados. */
+  authOnly?: boolean;
+};
+
+const SORT_OPTIONS: SortOption[] = [
+  { value: 'por-comecar', label: 'Por começar primeiro', authOnly: true },
+  { value: 'concluidos', label: 'Concluídos primeiro', authOnly: true },
+  { value: 'a-z', label: 'A → Z' },
+  { value: 'z-a', label: 'Z → A' },
+];
+
+const SORT_LABEL: Record<SortKey, string> = {
+  'por-comecar': 'Por começar',
+  concluidos: 'Concluídos',
+  'a-z': 'A → Z',
+  'z-a': 'Z → A',
 };
 
 export function ConteudosContent({
@@ -32,10 +67,25 @@ export function ConteudosContent({
   query,
   isAuthenticated,
   completedCourseIds,
+  sortKey,
 }: Props) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const completedSet = new Set(completedCourseIds);
   const isFiltering = query.length > 0;
   const hasResults = courses.length > 0;
+
+  function handleSortChange(value: string) {
+    const params = new URLSearchParams(searchParams);
+    params.set('ordenar', value);
+    router.push(`/conteudos?${params.toString()}`, { scroll: false });
+  }
+
+  const visibleSortOptions = SORT_OPTIONS.filter(
+    (opt) => !opt.authOnly || isAuthenticated,
+  );
+  const sortIcon = sortKey === 'z-a' ? ArrowUpAZ : ArrowDownAZ;
+  const SortIcon = sortIcon;
 
   return (
     <motion.section
@@ -91,14 +141,39 @@ export function ConteudosContent({
         >
           Pesquisar
         </button>
+        {/*
+          Preserva `?ordenar=` quando o utilizador submete a pesquisa — sem este
+          hidden, ao submeter o form perderíamos a ordenação actual.
+        */}
+        <input type="hidden" name="ordenar" value={sortKey} />
         {isFiltering ? (
           <Link
-            href="/conteudos"
+            href={`/conteudos?ordenar=${sortKey}`}
             className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-11 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
           >
             Limpar
           </Link>
         ) : null}
+        <DropdownMenu>
+          <DropdownMenuTrigger className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-11 items-center justify-center gap-2 rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none">
+            <SortIcon aria-hidden="true" className="h-4 w-4" />
+            <span className="hidden sm:inline">Ordenar:</span>
+            <span>{SORT_LABEL[sortKey]}</span>
+            <ChevronDown aria-hidden="true" className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" sideOffset={6} className="min-w-56">
+            <DropdownMenuRadioGroup value={sortKey} onValueChange={handleSortChange}>
+              {visibleSortOptions.map((opt) => (
+                <DropdownMenuRadioItem key={opt.value} value={opt.value}>
+                  <span className="flex-1">{opt.label}</span>
+                  {sortKey === opt.value ? (
+                    <Check aria-hidden="true" className="text-orange-primary h-4 w-4" />
+                  ) : null}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </motion.form>
 
       {hasResults ? (

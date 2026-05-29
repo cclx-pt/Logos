@@ -27,6 +27,39 @@ import { UUID_RE } from '@/lib/validation';
 export type EnrollmentState = 'anon' | 'enrolled' | 'not-enrolled';
 
 /**
+ * Devolve o conjunto de courseIds em que o utilizador actual está
+ * inscrito (rows em `course_access_log` cuja mais recente tem
+ * `unenrolled_at IS NULL`). Set vazio para anon.
+ *
+ * Usado no catálogo `/conteudos` para classificar cursos em "por
+ * começar" / "em curso" na ordenação por estado.
+ */
+export async function getEnrolledCourseIdsForCurrentUser(): Promise<Set<string>> {
+  const caller = await getCurrentUser();
+  if (!caller) return new Set();
+
+  const supabase = await getServerClient();
+  const { data, error } = await supabase
+    .from('course_access_log')
+    .select('course_id, accessed_at, unenrolled_at')
+    .order('accessed_at', { ascending: false })
+    .returns<{ course_id: string; accessed_at: string; unenrolled_at: string | null }[]>();
+
+  if (error) {
+    throw new Error(`Falha a carregar inscrições: ${error.message}`);
+  }
+
+  const enrolled = new Set<string>();
+  const seen = new Set<string>();
+  for (const row of data ?? []) {
+    if (seen.has(row.course_id)) continue;
+    seen.add(row.course_id);
+    if (row.unenrolled_at === null) enrolled.add(row.course_id);
+  }
+  return enrolled;
+}
+
+/**
  * Devolve o estado actual de inscrição. Inclui o caso anónimo para a UI
  * poder decidir entre as 3 vistas (banner-only, structure-readonly, full).
  */

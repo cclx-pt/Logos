@@ -16,9 +16,17 @@
 
 ---
 
-## [29-05-2026] — V3.3 PR8: enrollment + estado anónimo (bloqueador final V3.3)
+## [29-05-2026] — V3.3 PR8: enrollment + estado anónimo + ordenação do catálogo (bloqueador final V3.3)
 
-### add
+### add (iteração 29-05-2026)
+- **Dropdown de ordenação em `/conteudos`** com 4 chaves: `por-comecar` (default auth), `concluidos`, `a-z` (default anon), `z-a`. Persistido em `?ordenar=` (partilhável, server-rendered). Para anon só aparecem `A→Z` / `Z→A`.
+- **`src/lib/courses/sort.ts`** + 10 testes — `defaultSortKey`, `isSortKey`, `sortCourses` (ordena dentro de grupos por estado + alfabético).
+- **`getEnrolledCourseIdsForCurrentUser`** em `enrollment.ts` — Set de cursos com inscrição activa. Usada pelo sort por estado.
+- **Catálogo greyout para cursos concluídos**: cards de cursos em `course_completions` ganham `opacity-60` + badge "Concluído" + CTA "Rever curso →" (mesma UX que `/meus-cursos` "Terminados"). Mantêm-se clicáveis para rever.
+- **Anon não vê "Em breve"** — cards de cursos sem aulas continuam clicáveis para anon; clicar leva ao CTA de login na landing do curso. "Em breve" e o estado disabled só aparecem para utilizadores autenticados.
+- **`getCompletedCourseIdsForCurrentUser`** em `completion.ts` — Set de cursos concluídos pelo utilizador. RLS filtra a `own`.
+
+### add (PR8 original)
 - **Modelo de enrollment** sobre `course_access_log`: row mais recente por (user, course) decide o estado. `unenrolled_at IS NULL` → inscrito. Nova migration `20260529120000_enrollment_and_anon_landing.sql` adiciona coluna `unenrolled_at`, índice composto e UPDATE policy.
 - **`src/lib/courses/enrollment.ts`** com `getEnrollmentState`, `enrollAction`, `unenrollAction`. Revalida `/conteudos/<id>` + `/meus-cursos` em mutações.
 - **3 vistas em `/conteudos/[courseId]`**:
