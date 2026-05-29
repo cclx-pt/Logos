@@ -38,7 +38,7 @@ export function HomeHero({ isAuthenticated, ctaHref }: HomeHeroProps) {
         variants={staggerItem}
         className="text-muted-foreground mt-6 max-w-2xl text-center font-sans text-base leading-relaxed sm:text-lg"
       >
-        O ministério LOGOS é o espaço da CCLX para crescer no conhecimento das Escrituras.
+        Cursos, Apostilas e o teu ritmo — Sempre gratuitos.
       </motion.p>
 
       <motion.div variants={staggerItem} className="mt-10 flex w-full justify-center">

@@ -8,28 +8,37 @@ import { cn } from '@/lib/utils';
 
 type Testimonial = {
   quote: string;
+  author: string;
 };
 
 const testimonials: readonly Testimonial[] = [
   {
     quote:
       'O ministério LOGOS está a ser uma benção na minha vida. Faz-me sair da zona de conforto e ir mais fundo nas Escrituras. Muito obrigado a todos os envolvidos! Deus vos abençoe.',
+    author: 'Bernardo Degues',
   },
   {
     quote:
       'O LOGOS tem servido para somar mais proximidade com a Palavra, descobrir novos detalhes, repensar na Sua mensagem e aplicá-la no meu dia-a-dia. Uma forma simples, leve mas profunda para estudar a Bíblia. Uma hora que voa e que nos deixa com vontade de mais! Prefiro as aulas presenciais, que são também excelentes oportunidades para fazer em casal. Obrigada aos professores!',
+    author: 'Sara Narciso',
   },
   {
     quote:
       'Este tempo no LOGOS foi extremamente proveitoso e edificante para mim. Aprendi muito sobre a Bíblia e tive contacto com temas e curiosidades que eu nunca tinha estudado com profundidade. Foi um conteúdo muito enriquecedor!',
+    author: 'Raniere',
+  },
+  {
+    quote:
+      'Nas aulas do LOGOS consigo aprofundar temas que muitas vezes numa pregação não há tempo para explorar. Também me fez desconstruir algumas ideias erradas que tinha há anos e perceber melhor a Palavra com mais contexto e maturidade. Sou muito grato por tudo o que tenho aprendido aqui.',
+    author: 'André Mata',
   },
 ] as const;
 
 export function HomeTestimonials() {
   const [autoplay] = useState(() =>
-    Autoplay({ delay: 5500, stopOnInteraction: false, stopOnMouseEnter: true }),
+    Autoplay({ delay: 6500, stopOnInteraction: false, stopOnMouseEnter: true }),
   );
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: 'start' }, [autoplay]);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: 'center' }, [autoplay]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
 
@@ -67,15 +76,23 @@ export function HomeTestimonials() {
           {testimonials.map((t, i) => (
             <li
               key={i}
-              className="flex w-full shrink-0 grow-0 basis-full px-2 sm:basis-1/2 lg:basis-1/3"
+              className="flex w-full shrink-0 grow-0 basis-full px-2"
               aria-roledescription="slide"
               aria-label={`Testemunho ${i + 1} de ${testimonials.length}`}
             >
-              <figure className="border-border bg-background flex h-full w-full flex-col rounded-lg border p-6">
-                <Quote className="text-orange h-6 w-6 shrink-0" aria-hidden="true" />
-                <blockquote className="text-ink mt-4 font-sans text-base leading-relaxed">
-                  &ldquo;{t.quote}&rdquo;
-                </blockquote>
+              <figure className="border-border bg-background flex h-full w-full flex-col rounded-2xl border px-6 py-8 sm:flex-row sm:items-center sm:gap-8 sm:px-10 sm:py-10">
+                <Quote
+                  className="text-orange h-8 w-8 shrink-0 sm:h-12 sm:w-12"
+                  aria-hidden="true"
+                />
+                <div className="mt-4 sm:mt-0">
+                  <blockquote className="text-ink font-sans text-lg leading-relaxed sm:text-xl">
+                    &ldquo;{t.quote}&rdquo;
+                  </blockquote>
+                  <figcaption className="text-muted-foreground font-display mt-4 text-base font-medium">
+                    {t.author}
+                  </figcaption>
+                </div>
               </figure>
             </li>
           ))}

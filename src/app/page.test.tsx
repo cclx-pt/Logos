@@ -15,6 +15,13 @@ describe('HomeHero', () => {
     expect(screen.getByLabelText('LOGOS')).toBeInTheDocument();
   });
 
+  it('apresenta o subtítulo com a proposta de valor gratuita', () => {
+    render(<HomeHero isAuthenticated={false} ctaHref="/meus-cursos" />);
+    expect(
+      screen.getByText(/Cursos, Apostilas e o teu ritmo — Sempre gratuitos\./),
+    ).toBeInTheDocument();
+  });
+
   it('quando há sessão, expõe link "Meus cursos" para ctaHref', () => {
     render(<HomeHero isAuthenticated={true} ctaHref="/meus-cursos" />);
     const cta = screen.getByRole('link', { name: /meus cursos/i });

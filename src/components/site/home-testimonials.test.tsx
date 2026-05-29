@@ -8,10 +8,23 @@ describe('HomeTestimonials', () => {
     expect(screen.getByLabelText(/testemunhos de quem usa o LOGOS/i)).toBeInTheDocument();
   });
 
-  it('renderiza pelo menos 2 slides (testemunhos reais do ministério)', () => {
+  it('renderiza os quatro testemunhos reais do ministério', () => {
     render(<HomeTestimonials />);
     const slides = screen.getAllByRole('listitem', { hidden: false });
-    expect(slides.length).toBeGreaterThanOrEqual(2);
+    // 4 slides + os 4 pontos da paginação (tablist) só aparecem após o embla
+    // inicializar; contamos os slides pelo aria-label "Testemunho N de 4".
+    const testimonialSlides = slides.filter((s) =>
+      /Testemunho \d+ de 4/i.test(s.getAttribute('aria-label') ?? ''),
+    );
+    expect(testimonialSlides).toHaveLength(4);
+  });
+
+  it('atribui cada testemunho ao seu autor', () => {
+    render(<HomeTestimonials />);
+    expect(screen.getByText('Bernardo Degues')).toBeInTheDocument();
+    expect(screen.getByText('Sara Narciso')).toBeInTheDocument();
+    expect(screen.getByText('Raniere')).toBeInTheDocument();
+    expect(screen.getByText('André Mata')).toBeInTheDocument();
   });
 
   it('expõe controlos de navegação anterior/seguinte', () => {
