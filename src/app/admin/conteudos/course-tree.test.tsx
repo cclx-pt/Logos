@@ -100,7 +100,9 @@ describe('CourseTree — render', () => {
 
   it('lança Error quando o Supabase devolve error', async () => {
     setResponse({ data: null, error: { message: 'rls denied' } });
-    await expect(CourseTree({ courseId: COURSE_ID, courseTitle: 'Curso de teste' })).rejects.toThrow(/rls denied/i);
+    await expect(
+      CourseTree({ courseId: COURSE_ID, courseTitle: 'Curso de teste' }),
+    ).rejects.toThrow(/rls denied/i);
   });
 
   it('renderiza cada módulo com link para a sua página', async () => {

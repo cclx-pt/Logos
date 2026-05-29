@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 
+import { ListSearch } from '@/components/admin/list-search';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { getCurrentUser, getServerClient, ROLE_LABEL, type Role } from '@/lib/auth';
 import { isAdmin, isSuperAdmin } from '@/lib/auth/guards';
@@ -105,89 +106,96 @@ export default async function UtilizadoresPage() {
         )}
       </header>
 
-      <div className="border-border overflow-hidden rounded-lg border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
-            <tr>
-              <th scope="col" className="px-4 py-2 font-medium">
-                Nome
-              </th>
-              <th scope="col" className="px-4 py-2 font-medium">
-                Papel
-              </th>
-              <th scope="col" className="px-4 py-2 font-medium">
-                Etiquetas
-              </th>
-              <th scope="col" className="px-4 py-2 font-medium">
-                Criado em
-              </th>
-              {canMutateRoles && (
-                <th scope="col" className="px-4 py-2 text-right font-medium">
+      <ListSearch label="Pesquisar utilizador" placeholder="Pesquisar por nome ou papel...">
+        <div className="border-border overflow-hidden rounded-lg border">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
+              <tr>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  Nome
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
                   Papel
                 </th>
-              )}
-            </tr>
-          </thead>
-          <tbody className="divide-border divide-y">
-            {profiles.map((row) => {
-              const isSelf = row.id === user.id;
-              const targetIsSuperAdmin = isSuperAdmin(row.role);
-              const canMutateRow = canMutateRoles && !isSelf && !targetIsSuperAdmin;
-              const nextRole: 'user' | 'admin' = row.role === 'admin' ? 'user' : 'admin';
-              const actionLabel =
-                row.role === 'admin' ? 'Despromover a utilizador' : 'Promover a admin';
+                <th scope="col" className="px-4 py-2 font-medium">
+                  Etiquetas
+                </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  Criado em
+                </th>
+                {canMutateRoles && (
+                  <th scope="col" className="px-4 py-2 text-right font-medium">
+                    Papel
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="divide-border divide-y">
+              {profiles.map((row) => {
+                const isSelf = row.id === user.id;
+                const targetIsSuperAdmin = isSuperAdmin(row.role);
+                const canMutateRow = canMutateRoles && !isSelf && !targetIsSuperAdmin;
+                const nextRole: 'user' | 'admin' = row.role === 'admin' ? 'user' : 'admin';
+                const actionLabel =
+                  row.role === 'admin' ? 'Despromover a utilizador' : 'Promover a admin';
 
-              const assigned = tagsByUser.get(row.id) ?? [];
+                const assigned = tagsByUser.get(row.id) ?? [];
+                const tagSearchText = assigned.map((t) => t.label.toLowerCase()).join(' ');
 
-              return (
-                <tr key={row.id} className="text-ink align-top">
-                  <td className="px-4 py-3 font-medium">{row.display_name}</td>
-                  <td className="px-4 py-3">{ROLE_LABEL[row.role]}</td>
-                  <td className="px-4 py-3">
-                    <UserTagsCell
-                      userId={row.id}
-                      userName={row.display_name}
-                      assigned={assigned}
-                      allTags={tags}
-                    />
-                  </td>
-                  <td className="px-4 py-3">{formatDate(row.created_at)}</td>
-                  {canMutateRoles && (
-                    <td className="px-4 py-3 text-right">
-                      {canMutateRow ? (
-                        <form
-                          action={async (formData: FormData) => {
-                            'use server';
-                            const result = await setUserRoleAction(formData);
-                            redirect(
-                              result.ok
-                                ? '/admin/utilizadores?guardado=papel_atualizado'
-                                : '/admin/utilizadores?erro=generico',
-                            );
-                          }}
-                        >
-                          <input type="hidden" name="targetId" value={row.id} />
-                          <input type="hidden" name="newRole" value={nextRole} />
-                          <SubmitButton
-                            pendingLabel={row.role === 'admin' ? 'A despromover…' : 'A promover…'}
-                            className="text-orange-primary hover:bg-muted/40 hover:text-orange-hover h-auto rounded-md bg-transparent px-2 py-1 text-xs font-medium"
-                          >
-                            {actionLabel}
-                          </SubmitButton>
-                        </form>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">
-                          {isSelf ? 'Tu' : 'Sem ação'}
-                        </span>
-                      )}
+                return (
+                  <tr
+                    key={row.id}
+                    data-search-text={`${row.display_name.toLowerCase()} ${ROLE_LABEL[row.role].toLowerCase()} ${tagSearchText}`}
+                    className="text-ink align-top"
+                  >
+                    <td className="px-4 py-3 font-medium">{row.display_name}</td>
+                    <td className="px-4 py-3">{ROLE_LABEL[row.role]}</td>
+                    <td className="px-4 py-3">
+                      <UserTagsCell
+                        userId={row.id}
+                        userName={row.display_name}
+                        assigned={assigned}
+                        allTags={tags}
+                      />
                     </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                    <td className="px-4 py-3">{formatDate(row.created_at)}</td>
+                    {canMutateRoles && (
+                      <td className="px-4 py-3 text-right">
+                        {canMutateRow ? (
+                          <form
+                            action={async (formData: FormData) => {
+                              'use server';
+                              const result = await setUserRoleAction(formData);
+                              redirect(
+                                result.ok
+                                  ? '/admin/utilizadores?guardado=papel_atualizado'
+                                  : '/admin/utilizadores?erro=generico',
+                              );
+                            }}
+                          >
+                            <input type="hidden" name="targetId" value={row.id} />
+                            <input type="hidden" name="newRole" value={nextRole} />
+                            <SubmitButton
+                              pendingLabel={row.role === 'admin' ? 'A despromover…' : 'A promover…'}
+                              className="text-orange-primary hover:bg-muted/40 hover:text-orange-hover h-auto rounded-md bg-transparent px-2 py-1 text-xs font-medium"
+                            >
+                              {actionLabel}
+                            </SubmitButton>
+                          </form>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">
+                            {isSelf ? 'Tu' : 'Sem ação'}
+                          </span>
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </ListSearch>
     </div>
   );
 }

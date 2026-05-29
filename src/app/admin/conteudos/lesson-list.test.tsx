@@ -54,12 +54,21 @@ describe('LessonList — render', () => {
   });
 
   it('mostra placeholder quando lista vazia', () => {
-    render(<LessonList initial={[]} courseId={COURSE_ID} moduleId={MODULE_ID} modulePosition={2} />);
+    render(
+      <LessonList initial={[]} courseId={COURSE_ID} moduleId={MODULE_ID} modulePosition={2} />,
+    );
     expect(screen.getByText(/ainda não há aulas/i)).toBeInTheDocument();
   });
 
   it('renderiza um item por aula com numeração {módulo}.{aula}', () => {
-    render(<LessonList initial={makeLessons()} courseId={COURSE_ID} moduleId={MODULE_ID} modulePosition={2} />);
+    render(
+      <LessonList
+        initial={makeLessons()}
+        courseId={COURSE_ID}
+        moduleId={MODULE_ID}
+        modulePosition={2}
+      />,
+    );
     expect(screen.getByText('Aula A')).toBeInTheDocument();
     expect(screen.getByText('Aula B')).toBeInTheDocument();
     expect(screen.getByText('Aula C')).toBeInTheDocument();
@@ -69,13 +78,27 @@ describe('LessonList — render', () => {
   });
 
   it('mostra pill do template (pdf / vídeo + pdf)', () => {
-    render(<LessonList initial={makeLessons()} courseId={COURSE_ID} moduleId={MODULE_ID} modulePosition={2} />);
+    render(
+      <LessonList
+        initial={makeLessons()}
+        courseId={COURSE_ID}
+        moduleId={MODULE_ID}
+        modulePosition={2}
+      />,
+    );
     expect(screen.getAllByText(/só pdf/i).length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText(/vídeo \+ pdf/i)).toBeInTheDocument();
   });
 
   it('renderiza link YouTube apenas para aulas video_pdf', () => {
-    render(<LessonList initial={makeLessons()} courseId={COURSE_ID} moduleId={MODULE_ID} modulePosition={2} />);
+    render(
+      <LessonList
+        initial={makeLessons()}
+        courseId={COURSE_ID}
+        moduleId={MODULE_ID}
+        modulePosition={2}
+      />,
+    );
     const link = screen.getByRole('link', { name: /youtu\.be\/abc123/i });
     expect(link).toHaveAttribute('href', 'https://youtu.be/abc123');
     expect(link).toHaveAttribute('target', '_blank');
@@ -120,7 +143,14 @@ describe('LessonList — optimistic reorder', () => {
 
   it('clicar ↑ na primeira aula é no-op (disabled)', async () => {
     const user = userEvent.setup();
-    render(<LessonList initial={makeLessons()} courseId={COURSE_ID} moduleId={MODULE_ID} modulePosition={2} />);
+    render(
+      <LessonList
+        initial={makeLessons()}
+        courseId={COURSE_ID}
+        moduleId={MODULE_ID}
+        modulePosition={2}
+      />,
+    );
     const upA = screen.getByRole('button', { name: /mover aula a para cima/i });
     expect(upA).toBeDisabled();
     await user.click(upA);
@@ -129,7 +159,14 @@ describe('LessonList — optimistic reorder', () => {
 
   it('clicar ↓ na última aula é no-op (disabled)', async () => {
     const user = userEvent.setup();
-    render(<LessonList initial={makeLessons()} courseId={COURSE_ID} moduleId={MODULE_ID} modulePosition={2} />);
+    render(
+      <LessonList
+        initial={makeLessons()}
+        courseId={COURSE_ID}
+        moduleId={MODULE_ID}
+        modulePosition={2}
+      />,
+    );
     const downC = screen.getByRole('button', { name: /mover aula c para baixo/i });
     expect(downC).toBeDisabled();
     await user.click(downC);
@@ -138,7 +175,14 @@ describe('LessonList — optimistic reorder', () => {
 
   it('clicar ↑ na aula B chama moveLessonUpAction com FormData', async () => {
     const user = userEvent.setup();
-    render(<LessonList initial={makeLessons()} courseId={COURSE_ID} moduleId={MODULE_ID} modulePosition={2} />);
+    render(
+      <LessonList
+        initial={makeLessons()}
+        courseId={COURSE_ID}
+        moduleId={MODULE_ID}
+        modulePosition={2}
+      />,
+    );
     const upB = screen.getByRole('button', { name: /mover aula b para cima/i });
     await act(async () => {
       await user.click(upB);
@@ -152,7 +196,14 @@ describe('LessonList — optimistic reorder', () => {
 
   it('clicar ↓ na aula B chama moveLessonDownAction', async () => {
     const user = userEvent.setup();
-    render(<LessonList initial={makeLessons()} courseId={COURSE_ID} moduleId={MODULE_ID} modulePosition={2} />);
+    render(
+      <LessonList
+        initial={makeLessons()}
+        courseId={COURSE_ID}
+        moduleId={MODULE_ID}
+        modulePosition={2}
+      />,
+    );
     const downB = screen.getByRole('button', { name: /mover aula b para baixo/i });
     await act(async () => {
       await user.click(downB);

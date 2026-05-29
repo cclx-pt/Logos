@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ClickableRow } from '@/components/admin/clickable-row';
+import { ListSearch } from '@/components/admin/list-search';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { isAdmin } from '@/lib/auth/guards';
 import { formatDate } from '@/lib/format';
@@ -73,85 +75,81 @@ export default async function ConteudosPage() {
             Ainda não há cursos. Cria o primeiro com o botão acima.
           </p>
         ) : (
-          <div className="border-border overflow-hidden rounded-lg border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
-                <tr>
-                  <th scope="col" className="px-4 py-2 font-medium">
-                    Título
-                  </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
-                    Estado
-                  </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
-                    Etiquetas
-                  </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
-                    Criado em
-                  </th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-border divide-y">
-                {courses.map((course) => {
-                  const tagLabels = course.required_tags
-                    .map((id) => tagsById.get(id))
-                    .filter((label): label is string => typeof label === 'string');
+          <ListSearch label="Pesquisar curso" placeholder="Pesquisar por título...">
+            <div className="border-border overflow-hidden rounded-lg border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
+                  <tr>
+                    <th scope="col" className="px-4 py-2 font-medium">
+                      Título
+                    </th>
+                    <th scope="col" className="px-4 py-2 font-medium">
+                      Estado
+                    </th>
+                    <th scope="col" className="px-4 py-2 font-medium">
+                      Etiquetas
+                    </th>
+                    <th scope="col" className="px-4 py-2 font-medium">
+                      Criado em
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-border divide-y">
+                  {courses.map((course) => {
+                    const tagLabels = course.required_tags
+                      .map((id) => tagsById.get(id))
+                      .filter((label): label is string => typeof label === 'string');
 
-                  return (
-                    <tr key={course.id} className="text-ink align-top">
-                      <td className="px-4 py-3 font-medium">
-                        <Link
-                          href={`/admin/conteudos/${course.id}`}
-                          className="hover:text-orange-primary transition-colors"
-                        >
-                          {course.title}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-3">
-                        {course.published_at ? (
-                          <span className="bg-sage-card text-ink inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium">
-                            Publicado
-                          </span>
-                        ) : (
-                          <span className="bg-butter-card text-ink inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium">
-                            Rascunho
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {tagLabels.length === 0 ? (
-                          <span className="text-muted-foreground text-xs">Público</span>
-                        ) : (
-                          <div className="flex flex-wrap gap-1">
-                            {tagLabels.map((label) => (
-                              <span
-                                key={label}
-                                className="bg-cream-card text-ink rounded-full px-2 py-0.5 text-xs"
-                              >
-                                {label}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">{formatDate(course.created_at)}</td>
-                      <td className="px-4 py-3 text-right">
-                        <Link
-                          href={`/admin/conteudos/${course.id}`}
-                          className="text-orange-primary hover:text-orange-hover focus-visible:ring-ring rounded-md px-2 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                        >
-                          Abrir →
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    return (
+                      <ClickableRow
+                        key={course.id}
+                        href={`/admin/conteudos/${course.id}`}
+                        searchText={course.title.toLowerCase()}
+                        className="align-top"
+                      >
+                        <td className="px-4 py-3 font-medium">
+                          <Link
+                            href={`/admin/conteudos/${course.id}`}
+                            className="hover:text-orange-primary transition-colors"
+                          >
+                            {course.title}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3">
+                          {course.published_at ? (
+                            <span className="bg-sage-card text-ink inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium">
+                              Publicado
+                            </span>
+                          ) : (
+                            <span className="bg-butter-card text-ink inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium">
+                              Rascunho
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {tagLabels.length === 0 ? (
+                            <span className="text-muted-foreground text-xs">Público</span>
+                          ) : (
+                            <div className="flex flex-wrap gap-1">
+                              {tagLabels.map((label) => (
+                                <span
+                                  key={label}
+                                  className="bg-cream-card text-ink rounded-full px-2 py-0.5 text-xs"
+                                >
+                                  {label}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">{formatDate(course.created_at)}</td>
+                      </ClickableRow>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </ListSearch>
         )}
       </section>
     </div>
