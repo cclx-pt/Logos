@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 29-05-2026 (**V3.3 PR5 — catálogo full-width + descrição só na landing**: `/conteudos` ocupa toda a largura do ecrã em desktop (`xl:grid-cols-4`); cards do catálogo não mostram descrição (vive só na página do curso); split 50/50 (PR #39) descartado. 347/347 testes verdes. Próximo: PR6 search admin.)
+> **Última atualização:** 29-05-2026 (**V3.3 PR5 — catálogo full-width + módulos como páginas + imagem edge-to-edge**: `/conteudos` full-width com `xl:grid-cols-4`; imagem do card preenche o quadrado superior; cada módulo passa a ter a sua página `/conteudos/[courseId]/modulos/[moduleId]`; dropdowns substituídos por link cards. 347/347 testes verdes. Próximo: PR6 search admin.)
 
 ## 🎯 Milestone atual
 **V3 fechada dev-side em `v3-cursos`.** À espera de testemunhos finais do ministério para abrir PR `v3-cursos` → `main` e fazer deploy a `logos.cclx.pt`. Detalhes da estratégia em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).

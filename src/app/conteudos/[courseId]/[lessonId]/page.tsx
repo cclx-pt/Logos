@@ -102,6 +102,13 @@ export default async function LessonPage({ params }: PageProps) {
           {course.title}
         </Link>
         <span aria-hidden="true">›</span>
+        <Link
+          href={`/conteudos/${course.id}/modulos/${lesson.module.id}`}
+          className="hover:text-ink line-clamp-1 transition-colors"
+        >
+          {lesson.module.title}
+        </Link>
+        <span aria-hidden="true">›</span>
         <span className="text-ink line-clamp-1">{lesson.title}</span>
       </nav>
 
@@ -170,7 +177,7 @@ export default async function LessonPage({ params }: PageProps) {
       </div>
 
       {/* Mensagem de "módulo completo → próximo módulo" quando aplicável. */}
-      {isLastInModule && moduleDone && nextModule && nextModule.lessons[0] && (
+      {isLastInModule && moduleDone && nextModule && (
         <div className="border-orange-primary/30 bg-orange-primary/5 mt-10 rounded-2xl border p-6">
           <p className="text-orange-primary text-xs font-semibold tracking-wide uppercase">
             ✓ Módulo concluído
@@ -180,7 +187,7 @@ export default async function LessonPage({ params }: PageProps) {
             para o próximo módulo: <strong>{nextModule.title}</strong>.
           </p>
           <Link
-            href={`/conteudos/${course.id}/${nextModule.lessons[0].id}`}
+            href={`/conteudos/${course.id}/modulos/${nextModule.id}`}
             className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring mt-4 inline-flex h-10 items-center justify-center rounded-md px-5 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
           >
             Próximo módulo →

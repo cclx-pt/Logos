@@ -16,15 +16,24 @@
 
 ---
 
-## [29-05-2026] — V3.3 PR5: catálogo full-width + descrição só na landing do curso
+## [29-05-2026] — V3.3 PR5: catálogo full-width + módulos como páginas + imagem edge-to-edge
+
+### add
+- **Página própria por módulo no público (`/conteudos/[courseId]/modulos/[moduleId]`)** — substitui os `<details>` dropdowns. Mostra título, descrição, lista de aulas com estado de conclusão, CTA "Próximo módulo →" quando concluído, e link "← Voltar ao curso".
+- Breadcrumb da aula ganha link para a página do módulo (Conteúdos › Curso › Módulo › Aula).
 
 ### update
 - **`/conteudos` ocupa toda a largura do ecrã em desktop** — `max-w-5xl` substituído por `w-full` com padding maior (`lg:px-12 xl:px-16`). Grid passa a `xl:grid-cols-4` para aproveitar o espaço.
-- **`CourseCard` no catálogo já não mostra descrição** — fica reservada à landing do curso, evitando congestionar o catálogo e deixando títulos longos respirar. /meus-cursos continua a mostrar descrição (utilizador conhece o curso e o contexto faz falta).
-- `CourseCard` mantém layout vertical (banner em cima, texto em baixo) — proposta de split 50/50 (PR #39) descartada após teste do utilizador.
+- **`CourseCard`: imagem preenche o quadrado superior edge-to-edge** — `aspect-square w-full`, sem cantos próprios. Card ganha `overflow-hidden` e padding migra para a coluna de texto. Icon fallback cresce para `h-16 w-16`.
+- **`CourseCard` no catálogo já não mostra descrição** — fica reservada à landing do curso, evitando congestionar o catálogo. /meus-cursos continua a mostrar descrição.
+- **Course landing (`/conteudos/[courseId]`): módulos passam de `<details>` dropdowns a link cards** que navegam para a página do módulo. Mantém-se contagem `N/M` e check quando concluído.
+- "Próximo módulo →" da página da aula passa a apontar para a página do módulo (não para a primeira aula do módulo).
+
+### remove
+- Layout split 50/50 (PR #39) descartado após teste do utilizador.
 
 ### docs
-- `feature-docs/v3-3-handoff.md` atualizado: PR4 (split 50/50) marcada como descartada.
+- `feature-docs/v3-3-handoff.md` atualizado: PR4 marcada como descartada; PR5 expandida.
 
 ---
 

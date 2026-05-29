@@ -10,7 +10,6 @@ import { CourseImage } from '@/lib/courses/course-image';
 import { getCourseDetailById, getFirstLessonOfCourse } from '@/lib/courses/detail';
 import {
   getCompletedLessonIds,
-  getNextModuleWithLessons,
   getOrCreateCourseCompletion,
   isCourseComplete,
   isModuleComplete,
@@ -135,110 +134,52 @@ export default async function CoursePage({ params }: PageProps) {
               const completedInModule = module.lessons.filter((l) => completed.has(l.id)).length;
               const total = module.lessons.length;
               const moduleDone = isModuleComplete(module, completed);
-              const nextModule = getNextModuleWithLessons(course, module.id);
-              const firstOfNext = nextModule?.lessons[0];
 
               return (
                 <li key={module.id}>
-                  <details className="border-border bg-card group rounded-xl border p-5 transition-colors open:shadow-sm">
-                    <summary className="text-ink flex cursor-pointer list-none items-center justify-between gap-4 rounded-md outline-none">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-muted-foreground text-xs tracking-wide uppercase">
-                          Módulo {moduleIndex + 1}
-                        </p>
-                        <h3 className="font-display text-ink mt-1 text-xl font-medium tracking-tight">
-                          {module.title}
-                        </h3>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-3">
-                        {total > 0 ? (
-                          <span
-                            className={
-                              moduleDone
-                                ? 'text-orange-primary text-xs font-medium tabular-nums'
-                                : 'text-muted-foreground text-xs tabular-nums'
-                            }
-                          >
-                            {completedInModule}/{total}
-                          </span>
-                        ) : null}
-                        {moduleDone && (
-                          <Check
-                            aria-label="Módulo concluído"
-                            className="text-orange-primary h-5 w-5"
-                          />
-                        )}
-                        <span
-                          aria-hidden="true"
-                          className="text-muted-foreground transition-transform group-open:rotate-180"
-                        >
-                          ▾
-                        </span>
-                      </div>
-                    </summary>
-
-                    {module.description ? (
-                      <p className="text-muted-foreground mt-3 max-w-prose text-sm leading-relaxed">
-                        {module.description}
+                  <Link
+                    href={`/conteudos/${course.id}/modulos/${module.id}`}
+                    className="border-border bg-card hover:border-orange-primary/40 hover:bg-orange-primary/5 focus-visible:ring-ring group flex items-center justify-between gap-4 rounded-xl border p-5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-muted-foreground text-xs tracking-wide uppercase">
+                        Módulo {moduleIndex + 1}
                       </p>
-                    ) : null}
-
-                    {module.lessons.length === 0 ? (
-                      <p className="text-muted-foreground mt-3 text-sm">Sem aulas neste módulo.</p>
-                    ) : (
-                      <ol className="border-border divide-border mt-4 divide-y overflow-hidden rounded-lg border">
-                        {module.lessons.map((lesson, lessonIndex) => {
-                          const isDone = completed.has(lesson.id);
-                          return (
-                            <li key={lesson.id}>
-                              <Link
-                                href={`/conteudos/${course.id}/${lesson.id}`}
-                                className="hover:bg-orange-primary/5 focus-visible:ring-ring flex items-center gap-3 p-3 transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                              >
-                                <span
-                                  aria-hidden="true"
-                                  className={
-                                    isDone
-                                      ? 'bg-orange-primary flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs text-white'
-                                      : 'border-border text-muted-foreground flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs tabular-nums'
-                                  }
-                                >
-                                  {isDone ? <Check className="h-3.5 w-3.5" /> : lessonIndex + 1}
-                                </span>
-                                <span
-                                  className={
-                                    isDone
-                                      ? 'text-muted-foreground line-clamp-1 flex-1 text-sm line-through'
-                                      : 'text-ink line-clamp-1 flex-1 text-sm font-medium'
-                                  }
-                                >
-                                  {lesson.title}
-                                </span>
-                                <span className="text-muted-foreground text-[10px] tracking-wide uppercase">
-                                  {lesson.template === 'video_pdf' ? 'vídeo + pdf' : 'pdf'}
-                                </span>
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ol>
-                    )}
-
-                    {moduleDone && firstOfNext && (
-                      <div className="border-orange-primary/30 bg-orange-primary/5 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border p-4">
-                        <p className="text-ink text-sm">Módulo concluído. Pronto para o próximo?</p>
-                        <Link
-                          href={`/conteudos/${course.id}/${firstOfNext.id}`}
-                          className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md px-4 text-xs font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                      <h3 className="font-display text-ink mt-1 text-xl font-medium tracking-tight">
+                        {module.title}
+                      </h3>
+                      {module.description ? (
+                        <p className="text-muted-foreground mt-2 line-clamp-2 max-w-prose text-sm leading-relaxed">
+                          {module.description}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-3">
+                      {total > 0 ? (
+                        <span
+                          className={
+                            moduleDone
+                              ? 'text-orange-primary text-xs font-medium tabular-nums'
+                              : 'text-muted-foreground text-xs tabular-nums'
+                          }
                         >
-                          Próximo módulo →
-                        </Link>
-                      </div>
-                    )}
-                    {moduleDone && !firstOfNext && !courseDone && (
-                      <p className="text-muted-foreground mt-4 text-sm">Último módulo concluído.</p>
-                    )}
-                  </details>
+                          {completedInModule}/{total}
+                        </span>
+                      ) : null}
+                      {moduleDone && (
+                        <Check
+                          aria-label="Módulo concluído"
+                          className="text-orange-primary h-5 w-5"
+                        />
+                      )}
+                      <span
+                        aria-hidden="true"
+                        className="text-muted-foreground transition-transform group-hover:translate-x-1"
+                      >
+                        →
+                      </span>
+                    </div>
+                  </Link>
                 </li>
               );
             })}
