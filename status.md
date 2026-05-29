@@ -154,8 +154,6 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
 - [x] **V3 PR8 — Access log + admin stats** (20-05-2026) — `logCourseAccessAction` deixa de ser no-op (insert real em `course_access_log`); CTA "Começar/Continuar curso" em `/conteudos/[slug]` converte de `<Link>` para `<form>` com Server Action que loga + redirect (falha do insert não bloqueia navegação — best-effort telemetria). Página `/admin/conteudos/[courseId]/stats` (admin+super_admin) com 3 cards: acessos totais, utilizadores únicos, aulas concluídas. Helper `getCourseStats(courseId, lessonIds)`. Link "Ver estatísticas" no header da página de curso admin. 6 testes novos (278 → 284).
 - [x] **V3 PR9a — Vercel Analytics** (20-05-2026) — `@vercel/analytics@2.0.1` instalado; `<Analytics />` adicionado ao root `layout.tsx` (antes de `</body>`, depois do `<Footer />`). Sem testes novos (componente é um wrapper que injecta script — Vercel handle o resto). Página `/_vercel/insights/event` activa no preview e production. Cookieless por design — não acrescenta banner de cookies.
 - [ ] *(polish, prazo permite)* **V3 PR9 — Vercel Analytics + Playwright E2E**. §9.
-- [ ] Substituir copy placeholder de Conhece-nos por texto final do ministério. *Bloqueado por: ministério.*
-- [ ] Acrescentar morada + horários da igreja a Fala connosco. *Bloqueado por: ministério.*
 
 ## 🗺️ Roadmap por versão (resumo)
 

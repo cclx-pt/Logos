@@ -16,6 +16,22 @@
 
 ---
 
+## [29-05-2026] — Copy final do ministério: carrossel + hero (v2.5 + v3)
+
+### update
+- `src/components/site/home-testimonials.tsx` — carrossel redesenhado para **um testemunho por slide** em cartão **largo horizontal** (ícone `Quote` à esquerda + citação/autor à direita em ≥sm; empilha em mobile). `basis-full` (deixa de mostrar 2/3 cards lado a lado), `align: 'center'`, autoplay 5,5s → 6,5s (textos mais longos, um de cada vez). Cada testemunho ganha `author`.
+- **4 testemunhos finais do ministério** (substituem placeholders): Bernardo Degues, Sara Narciso, Raniere e o novo **André Mata**.
+- `src/components/site/home-hero.tsx` — subtítulo do hero passa de "O ministério LOGOS é o espaço da CCLX..." para **"Cursos, Apostilas e o teu ritmo — Sempre gratuitos."**
+- Testes: `home-testimonials.test.tsx` (4 slides + atribuição de autor) e `page.test.tsx` (subtítulo gratuito).
+
+### docs
+- `status.md` — removidos os 2 itens "Bloqueado por: ministério" (Conhece-nos copy final — já estava final no repo; morada/horários — dispensados a pedido do utilizador).
+
+### infra
+- Aplicado em **ambas** as branches `v3-cursos` e `v2.5-copy-ux` (copy partilhada; ver `feature-docs/branch-strategy.md`).
+
+---
+
 ## [29-05-2026] — V3.3 PR8: enrollment + estado anónimo + ordenação do catálogo (bloqueador final V3.3)
 
 ### add (iteração 29-05-2026)
