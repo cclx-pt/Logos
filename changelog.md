@@ -24,7 +24,7 @@
 
 ### update
 - **`/conteudos` ocupa toda a largura do ecrã em desktop** — `max-w-5xl` substituído por `w-full` com padding maior (`lg:px-12 xl:px-16`). Grid passa a `xl:grid-cols-4` para aproveitar o espaço.
-- **`CourseCard`: imagem preenche o quadrado superior edge-to-edge** — `aspect-square w-full`, sem cantos próprios. Card ganha `overflow-hidden` e padding migra para a coluna de texto. Icon fallback cresce para `h-16 w-16`.
+- **`CourseCard`: imagem preenche o topo edge-to-edge em `aspect-video` (16:9 standard)** — mesmo ratio que a hero da landing do curso, sem distorção, `object-cover` para crop limpo. Card ganha `overflow-hidden` e padding migra para a coluna de texto. Icon fallback usa `h-14 w-14`.
 - **`CourseCard` no catálogo já não mostra descrição** — fica reservada à landing do curso, evitando congestionar o catálogo. /meus-cursos continua a mostrar descrição.
 - **Course landing (`/conteudos/[courseId]`): módulos passam de `<details>` dropdowns a link cards** que navegam para a página do módulo. Mantém-se contagem `N/M` e check quando concluído.
 - "Próximo módulo →" da página da aula passa a apontar para a página do módulo (não para a primeira aula do módulo).
