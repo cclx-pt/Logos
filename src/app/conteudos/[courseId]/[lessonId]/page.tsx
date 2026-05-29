@@ -16,6 +16,7 @@ import {
   getNextModuleWithLessons,
   isModuleComplete,
 } from '@/lib/courses/completion';
+import { getEnrollmentState } from '@/lib/courses/enrollment';
 import { PdfDownloadButton } from './pdf-download-button';
 import { MarkCompleteButton } from './mark-complete-button';
 
@@ -50,6 +51,13 @@ export default async function LessonPage({ params }: PageProps) {
   // queries inúteis e poupa o utilizador a uma página vazia.
   const user = await getCurrentUser();
   if (!user) {
+    redirect(`/conteudos/${courseId}`);
+  }
+
+  // Enrollment gate (V3.3 PR8): utilizadores logados mas não inscritos
+  // não podem ver aulas. A página do curso mostra "Começar curso" → enrollAction.
+  const enrollmentState = await getEnrollmentState(courseId);
+  if (enrollmentState !== 'enrolled') {
     redirect(`/conteudos/${courseId}`);
   }
 

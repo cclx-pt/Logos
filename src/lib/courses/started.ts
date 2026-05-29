@@ -31,6 +31,7 @@ export type StartedCourse = VisibleCourse & {
 type AccessRow = {
   course_id: string;
   accessed_at: string;
+  unenrolled_at: string | null;
   courses: {
     id: string;
     title: string;
@@ -54,7 +55,7 @@ export async function getStartedCoursesForUser(): Promise<StartedCourse[]> {
   const { data: accesses, error: accessError } = await supabase
     .from('course_access_log')
     .select(
-      'course_id, accessed_at, courses ( id, title, description, icon, banner_storage_path, modules ( lessons ( count ) ) )',
+      'course_id, accessed_at, unenrolled_at, courses ( id, title, description, icon, banner_storage_path, modules ( lessons ( count ) ) )',
     )
     .order('accessed_at', { ascending: false })
     .returns<AccessRow[]>();
@@ -64,13 +65,19 @@ export async function getStartedCoursesForUser(): Promise<StartedCourse[]> {
   }
 
   // Acumular paths para sign batched depois do dedupe.
+  // Para cada curso, a row mais recente decide o estado de inscrição.
+  // Cursos onde o utilizador saiu (mais recente unenrolled_at not null)
+  // NÃO aparecem em /meus-cursos — V3.3 PR8.
   const dedupe = new Map<
     string,
     Omit<StartedCourse, 'bannerUrl'> & { bannerStoragePath: string | null }
   >();
+  const seenCourses = new Set<string>();
   for (const row of accesses ?? []) {
+    if (seenCourses.has(row.course_id)) continue;
+    seenCourses.add(row.course_id);
+    if (row.unenrolled_at !== null) continue; // utilizador saiu deste curso
     if (!row.courses) continue; // curso despublicado / sem visibilidade
-    if (dedupe.has(row.course_id)) continue; // mantém a primeira (mais recente)
     dedupe.set(row.course_id, {
       id: row.courses.id,
       title: row.courses.title,

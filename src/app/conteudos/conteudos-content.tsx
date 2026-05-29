@@ -1,22 +1,91 @@
 'use client';
 
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { Search, Sparkles } from 'lucide-react';
+import { ArrowDownAZ, ArrowUpAZ, ChevronDown, Search, Sparkles } from 'lucide-react';
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { CourseCard } from '@/components/site/course-card';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 import type { VisibleCourse } from '@/lib/courses/visibility';
+import type { SortKey } from '@/lib/courses/sort';
 
 type Props = {
   courses: VisibleCourse[];
   /** Termo de pesquisa actual (trimmed). Vazio se não há filtro. */
   query: string;
+  /**
+   * Se o utilizador está autenticado. Usado pelo `CourseCard` para decidir
+   * se aplica o estado "Em breve" (cursos sem aulas) — para anon, todos os
+   * cards são clicáveis (clicar leva à landing → CTA de login).
+   */
+  isAuthenticated: boolean;
+  /**
+   * IDs de cursos que o utilizador actual já concluiu. Cards correspondentes
+   * ganham greyout + badge "Concluído" + CTA "Rever curso →" — mesma UX
+   * da secção "Terminados" em `/meus-cursos`. Vazio para anon ou sem
+   * conclusões.
+   */
+  completedCourseIds: string[];
+  /**
+   * Chave de ordenação activa (já aplicada no server). Controla o estado
+   * inicial do dropdown.
+   */
+  sortKey: SortKey;
 };
 
-export function ConteudosContent({ courses, query }: Props) {
+type SortOption = {
+  value: SortKey;
+  label: string;
+  /** Se `authOnly`, só aparece para utilizadores autenticados. */
+  authOnly?: boolean;
+};
+
+const SORT_OPTIONS: SortOption[] = [
+  { value: 'por-comecar', label: 'Por começar primeiro', authOnly: true },
+  { value: 'concluidos', label: 'Concluídos primeiro', authOnly: true },
+  { value: 'a-z', label: 'A → Z' },
+  { value: 'z-a', label: 'Z → A' },
+];
+
+const SORT_LABEL: Record<SortKey, string> = {
+  'por-comecar': 'Por começar',
+  concluidos: 'Concluídos',
+  'a-z': 'A → Z',
+  'z-a': 'Z → A',
+};
+
+export function ConteudosContent({
+  courses,
+  query,
+  isAuthenticated,
+  completedCourseIds,
+  sortKey,
+}: Props) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const completedSet = new Set(completedCourseIds);
   const isFiltering = query.length > 0;
   const hasResults = courses.length > 0;
+
+  function handleSortChange(value: string) {
+    const params = new URLSearchParams(searchParams);
+    params.set('ordenar', value);
+    router.push(`/conteudos?${params.toString()}`, { scroll: false });
+  }
+
+  const visibleSortOptions = SORT_OPTIONS.filter(
+    (opt) => !opt.authOnly || isAuthenticated,
+  );
+  const sortIcon = sortKey === 'z-a' ? ArrowUpAZ : ArrowDownAZ;
+  const SortIcon = sortIcon;
 
   return (
     <motion.section
@@ -72,14 +141,36 @@ export function ConteudosContent({ courses, query }: Props) {
         >
           Pesquisar
         </button>
+        {/*
+          Preserva `?ordenar=` quando o utilizador submete a pesquisa — sem este
+          hidden, ao submeter o form perderíamos a ordenação actual.
+        */}
+        <input type="hidden" name="ordenar" value={sortKey} />
         {isFiltering ? (
           <Link
-            href="/conteudos"
+            href={`/conteudos?ordenar=${sortKey}`}
             className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-11 items-center justify-center rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
           >
             Limpar
           </Link>
         ) : null}
+        <DropdownMenu>
+          <DropdownMenuTrigger className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-11 items-center justify-center gap-2 rounded-md border px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none">
+            <SortIcon aria-hidden="true" className="h-4 w-4" />
+            <span className="hidden sm:inline">Ordenar:</span>
+            <span>{SORT_LABEL[sortKey]}</span>
+            <ChevronDown aria-hidden="true" className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" sideOffset={6} className="min-w-56">
+            <DropdownMenuRadioGroup value={sortKey} onValueChange={handleSortChange}>
+              {visibleSortOptions.map((opt) => (
+                <DropdownMenuRadioItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </motion.form>
 
       {hasResults ? (
@@ -90,7 +181,12 @@ export function ConteudosContent({ courses, query }: Props) {
         >
           {courses.map((course) => (
             <li key={course.id}>
-              <CourseCard course={course} variant="catalog" />
+              <CourseCard
+                course={course}
+                variant="catalog"
+                isAuthenticated={isAuthenticated}
+                isCompleted={completedSet.has(course.id)}
+              />
             </li>
           ))}
         </motion.ul>
