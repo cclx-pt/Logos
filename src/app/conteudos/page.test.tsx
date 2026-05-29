@@ -18,19 +18,19 @@ function makeCourse(overrides: Partial<VisibleCourse> = {}): VisibleCourse {
 
 describe('ConteudosContent — sempre presente', () => {
   it('apresenta o heading "Conteúdos"', () => {
-    render(<ConteudosContent courses={[]} query="" isAuthenticated={true} />);
+    render(<ConteudosContent courses={[]} query="" isAuthenticated={true} completedCourseIds={[]} />);
     expect(screen.getByRole('heading', { level: 1, name: /^conteúdos$/i })).toBeInTheDocument();
   });
 
   it('apresenta o parágrafo intro do ministério', () => {
-    render(<ConteudosContent courses={[]} query="" isAuthenticated={true} />);
+    render(<ConteudosContent courses={[]} query="" isAuthenticated={true} completedCourseIds={[]} />);
     expect(
       screen.getByText(/Os nossos conteúdos foram desenvolvidos para fortalecer a igreja/i),
     ).toBeInTheDocument();
   });
 
   it('apresenta o form de pesquisa accessível', () => {
-    render(<ConteudosContent courses={[]} query="" isAuthenticated={true} />);
+    render(<ConteudosContent courses={[]} query="" isAuthenticated={true} completedCourseIds={[]} />);
     expect(screen.getByRole('search')).toBeInTheDocument();
     expect(screen.getByRole('searchbox')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /pesquisar/i })).toBeInTheDocument();
@@ -39,33 +39,33 @@ describe('ConteudosContent — sempre presente', () => {
 
 describe('ConteudosContent — estado vazio sem filtro', () => {
   it('apresenta o bloco "Em breve" quando não há cursos visíveis', () => {
-    render(<ConteudosContent courses={[]} query="" isAuthenticated={true} />);
+    render(<ConteudosContent courses={[]} query="" isAuthenticated={true} completedCourseIds={[]} />);
     expect(screen.getByRole('heading', { level: 2, name: /^em breve$/i })).toBeInTheDocument();
     expect(screen.getByText(/Os cursos estão a ser preparados/i)).toBeInTheDocument();
   });
 
   it('não mostra link "Limpar" quando não há filtro activo', () => {
-    render(<ConteudosContent courses={[]} query="" isAuthenticated={true} />);
+    render(<ConteudosContent courses={[]} query="" isAuthenticated={true} completedCourseIds={[]} />);
     expect(screen.queryByRole('link', { name: /limpar/i })).not.toBeInTheDocument();
   });
 });
 
 describe('ConteudosContent — estado vazio com filtro', () => {
   it('apresenta "Sem resultados" quando o filtro não encontra cursos', () => {
-    render(<ConteudosContent courses={[]} query="hebreu" isAuthenticated={true} />);
+    render(<ConteudosContent courses={[]} query="hebreu" isAuthenticated={true} completedCourseIds={[]} />);
     expect(screen.getByRole('heading', { level: 2, name: /sem resultados/i })).toBeInTheDocument();
     expect(screen.getByText(/hebreu/i)).toBeInTheDocument();
   });
 
   it('mostra link "Limpar" quando há filtro activo', () => {
-    render(<ConteudosContent courses={[]} query="hebreu" isAuthenticated={true} />);
+    render(<ConteudosContent courses={[]} query="hebreu" isAuthenticated={true} completedCourseIds={[]} />);
     const limpar = screen.getByRole('link', { name: /limpar/i });
     expect(limpar).toBeInTheDocument();
     expect(limpar).toHaveAttribute('href', '/conteudos');
   });
 
   it('pré-popula o input de pesquisa com o termo actual', () => {
-    render(<ConteudosContent courses={[]} query="marcos" isAuthenticated={true} />);
+    render(<ConteudosContent courses={[]} query="marcos" isAuthenticated={true} completedCourseIds={[]} />);
     expect(screen.getByRole('searchbox')).toHaveValue('marcos');
   });
 });
@@ -76,14 +76,14 @@ describe('ConteudosContent — cards de cursos', () => {
       makeCourse({ id: 'a', title: 'Marcos', description: null }),
       makeCourse({ id: 'b', title: 'Romanos', description: null }),
     ];
-    render(<ConteudosContent courses={courses} query="" isAuthenticated={true} />);
+    render(<ConteudosContent courses={courses} query="" isAuthenticated={true} completedCourseIds={[]} />);
     expect(screen.getByRole('link', { name: /marcos/i })).toHaveAttribute('href', '/conteudos/a');
     expect(screen.getByRole('link', { name: /romanos/i })).toHaveAttribute('href', '/conteudos/b');
   });
 
   it('mostra badge "Em breve" e desativa o card quando hasLessons = false', () => {
     const courses = [makeCourse({ hasLessons: false, description: null })];
-    render(<ConteudosContent courses={courses} query="" isAuthenticated={true} />);
+    render(<ConteudosContent courses={courses} query="" isAuthenticated={true} completedCourseIds={[]} />);
     const card = screen.getByRole('link', { name: /marcos/i });
     expect(card).toHaveAttribute('aria-disabled', 'true');
     expect(card).toHaveAttribute('tabindex', '-1');
@@ -91,13 +91,13 @@ describe('ConteudosContent — cards de cursos', () => {
   });
 
   it('não mostra badge "Em breve" quando hasLessons = true', () => {
-    render(<ConteudosContent courses={[makeCourse({ hasLessons: true })]} query="" isAuthenticated={true} />);
+    render(<ConteudosContent courses={[makeCourse({ hasLessons: true })]} query="" isAuthenticated={true} completedCourseIds={[]} />);
     // Apenas o card está visível — não há heading "Em breve" nem badge.
     expect(screen.queryByText(/em breve/i)).not.toBeInTheDocument();
   });
 
   it('omite a descrição quando é null', () => {
-    render(<ConteudosContent courses={[makeCourse({ description: null })]} query="" isAuthenticated={true} />);
+    render(<ConteudosContent courses={[makeCourse({ description: null })]} query="" isAuthenticated={true} completedCourseIds={[]} />);
     expect(screen.queryByText(/Uma jornada de seis semanas/i)).not.toBeInTheDocument();
   });
 
@@ -108,7 +108,7 @@ describe('ConteudosContent — cards de cursos', () => {
           makeCourse({ description: 'Uma jornada de seis semanas pelo Evangelho de Marcos.' }),
         ]}
         query=""
-        isAuthenticated={true}
+        isAuthenticated={true} completedCourseIds={[]}
       />,
     );
     expect(screen.queryByText(/Uma jornada de seis semanas/i)).not.toBeInTheDocument();
@@ -117,13 +117,13 @@ describe('ConteudosContent — cards de cursos', () => {
 
 describe('ConteudosContent — catálogo sem estado pessoal (V3.2)', () => {
   it('nunca mostra badge "Começado" nem "Concluído" (estado pessoal vive em /meus-cursos)', () => {
-    render(<ConteudosContent courses={[makeCourse()]} query="" isAuthenticated={true} />);
+    render(<ConteudosContent courses={[makeCourse()]} query="" isAuthenticated={true} completedCourseIds={[]} />);
     expect(screen.queryByText(/^começado$/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/^concluído$/i)).not.toBeInTheDocument();
   });
 
   it('mantém badge "Em breve" quando hasLessons=false', () => {
-    render(<ConteudosContent courses={[makeCourse({ hasLessons: false })]} query="" isAuthenticated={true} />);
+    render(<ConteudosContent courses={[makeCourse({ hasLessons: false })]} query="" isAuthenticated={true} completedCourseIds={[]} />);
     expect(screen.getByText(/^em breve$/i)).toBeInTheDocument();
   });
 });
@@ -134,7 +134,7 @@ describe('ConteudosContent — utilizador anónimo (V3.3 PR8)', () => {
       <ConteudosContent
         courses={[makeCourse({ id: 'a', title: 'Marcos', hasLessons: false })]}
         query=""
-        isAuthenticated={false}
+        isAuthenticated={false} completedCourseIds={[]}
       />,
     );
     expect(screen.queryByText(/em breve/i)).not.toBeInTheDocument();
@@ -149,9 +149,56 @@ describe('ConteudosContent — utilizador anónimo (V3.3 PR8)', () => {
       <ConteudosContent
         courses={[makeCourse({ hasLessons: false })]}
         query=""
-        isAuthenticated={false}
+        isAuthenticated={false} completedCourseIds={[]}
       />,
     );
     expect(screen.getByText(/ver curso/i)).toBeInTheDocument();
+  });
+});
+
+describe('ConteudosContent — cursos concluídos no catálogo (V3.3 PR8)', () => {
+  it('aplica greyout, badge "Concluído" e CTA "Rever curso" para cursos em completedCourseIds', () => {
+    render(
+      <ConteudosContent
+        courses={[makeCourse({ id: 'c1', title: 'Marcos' })]}
+        query=""
+        isAuthenticated={true}
+        completedCourseIds={['c1']}
+      />,
+    );
+    const card = screen.getByRole('link', { name: /marcos/i });
+    expect(card.className).toMatch(/opacity-60/);
+    expect(screen.getByText(/^concluído$/i)).toBeInTheDocument();
+    expect(screen.getByText(/rever curso/i)).toBeInTheDocument();
+    // "Ver curso" puro (sem o prefixo "Re") não deve aparecer
+    expect(screen.queryByText(/^ver curso →$/i)).not.toBeInTheDocument();
+  });
+
+  it('cursos concluídos continuam clicáveis (utilizador pode rever)', () => {
+    render(
+      <ConteudosContent
+        courses={[makeCourse({ id: 'c1', hasLessons: false })]}
+        query=""
+        isAuthenticated={true}
+        completedCourseIds={['c1']}
+      />,
+    );
+    const card = screen.getByRole('link', { name: /marcos/i });
+    expect(card).not.toHaveAttribute('aria-disabled');
+    expect(card).not.toHaveAttribute('tabindex', '-1');
+    expect(card).toHaveAttribute('href', '/conteudos/c1');
+  });
+
+  it('cursos não concluídos continuam com "Ver curso →"', () => {
+    render(
+      <ConteudosContent
+        courses={[makeCourse({ id: 'c1' }), makeCourse({ id: 'c2', title: 'Romanos' })]}
+        query=""
+        isAuthenticated={true}
+        completedCourseIds={['c1']}
+      />,
+    );
+    expect(screen.getByText(/rever curso/i)).toBeInTheDocument();
+    expect(screen.getByText(/^ver curso →$/i)).toBeInTheDocument();
   });
 });

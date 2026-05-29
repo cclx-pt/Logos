@@ -18,9 +18,22 @@ type Props = {
    * cards são clicáveis (clicar leva à landing → CTA de login).
    */
   isAuthenticated: boolean;
+  /**
+   * IDs de cursos que o utilizador actual já concluiu. Cards correspondentes
+   * ganham greyout + badge "Concluído" + CTA "Rever curso →" — mesma UX
+   * da secção "Terminados" em `/meus-cursos`. Vazio para anon ou sem
+   * conclusões.
+   */
+  completedCourseIds: string[];
 };
 
-export function ConteudosContent({ courses, query, isAuthenticated }: Props) {
+export function ConteudosContent({
+  courses,
+  query,
+  isAuthenticated,
+  completedCourseIds,
+}: Props) {
+  const completedSet = new Set(completedCourseIds);
   const isFiltering = query.length > 0;
   const hasResults = courses.length > 0;
 
@@ -100,6 +113,7 @@ export function ConteudosContent({ courses, query, isAuthenticated }: Props) {
                 course={course}
                 variant="catalog"
                 isAuthenticated={isAuthenticated}
+                isCompleted={completedSet.has(course.id)}
               />
             </li>
           ))}

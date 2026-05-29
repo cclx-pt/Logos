@@ -9,10 +9,10 @@ import { cn } from '@/lib/utils';
  * (estado pessoal). Três variants cobrem todos os usos actuais:
  *
  *   - `catalog`     — catálogo público. Mostra badge "Em breve" se o curso
- *                     não tiver aulas; nesse caso o link fica desactivado
- *                     (`aria-disabled`, `tabIndex=-1`, `pointer-events-none`).
- *                     **Não mostra descrição** — fica reservada à landing do
- *                     curso para não congestionar o catálogo.
+ *                     não tiver aulas (só para utilizadores autenticados).
+ *                     Se a flag `isCompleted` for true, replica a UX do
+ *                     variant `completed` (greyout + badge + "Rever curso").
+ *                     **Não mostra descrição** — fica reservada à landing.
  *   - `in-progress` — `/meus-cursos`. Badge "Em curso", CTA "Continuar →".
  *                     Mostra descrição.
  *   - `completed`   — `/meus-cursos`. Badge "Concluído", CTA "Rever curso →",
@@ -44,22 +44,35 @@ type CourseCardProps = {
    * `completed` (que só renderizam para utilizadores logados).
    */
   isAuthenticated?: boolean;
+  /**
+   * Para variant `catalog`: utilizador logado já concluiu este curso →
+   * aplica greyout + badge "Concluído" + CTA "Rever curso →" (mesma UX
+   * de `/meus-cursos` "Terminados"). Ignorado pelos outros variants.
+   */
+  isCompleted?: boolean;
 };
 
-export function CourseCard({ course, variant, isAuthenticated = true }: CourseCardProps) {
+export function CourseCard({
+  course,
+  variant,
+  isAuthenticated = true,
+  isCompleted = false,
+}: CourseCardProps) {
   const isCatalog = variant === 'catalog';
-  const isCompleted = variant === 'completed';
+  const showCompletedUx = variant === 'completed' || (isCatalog && isCompleted);
   // "Em breve" + disabled só faz sentido para utilizadores autenticados —
   // anon nunca poderia entrar mesmo num curso com aulas (cai no CTA de login).
-  const isCatalogDisabled = isCatalog && isAuthenticated && !course.hasLessons;
-  const showComingSoonBadge = isCatalog && isAuthenticated && !course.hasLessons;
+  // Cursos concluídos no catálogo nunca ficam disabled — utilizador pode rever.
+  const isCatalogDisabled =
+    isCatalog && isAuthenticated && !isCompleted && !course.hasLessons;
+  const showComingSoonBadge = isCatalogDisabled;
 
   const baseClasses =
     'border-border bg-card focus-visible:ring-ring group flex h-full flex-col overflow-hidden rounded-2xl border focus-visible:ring-2 focus-visible:outline-none';
 
   const variantClasses = isCatalogDisabled
     ? 'pointer-events-none opacity-70'
-    : isCompleted
+    : showCompletedUx
       ? 'opacity-60 transition-all hover:opacity-100 hover:border-orange-primary/40'
       : 'transition-colors hover:border-orange-primary/40 hover:bg-orange-primary/5';
 
@@ -91,7 +104,7 @@ export function CourseCard({ course, variant, isAuthenticated = true }: CourseCa
               Em curso
             </span>
           )}
-          {variant === 'completed' && (
+          {showCompletedUx && (
             <span className="border-sage-card bg-sage-card/40 text-ink inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
               <Check className="h-3 w-3" aria-hidden="true" />
               Concluído
@@ -103,21 +116,19 @@ export function CourseCard({ course, variant, isAuthenticated = true }: CourseCa
             {course.description}
           </p>
         ) : null}
-        {isCatalog && !isCatalogDisabled && (
-          <span className="text-orange-primary mt-auto pt-5 text-xs font-medium tracking-wide uppercase">
-            Ver curso →
-          </span>
-        )}
-        {variant === 'in-progress' && (
-          <span className="text-orange-primary mt-auto pt-5 text-xs font-medium tracking-wide uppercase">
-            Continuar →
-          </span>
-        )}
-        {variant === 'completed' && (
+        {showCompletedUx ? (
           <span className="text-orange-primary mt-auto pt-5 text-xs font-medium tracking-wide uppercase">
             Rever curso →
           </span>
-        )}
+        ) : isCatalog && !isCatalogDisabled ? (
+          <span className="text-orange-primary mt-auto pt-5 text-xs font-medium tracking-wide uppercase">
+            Ver curso →
+          </span>
+        ) : variant === 'in-progress' ? (
+          <span className="text-orange-primary mt-auto pt-5 text-xs font-medium tracking-wide uppercase">
+            Continuar →
+          </span>
+        ) : null}
       </div>
     </Link>
   );

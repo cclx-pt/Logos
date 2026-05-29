@@ -78,6 +78,31 @@ export function isCourseComplete(course: CourseDetail, completedLessonIds: Set<s
 }
 
 /**
+ * Devolve o conjunto de courseIds que o utilizador actual já concluiu.
+ * RLS em `course_completions` filtra para `own` — chamar sem sessão
+ * devolve set vazio (sem query).
+ *
+ * Usado no catálogo `/conteudos` para greyout + badge "Concluído" em
+ * cursos já terminados pelo utilizador, alinhando com a UX da secção
+ * "Terminados" em `/meus-cursos`.
+ */
+export async function getCompletedCourseIdsForCurrentUser(): Promise<Set<string>> {
+  const caller = await getCurrentUser();
+  if (!caller) return new Set();
+
+  const supabase = await getServerClient();
+  const { data, error } = await supabase
+    .from('course_completions')
+    .select('course_id')
+    .returns<{ course_id: string }[]>();
+
+  if (error) {
+    throw new Error(`Falha a carregar cursos concluídos: ${error.message}`);
+  }
+  return new Set((data ?? []).map((r) => r.course_id));
+}
+
+/**
  * Devolve a data de conclusão do curso para o utilizador actual. Se ainda
  * não existir row em `course_completions`, insere uma agora — `completed_at`
  * fica preservado para sempre (RLS de PR2 garante imutabilidade: sem
