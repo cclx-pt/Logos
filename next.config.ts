@@ -14,6 +14,11 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '25mb',
     },
+    // Smoothness pass V3.3 PR7 — fade automático entre rotas via
+    // View Transitions API. Browsers sem suporte caem para navegação
+    // instantânea (sem regressão). Activa o componente <ViewTransition>
+    // do React 19 + crossfade default em `<Link>`s.
+    viewTransition: true,
   },
 };
 

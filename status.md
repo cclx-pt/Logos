@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 29-05-2026 (**V3.3 PR6 — search admin + linha clicável**: `<ListSearch>` e `<ClickableRow>` reutilizáveis; pesquisa em `/admin/conteudos`, `/admin/utilizadores`, `/admin/etiquetas`; linhas inteiras clicáveis em `/admin/conteudos` (coluna Ações removida). 353/353 testes verdes. Próximo: PR7 smoothness.)
+> **Última atualização:** 29-05-2026 (**V3.3 PR7 — smoothness pass**: View Transitions API entre rotas; `<details>` abre/fecha com 250 ms fade via `interpolate-size`; baseline de transições em a/button/summary; remoção do ícone `Sparkles` no estado "sem cursos em progresso". 353/353 testes verdes. Próximo: PR8 enrollment.)
 
 ## 🎯 Milestone atual
 **V3 fechada dev-side em `v3-cursos`.** À espera de testemunhos finais do ministério para abrir PR `v3-cursos` → `main` e fazer deploy a `logos.cclx.pt`. Detalhes da estratégia em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
