@@ -16,6 +16,22 @@
 
 ---
 
+## [29-05-2026] — V3.3 PR6: search admin + linha clicável em `/admin/conteudos`
+
+### add
+- **`<ListSearch>`** novo component reutilizável (`src/components/admin/list-search.tsx`) — wrapper Client que filtra descendentes com `data-search-text` client-side. Input acessível com label SR-only, empty-state quando zero matches, ignora espaços à volta. Fallback para listagens admin que vão crescer antes de existir paginação server-side (V4).
+- **`<ClickableRow>`** (`src/components/admin/clickable-row.tsx`) — `<tr>` Client que navega para `href` ao clicar. Cliques em `<a>`/`<button>`/`<input>`/`<label>` são ignorados para não interferir com controlos inline.
+- Search aplicada em **3 listagens admin**:
+  - `/admin/conteudos`: pesquisa por título do curso.
+  - `/admin/utilizadores`: pesquisa por nome, papel ou etiqueta.
+  - `/admin/etiquetas`: pesquisa por nome da etiqueta.
+- Testes em `list-search.test.tsx` (6 casos: label, default visível, filter substring, empty-state, clear, trim de espaços).
+
+### update
+- **`/admin/conteudos`**: linhas inteiras passam a ser clicáveis (navegam para a página do curso). Coluna "Ações" + botão "Abrir →" removidos — redundância eliminada.
+
+---
+
 ## [29-05-2026] — V3.3 PR5: catálogo full-width + módulos como páginas + imagem edge-to-edge
 
 ### add

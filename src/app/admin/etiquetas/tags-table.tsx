@@ -4,6 +4,7 @@ import { startTransition, useOptimistic } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 
+import { ListSearch } from '@/components/admin/list-search';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { formatDate } from '@/lib/format';
 import { deleteTagAction, updateTagAction } from './actions';
@@ -62,124 +63,126 @@ export function TagsTable({ initial, editingId, confirmingDeleteId }: Props) {
   }
 
   return (
-    <div className="border-border overflow-hidden rounded-lg border">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
-          <tr>
-            <th scope="col" className="px-4 py-2 font-medium">
-              Nome
-            </th>
-            <th scope="col" className="px-4 py-2 font-medium">
-              Criada em
-            </th>
-            <th scope="col" className="px-4 py-2 text-right font-medium">
-              Ações
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-border divide-y">
-          {tags.map((tag) => {
-            const isEditing = editingId === tag.id;
-            const isConfirmingDelete = confirmingDeleteId === tag.id;
+    <ListSearch label="Pesquisar etiqueta" placeholder="Pesquisar por nome...">
+      <div className="border-border overflow-hidden rounded-lg border">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
+            <tr>
+              <th scope="col" className="px-4 py-2 font-medium">
+                Nome
+              </th>
+              <th scope="col" className="px-4 py-2 font-medium">
+                Criada em
+              </th>
+              <th scope="col" className="px-4 py-2 text-right font-medium">
+                Ações
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-border divide-y">
+            {tags.map((tag) => {
+              const isEditing = editingId === tag.id;
+              const isConfirmingDelete = confirmingDeleteId === tag.id;
 
-            if (isEditing) {
-              return (
-                <tr key={tag.id} className="bg-muted/20">
-                  <td colSpan={3} className="px-4 py-3">
-                    <form
-                      action={(formData) => {
-                        startTransition(async () => {
-                          const result = await updateTagAction(formData);
-                          if (result.ok) {
-                            toast.success('Etiqueta guardada.');
-                          } else {
-                            toast.error('Algo correu mal. Tenta de novo.');
-                          }
-                        });
-                      }}
-                      className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end"
-                    >
-                      <input type="hidden" name="id" value={tag.id} />
-                      <label className="block">
-                        <span className="text-muted-foreground text-xs font-medium">Nome</span>
-                        <input
-                          type="text"
-                          name="label"
-                          required
-                          defaultValue={tag.label}
-                          minLength={1}
-                          maxLength={80}
-                          className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-                        />
-                      </label>
-                      <SubmitButton pendingLabel="A guardar…">Guardar</SubmitButton>
-                      <Link
-                        href="/admin/etiquetas"
-                        className="text-muted-foreground hover:text-ink focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md px-3 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
+              if (isEditing) {
+                return (
+                  <tr key={tag.id} className="bg-muted/20">
+                    <td colSpan={3} className="px-4 py-3">
+                      <form
+                        action={(formData) => {
+                          startTransition(async () => {
+                            const result = await updateTagAction(formData);
+                            if (result.ok) {
+                              toast.success('Etiqueta guardada.');
+                            } else {
+                              toast.error('Algo correu mal. Tenta de novo.');
+                            }
+                          });
+                        }}
+                        className="grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end"
                       >
-                        Cancelar
-                      </Link>
-                    </form>
-                  </td>
-                </tr>
-              );
-            }
-
-            if (isConfirmingDelete) {
-              return (
-                <tr key={tag.id} className="border-l-destructive bg-destructive/10 border-l-4">
-                  <td colSpan={3} className="px-4 py-3">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-ink text-sm">
-                        Apagar a etiqueta <strong className="font-semibold">{tag.label}</strong>?
-                        Esta ação remove-a de todos os utilizadores e não pode ser revertida.
-                      </p>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(tag.id)}
-                          className="bg-destructive hover:bg-destructive/90 focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md px-3 text-xs font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                        >
-                          Apagar definitivamente
-                        </button>
+                        <input type="hidden" name="id" value={tag.id} />
+                        <label className="block">
+                          <span className="text-muted-foreground text-xs font-medium">Nome</span>
+                          <input
+                            type="text"
+                            name="label"
+                            required
+                            defaultValue={tag.label}
+                            minLength={1}
+                            maxLength={80}
+                            className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
+                          />
+                        </label>
+                        <SubmitButton pendingLabel="A guardar…">Guardar</SubmitButton>
                         <Link
                           href="/admin/etiquetas"
-                          className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
+                          className="text-muted-foreground hover:text-ink focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md px-3 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
                         >
                           Cancelar
                         </Link>
+                      </form>
+                    </td>
+                  </tr>
+                );
+              }
+
+              if (isConfirmingDelete) {
+                return (
+                  <tr key={tag.id} className="border-l-destructive bg-destructive/10 border-l-4">
+                    <td colSpan={3} className="px-4 py-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-ink text-sm">
+                          Apagar a etiqueta <strong className="font-semibold">{tag.label}</strong>?
+                          Esta ação remove-a de todos os utilizadores e não pode ser revertida.
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(tag.id)}
+                            className="bg-destructive hover:bg-destructive/90 focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md px-3 text-xs font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                          >
+                            Apagar definitivamente
+                          </button>
+                          <Link
+                            href="/admin/etiquetas"
+                            className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
+                          >
+                            Cancelar
+                          </Link>
+                        </div>
                       </div>
+                    </td>
+                  </tr>
+                );
+              }
+
+              return (
+                <tr key={tag.id} data-search-text={tag.label.toLowerCase()} className="text-ink">
+                  <td className="px-4 py-3 font-medium">{tag.label}</td>
+                  <td className="px-4 py-3 text-sm">{formatDate(tag.created_at)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex justify-end gap-3">
+                      <Link
+                        href={`/admin/etiquetas?editar=${tag.id}`}
+                        className="text-orange-primary hover:text-orange-hover focus-visible:ring-ring rounded-md px-2 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                      >
+                        Editar
+                      </Link>
+                      <Link
+                        href={`/admin/etiquetas?apagar=${tag.id}`}
+                        className="text-destructive focus-visible:ring-ring rounded-md px-2 py-1 text-xs font-medium transition-colors hover:opacity-80 focus-visible:ring-2 focus-visible:outline-none"
+                      >
+                        Apagar
+                      </Link>
                     </div>
                   </td>
                 </tr>
               );
-            }
-
-            return (
-              <tr key={tag.id} className="text-ink">
-                <td className="px-4 py-3 font-medium">{tag.label}</td>
-                <td className="px-4 py-3 text-sm">{formatDate(tag.created_at)}</td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex justify-end gap-3">
-                    <Link
-                      href={`/admin/etiquetas?editar=${tag.id}`}
-                      className="text-orange-primary hover:text-orange-hover focus-visible:ring-ring rounded-md px-2 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                    >
-                      Editar
-                    </Link>
-                    <Link
-                      href={`/admin/etiquetas?apagar=${tag.id}`}
-                      className="text-destructive focus-visible:ring-ring rounded-md px-2 py-1 text-xs font-medium transition-colors hover:opacity-80 focus-visible:ring-2 focus-visible:outline-none"
-                    >
-                      Apagar
-                    </Link>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+            })}
+          </tbody>
+        </table>
+      </div>
+    </ListSearch>
   );
 }

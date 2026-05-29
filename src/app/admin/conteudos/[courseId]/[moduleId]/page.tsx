@@ -8,11 +8,7 @@ import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { ConteudosBreadcrumb } from '../../conteudos-breadcrumb';
 import { CourseTree } from '../../course-tree';
-import {
-  createLessonAction,
-  deleteLessonAction,
-  updateLessonAction,
-} from '../../lessons-actions';
+import { createLessonAction, deleteLessonAction, updateLessonAction } from '../../lessons-actions';
 import { deleteModuleAction, updateModuleAction } from '../../modules-actions';
 import { LessonList, type LessonListItem } from '../../lesson-list';
 
@@ -94,10 +90,7 @@ export default async function ModuloDetalhePage({ params, searchParams }: PagePr
 
   const lessons = lessonsData ?? [];
   const siblings = siblingModules ?? [];
-  const modulePosition = Math.max(
-    1,
-    siblings.findIndex((m) => m.id === module.id) + 1,
-  );
+  const modulePosition = Math.max(1, siblings.findIndex((m) => m.id === module.id) + 1);
   const backHref = `/admin/conteudos/${course.id}/${module.id}`;
   const editingLesson = editar ? lessons.find((l) => l.id === editar) : undefined;
   const deletingLesson = apagar ? lessons.find((l) => l.id === apagar) : undefined;
@@ -169,9 +162,7 @@ export default async function ModuloDetalhePage({ params, searchParams }: PagePr
       <label className="block">
         <span className="text-muted-foreground text-xs font-medium">
           URL do YouTube{' '}
-          <span className="text-muted-foreground/70 font-normal">
-            (obrigatório se Vídeo + PDF)
-          </span>
+          <span className="text-muted-foreground/70 font-normal">(obrigatório se Vídeo + PDF)</span>
         </span>
         <input
           type="url"
@@ -290,7 +281,9 @@ export default async function ModuloDetalhePage({ params, searchParams }: PagePr
                   'use server';
                   const result = await updateModuleAction(formData);
                   redirect(
-                    result.ok ? `${backHref}?guardado=modulo_atualizado` : `${backHref}?erro=generico`,
+                    result.ok
+                      ? `${backHref}?guardado=modulo_atualizado`
+                      : `${backHref}?erro=generico`,
                   );
                 }}
                 className="space-y-3"
@@ -332,8 +325,8 @@ export default async function ModuloDetalhePage({ params, searchParams }: PagePr
               title={`Aulas (${lessons.length})`}
               subtitle={
                 <>
-                  Cada aula tem obrigatoriamente uma apostila (PDF). O vídeo do YouTube é opcional
-                  — escolhe o template <strong>Vídeo + PDF</strong> se a aula tiver ambos.
+                  Cada aula tem obrigatoriamente uma apostila (PDF). O vídeo do YouTube é opcional —
+                  escolhe o template <strong>Vídeo + PDF</strong> se a aula tiver ambos.
                 </>
               }
             >
@@ -347,7 +340,9 @@ export default async function ModuloDetalhePage({ params, searchParams }: PagePr
                       'use server';
                       const result = await createLessonAction(formData);
                       redirect(
-                        result.ok ? `${backHref}?guardado=aula_criada` : `${backHref}?erro=generico`,
+                        result.ok
+                          ? `${backHref}?guardado=aula_criada`
+                          : `${backHref}?erro=generico`,
                       );
                     }}
                     encType="multipart/form-data"
@@ -469,9 +464,7 @@ export default async function ModuloDetalhePage({ params, searchParams }: PagePr
                         'use server';
                         const result = await deleteModuleAction(formData);
                         if (result.ok) {
-                          redirect(
-                            `/admin/conteudos/${course.id}?guardado=modulo_apagado`,
-                          );
+                          redirect(`/admin/conteudos/${course.id}?guardado=modulo_apagado`);
                         }
                         redirect(`${backHref}?erro=generico`);
                       }}
