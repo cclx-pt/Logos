@@ -90,7 +90,7 @@ describe('getStartedCoursesForUser', () => {
       if (table === 'course_access_log')
         return makeBuilder({
           data: [
-            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', courses: courseEmbed },
+            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', unenrolled_at: null, courses: courseEmbed },
           ],
           error: null,
         });
@@ -120,9 +120,9 @@ describe('getStartedCoursesForUser', () => {
         return makeBuilder({
           data: [
             // desc por accessed_at; primeiro é o mais recente
-            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', courses: courseEmbed },
-            { course_id: 'course-1', accessed_at: '2026-05-20T09:00:00Z', courses: courseEmbed },
-            { course_id: 'course-1', accessed_at: '2026-05-15T08:00:00Z', courses: courseEmbed },
+            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', unenrolled_at: null, courses: courseEmbed },
+            { course_id: 'course-1', accessed_at: '2026-05-20T09:00:00Z', unenrolled_at: null, courses: courseEmbed },
+            { course_id: 'course-1', accessed_at: '2026-05-15T08:00:00Z', unenrolled_at: null, courses: courseEmbed },
           ],
           error: null,
         });
@@ -141,8 +141,8 @@ describe('getStartedCoursesForUser', () => {
       if (table === 'course_access_log')
         return makeBuilder({
           data: [
-            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', courses: courseEmbed },
-            { course_id: 'course-bad', accessed_at: '2026-05-24T10:00:00Z', courses: null },
+            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', unenrolled_at: null, courses: courseEmbed },
+            { course_id: 'course-bad', accessed_at: '2026-05-24T10:00:00Z', unenrolled_at: null, courses: null },
           ],
           error: null,
         });
@@ -161,7 +161,7 @@ describe('getStartedCoursesForUser', () => {
       if (table === 'course_access_log')
         return makeBuilder({
           data: [
-            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', courses: courseEmbed },
+            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', unenrolled_at: null, courses: courseEmbed },
           ],
           error: null,
         });
@@ -180,7 +180,7 @@ describe('getStartedCoursesForUser', () => {
       if (table === 'course_access_log')
         return makeBuilder({
           data: [
-            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', courses: courseEmbed },
+            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', unenrolled_at: null, courses: courseEmbed },
           ],
           error: null,
         });
@@ -192,6 +192,68 @@ describe('getStartedCoursesForUser', () => {
     await expect(getStartedCoursesForUser()).rejects.toThrow(/rls error/i);
   });
 
+  it('exclui cursos onde a row mais recente tem unenrolled_at set (V3.3 PR8)', async () => {
+    mockGetCurrentUser.mockResolvedValue(profile());
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'course_access_log')
+        return makeBuilder({
+          data: [
+            // desc: a mais recente é unenrolled — excluído
+            {
+              course_id: 'course-1',
+              accessed_at: '2026-05-25T10:00:00Z',
+              unenrolled_at: '2026-05-26T10:00:00Z',
+              courses: courseEmbed,
+            },
+            // row antiga (enrolled), mas é ignorada porque já vimos course-1
+            {
+              course_id: 'course-1',
+              accessed_at: '2026-05-20T09:00:00Z',
+              unenrolled_at: null,
+              courses: courseEmbed,
+            },
+          ],
+          error: null,
+        });
+      if (table === 'course_completions') return makeBuilder({ data: [], error: null });
+      throw new Error(`unexpected table: ${table}`);
+    });
+
+    const result = await getStartedCoursesForUser();
+    expect(result).toEqual([]);
+  });
+
+  it('inclui curso se a row mais recente é enrolled mesmo havendo unenroll antigo', async () => {
+    mockGetCurrentUser.mockResolvedValue(profile());
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'course_access_log')
+        return makeBuilder({
+          data: [
+            // desc: a mais recente é re-enroll
+            {
+              course_id: 'course-1',
+              accessed_at: '2026-05-25T10:00:00Z',
+              unenrolled_at: null,
+              courses: courseEmbed,
+            },
+            {
+              course_id: 'course-1',
+              accessed_at: '2026-05-20T09:00:00Z',
+              unenrolled_at: '2026-05-22T09:00:00Z',
+              courses: courseEmbed,
+            },
+          ],
+          error: null,
+        });
+      if (table === 'course_completions') return makeBuilder({ data: [], error: null });
+      throw new Error(`unexpected table: ${table}`);
+    });
+
+    const result = await getStartedCoursesForUser();
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('course-1');
+  });
+
   it('hasLessons=false quando o curso embed não tem aulas', async () => {
     mockGetCurrentUser.mockResolvedValue(profile());
     mockFrom.mockImplementation((table: string) => {
@@ -201,6 +263,7 @@ describe('getStartedCoursesForUser', () => {
             {
               course_id: 'course-1',
               accessed_at: '2026-05-25T10:00:00Z',
+              unenrolled_at: null,
               courses: { ...courseEmbed, modules: [{ lessons: [{ count: 0 }] }] },
             },
           ],

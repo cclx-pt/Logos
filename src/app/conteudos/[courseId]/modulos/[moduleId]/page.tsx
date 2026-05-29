@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Check } from 'lucide-react';
 
 import { UUID_RE } from '@/lib/validation';
@@ -10,6 +10,7 @@ import {
   getNextModuleWithLessons,
   isModuleComplete,
 } from '@/lib/courses/completion';
+import { getEnrollmentState } from '@/lib/courses/enrollment';
 
 type PageProps = {
   params: Promise<{ courseId: string; moduleId: string }>;
@@ -36,6 +37,14 @@ export default async function CourseModulePage({ params }: PageProps) {
   if (!UUID_RE.test(courseId) || !UUID_RE.test(moduleId)) {
     notFound();
   }
+
+  // Enrollment gate (V3.3 PR8): só utilizadores inscritos vêem páginas de módulo.
+  // Anon e logado-não-inscrito caem na landing do curso (que tem CTA apropriada).
+  const enrollmentState = await getEnrollmentState(courseId);
+  if (enrollmentState !== 'enrolled') {
+    redirect(`/conteudos/${courseId}`);
+  }
+
   const course = await getCourseDetailById(courseId);
   if (!course) {
     notFound();

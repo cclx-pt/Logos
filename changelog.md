@@ -16,6 +16,28 @@
 
 ---
 
+## [29-05-2026] — V3.3 PR8: enrollment + estado anónimo (bloqueador final V3.3)
+
+### add
+- **Modelo de enrollment** sobre `course_access_log`: row mais recente por (user, course) decide o estado. `unenrolled_at IS NULL` → inscrito. Nova migration `20260529120000_enrollment_and_anon_landing.sql` adiciona coluna `unenrolled_at`, índice composto e UPDATE policy.
+- **`src/lib/courses/enrollment.ts`** com `getEnrollmentState`, `enrollAction`, `unenrollAction`. Revalida `/conteudos/<id>` + `/meus-cursos` em mutações.
+- **3 vistas em `/conteudos/[courseId]`**:
+  - **Anon:** banner + título + descrição + CTA "Inicia sessão com Google" (com `next` correcto).
+  - **Logado não-inscrito:** + estrutura de módulos e aulas read-only (numeradas `1.1, 1.2…`, sem links) + CTA "Começar curso".
+  - **Logado inscrito:** comportamento V3 actual (módulos como link cards, aulas clicáveis) + link discreto "Sair do curso" no fundo.
+- **`EnrollCourseCta` e `UnenrollCourseLink`** Components com Server Actions inline.
+- **Acesso anónimo a courses publicados sem `required_tags`**: `course_is_visible(courses)` passa a aceitar `anon` (apenas para published + sem required_tags). Anon vê banner via storage `course-banners`. Modules/lessons ficam auth-only via `auth.role() = 'authenticated'` explícito nas suas policies.
+- Testes: 14 novos em `enrollment.test.ts` (getEnrollmentState, enrollAction, unenrollAction) + 2 novos em `started.test.ts` para o filtro de unenrollment.
+
+### update
+- **`getStartedCoursesForUser`** filtra cursos onde o utilizador saiu (mais recente `unenrolled_at` not null). Re-inscrever-se faz o curso voltar a aparecer em `/meus-cursos`.
+- **`/conteudos/[courseId]/[lessonId]`** e **`/conteudos/[courseId]/modulos/[moduleId]`** ganham guard de enrollment — redirect para a landing do curso quando o utilizador não está inscrito (defesa em profundidade ao RLS).
+
+### infra
+- Migration aplicada em `logos-dev` (PR aprovado bloqueia push prod).
+
+---
+
 ## [29-05-2026] — V3.3 PR7: smoothness pass — view transitions, transições, polish do estado vazio
 
 ### add
