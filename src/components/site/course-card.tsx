@@ -36,12 +36,23 @@ export type CourseCardData = {
 type CourseCardProps = {
   course: CourseCardData;
   variant: 'catalog' | 'in-progress' | 'completed';
+  /**
+   * Estado de autenticação. Só relevante para `catalog` — anon não vê a
+   * badge "Em breve" nem o card disabled. Para anon, todos os cards
+   * são clicáveis e o redireccionamento para login acontece na landing.
+   * Default `true` para manter compat com variants `in-progress` /
+   * `completed` (que só renderizam para utilizadores logados).
+   */
+  isAuthenticated?: boolean;
 };
 
-export function CourseCard({ course, variant }: CourseCardProps) {
+export function CourseCard({ course, variant, isAuthenticated = true }: CourseCardProps) {
   const isCatalog = variant === 'catalog';
   const isCompleted = variant === 'completed';
-  const isCatalogDisabled = isCatalog && !course.hasLessons;
+  // "Em breve" + disabled só faz sentido para utilizadores autenticados —
+  // anon nunca poderia entrar mesmo num curso com aulas (cai no CTA de login).
+  const isCatalogDisabled = isCatalog && isAuthenticated && !course.hasLessons;
+  const showComingSoonBadge = isCatalog && isAuthenticated && !course.hasLessons;
 
   const baseClasses =
     'border-border bg-card focus-visible:ring-ring group flex h-full flex-col overflow-hidden rounded-2xl border focus-visible:ring-2 focus-visible:outline-none';
@@ -70,7 +81,7 @@ export function CourseCard({ course, variant }: CourseCardProps) {
           <h2 className="font-display text-ink text-2xl leading-tight font-medium tracking-tight">
             {course.title}
           </h2>
-          {isCatalog && !course.hasLessons && (
+          {showComingSoonBadge && (
             <span className="border-orange-primary/30 bg-orange-primary/10 text-orange-primary inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
               Em breve
             </span>
@@ -92,7 +103,7 @@ export function CourseCard({ course, variant }: CourseCardProps) {
             {course.description}
           </p>
         ) : null}
-        {isCatalog && course.hasLessons && (
+        {isCatalog && !isCatalogDisabled && (
           <span className="text-orange-primary mt-auto pt-5 text-xs font-medium tracking-wide uppercase">
             Ver curso →
           </span>

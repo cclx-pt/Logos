@@ -12,9 +12,15 @@ type Props = {
   courses: VisibleCourse[];
   /** Termo de pesquisa actual (trimmed). Vazio se não há filtro. */
   query: string;
+  /**
+   * Se o utilizador está autenticado. Usado pelo `CourseCard` para decidir
+   * se aplica o estado "Em breve" (cursos sem aulas) — para anon, todos os
+   * cards são clicáveis (clicar leva à landing → CTA de login).
+   */
+  isAuthenticated: boolean;
 };
 
-export function ConteudosContent({ courses, query }: Props) {
+export function ConteudosContent({ courses, query, isAuthenticated }: Props) {
   const isFiltering = query.length > 0;
   const hasResults = courses.length > 0;
 
@@ -90,7 +96,11 @@ export function ConteudosContent({ courses, query }: Props) {
         >
           {courses.map((course) => (
             <li key={course.id}>
-              <CourseCard course={course} variant="catalog" />
+              <CourseCard
+                course={course}
+                variant="catalog"
+                isAuthenticated={isAuthenticated}
+              />
             </li>
           ))}
         </motion.ul>
