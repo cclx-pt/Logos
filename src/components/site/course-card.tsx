@@ -11,9 +11,16 @@ import { cn } from '@/lib/utils';
  *   - `catalog`     — catálogo público. Mostra badge "Em breve" se o curso
  *                     não tiver aulas; nesse caso o link fica desactivado
  *                     (`aria-disabled`, `tabIndex=-1`, `pointer-events-none`).
+ *                     **Não mostra descrição** — fica reservada à landing do
+ *                     curso para não congestionar o catálogo.
  *   - `in-progress` — `/meus-cursos`. Badge "Em curso", CTA "Continuar →".
+ *                     Mostra descrição.
  *   - `completed`   — `/meus-cursos`. Badge "Concluído", CTA "Rever curso →",
- *                     `opacity-60` que volta a 100% no hover.
+ *                     `opacity-60` que volta a 100% no hover. Mostra descrição.
+ *
+ * Layout: vertical. Banner (ou icon fallback) na metade superior;
+ * título, badge, descrição (quando aplicável) e CTA na metade inferior.
+ * Igual em mobile e desktop — apenas o tamanho dos cards muda via grid.
  */
 
 export type CourseCardData = {
@@ -31,8 +38,9 @@ type CourseCardProps = {
 };
 
 export function CourseCard({ course, variant }: CourseCardProps) {
+  const isCatalog = variant === 'catalog';
   const isCompleted = variant === 'completed';
-  const isCatalogDisabled = variant === 'catalog' && !course.hasLessons;
+  const isCatalogDisabled = isCatalog && !course.hasLessons;
 
   const baseClasses =
     'border-border bg-card focus-visible:ring-ring group flex h-full flex-col rounded-2xl border p-6 focus-visible:ring-2 focus-visible:outline-none';
@@ -57,10 +65,10 @@ export function CourseCard({ course, variant }: CourseCardProps) {
         variant="card"
       />
       <div className="mt-5 flex flex-wrap items-start gap-2">
-        <h2 className="font-display text-ink text-2xl font-medium tracking-tight">
+        <h2 className="font-display text-ink text-2xl leading-tight font-medium tracking-tight">
           {course.title}
         </h2>
-        {variant === 'catalog' && !course.hasLessons && (
+        {isCatalog && !course.hasLessons && (
           <span className="border-orange-primary/30 bg-orange-primary/10 text-orange-primary inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
             Em breve
           </span>
@@ -77,12 +85,12 @@ export function CourseCard({ course, variant }: CourseCardProps) {
           </span>
         )}
       </div>
-      {course.description ? (
+      {!isCatalog && course.description ? (
         <p className="text-muted-foreground mt-2 line-clamp-4 text-sm leading-relaxed">
           {course.description}
         </p>
       ) : null}
-      {variant === 'catalog' && course.hasLessons && (
+      {isCatalog && course.hasLessons && (
         <span className="text-orange-primary mt-auto pt-5 text-xs font-medium tracking-wide uppercase">
           Ver curso →
         </span>

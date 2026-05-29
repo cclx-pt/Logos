@@ -100,6 +100,18 @@ describe('ConteudosContent — cards de cursos', () => {
     render(<ConteudosContent courses={[makeCourse({ description: null })]} query="" />);
     expect(screen.queryByText(/Uma jornada de seis semanas/i)).not.toBeInTheDocument();
   });
+
+  it('nunca mostra a descrição no catálogo, mesmo que esteja presente (vive só na landing do curso)', () => {
+    render(
+      <ConteudosContent
+        courses={[
+          makeCourse({ description: 'Uma jornada de seis semanas pelo Evangelho de Marcos.' }),
+        ]}
+        query=""
+      />,
+    );
+    expect(screen.queryByText(/Uma jornada de seis semanas/i)).not.toBeInTheDocument();
+  });
 });
 
 describe('ConteudosContent — catálogo sem estado pessoal (V3.2)', () => {

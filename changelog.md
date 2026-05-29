@@ -16,6 +16,18 @@
 
 ---
 
+## [29-05-2026] — V3.3 PR5: catálogo full-width + descrição só na landing do curso
+
+### update
+- **`/conteudos` ocupa toda a largura do ecrã em desktop** — `max-w-5xl` substituído por `w-full` com padding maior (`lg:px-12 xl:px-16`). Grid passa a `xl:grid-cols-4` para aproveitar o espaço.
+- **`CourseCard` no catálogo já não mostra descrição** — fica reservada à landing do curso, evitando congestionar o catálogo e deixando títulos longos respirar. /meus-cursos continua a mostrar descrição (utilizador conhece o curso e o contexto faz falta).
+- `CourseCard` mantém layout vertical (banner em cima, texto em baixo) — proposta de split 50/50 (PR #39) descartada após teste do utilizador.
+
+### docs
+- `feature-docs/v3-3-handoff.md` atualizado: PR4 (split 50/50) marcada como descartada.
+
+---
+
 ## [28-05-2026] — V3.3 PR3: copy /meus-cursos (ícone fora + textos novos)
 
 ### update
