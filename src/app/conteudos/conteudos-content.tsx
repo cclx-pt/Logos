@@ -23,7 +23,7 @@ export function ConteudosContent({ courses, query }: Props) {
       variants={staggerContainer}
       initial="hidden"
       animate="show"
-      className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24"
+      className="w-full px-4 py-16 sm:px-6 sm:py-20 lg:px-12 lg:py-24 xl:px-16"
     >
       <motion.h1
         variants={staggerItem}
@@ -86,7 +86,7 @@ export function ConteudosContent({ courses, query }: Props) {
         <motion.ul
           variants={staggerItem}
           aria-label="Cursos disponíveis"
-          className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
           {courses.map((course) => (
             <li key={course.id}>

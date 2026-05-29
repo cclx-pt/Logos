@@ -33,10 +33,16 @@ type CourseImageProps = {
 };
 
 export function CourseImage({ bannerUrl, iconSlug, alt, variant, className }: CourseImageProps) {
+  // Ambas as variants usam banner horizontal 16:9 (`aspect-video`) —
+  // ratio standard para thumbnails/banners, evita distorção em qualquer
+  // contexto. `object-cover` no <Image> garante crop limpo.
+  //   - `card`: edge-to-edge no topo do card; o card tem `overflow-hidden`
+  //             e a imagem segue os cantos sem precisar de `rounded-*` própria.
+  //   - `hero`: cantos próprios para a landing do curso.
   const wrapper =
     variant === 'hero'
       ? 'relative aspect-video w-full overflow-hidden rounded-2xl bg-orange-primary/5'
-      : 'relative aspect-video w-full overflow-hidden rounded-xl bg-orange-primary/5';
+      : 'relative aspect-video w-full bg-orange-primary/5';
 
   if (bannerUrl) {
     return (
@@ -48,7 +54,7 @@ export function CourseImage({ bannerUrl, iconSlug, alt, variant, className }: Co
           sizes={
             variant === 'hero'
               ? '(min-width: 1024px) 720px, 100vw'
-              : '(min-width: 1024px) 300px, (min-width: 640px) 50vw, 100vw'
+              : '(min-width: 1280px) 300px, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw'
           }
           className="object-cover"
           unoptimized
@@ -62,7 +68,7 @@ export function CourseImage({ bannerUrl, iconSlug, alt, variant, className }: Co
       className={cn(wrapper, 'text-orange-primary flex items-center justify-center', className)}
       data-testid="course-image-icon"
     >
-      <CourseIcon slug={iconSlug} className={variant === 'hero' ? 'h-20 w-20' : 'h-12 w-12'} />
+      <CourseIcon slug={iconSlug} className={variant === 'hero' ? 'h-20 w-20' : 'h-14 w-14'} />
     </div>
   );
 }

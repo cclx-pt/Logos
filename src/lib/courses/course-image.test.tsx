@@ -35,13 +35,14 @@ describe('CourseImage', () => {
     expect(wrapper.className).toMatch(/rounded-2xl/);
   });
 
-  it('aplica wrapper de card quando variant=card', () => {
+  it('aplica wrapper de card edge-to-edge quando variant=card (aspect-video, sem cantos próprios)', () => {
     const { container } = render(
       <CourseImage bannerUrl={null} iconSlug="cross" alt="Marcos" variant="card" />,
     );
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper.className).toMatch(/aspect-video/);
-    expect(wrapper.className).toMatch(/rounded-xl/);
+    // O pai `CourseCard` é que tem overflow-hidden + rounded; a imagem não arredonda.
+    expect(wrapper.className).not.toMatch(/rounded-/);
   });
 
   it('passa className extra para o wrapper', () => {
