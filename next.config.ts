@@ -53,6 +53,14 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Rejeita payloads de Server Actions acima do limite. V2.5 nao tem uploads
+  // (so forms pequenos: login, gestao de papeis), por isso 64kb e folgado.
+  // NOTA: V3 (upload de PDF, ate 20MB) tera de subir este valor ao reconciliar.
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '64kb',
+    },
+  },
   images: {
     remotePatterns: [
       // Avatares Google (via Supabase Auth, user_metadata.avatar_url).
