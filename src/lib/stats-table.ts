@@ -13,6 +13,12 @@ export type StatColumn = {
   label: string;
   /** Coluna numérica → alinha à direita e ordena numericamente. */
   numeric?: boolean;
+  /**
+   * Coluna de data: o valor em `cells` é uma string ISO (guardada para ordenar
+   * cronologicamente, já que ISO ordena bem como string); a UI mostra-a
+   * formatada.
+   */
+  date?: boolean;
 };
 
 export type StatRow = {

@@ -7,7 +7,6 @@ import { isAdmin } from '@/lib/auth/guards';
 import { getCourseStatsDetail } from '@/lib/courses/stats-detail';
 import { StatCard } from '@/components/admin/stat-card';
 import { SortableStatsTable } from '@/components/admin/sortable-stats-table';
-import { formatDate } from '@/lib/format';
 
 export const metadata = {
   title: 'Estatísticas do curso · Área admin · LOGOS',
@@ -151,30 +150,21 @@ export default async function CourseStatsPage({
         ) : finishers.length === 0 ? (
           <p className="text-muted-foreground text-sm">Ainda ninguém concluiu este curso.</p>
         ) : (
-          <div className="border-border overflow-hidden rounded-lg border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
-                <tr>
-                  <th scope="col" className="px-4 py-2 font-medium">
-                    Utilizador
-                  </th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
-                    Concluído em
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-border divide-y">
-                {finishers.map((f) => (
-                  <tr key={f.userId} className="text-ink">
-                    <td className="px-4 py-3 font-medium">{f.name}</td>
-                    <td className="text-muted-foreground px-4 py-3 text-right">
-                      {formatDate(f.completedAt)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SortableStatsTable
+            searchLabel="Pesquisar utilizador"
+            searchPlaceholder="Pesquisar por nome..."
+            initialSortKey="completedAt"
+            initialSortDir="desc"
+            columns={[
+              { key: 'name', label: 'Utilizador' },
+              { key: 'completedAt', label: 'Concluído em', date: true },
+            ]}
+            rows={finishers.map((f) => ({
+              id: f.userId,
+              search: f.name.toLowerCase(),
+              cells: { name: f.name, completedAt: f.completedAt },
+            }))}
+          />
         )}
       </section>
     </div>

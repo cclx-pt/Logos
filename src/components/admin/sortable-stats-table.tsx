@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowDown, ArrowUp, ArrowUpDown, Search } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/format';
 import {
   filterAndSortStatRows,
   type SortDir,
@@ -138,6 +139,13 @@ export function SortableStatsTable({
                         ) : (
                           value
                         )}
+                      </td>
+                    );
+                  }
+                  if (col.date) {
+                    return (
+                      <td key={col.key} className="text-muted-foreground px-4 py-3 text-right">
+                        {value ? formatDate(String(value)) : '-'}
                       </td>
                     );
                   }
