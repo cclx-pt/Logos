@@ -13,6 +13,7 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getServerClient } from './index';
+import { safeNextPath } from './redirect';
 
 // Hosts legítimos para o callback OAuth: produção, dev local e previews Vercel.
 function isAllowedHost(host: string): boolean {
@@ -55,17 +56,11 @@ function getOrigin(headersList: Headers): string {
   return parsed.origin;
 }
 
-function safeNext(next: FormDataEntryValue | null): string | null {
-  if (typeof next !== 'string' || !next) return null;
-  if (!next.startsWith('/') || next.startsWith('//')) return null;
-  return next;
-}
-
 export async function signInWithGoogleAction(formData?: FormData): Promise<void> {
   const supabase = await getServerClient();
   const origin = getOrigin(await headers());
 
-  const next = formData ? safeNext(formData.get('next')) : null;
+  const next = formData ? safeNextPath(formData.get('next')) : null;
   const callback = next
     ? `${origin}/auth/callback?next=${encodeURIComponent(next)}`
     : `${origin}/auth/callback`;
