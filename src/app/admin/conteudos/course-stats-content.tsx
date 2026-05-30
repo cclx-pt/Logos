@@ -2,6 +2,7 @@ import { BarChart3, Users, CheckCircle2 } from 'lucide-react';
 
 import { getServerClient } from '@/lib/auth';
 import { getCourseStats } from '@/lib/courses/stats';
+import { StatCard } from '@/components/admin/stat-card';
 
 type LessonRow = { id: string };
 
@@ -97,29 +98,6 @@ export async function CourseStatsContent({ courseId }: Props) {
           </li>
         </ul>
       </div>
-    </div>
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  hint: string;
-}) {
-  return (
-    <div className="border-border bg-background rounded-lg border p-4">
-      <div className="text-orange-primary flex items-center gap-2">
-        {icon}
-        <span className="text-xs font-semibold tracking-wide uppercase">{label}</span>
-      </div>
-      <p className="font-display text-ink mt-2 text-3xl font-medium tabular-nums">{value}</p>
-      <p className="text-muted-foreground mt-2 text-xs">{hint}</p>
     </div>
   );
 }
