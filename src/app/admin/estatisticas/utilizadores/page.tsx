@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
-import { ListSearch } from '@/components/admin/list-search';
+import { SortableStatsTable } from '@/components/admin/sortable-stats-table';
 import { getCurrentUser, ROLE_LABEL } from '@/lib/auth';
 import { isSuperAdmin } from '@/lib/auth/guards';
 import { getUsersOverview } from '@/lib/courses/stats-users';
@@ -45,49 +45,27 @@ export default async function UsersStatsPage() {
       {rows.length === 0 ? (
         <p className="text-muted-foreground text-sm">Ainda não há utilizadores.</p>
       ) : (
-        <ListSearch label="Pesquisar utilizador" placeholder="Pesquisar por nome ou papel...">
-          <div className="border-border overflow-hidden rounded-lg border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
-                <tr>
-                  <th scope="col" className="px-4 py-2 font-medium">
-                    Utilizador
-                  </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
-                    Papel
-                  </th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
-                    Inscritos
-                  </th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
-                    Terminados
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-border divide-y">
-                {rows.map((row) => (
-                  <tr
-                    key={row.userId}
-                    data-search-text={`${row.name.toLowerCase()} ${ROLE_LABEL[row.role].toLowerCase()}`}
-                    className="text-ink hover:bg-muted/40 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-medium">
-                      <Link
-                        href={`/admin/estatisticas/utilizadores/${row.userId}`}
-                        className="hover:text-orange-hover focus-visible:ring-ring rounded-sm focus-visible:ring-2 focus-visible:outline-none"
-                      >
-                        {row.name}
-                      </Link>
-                    </td>
-                    <td className="text-muted-foreground px-4 py-3">{ROLE_LABEL[row.role]}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{row.enrolled}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{row.completed}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </ListSearch>
+        <SortableStatsTable
+          searchLabel="Pesquisar utilizador"
+          searchPlaceholder="Pesquisar por nome ou papel..."
+          columns={[
+            { key: 'name', label: 'Utilizador' },
+            { key: 'role', label: 'Papel' },
+            { key: 'enrolled', label: 'Inscritos', numeric: true },
+            { key: 'completed', label: 'Terminados', numeric: true },
+          ]}
+          rows={rows.map((row) => ({
+            id: row.userId,
+            href: `/admin/estatisticas/utilizadores/${row.userId}`,
+            search: `${row.name.toLowerCase()} ${ROLE_LABEL[row.role].toLowerCase()}`,
+            cells: {
+              name: row.name,
+              role: ROLE_LABEL[row.role],
+              enrolled: row.enrolled,
+              completed: row.completed,
+            },
+          }))}
+        />
       )}
     </div>
   );

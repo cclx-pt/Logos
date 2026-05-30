@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { isAdmin } from '@/lib/auth/guards';
 import { getCourseStatsDetail } from '@/lib/courses/stats-detail';
 import { StatCard } from '@/components/admin/stat-card';
+import { SortableStatsTable } from '@/components/admin/sortable-stats-table';
 import { formatDate } from '@/lib/format';
 
 export const metadata = {
@@ -82,9 +83,25 @@ export default async function CourseStatsPage({
         {detail.modules.length === 0 ? (
           <p className="text-muted-foreground text-sm">Este curso ainda não tem módulos.</p>
         ) : (
-          <StatsTable
-            headers={['Módulo', 'Aulas', 'Visitas', 'Concluídas']}
-            rows={detail.modules.map((m) => [m.title, m.lessonCount, m.views, m.completions])}
+          <SortableStatsTable
+            initialSortKey="views"
+            initialSortDir="desc"
+            columns={[
+              { key: 'title', label: 'Módulo' },
+              { key: 'lessonCount', label: 'Aulas', numeric: true },
+              { key: 'views', label: 'Visitas', numeric: true },
+              { key: 'completions', label: 'Concluídas', numeric: true },
+            ]}
+            rows={detail.modules.map((m) => ({
+              id: m.moduleId,
+              search: m.title.toLowerCase(),
+              cells: {
+                title: m.title,
+                lessonCount: m.lessonCount,
+                views: m.views,
+                completions: m.completions,
+              },
+            }))}
           />
         )}
       </section>
@@ -96,15 +113,29 @@ export default async function CourseStatsPage({
         {detail.lessons.length === 0 ? (
           <p className="text-muted-foreground text-sm">Este curso ainda não tem aulas.</p>
         ) : (
-          <StatsTable
-            headers={['Aula', 'Módulo', 'Visitas', 'Únicos', 'Concluídas']}
-            rows={detail.lessons.map((l) => [
-              l.title,
-              l.moduleTitle,
-              l.views,
-              l.uniqueViewers,
-              l.completions,
-            ])}
+          <SortableStatsTable
+            searchLabel="Pesquisar aula"
+            searchPlaceholder="Pesquisar por aula ou módulo..."
+            initialSortKey="views"
+            initialSortDir="desc"
+            columns={[
+              { key: 'title', label: 'Aula' },
+              { key: 'moduleTitle', label: 'Módulo' },
+              { key: 'views', label: 'Visitas', numeric: true },
+              { key: 'uniqueViewers', label: 'Únicos', numeric: true },
+              { key: 'completions', label: 'Concluídas', numeric: true },
+            ]}
+            rows={detail.lessons.map((l) => ({
+              id: l.lessonId,
+              search: `${l.title.toLowerCase()} ${l.moduleTitle.toLowerCase()}`,
+              cells: {
+                title: l.title,
+                moduleTitle: l.moduleTitle,
+                views: l.views,
+                uniqueViewers: l.uniqueViewers,
+                completions: l.completions,
+              },
+            }))}
           />
         )}
       </section>
@@ -146,45 +177,6 @@ export default async function CourseStatsPage({
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-/** Tabela simples de estatísticas: 1ª coluna texto à esquerda, restantes numéricas à direita. */
-function StatsTable({ headers, rows }: { headers: string[]; rows: (string | number)[][] }) {
-  return (
-    <div className="border-border overflow-hidden rounded-lg border">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
-          <tr>
-            {headers.map((h, i) => (
-              <th
-                key={h}
-                scope="col"
-                className={`px-4 py-2 font-medium ${i === 0 ? '' : 'text-right'}`}
-              >
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-border divide-y">
-          {rows.map((cells, r) => (
-            <tr key={r} className="text-ink">
-              {cells.map((cell, c) => (
-                <td
-                  key={c}
-                  className={
-                    c === 0 ? 'px-4 py-3 font-medium' : 'px-4 py-3 text-right tabular-nums'
-                  }
-                >
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }

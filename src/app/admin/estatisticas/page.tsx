@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { isAdmin, isSuperAdmin } from '@/lib/auth/guards';
 import { getAdminOverview } from '@/lib/courses/overview-stats';
 import { StatCard } from '@/components/admin/stat-card';
+import { SortableStatsTable } from '@/components/admin/sortable-stats-table';
 
 export const metadata = {
   title: 'Estatísticas · Área admin · LOGOS',
@@ -89,57 +90,35 @@ export default async function EstatisticasPage() {
         {perCourse.length === 0 ? (
           <p className="text-muted-foreground text-sm">Ainda não há dados de utilização.</p>
         ) : (
-          <div className="border-border overflow-hidden rounded-lg border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
-                <tr>
-                  <th scope="col" className="px-4 py-2 font-medium">
-                    Curso
-                  </th>
-                  <th scope="col" className="px-4 py-2 font-medium">
-                    Estado
-                  </th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
-                    Inscritos
-                  </th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
-                    Acessos
-                  </th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
-                    Únicos
-                  </th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
-                    Finalizações
-                  </th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
-                    Aulas concl.
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-border divide-y">
-                {perCourse.map((row) => (
-                  <tr key={row.courseId} className="text-ink hover:bg-muted/40 transition-colors">
-                    <td className="px-4 py-3 font-medium">
-                      <Link
-                        href={`/admin/estatisticas/cursos/${row.courseId}`}
-                        className="hover:text-orange-hover focus-visible:ring-ring rounded-sm focus-visible:ring-2 focus-visible:outline-none"
-                      >
-                        {row.title}
-                      </Link>
-                    </td>
-                    <td className="text-muted-foreground px-4 py-3">
-                      {row.published ? 'Publicado' : 'Rascunho'}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums">{row.enrolls}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{row.accesses}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{row.uniqueUsers}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{row.completions}</td>
-                    <td className="px-4 py-3 text-right tabular-nums">{row.lessonCompletions}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <SortableStatsTable
+            searchLabel="Pesquisar curso"
+            searchPlaceholder="Pesquisar por título..."
+            initialSortKey="accesses"
+            initialSortDir="desc"
+            columns={[
+              { key: 'title', label: 'Curso' },
+              { key: 'estado', label: 'Estado' },
+              { key: 'enrolls', label: 'Inscritos', numeric: true },
+              { key: 'accesses', label: 'Acessos', numeric: true },
+              { key: 'uniqueUsers', label: 'Únicos', numeric: true },
+              { key: 'completions', label: 'Finalizações', numeric: true },
+              { key: 'lessonCompletions', label: 'Aulas concl.', numeric: true },
+            ]}
+            rows={perCourse.map((row) => ({
+              id: row.courseId,
+              href: `/admin/estatisticas/cursos/${row.courseId}`,
+              search: row.title.toLowerCase(),
+              cells: {
+                title: row.title,
+                estado: row.published ? 'Publicado' : 'Rascunho',
+                enrolls: row.enrolls,
+                accesses: row.accesses,
+                uniqueUsers: row.uniqueUsers,
+                completions: row.completions,
+                lessonCompletions: row.lessonCompletions,
+              },
+            }))}
+          />
         )}
       </section>
     </div>
