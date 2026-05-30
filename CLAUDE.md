@@ -37,6 +37,7 @@ Modelo de dados (3 níveis): `Curso → Módulo → Aula`. Aulas têm `template`
 - **Sempre escrever testes** para: visibilidade por etiquetas, lógica de conclusão de curso, controlo de acesso por papel.
 - **Verificar a versão (V1–V9) antes de implementar.** Nada de scope creep entre versões.
 - **PT-PT em toda a UI e copy.** Sem PT-BR. Sem inglês na UI.
+- **Sem em dashes (`—`) em copy/UI. Usar sempre hyphen (`-`).** Vale para texto visível ao utilizador (JSX, hints, mensagens, emails). Para separar dentro de uma frase, usar hyphen, vírgula ou dois pontos, nunca `—`. Erro recorrente: corrigir à nascença.
 - **Não alojar vídeo no sistema.** Sempre YouTube embed via iframe.
 - **Conteúdo restrito por etiqueta é invisível**, nunca aparece com cadeado ou "acesso negado".
 - **IDs internos estáveis.** Renomear/reordenar nunca invalida conclusões existentes.

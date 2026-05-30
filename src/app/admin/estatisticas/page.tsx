@@ -56,12 +56,12 @@ export default async function EstatisticasPage() {
           icon={<BarChart3 className="h-5 w-5" />}
           label="Acessos totais"
           value={totals.totalAccesses}
-          hint="Cada clique no CTA conta — o mesmo utilizador pode contar várias vezes."
+          hint="Cada clique no CTA conta; o mesmo utilizador pode contar várias vezes."
         />
         <StatCard
           icon={<Users className="h-5 w-5" />}
           label="Utilizadores registados"
-          value={totals.registeredUsers ?? '—'}
+          value={totals.registeredUsers ?? 'n/d'}
           hint="Total de contas (login Google)."
         />
         <StatCard

@@ -91,7 +91,7 @@ export function aggregateCourseDetail(input: CourseDetailInput): CourseStatsDeta
       return {
         lessonId: l.id,
         title: l.title,
-        moduleTitle: moduleById.get(l.module_id)?.title ?? '—',
+        moduleTitle: moduleById.get(l.module_id)?.title ?? 'n/d',
         views: a.views,
         uniqueViewers: a.viewers.size,
         completions: a.completions,

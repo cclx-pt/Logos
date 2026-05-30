@@ -61,7 +61,7 @@ export async function CourseStatsContent({ courseId }: Props) {
           icon={<BarChart3 className="h-5 w-5" />}
           label="Acessos totais"
           value={stats.totalAccesses}
-          hint="Cada clique no CTA conta — incluindo o mesmo utilizador várias vezes."
+          hint="Cada clique no CTA conta, incluindo o mesmo utilizador várias vezes."
         />
         <StatCard
           icon={<Users className="h-5 w-5" />}
@@ -89,11 +89,11 @@ export async function CourseStatsContent({ courseId }: Props) {
             admin/super_admin).
           </li>
           <li>
-            Aulas concluídas vêm de <code>lesson_completions</code> e contam toggles activos —
+            Aulas concluídas vêm de <code>lesson_completions</code> e contam toggles activos;
             desmarcar uma aula reduz o número.
           </li>
           <li>
-            Não há contagem de &ldquo;utilizadores que concluíram o curso inteiro&rdquo; — V3 não
+            Não há contagem de &ldquo;utilizadores que concluíram o curso inteiro&rdquo;: V3 não
             escreve em <code>course_completions</code>; deriva on-read na página do curso.
           </li>
         </ul>

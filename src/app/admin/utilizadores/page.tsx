@@ -162,7 +162,7 @@ export default async function UtilizadoresPage({
                             Promover <strong className="font-semibold">{row.display_name}</strong> a
                             super administrador? Um super administrador pode gerir tudo, incluindo
                             promover outros. Esta ação{' '}
-                            <strong>não pode ser revertida pela interface</strong> — só por SQL.
+                            <strong>não pode ser revertida pela interface</strong>: só por SQL.
                           </p>
                           <div className="flex gap-2">
                             <form
