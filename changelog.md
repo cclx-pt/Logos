@@ -16,6 +16,20 @@
 
 ---
 
+## [30-05-2026] — Estatísticas profundas (puxar V5), fase 1: visitas + overview expandido
+
+> Decisão de scope: o "dashboard de estatísticas mais profundo" é V5 (SPEC_1.md §9). Foi **puxado para o período de V3** a pedido do utilizador. Só quantidades — sem percentagens/taxas (respeita "sem percentagens até V7") nem segmentação por etiqueta (fica V5).
+
+### add
+- Migration `20260530130000_stats_deep_v5.sql`: tabela **`lesson_views`** (visitas a aulas; RLS SELECT admin, INSERT self, imutável) + função **`count_registered_users()`** SECURITY DEFINER (devolve só a contagem de `profiles`, e só a admins — sem expor PII).
+- **Instrumentação de visitas:** `logLessonViewAction` (best-effort) em `access-actions.ts` + `<LessonViewBeacon>` (client, dispara uma vez no mount) montado na página de aula.
+- **Overview expandido** (`/admin/estatisticas`): novo card **Utilizadores registados** (via RPC; "—" se indisponível) e, na tabela por curso, novas colunas **Inscritos** (inscrições activas via row mais recente do `course_access_log` com `unenrolled_at IS NULL`) e **Finalizações** (`course_completions` por curso). `aggregateOverview` estendida (+3 testes; 9 no total).
+
+### infra
+- Só em `v3-cursos`. Migrations a aplicar a `logos-dev` (nunca `logos-prod`).
+
+---
+
 ## [30-05-2026] — super_admin pode promover a super_admin (pela UI)
 
 ### add
