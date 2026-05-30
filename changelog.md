@@ -16,6 +16,21 @@
 
 ---
 
+## [30-05-2026] — Estatísticas admin: vista agregada (V3-básico)
+
+### add
+- **Nova página `/admin/estatisticas`** (admin + super_admin) — visão geral da utilização num só sítio: 5 cards de totais (cursos publicados/rascunhos, acessos totais, utilizadores activos, aulas concluídas, cursos concluídos) + tabela-resumo por curso (acessos, únicos, conclusões de aulas) com cada linha a ligar para `/admin/conteudos/<courseId>`. Link "Estatísticas" na sidebar admin (a seguir a Conteúdos).
+- **`src/lib/courses/overview-stats.ts`** — `aggregateOverview()` (função pura, 7 testes) + `getAdminOverview()` (6 SELECTs agregados em JS). "Utilizadores activos" = `count(distinct user_id)` de `course_access_log` (admin-safe; `profiles` só dá SELECT a super_admin). Sem N+1 — um SELECT por tabela.
+- **`src/components/admin/stat-card.tsx`** — `StatCard` extraído de `course-stats-content.tsx` e partilhado pelas duas vistas (DRY).
+
+### docs
+- Fronteira de versão respeitada: o **dashboard profundo** (taxas de conclusão %, segmentação por etiqueta, tendências, export) é **V5** (SPEC_1.md §9) e fica deferido. Esta entrega é só "estatísticas básicas visíveis ao admin" (V3).
+
+### infra
+- Só em `v3-cursos` (V3 — não toca em `v2.5-copy-ux` nem `main`). Sem migration: UI read-only sobre tabelas existentes; RLS de admin já dá SELECT.
+
+---
+
 ## [29-05-2026] — Copy final do ministério: carrossel + hero (v2.5 + v3)
 
 ### update
