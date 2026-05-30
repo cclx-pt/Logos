@@ -16,6 +16,21 @@
 
 ---
 
+## [30-05-2026] — super_admin pode promover a super_admin (pela UI)
+
+### add
+- **Promoção a super_admin pela UI** em `/admin/utilizadores` — botão "Promover a super admin" (só super_admin, só sobre alvos não-super) + confirmação inline (`?promover-super=<id>`, mesmo padrão URL-driven do `?apagar=` das etiquetas) a avisar que **é irreversível pela interface**.
+- Migration `20260530120000_allow_super_admin_promotion.sql` — recria `enforce_profiles_role_mutation_authority()` para aceitar `NEW.role = 'super_admin'`. **Mantém** o bloqueio de alterar um super_admin existente (`OLD.role = 'super_admin'`) → despromover continua só-SQL (evita lock-out).
+- `setUserRoleAction` aceita `newRole = 'super_admin'` (mantém: caller super_admin, alvo não-super, não-próprio).
+
+### docs
+- `feature-docs/auth-architecture.md` §5.1 — nota sobre promoção a super_admin via UI vs demoção só-SQL.
+
+### infra
+- Só em `v3-cursos`. Migration aplicada a `logos-dev` (nunca `logos-prod`).
+
+---
+
 ## [30-05-2026] — Estatísticas admin: vista agregada (V3-básico)
 
 ### add

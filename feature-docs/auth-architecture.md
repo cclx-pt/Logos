@@ -105,6 +105,8 @@ O sistema arranca sem nenhum `super_admin`: o callback OAuth + trigger DB criam 
    - Reporta nº de rows actualizadas via `RAISE NOTICE`.
 3. Operador verifica que o `update` afectou exactamente 1 row.
 
+> **Promoção a super_admin pela UI (30-05-2026):** depois de existir o primeiro super_admin (seed acima), qualquer super_admin pode promover outros utilizadores a `super_admin` em `/admin/utilizadores` (botão "Promover a super admin" + confirmação inline). O trigger `enforce_profiles_role_mutation_authority` passou a aceitar `NEW.role = 'super_admin'`, mas **continua a bloquear alterar o papel de um super_admin já existente** — ou seja, **despromover** um super_admin é ainda só por SQL directo (evita lock-out). O seed `.example` mantém-se como bootstrap do *primeiro* super_admin de cada ambiente.
+
 **Porquê SQL versionado e não migration:**
 
 - Uma migration assume um `auth.users` específico, o que falha em qualquer DB de CI/teste que não tenha o login prévio. O Vercel Preview (que aponta para `logos-dev`) corre migrations automaticamente — incluir o seed numa migration partiria builds.
