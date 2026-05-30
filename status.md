@@ -161,6 +161,7 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
   - **Detalhe por curso** `/admin/estatisticas/cursos/[id]`: módulos e aulas por visitas/únicos/conclusões + "quem terminou" (nomes só super_admin).
   - **Por utilizador** `/admin/estatisticas/utilizadores(+/[id])`: só super_admin; inscritos/terminados por utilizador.
   - Helpers `overview-stats.ts` / `stats-detail.ts` / `stats-users.ts` (funções puras testadas; gate de papel em `buildFinishers` + getters). `SPEC_1.md` §9/§10 atualizado (V5 puxado; ficam só taxas %/segmentação para V5).
+  - **Pesquisa + ordenação** nas tabelas que crescem via `SortableStatsTable` (filtro `useDeferredValue`, INP-safe; lógica pura `src/lib/stats-table.ts`). Resolve o aviso de INP na pesquisa.
   - **Falta V5 (não agora):** percentagens/taxas de conclusão, segmentação por etiqueta, tendências/export.
 - [ ] *(polish, prazo permite)* **V3 PR9 — Vercel Analytics + Playwright E2E**. §9.
 

@@ -16,6 +16,20 @@
 
 ---
 
+## [30-05-2026] — Estatísticas: pesquisa + ordenação nas tabelas (INP-safe)
+
+### add
+- **`SortableStatsTable`** (`src/components/admin/sortable-stats-table.tsx`) — tabela cliente reutilizável com **pesquisa** (opcional) e **ordenação por coluna** (clicar no cabeçalho alterna asc/desc; numéricas começam do maior). Filtro usa `useDeferredValue` para **não bloquear a escrita** (INP saudável à medida que as listas crescem). Lógica pura em `src/lib/stats-table.ts` (`filterAndSortStatRows`; 5 testes).
+- Aplicado a: **overview por curso** (pesquisa por título; ordena por acessos/inscritos/finalizações/etc.), **detalhe do curso** (módulos e aulas; pesquisa de aulas; ordena por visitas/conclusões), e **por utilizador** (pesquisa por nome/papel; ordena por inscritos/terminados). A lista por-utilizador deixa de usar `ListSearch` (passa a ter também ordenação).
+
+### fix
+- Resposta ao aviso de **INP** na pesquisa: as tabelas de estatísticas filtram de forma diferida (não-bloqueante). A pesquisa do catálogo `/conteudos` já era server-side (form GET), não filtra por tecla.
+
+### infra
+- Só em `v3-cursos`. Sem migration.
+
+---
+
 ## [30-05-2026] — Estatísticas profundas (puxar V5), fase 2: detalhe por curso + por utilizador
 
 ### add

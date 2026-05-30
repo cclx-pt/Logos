@@ -35,6 +35,8 @@ A pedido do utilizador, o dashboard ganhou detalhe muito além do básico. **Só
 
 **Visitas a aulas:** `lesson_views` (RLS SELECT admin, INSERT self, imutável). Registo best-effort via `logLessonViewAction` + `<LessonViewBeacon>` (mount na página de aula). "Visitas" de um módulo = soma das suas aulas.
 
+**Pesquisa + ordenação:** as tabelas que crescem (overview por curso, módulos/aulas do curso, lista por-utilizador) usam `SortableStatsTable` (`src/components/admin/sortable-stats-table.tsx`) — pesquisa opcional + ordenação por coluna (clicar no cabeçalho). O filtro corre com `useDeferredValue` (não bloqueia a escrita → INP saudável). Lógica pura testável em `src/lib/stats-table.ts`.
+
 **PII / papéis:** tudo o que mostra **nomes** de utilizadores (quem terminou, vistas por-utilizador) é **só super_admin** — alinhado com o RLS de `profiles`. Admins normais veem todos os números agregados, mas não nomes. `count_registered_users()` devolve só a contagem (sem linhas) e só a admins.
 
 ## Fronteira V3 / V5 (deliberada)
