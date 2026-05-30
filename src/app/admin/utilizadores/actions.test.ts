@@ -91,11 +91,9 @@ describe('setUserRoleAction (V2 PR3)', () => {
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/targetId/i) });
   });
 
-  it('recusa newRole fora de {user, admin}', async () => {
+  it('recusa newRole fora de {user, admin, super_admin}', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', CALLER_ID));
-    const result = await setUserRoleAction(
-      formDataOf({ targetId: TARGET_ID, newRole: 'super_admin' }),
-    );
+    const result = await setUserRoleAction(formDataOf({ targetId: TARGET_ID, newRole: 'root' }));
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/newRole/i) });
   });
 
@@ -137,6 +135,23 @@ describe('setUserRoleAction (V2 PR3)', () => {
     mockUpdateEq.mockResolvedValue({ error: null });
 
     const result = await setUserRoleAction(formDataOf({ targetId: TARGET_ID, newRole: 'admin' }));
+
+    expect(result).toEqual({ ok: true });
+    expect(mockUpdateEq).toHaveBeenCalledWith('id', TARGET_ID);
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/utilizadores');
+  });
+
+  it('promove admin → super_admin quando caller é super_admin', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', CALLER_ID));
+    mockMaybeSingle.mockResolvedValue({
+      data: { id: TARGET_ID, role: 'admin' },
+      error: null,
+    });
+    mockUpdateEq.mockResolvedValue({ error: null });
+
+    const result = await setUserRoleAction(
+      formDataOf({ targetId: TARGET_ID, newRole: 'super_admin' }),
+    );
 
     expect(result).toEqual({ ok: true });
     expect(mockUpdateEq).toHaveBeenCalledWith('id', TARGET_ID);

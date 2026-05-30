@@ -1,17 +1,20 @@
 'use server';
 
 /**
- * Server Actions de gestão de papéis — V2 PR3.
+ * Server Actions de gestão de papéis — V2 PR3 (+ promoção a super_admin).
  *
- * Apenas `super_admin` pode mudar o `role` de outro utilizador, e apenas entre
- * `user` ⇄ `admin`. Defesa em profundidade:
+ * Apenas `super_admin` pode mudar o `role` de outro utilizador, para `user`,
+ * `admin` ou `super_admin`. Promover a super_admin é irreversível pela UI: um
+ * super_admin existente não pode ser despromovido aqui (só por SQL directo).
+ * Defesa em profundidade:
  *
  *   1. Esta action recusa se o caller não for super_admin, se o alvo for o
  *      próprio caller, ou se o alvo já for super_admin.
  *   2. RLS em `profiles` (policy `profiles_update_super_admin`) garante que o
  *      update por outro role nunca afecta linhas.
  *   3. Trigger `enforce_profiles_role_mutation_authority` bloqueia mudanças
- *      inválidas mesmo via service role / SQL directo.
+ *      inválidas mesmo via service role / SQL directo (e impede tocar num
+ *      super_admin existente).
  */
 
 import { revalidatePath } from 'next/cache';
@@ -34,8 +37,8 @@ export async function setUserRoleAction(formData: FormData): Promise<SetUserRole
   if (typeof targetId !== 'string' || !UUID_RE.test(targetId)) {
     return { ok: false, error: 'targetId inválido.' };
   }
-  if (newRole !== 'user' && newRole !== 'admin') {
-    return { ok: false, error: 'newRole inválido (esperado user ou admin).' };
+  if (newRole !== 'user' && newRole !== 'admin' && newRole !== 'super_admin') {
+    return { ok: false, error: 'newRole inválido (esperado user, admin ou super_admin).' };
   }
 
   if (targetId === caller.id) {

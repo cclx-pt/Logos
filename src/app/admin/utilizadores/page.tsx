@@ -30,7 +30,11 @@ type UserTagRow = {
   tag_id: string;
 };
 
-export default async function UtilizadoresPage() {
+export default async function UtilizadoresPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ 'promover-super'?: string }>;
+}) {
   const user = await getCurrentUser();
   // Acesso para admin e super_admin. Promover/despromover continua restrito a
   // super_admin no Server Action; a UI condiciona o botão.
@@ -39,6 +43,9 @@ export default async function UtilizadoresPage() {
   }
 
   const canMutateRoles = isSuperAdmin(user.role);
+  // Confirmação inline de promoção a super_admin (URL-driven, como `?apagar=`
+  // nas etiquetas). Só super_admin a vê e só sobre alvos não-super.
+  const { 'promover-super': confirmingSuperId } = await searchParams;
 
   const supabase = await getServerClient();
   const [
@@ -89,7 +96,7 @@ export default async function UtilizadoresPage() {
         <h1 className="font-display text-ink text-3xl font-medium tracking-tight">Utilizadores</h1>
         <p className="text-muted-foreground mt-2 max-w-prose text-sm">
           {canMutateRoles
-            ? 'Aqui podes promover utilizadores a administrador, despromover administradores a utilizador, e atribuir etiquetas a qualquer utilizador. Os super administradores existentes não aparecem como editáveis; a sua mudança de papel é feita só via SQL.'
+            ? 'Aqui podes promover utilizadores a administrador ou super administrador, despromover administradores a utilizador, e atribuir etiquetas a qualquer utilizador. Promover a super administrador é irreversível pela interface; despromover um super administrador é feito só via SQL.'
             : 'Aqui podes atribuir e remover etiquetas dos utilizadores. A mudança de papel é restrita a super administradores.'}
         </p>
         {tags.length === 0 && (
@@ -142,6 +149,55 @@ export default async function UtilizadoresPage() {
                 const assigned = tagsByUser.get(row.id) ?? [];
                 const tagSearchText = assigned.map((t) => t.label.toLowerCase()).join(' ');
 
+                // Confirmação inline de promoção a super_admin.
+                if (canMutateRow && confirmingSuperId === row.id) {
+                  return (
+                    <tr
+                      key={row.id}
+                      className="border-l-orange-primary bg-orange-primary/10 border-l-4"
+                    >
+                      <td colSpan={5} className="px-4 py-3">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <p className="text-ink max-w-prose text-sm">
+                            Promover <strong className="font-semibold">{row.display_name}</strong> a
+                            super administrador? Um super administrador pode gerir tudo, incluindo
+                            promover outros. Esta ação{' '}
+                            <strong>não pode ser revertida pela interface</strong> — só por SQL.
+                          </p>
+                          <div className="flex gap-2">
+                            <form
+                              action={async (formData: FormData) => {
+                                'use server';
+                                const result = await setUserRoleAction(formData);
+                                redirect(
+                                  result.ok
+                                    ? '/admin/utilizadores?guardado=papel_atualizado'
+                                    : '/admin/utilizadores?erro=generico',
+                                );
+                              }}
+                            >
+                              <input type="hidden" name="targetId" value={row.id} />
+                              <input type="hidden" name="newRole" value="super_admin" />
+                              <SubmitButton
+                                pendingLabel="A promover…"
+                                className="bg-orange-primary hover:bg-orange-hover h-9 rounded-md px-3 text-xs font-medium text-white"
+                              >
+                                Promover a super administrador
+                              </SubmitButton>
+                            </form>
+                            <Link
+                              href="/admin/utilizadores"
+                              className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
+                            >
+                              Cancelar
+                            </Link>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+
                 return (
                   <tr
                     key={row.id}
@@ -162,26 +218,36 @@ export default async function UtilizadoresPage() {
                     {canMutateRoles && (
                       <td className="px-4 py-3 text-right">
                         {canMutateRow ? (
-                          <form
-                            action={async (formData: FormData) => {
-                              'use server';
-                              const result = await setUserRoleAction(formData);
-                              redirect(
-                                result.ok
-                                  ? '/admin/utilizadores?guardado=papel_atualizado'
-                                  : '/admin/utilizadores?erro=generico',
-                              );
-                            }}
-                          >
-                            <input type="hidden" name="targetId" value={row.id} />
-                            <input type="hidden" name="newRole" value={nextRole} />
-                            <SubmitButton
-                              pendingLabel={row.role === 'admin' ? 'A despromover…' : 'A promover…'}
-                              className="text-orange-primary hover:bg-muted/40 hover:text-orange-hover h-auto rounded-md bg-transparent px-2 py-1 text-xs font-medium"
+                          <div className="flex flex-col items-end gap-1.5">
+                            <form
+                              action={async (formData: FormData) => {
+                                'use server';
+                                const result = await setUserRoleAction(formData);
+                                redirect(
+                                  result.ok
+                                    ? '/admin/utilizadores?guardado=papel_atualizado'
+                                    : '/admin/utilizadores?erro=generico',
+                                );
+                              }}
                             >
-                              {actionLabel}
-                            </SubmitButton>
-                          </form>
+                              <input type="hidden" name="targetId" value={row.id} />
+                              <input type="hidden" name="newRole" value={nextRole} />
+                              <SubmitButton
+                                pendingLabel={
+                                  row.role === 'admin' ? 'A despromover…' : 'A promover…'
+                                }
+                                className="text-orange-primary hover:bg-muted/40 hover:text-orange-hover h-auto rounded-md bg-transparent px-2 py-1 text-xs font-medium"
+                              >
+                                {actionLabel}
+                              </SubmitButton>
+                            </form>
+                            <Link
+                              href={`/admin/utilizadores?promover-super=${row.id}`}
+                              className="text-muted-foreground hover:text-orange-hover focus-visible:ring-ring rounded-md px-2 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                            >
+                              Promover a super admin
+                            </Link>
+                          </div>
                         ) : (
                           <span className="text-muted-foreground text-xs">
                             {isSelf ? 'Tu' : 'Sem ação'}
