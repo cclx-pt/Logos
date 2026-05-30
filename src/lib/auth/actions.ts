@@ -14,15 +14,45 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getServerClient } from './index';
 
+// Hosts legítimos para o callback OAuth: produção, dev local e previews Vercel.
+function isAllowedHost(host: string): boolean {
+  const hostname = (host.split(':')[0] ?? '').toLowerCase();
+  return (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === 'logos.cclx.pt' ||
+    hostname.endsWith('.vercel.app')
+  );
+}
+
 function getOrigin(headersList: Headers): string {
-  const origin = headersList.get('origin');
-  if (origin) return origin;
-  const proto = headersList.get('x-forwarded-proto') ?? 'https';
-  const host = headersList.get('x-forwarded-host') ?? headersList.get('host');
-  if (!host) {
-    throw new Error('Não consigo determinar o origin do request (host header em falta).');
+  const originHeader = headersList.get('origin');
+  let candidate: string;
+  if (originHeader) {
+    candidate = originHeader;
+  } else {
+    const proto = headersList.get('x-forwarded-proto') ?? 'https';
+    const host = headersList.get('x-forwarded-host') ?? headersList.get('host');
+    if (!host) {
+      throw new Error('Não consigo determinar o origin do request (host header em falta).');
+    }
+    candidate = `${proto}://${host}`;
   }
-  return `${proto}://${host}`;
+
+  // Defesa em profundidade contra host-header injection: o origin que compõe o
+  // redirectTo do OAuth tem de ser um host conhecido. O allowlist do Supabase já
+  // rejeita callbacks forjados; validamos aqui também para nunca construir um
+  // redirectTo apontado a um domínio de atacante.
+  let parsed: URL;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    throw new Error('Origin do request inválido.');
+  }
+  if (!isAllowedHost(parsed.host)) {
+    throw new Error(`Origin não permitido: ${parsed.host}`);
+  }
+  return parsed.origin;
 }
 
 function safeNext(next: FormDataEntryValue | null): string | null {

@@ -1,16 +1,41 @@
 import type { NextConfig } from 'next';
 
-// Headers de seguranca aplicados a todas as rotas.
-// Nota: NAO inclui uma Content-Security-Policy completa (de proposito) - uma CSP
-// estrita precisa de afinar inline scripts do Next, Vercel Analytics, frame-src do
-// YouTube (home + aulas V3), connect-src do Supabase e img-src do Google. Fica como
-// follow-up dedicado para evitar partir paginas. Estes headers sao seguros e nao
-// quebram nada. HSTS e tambem injectado pela Vercel no dominio custom; declaramo-lo
-// aqui de forma explicita.
+const isDev = process.env.NODE_ENV !== 'production';
+
+// Content-Security-Policy (enforcing). Pragmatica, nao baseada em nonce:
+// - script-src/style-src usam 'unsafe-inline' porque o Next injecta scripts/estilos
+//   inline para hidratacao e o RSC payload (sem nonce nao ha alternativa). Mesmo
+//   assim, as restantes directivas (frame-ancestors, object-src, base-uri, frame-src,
+//   connect-src, form-action) continuam a dar defesa real.
+// - 'unsafe-eval' SO em desenvolvimento (React Fast Refresh / Turbopack usam eval).
+//   Em producao fica de fora.
+// - Fontes Google sao self-hosted pelo next/font (servidas de 'self').
+// Endurecimento futuro: migrar para CSP baseada em nonce e remover 'unsafe-inline'.
+const csp = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'self'",
+  // Embeds de YouTube (video de apresentacao na home + aulas V3).
+  'frame-src https://www.youtube-nocookie.com https://www.youtube.com',
+  // Avatares Google + imagens inline.
+  "img-src 'self' data: https://lh3.googleusercontent.com",
+  "font-src 'self' data:",
+  "style-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://va.vercel-scripts.com`,
+  // Supabase (auth/db/storage) + telemetria Vercel.
+  "connect-src 'self' https://*.supabase.co https://*.supabase.in https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+  "form-action 'self'",
+  "manifest-src 'self'",
+].join('; ');
+
+// Headers de seguranca aplicados a todas as rotas. HSTS e tambem injectado pela
+// Vercel no dominio custom; declaramo-lo aqui de forma explicita.
 const securityHeaders = [
+  { key: 'Content-Security-Policy', value: csp },
   // Impede o browser de adivinhar (sniff) o content-type.
   { key: 'X-Content-Type-Options', value: 'nosniff' },
-  // Anti-clickjacking: o site nao pode ser embebido por terceiros (protege o login).
+  // Anti-clickjacking (legado; frame-ancestors da CSP e o equivalente moderno).
   // Nao afecta os nossos proprios iframes a embeber o YouTube.
   { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
   // Nao vazar o caminho completo de origem para sites externos.
