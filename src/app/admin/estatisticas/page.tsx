@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Award, BarChart3, BookOpen, CheckCircle2, UserCheck, Users } from 'lucide-react';
 
 import { getCurrentUser } from '@/lib/auth';
-import { isAdmin } from '@/lib/auth/guards';
+import { isAdmin, isSuperAdmin } from '@/lib/auth/guards';
 import { getAdminOverview } from '@/lib/courses/overview-stats';
 import { StatCard } from '@/components/admin/stat-card';
 
@@ -24,13 +24,25 @@ export default async function EstatisticasPage() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="font-display text-ink text-3xl font-medium tracking-tight">Estatísticas</h1>
-        <p className="text-muted-foreground mt-2 max-w-prose text-sm">
-          Visão geral da utilização do LOGOS. Os acessos são registados quando alguém clica em{' '}
-          <strong>Começar</strong> ou <strong>Continuar curso</strong>; as conclusões vêm das aulas
-          marcadas pelos utilizadores. Para o detalhe de um curso, abre-o em Conteúdos.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-ink text-3xl font-medium tracking-tight">
+            Estatísticas
+          </h1>
+          <p className="text-muted-foreground mt-2 max-w-prose text-sm">
+            Visão geral da utilização do LOGOS. Os acessos são registados quando alguém clica em{' '}
+            <strong>Começar</strong> ou <strong>Continuar curso</strong>; as conclusões vêm das
+            aulas marcadas pelos utilizadores. Abre um curso para o detalhe por módulo e aula.
+          </p>
+        </div>
+        {isSuperAdmin(user.role) && (
+          <Link
+            href="/admin/estatisticas/utilizadores"
+            className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-9 shrink-0 items-center justify-center rounded-md border px-3 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          >
+            Ver por utilizador →
+          </Link>
+        )}
       </header>
 
       <section aria-label="Totais" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -109,7 +121,7 @@ export default async function EstatisticasPage() {
                   <tr key={row.courseId} className="text-ink hover:bg-muted/40 transition-colors">
                     <td className="px-4 py-3 font-medium">
                       <Link
-                        href={`/admin/conteudos/${row.courseId}`}
+                        href={`/admin/estatisticas/cursos/${row.courseId}`}
                         className="hover:text-orange-hover focus-visible:ring-ring rounded-sm focus-visible:ring-2 focus-visible:outline-none"
                       >
                         {row.title}
