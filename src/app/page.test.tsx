@@ -18,7 +18,7 @@ describe('HomeHero', () => {
   it('apresenta o subtítulo com a proposta de valor gratuita', () => {
     render(<HomeHero isAuthenticated={false} ctaHref="/meus-cursos" />);
     expect(
-      screen.getByText(/Cursos, Apostilas e o teu ritmo — Sempre gratuitos\./),
+      screen.getByText(/Cursos, Apostilas e o teu ritmo - Sempre gratuitos\./),
     ).toBeInTheDocument();
   });
 
