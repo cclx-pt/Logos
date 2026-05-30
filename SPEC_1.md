@@ -259,6 +259,7 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 - Pesquisa e navegação no catálogo
 - **Contabilização leve de acessos:** botão "Aceder ao curso" / "Começar curso" regista um acesso. Estatísticas básicas visíveis ao admin (por exemplo: "X utilizadores começaram este curso")
 - Vercel Analytics ativado (gratuito, automático)
+- **(Puxado de V5 — 30-05-2026):** dashboard de estatísticas em `/admin/estatisticas` — totais, por curso (inscritos, finalizações, acessos, visitas a módulos/aulas) e por utilizador (super_admin). Inclui tracking de visitas a aulas (`lesson_views`). **Sem** taxas/percentagens de conclusão nem segmentação por etiqueta — essa parte continua em V5.
 
 ### V4 — Etiquetas Multi-Nível
 
@@ -275,7 +276,7 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 - Perguntas guardadas em base de dados; vista de "caixa de entrada" para a equipa de admins
 - Equipa responde inicialmente fora da plataforma (email manual ao aluno); respostas estruturadas dentro da plataforma podem vir mais tarde
 - Notificação por email aos admins quando uma nova pergunta é submetida (via Resend)
-- **Dashboard de estatísticas mais profundo:** conclusões por curso, taxas de conclusão, segmentação por etiqueta
+- **Dashboard de estatísticas mais profundo:** ~~conclusões por curso~~, **taxas de conclusão** e **segmentação por etiqueta**. *(As contagens — conclusões/inscrições/visitas por curso, módulo, aula e utilizador — foram puxadas para V3 em 30-05-2026, ver §9 V3 e `feature-docs/admin-estatisticas.md`. Ficam para V5 apenas as percentagens/taxas e a segmentação por etiqueta.)*
 
 ### V6 — Live Stream e Tema
 
@@ -318,7 +319,8 @@ A equipa do ministério organizou os pedidos por **prioridade** (P1 essencial �
 | Contabilização leve de acessos                        | PDF P1C              |     P1     |   V3   |
 | Restrição de módulos e aulas por etiqueta             | PDF P1A              |     P1     |   V4   |
 | Perguntas por aula → caixa de entrada da equipa       | PDF P2A              |     P2     |   V5   |
-| Dashboard de estatísticas                             | Novo                 |     —      |   V5   |
+| Dashboard de estatísticas (contagens)                 | Novo                 |     —      | V3 (puxado 30-05) |
+| Dashboard de estatísticas (taxas % + segmentação)     | Novo                 |     —      |   V5   |
 | Live stream do YouTube embebido                       | PDF P3A              |     P3     |   V6   |
 | Modo escuro / modo claro                              | PDF P4A              |     P4     |   V6   |
 | Indicadores de progresso (barra, %)                   | A reavaliar          |     —      |   V7   |

@@ -25,6 +25,18 @@ Página `/admin/estatisticas` (admin + super_admin) que junta num só sítio os 
 - **Sem N+1:** um SELECT por tabela (courses, modules, lessons, course_access_log, lesson_completions, course_completions) + agregação em JS. Suficiente para os volumes de V3.
 - **Sem migration:** UI read-only; o RLS de admin já dá SELECT a tudo.
 
+## Detalhe profundo (30-05-2026 — V5 puxado para V3)
+
+A pedido do utilizador, o dashboard ganhou detalhe muito além do básico. **Só quantidades** (sem percentagens). Migrations `20260530130000` (`lesson_views` + `count_registered_users()`) aplicadas a `logos-dev`.
+
+- **Overview (`/admin/estatisticas`)** ganhou card **Utilizadores registados** (RPC `count_registered_users`, "—" se indisponível) e, por curso, colunas **Inscritos** (inscrições activas) e **Finalizações** (`course_completions`).
+- **Detalhe por curso (`/admin/estatisticas/cursos/[id]`)** — cards (inscritos, finalizações, acessos, únicos) + **módulos e aulas ordenados por visitas** (visitas, visitantes únicos, conclusões) + **"Quem terminou"** (nomes + datas — **só super_admin**; admin normal vê só a contagem). Helper `stats-detail.ts` (`aggregateCourseDetail` + `buildFinishers` com gate de papel, testados).
+- **Por utilizador (`/admin/estatisticas/utilizadores` + `/[id]`)** — **só super_admin**: lista com nº de cursos inscritos/terminados (pesquisável) e, por utilizador, os cursos inscritos e terminados (com datas). Helper `stats-users.ts` (`aggregateUsersOverview`, `aggregateUserDetail`, `activeEnrollmentKeys`, testados).
+
+**Visitas a aulas:** `lesson_views` (RLS SELECT admin, INSERT self, imutável). Registo best-effort via `logLessonViewAction` + `<LessonViewBeacon>` (mount na página de aula). "Visitas" de um módulo = soma das suas aulas.
+
+**PII / papéis:** tudo o que mostra **nomes** de utilizadores (quem terminou, vistas por-utilizador) é **só super_admin** — alinhado com o RLS de `profiles`. Admins normais veem todos os números agregados, mas não nomes. `count_registered_users()` devolve só a contagem (sem linhas) e só a admins.
+
 ## Fronteira V3 / V5 (deliberada)
 
 Fica **fora** desta entrega e reservado para **V5** (SPEC_1.md §9, "dashboard de estatísticas mais profundo"):

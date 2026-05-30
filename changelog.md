@@ -16,6 +16,22 @@
 
 ---
 
+## [30-05-2026] — Estatísticas profundas (puxar V5), fase 2: detalhe por curso + por utilizador
+
+### add
+- **Detalhe por curso** `/admin/estatisticas/cursos/[courseId]` (admin+) — cards (inscritos, finalizações, acessos, únicos), **módulos e aulas ordenados por visitas** (visitas/únicos/conclusões via `lesson_views` + `lesson_completions`), e **"Quem terminou"** com nomes+datas **só para super_admin** (admin normal vê só a contagem). `src/lib/courses/stats-detail.ts` (`aggregateCourseDetail` + `buildFinishers` com gate de papel; 6 testes).
+- **Por utilizador** `/admin/estatisticas/utilizadores` + `/[id]` (**só super_admin**) — lista pesquisável com nº de cursos inscritos/terminados; detalhe com cursos inscritos (activos) e terminados (com datas). `src/lib/courses/stats-users.ts` (`aggregateUsersOverview`, `aggregateUserDetail`, `activeEnrollmentKeys`; 4 testes). Link "Ver por utilizador →" no overview (super_admin).
+- Linhas do overview passam a ligar a `/admin/estatisticas/cursos/[id]`.
+
+### docs
+- `SPEC_1.md` §9/§10 — dashboard de estatísticas (contagens) marcado como **puxado de V5 para V3** (30-05); ficam em V5 só as taxas/percentagens e segmentação por etiqueta.
+- `feature-docs/admin-estatisticas.md` — secção de detalhe profundo + regras de PII/papéis.
+
+### infra
+- Só em `v3-cursos`. Sem migration nova (usa `lesson_views`/RPC da fase 1, já em `logos-dev`).
+
+---
+
 ## [30-05-2026] — Estatísticas profundas (puxar V5), fase 1: visitas + overview expandido
 
 > Decisão de scope: o "dashboard de estatísticas mais profundo" é V5 (SPEC_1.md §9). Foi **puxado para o período de V3** a pedido do utilizador. Só quantidades — sem percentagens/taxas (respeita "sem percentagens até V7") nem segmentação por etiqueta (fica V5).
