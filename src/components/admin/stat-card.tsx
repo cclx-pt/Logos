@@ -13,7 +13,7 @@ export function StatCard({
 }: {
   icon: ReactNode;
   label: string;
-  value: number;
+  value: number | string;
   hint: string;
 }) {
   return (

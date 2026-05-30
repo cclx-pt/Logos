@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import { aggregateOverview, type OverviewInput } from './overview-stats';
+import { aggregateOverview, type AccessInput, type OverviewInput } from './overview-stats';
 
 const empty: OverviewInput = {
   courses: [],
@@ -9,7 +9,18 @@ const empty: OverviewInput = {
   accesses: [],
   lessonCompletions: [],
   courseCompletions: [],
+  registeredUsers: null,
 };
+
+/** Helper para construir uma row de acesso com timestamp e estado de inscrição. */
+function access(
+  user_id: string,
+  course_id: string,
+  accessed_at: string,
+  unenrolled_at: string | null = null,
+): AccessInput {
+  return { user_id, course_id, accessed_at, unenrolled_at };
+}
 
 describe('aggregateOverview', () => {
   it('devolve tudo a zero e sem linhas quando não há dados', () => {
@@ -21,8 +32,13 @@ describe('aggregateOverview', () => {
       activeUsers: 0,
       lessonCompletions: 0,
       courseCompletions: 0,
+      registeredUsers: null,
     });
     expect(result.perCourse).toEqual([]);
+  });
+
+  it('reflecte registeredUsers vindo da RPC', () => {
+    expect(aggregateOverview({ ...empty, registeredUsers: 42 }).totals.registeredUsers).toBe(42);
   });
 
   it('separa cursos publicados de rascunhos', () => {
@@ -47,10 +63,10 @@ describe('aggregateOverview', () => {
         { id: 'c2', title: 'Êxodo', published_at: '2026-05-01T00:00:00Z' },
       ],
       accesses: [
-        { course_id: 'c1', user_id: 'u1' },
-        { course_id: 'c1', user_id: 'u1' }, // repetido — conta acesso, não user
-        { course_id: 'c1', user_id: 'u2' },
-        { course_id: 'c2', user_id: 'u1' }, // mesmo user noutro curso
+        access('u1', 'c1', '2026-05-01T10:00:00Z'),
+        access('u1', 'c1', '2026-05-02T10:00:00Z'), // repetido — conta acesso, não user
+        access('u2', 'c1', '2026-05-01T10:00:00Z'),
+        access('u1', 'c2', '2026-05-01T10:00:00Z'), // mesmo user noutro curso
       ],
     });
 
@@ -61,6 +77,24 @@ describe('aggregateOverview', () => {
     const c2 = result.perCourse.find((r) => r.courseId === 'c2')!;
     expect(c1).toMatchObject({ accesses: 3, uniqueUsers: 2 });
     expect(c2).toMatchObject({ accesses: 1, uniqueUsers: 1 });
+  });
+
+  it('conta inscrições activas pela row mais recente por (user, curso)', () => {
+    const result = aggregateOverview({
+      ...empty,
+      courses: [{ id: 'c1', title: 'Génesis', published_at: '2026-05-01T00:00:00Z' }],
+      accesses: [
+        // u1: inscreveu, saiu, voltou a inscrever → mais recente é NULL → inscrito
+        access('u1', 'c1', '2026-05-01T10:00:00Z', '2026-05-02T10:00:00Z'),
+        access('u1', 'c1', '2026-05-03T10:00:00Z', null),
+        // u2: a row mais recente tem unenrolled_at → não inscrito
+        access('u2', 'c1', '2026-05-01T10:00:00Z', null),
+        access('u2', 'c1', '2026-05-04T10:00:00Z', '2026-05-05T10:00:00Z'),
+        // u3: uma só row activa → inscrito
+        access('u3', 'c1', '2026-05-01T10:00:00Z', null),
+      ],
+    });
+    expect(result.perCourse[0]!.enrolls).toBe(2); // u1 + u3
   });
 
   it('imputa conclusões de aulas ao curso via module → course', () => {
@@ -95,13 +129,18 @@ describe('aggregateOverview', () => {
     expect(c2.lessonCompletions).toBe(1); // l3
   });
 
-  it('conta cursos concluídos a partir de course_completions', () => {
+  it('conta finalizações (course_completions) por curso e no total', () => {
     const result = aggregateOverview({
       ...empty,
-      courses: [{ id: 'c1', title: 'Génesis', published_at: '2026-05-01T00:00:00Z' }],
-      courseCompletions: [{ course_id: 'c1' }, { course_id: 'c1' }],
+      courses: [
+        { id: 'c1', title: 'Génesis', published_at: '2026-05-01T00:00:00Z' },
+        { id: 'c2', title: 'Êxodo', published_at: '2026-05-01T00:00:00Z' },
+      ],
+      courseCompletions: [{ course_id: 'c1' }, { course_id: 'c1' }, { course_id: 'c2' }],
     });
-    expect(result.totals.courseCompletions).toBe(2);
+    expect(result.totals.courseCompletions).toBe(3);
+    expect(result.perCourse.find((r) => r.courseId === 'c1')!.completions).toBe(2);
+    expect(result.perCourse.find((r) => r.courseId === 'c2')!.completions).toBe(1);
   });
 
   it('ordena perCourse por acessos desc, com título a desempatar', () => {
@@ -113,8 +152,8 @@ describe('aggregateOverview', () => {
         { id: 'c3', title: 'Gama', published_at: null },
       ],
       accesses: [
-        { course_id: 'c3', user_id: 'u1' },
-        { course_id: 'c3', user_id: 'u2' },
+        access('u1', 'c3', '2026-05-01T10:00:00Z'),
+        access('u2', 'c3', '2026-05-01T10:00:00Z'),
         // c1 e c2 ficam empatados a 0 → desempate alfabético: Alfa antes de Beta
       ],
     });
@@ -132,6 +171,8 @@ describe('aggregateOverview', () => {
       published: false,
       accesses: 0,
       uniqueUsers: 0,
+      enrolls: 0,
+      completions: 0,
       lessonCompletions: 0,
     });
   });

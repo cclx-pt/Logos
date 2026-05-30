@@ -19,6 +19,7 @@ import {
 import { getEnrollmentState } from '@/lib/courses/enrollment';
 import { PdfDownloadButton } from './pdf-download-button';
 import { MarkCompleteButton } from './mark-complete-button';
+import { LessonViewBeacon } from './lesson-view-beacon';
 
 type PageProps = {
   params: Promise<{ courseId: string; lessonId: string }>;
@@ -95,6 +96,7 @@ export default async function LessonPage({ params }: PageProps) {
 
   return (
     <article className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
+      <LessonViewBeacon lessonId={lesson.id} />
       <nav
         aria-label="Breadcrumb"
         className="text-muted-foreground mb-6 flex flex-wrap items-center gap-2 text-xs"

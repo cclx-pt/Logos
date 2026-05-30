@@ -68,6 +68,32 @@ export async function getLessonPdfSignedUrlAction(lessonId: string): Promise<Sig
 
 export type LogAccessResult = { ok: true } | { ok: false; error: string };
 
+/**
+ * Regista uma visita a uma aula em `lesson_views` (V3 pull-forward de V5).
+ * Best-effort: chamada por um beacon client no mount da página de aula. Falha
+ * (RLS, sessão expirada, aula inexistente) não é fatal — devolve `{ ok: false }`
+ * e a página continua a funcionar. Só serve telemetria leve para o admin.
+ */
+export async function logLessonViewAction(lessonId: string): Promise<LogAccessResult> {
+  const caller = await getCurrentUser();
+  if (!caller) {
+    return { ok: false, error: 'Precisas de iniciar sessão.' };
+  }
+  if (!UUID_RE.test(lessonId)) {
+    return { ok: false, error: 'Aula inválida.' };
+  }
+
+  const supabase = await getServerClient();
+  const { error } = await supabase
+    .from('lesson_views')
+    .insert({ user_id: caller.id, lesson_id: lessonId });
+
+  if (error) {
+    return { ok: false, error: `Falha a registar visita: ${error.message}` };
+  }
+  return { ok: true };
+}
+
 export async function logCourseAccessAction(courseId: string): Promise<LogAccessResult> {
   const caller = await getCurrentUser();
   if (!caller) {

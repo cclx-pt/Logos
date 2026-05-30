@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { Award, BarChart3, BookOpen, CheckCircle2, Users } from 'lucide-react';
+import { Award, BarChart3, BookOpen, CheckCircle2, UserCheck, Users } from 'lucide-react';
 
 import { getCurrentUser } from '@/lib/auth';
 import { isAdmin } from '@/lib/auth/guards';
@@ -48,6 +48,12 @@ export default async function EstatisticasPage() {
         />
         <StatCard
           icon={<Users className="h-5 w-5" />}
+          label="Utilizadores registados"
+          value={totals.registeredUsers ?? '—'}
+          hint="Total de contas (login Google)."
+        />
+        <StatCard
+          icon={<UserCheck className="h-5 w-5" />}
           label="Utilizadores activos"
           value={totals.activeUsers}
           hint="Pessoas distintas que abriram pelo menos um curso."
@@ -82,13 +88,19 @@ export default async function EstatisticasPage() {
                     Estado
                   </th>
                   <th scope="col" className="px-4 py-2 text-right font-medium">
+                    Inscritos
+                  </th>
+                  <th scope="col" className="px-4 py-2 text-right font-medium">
                     Acessos
                   </th>
                   <th scope="col" className="px-4 py-2 text-right font-medium">
                     Únicos
                   </th>
                   <th scope="col" className="px-4 py-2 text-right font-medium">
-                    Concluídas
+                    Finalizações
+                  </th>
+                  <th scope="col" className="px-4 py-2 text-right font-medium">
+                    Aulas concl.
                   </th>
                 </tr>
               </thead>
@@ -106,8 +118,10 @@ export default async function EstatisticasPage() {
                     <td className="text-muted-foreground px-4 py-3">
                       {row.published ? 'Publicado' : 'Rascunho'}
                     </td>
+                    <td className="px-4 py-3 text-right tabular-nums">{row.enrolls}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{row.accesses}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{row.uniqueUsers}</td>
+                    <td className="px-4 py-3 text-right tabular-nums">{row.completions}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{row.lessonCompletions}</td>
                   </tr>
                 ))}
