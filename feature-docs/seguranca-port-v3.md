@@ -39,6 +39,8 @@ As migrações de segurança **já estão aplicadas em `logos-dev`** (objetos co
 
 **Risco:** a migração `rate_limit` faz `create table rate_limit` **sem `if not exists`**. Um `supabase db push` a partir de `v3-cursos` veria a `170000` como por-aplicar (versão ausente do ledger) e **falharia** ao recriar a tabela. As outras duas são idempotentes (REVOKE/GRANT, `drop policy if exists` + `create or replace`).
 
-**Resolução recomendada** (mesma prática usada para alinhar prod): reconciliar `supabase_migrations.schema_migrations` em `logos-dev` para os nomes dos ficheiros (`214607`->`150000`, `220850`->`160000`, `225823`->`170000`), mantendo os ficheiros alinhados com `main` para um merge limpo no lançamento. É uma mudança só de metadados (não toca no schema). Pendente de decisão — ver `MEMORY` "Divergência de migrações Supabase".
+**Resolução aplicada (02-06-2026):** reconciliado o `supabase_migrations.schema_migrations` de `logos-dev` para os nomes dos ficheiros (`214607`->`150000`, `220850`->`160000`, `225823`->`170000`) via UPDATE com condição por `name`, dentro de transação. Mudança só de metadados (não toca no schema; os objetos já existiam). Repo (= `main`) e ledger de `logos-dev` ficam alinhados, logo um `supabase db push` já não tenta re-aplicar a `rate_limit`. Mesma prática usada para alinhar prod — ver `MEMORY` "Divergência de migrações Supabase".
+
+> Nota: as restantes migrações de V3 mantêm divergência ficheiro-vs-ledger pré-existente (ex.: `allow_super_admin_promotion` ficheiro `…120000` vs ledger `…172850`). Fora do âmbito deste port; tratar na reconciliação geral antes do lançamento.
 
 **No lançamento (01-07-2026):** estas 3 migrações já estão em `logos-prod` desde a V2.5; o processo de subida de V3 a prod tem de as saltar (não re-aplicar), tal como já acontece com as restantes migrações de V3 com versões divergentes.
