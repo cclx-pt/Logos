@@ -53,14 +53,6 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // Rejeita payloads de Server Actions acima do limite. V2.5 nao tem uploads
-  // (so forms pequenos: login, gestao de papeis), por isso 64kb e folgado.
-  // NOTA: V3 (upload de PDF, ate 20MB) tera de subir este valor ao reconciliar.
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '64kb',
-    },
-  },
   images: {
     remotePatterns: [
       // Avatares Google (via Supabase Auth, user_metadata.avatar_url).
@@ -68,9 +60,10 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
-    // Default Next.js é 1 MB — bloqueia upload de PDFs em createLessonAction.
-    // Schema da PR2 (storage.buckets.lesson-pdfs) permite até 20 MB; aqui
-    // damos buffer para o resto do FormData (campos texto + headers).
+    // Limite de payload de Server Actions. A V2.5 fixava 64kb (sem uploads),
+    // mas a V3 faz upload de PDFs (createLessonAction) — o schema da PR2
+    // (storage.buckets.lesson-pdfs) permite até 20 MB e damos buffer para o
+    // resto do FormData. Esta é a reconciliação que a nota da V2.5 antecipava.
     serverActions: {
       bodySizeLimit: '25mb',
     },
