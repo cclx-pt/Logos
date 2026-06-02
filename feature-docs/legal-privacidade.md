@@ -58,6 +58,10 @@ Server component, PT-PT, 9 secções a cobrir o art. 13.º:
 
 Testes: `src/lib/auth/actions.test.ts` (3 casos).
 
+**Aplicado (02-06-2026):** dev (só a função nova) + prod (sequência pendente completa, com versões de ficheiro registadas). Ver `legal-pendencias.md` §8.
+
+**⚠️ Caveat para V3:** quando existirem tabelas com FK `RESTRICT` para `profiles.id` (em dev já há: `courses.created_by`, `tags.created_by`, `user_tags.assigned_by`), o apagamento de um **autor de conteúdo** será bloqueado. Utilizadores normais não são afetados (dados próprios são `CASCADE`). Resolver antes de levar V3 a prod. Ver `legal-pendencias.md` §8b.
+
 ## 5. A cargo da organização (fora do código)
 
 - **Aceitar/assinar os DPAs** dos subcontratantes (Supabase, Vercel, Google, Resend) — contratos-padrão fornecidos por cada um.

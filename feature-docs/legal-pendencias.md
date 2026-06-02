@@ -10,11 +10,9 @@ Legenda de responsável: 🧑‍💻 **código** (faz-se no repo) · 🏛️ **o
 
 ## 🔴 Obrigatório por lei — a tratar antes/no lançamento
 
-### 1. 🧑‍💻 Aviso de privacidade no ponto de recolha (art. 13.º)
-O RGPD exige informar o titular **no momento em que os dados são recolhidos**, não só num link de footer. Falta um aviso no ecrã de login Google, do tipo:
-> "Ao entrar, aceitas a nossa [Política de Privacidade]."
-
-**Estado:** a implementar nesta ronda (ver secção "Continuação" abaixo).
+### 1. 🧑‍💻 Aviso de privacidade no ponto de recolha (art. 13.º) — ✅ FEITO (02-06-2026)
+O RGPD exige informar o titular **no momento em que os dados são recolhidos**, não só num link de footer. O CTA de login do hero (`home-hero.tsx`) passou a mostrar, quando não autenticado:
+> "Entras com a tua conta Google. Ao continuar, aceitas a [Política de Privacidade]."
 
 ### 2. 🏛️ Acordos de subcontratação / DPA (art. 28.º)
 Tem de existir um contrato entre o responsável (CCLX) e cada subcontratante que trata dados por nossa conta. São contratos-padrão que cada fornecedor disponibiliza — basta aceitar/assinar na conta:
@@ -58,10 +56,12 @@ Em Portugal, o consentimento de menores em serviços da sociedade da informaçã
 
 ## 🟢 Operacional (não é "lei", mas faz a conformidade funcionar)
 
-### 8. ⚙️ Aplicar migrações à base de dados
-As funções `delete_own_account()` (art. 17.º) e `check_rate_limit()` existem como ficheiros mas **ainda não foram aplicadas** a `logos-dev`/`logos-prod`. Sem isto, o botão "Apagar a minha conta" falha em produção.
+### 8. ⚙️ Aplicar migrações à base de dados — ✅ FEITO (02-06-2026)
+- **`logos-dev`:** já tinha as migrações de segurança (sob outros timestamps, via linha V3); aplicada só a nova `delete_own_account` (versão MCP `20260602133608`).
+- **`logos-prod`:** aplicada a sequência pendente completa (`role_mutation_authority`, `revoke_execute...`, `profiles_update_lockdown`, `rate_limit`, `delete_own_account`), **com a versão exata de cada ficheiro** registada em `schema_migrations` — o histórico de prod passa a bater certo com o repo. Validado: anon não executa as funções sensíveis, `authenticated` executa o que precisa, dono `postgres`. Advisor de segurança: só avisos esperados (RLS-no-policy intencional no `rate_limit`, helpers de RLS, RPC de apagamento intencional, leaked-password irrelevante por ser OAuth-only).
 
-**Estado:** a aplicar nesta subida (dev → prod).
+### 8b. ⚠️ 🧑‍💻 Caveat V3: apagamento bloqueado para autores de conteúdo
+Em `logos-dev` (que já tem V3) há FKs `RESTRICT` para `profiles.id` em `courses.created_by`, `tags.created_by` e `user_tags.assigned_by`. Um **utilizador normal** apaga-se sem problema (conclusões/vistas/tags próprias são `CASCADE`), mas um **admin que criou conteúdo** seria bloqueado pelo `delete_own_account()`. Irrelevante em prod hoje (sem V3), mas **quando o V3 for para prod** é preciso uma estratégia (ex.: `SET NULL`, reatribuir a conta de sistema, ou bloquear apagamento de autores com aviso).
 
 ### 9. 🧑‍💻 Ligar o caller do rate limiter
 `check_rate_limit()` é uma primitiva de DB sem consumidor na app. Não é exigência legal, mas é hardening pendente desta branch.

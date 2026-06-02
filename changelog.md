@@ -36,8 +36,14 @@ Trabalho de conformidade legal e hardening na branch `launch/v2.5-security`, con
 - update: `src/app/perfil/page.tsx` — nova secção "Apagar conta" com `<DeleteAccountButton />` e link para a Política de Privacidade.
 - update: `src/components/site/footer.tsx` — link para `/privacidade`.
 
+- add: `src/components/site/home-hero.tsx` → aviso de consentimento no CTA de login (art. 13.º, ponto de recolha): "Entras com a tua conta Google. Ao continuar, aceitas a Política de Privacidade."
+
+### infra
+- infra: migrações aplicadas. **`logos-dev`** — só a nova `delete_own_account` (as de segurança já lá estavam via linha V3, sob outros timestamps). **`logos-prod`** — sequência pendente completa aplicada em ordem (`role_mutation_authority`, `revoke_execute...`, `profiles_update_lockdown`, `rate_limit`, `delete_own_account`), com a **versão exata de cada ficheiro** registada em `schema_migrations` (histórico de prod passa a coincidir com o repo). Advisor de segurança de prod: só avisos esperados.
+
 ### docs
-- docs: `feature-docs/legal-privacidade.md` — decisão de âmbito (o que a lei obriga vs. recomendado), conteúdo da política, arquitetura do apagamento, e o que falta a cargo da organização (DPAs com subcontratantes).
+- docs: `feature-docs/legal-privacidade.md` — decisão de âmbito (o que a lei obriga vs. recomendado), conteúdo da política, arquitetura do apagamento (+ caveat V3 dos FK `RESTRICT`), e o que falta a cargo da organização (DPAs com subcontratantes).
+- docs: `feature-docs/legal-pendencias.md` — checklist do que falta para conformidade plena (aviso de consentimento ✅, DPAs, RAT, art. 9.º categorias especiais, procedimento de violação de dados, menores, caveat V3 do apagamento).
 
 ---
 
