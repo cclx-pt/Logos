@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### update
+- update: [02-06-2026] testemunhos do carrossel da home passam a anónimos - removidos os nomes dos autores (`figcaption`) e o campo `author` de `home-testimonials.tsx`. As citações mantêm-se inalteradas. (`fix/testemunhos-anonimos`)
+
 ### infra
 - add: repositório GitHub privado inicial
 - add: estrutura de documentação (`CLAUDE.md`, `architecture.md`, `status.md`, `feature-docs/`)
