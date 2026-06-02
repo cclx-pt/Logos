@@ -41,20 +41,29 @@ export function HomeHero({ isAuthenticated, ctaHref }: HomeHeroProps) {
         Cursos, Apostilas e o teu ritmo - Sempre gratuitos.
       </motion.p>
 
-      <motion.div variants={staggerItem} className="mt-10 flex w-full justify-center">
+      <motion.div variants={staggerItem} className="mt-10 flex w-full flex-col items-center gap-3">
         {isAuthenticated ? (
           <Link href={ctaHref} className={buttonVariants({ size: 'lg' })}>
             Meus cursos
             <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
           </Link>
         ) : (
-          <form action={signInWithGoogleAction}>
-            <input type="hidden" name="next" value={ctaHref} />
-            <Button type="submit" size="lg">
-              Meus cursos
-              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-            </Button>
-          </form>
+          <>
+            <form action={signInWithGoogleAction}>
+              <input type="hidden" name="next" value={ctaHref} />
+              <Button type="submit" size="lg">
+                Meus cursos
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              </Button>
+            </form>
+            <p className="text-muted-foreground max-w-xs text-center font-sans text-xs leading-relaxed">
+              Entras com a tua conta Google. Ao continuar, aceitas a{' '}
+              <Link href="/privacidade" className="hover:text-orange-hover underline">
+                Política de Privacidade
+              </Link>
+              .
+            </p>
+          </>
         )}
       </motion.div>
     </motion.section>
