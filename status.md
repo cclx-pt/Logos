@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 29-05-2026 (**V3.3 PR8 — enrollment + anon (bloqueador final V3.3)**: `/conteudos/[courseId]` ganha 3 vistas (anon/não-inscrito/inscrito); `course_access_log` ganha coluna `unenrolled_at`; RLS aceita anon para courses publicados sem tags; guard de enrollment em páginas de aula e módulo. 369/369 testes verdes. **V3.3 pronta para abrir PR para `main` quando o ministério fechar testemunhos.**)
+> **Última atualização:** 02-06-2026 (**Port do hardening de segurança V2.5 para `v3-cursos`**: cherry-pick dos 4 commits de segurança da V2.5 - headers/CSP/host allowlist, patch Next 16.2.6, REVOKE helpers, lockdown UPDATE de `profiles`, rate limiter, fix de open-redirect. Paridade verificada contra `main`; 422/422 testes verdes. Caveat de divergência de versões de migração em `feature-docs/seguranca-port-v3.md`. Anterior: V3.3 PR8 enrollment + anon - 3 vistas em `/conteudos/[courseId]`, `unenrolled_at`, RLS anon. **V3.3 pronta para PR `v3-cursos` para `main` quando o ministério fechar testemunhos.**)
 
 ## 🎯 Milestone atual
 **V3 fechada dev-side em `v3-cursos`.** À espera de testemunhos finais do ministério para abrir PR `v3-cursos` → `main` e fazer deploy a `logos.cclx.pt`. Detalhes da estratégia em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
