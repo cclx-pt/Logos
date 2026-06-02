@@ -156,6 +156,10 @@ Atalhos para a checklist do ministério:
 - Testes Vitest: smoke do número de items + presença de aria-labels.
 - Manual: setas navegam, ponto activo muda, mobile funciona com swipe.
 
+### Atualização 02-06-2026 - testemunhos anónimos
+
+A pedido do ministério, os testemunhos passaram a **anónimos**: removidos os nomes dos autores (`figcaption` + campo `author` do tipo `Testimonial`). As 4 citações reais mantêm-se; só deixa de haver atribuição visível. O teste de atribuição por nome foi substituído por um que garante a ausência de nomes. Branch `fix/testemunhos-anonimos`.
+
 ---
 
 ## 5. PR-E — Fala Connosco: texto novo
