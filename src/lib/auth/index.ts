@@ -13,7 +13,9 @@
 import { cookies } from 'next/headers';
 import type { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient, User as SupabaseUser } from '@supabase/supabase-js';
+
+export type { SupabaseUser };
 
 export type Role = 'user' | 'admin' | 'super_admin';
 

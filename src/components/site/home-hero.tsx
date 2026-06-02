@@ -4,10 +4,18 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import { Logo } from './logo';
-import { buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { signInWithGoogleAction } from '@/lib/auth/actions';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 
-export function HomeHero() {
+type HomeHeroProps = {
+  /** Resolve no servidor a partir de `getCurrentUser()`. */
+  isAuthenticated: boolean;
+  /** Para onde levar o utilizador autenticado (e onde aterrar após login). */
+  ctaHref: string;
+};
+
+export function HomeHero({ isAuthenticated, ctaHref }: HomeHeroProps) {
   return (
     <motion.section
       variants={staggerContainer}
@@ -16,35 +24,47 @@ export function HomeHero() {
       className="mx-auto flex max-w-4xl flex-col items-center px-4 py-20 text-center sm:px-6 sm:py-28 lg:py-32"
     >
       <motion.div variants={staggerItem}>
-        <Logo size="lg" asStatic />
+        <Logo size="xl" asStatic />
       </motion.div>
 
       <motion.h1
         variants={staggerItem}
-        className="font-display text-ink mt-8 text-4xl leading-tight font-medium sm:text-5xl"
+        className="font-display text-ink mt-10 text-4xl leading-tight font-medium sm:text-5xl"
       >
-        Estudo bíblico para uma fé enraizada.
+        Estudo Bíblico para uma Fé Enraizada.
       </motion.h1>
 
       <motion.p
         variants={staggerItem}
-        className="text-muted-foreground mt-6 max-w-2xl font-sans text-base leading-relaxed sm:text-lg"
+        className="text-muted-foreground mt-6 max-w-2xl text-center font-sans text-base leading-relaxed sm:text-lg"
       >
-        O ministério Logos é o espaço da CCLX para crescer no conhecimento das Escrituras. Cursos em
-        vídeo, apostilas para descarregar e o teu ritmo — sempre gratuitos.
+        Cursos, Apostilas e o teu ritmo - Sempre gratuitos.
       </motion.p>
 
-      <motion.div
-        variants={staggerItem}
-        className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:gap-4"
-      >
-        <Link href="/conteudos" className={buttonVariants({ size: 'lg' })}>
-          Ver conteúdos
-          <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-        </Link>
-        <Link href="/conhece-nos" className={buttonVariants({ variant: 'ghost', size: 'lg' })}>
-          Conhece o projeto
-        </Link>
+      <motion.div variants={staggerItem} className="mt-10 flex w-full flex-col items-center gap-3">
+        {isAuthenticated ? (
+          <Link href={ctaHref} className={buttonVariants({ size: 'lg' })}>
+            Meus cursos
+            <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+          </Link>
+        ) : (
+          <>
+            <form action={signInWithGoogleAction}>
+              <input type="hidden" name="next" value={ctaHref} />
+              <Button type="submit" size="lg">
+                Meus cursos
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              </Button>
+            </form>
+            <p className="text-muted-foreground max-w-xs text-center font-sans text-xs leading-relaxed">
+              Entras com a tua conta Google. Ao continuar, aceitas a{' '}
+              <Link href="/privacidade" className="hover:text-orange-hover underline">
+                Política de Privacidade
+              </Link>
+              .
+            </p>
+          </>
+        )}
       </motion.div>
     </motion.section>
   );

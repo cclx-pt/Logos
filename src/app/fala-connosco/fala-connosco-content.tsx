@@ -6,7 +6,7 @@ import { siteConfig } from '@/lib/site-config';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 
 export function FalaConnoscoContent() {
-  const mailto = `mailto:${siteConfig.organization.email}?subject=${encodeURIComponent('Contacto Logos')}`;
+  const mailto = `mailto:${siteConfig.organization.email}?subject=${encodeURIComponent('Contacto LOGOS')}`;
 
   return (
     <motion.section
@@ -19,14 +19,18 @@ export function FalaConnoscoContent() {
         variants={staggerItem}
         className="font-display text-ink text-4xl font-medium sm:text-5xl"
       >
-        Fala connosco
+        Fala Connosco
       </motion.h1>
 
       <motion.p
         variants={staggerItem}
-        className="text-muted-foreground mt-8 font-sans text-lg leading-relaxed"
+        className="text-muted-foreground mt-8 text-justify font-sans text-lg leading-relaxed hyphens-auto"
       >
-        Tens uma sugestão ou queres saber mais sobre a CCLX? Escreve-nos — lemos tudo.
+        Queres falar Connosco ou descobrir melhor o que fazemos na CCLX - Comunidade Cristã de
+        Lisboa? Estamos disponíveis para esclarecer dúvidas, dar-nos a conhecer ou ajudar no que
+        precisares. Podes entrar em contacto Connosco através do nosso email ou visitar o nosso
+        website, onde encontrarás mais informações sobre a CCLX - Comunidade Cristã de Lisboa, os
+        nossos projetos e outros contactos úteis.
       </motion.p>
 
       <motion.div variants={staggerItem} className="mt-12 grid gap-4 sm:grid-cols-2">
@@ -58,13 +62,6 @@ export function FalaConnoscoContent() {
           </div>
         </a>
       </motion.div>
-
-      <motion.p
-        variants={staggerItem}
-        className="text-muted-foreground mt-16 font-sans text-xs tracking-[0.25em] uppercase"
-      >
-        Horários e morada da igreja em breve
-      </motion.p>
     </motion.section>
   );
 }

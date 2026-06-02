@@ -6,37 +6,12 @@ import { siteConfig } from '@/lib/site-config';
 import { cormorant, inter } from './fonts';
 import './globals.css';
 
-const title = `${siteConfig.name} — ${siteConfig.organization.name}`;
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteConfig.url),
   title: {
-    default: title,
+    default: `${siteConfig.name} · ${siteConfig.organization.name}`,
     template: `%s · ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  openGraph: {
-    type: 'website',
-    locale: 'pt_PT',
-    siteName: siteConfig.name,
-    title,
-    description: siteConfig.description,
-    url: siteConfig.url,
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: `Livro — logótipo ${siteConfig.name} ${siteConfig.organization.name}`,
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title,
-    description: siteConfig.description,
-    images: ['/og-image.png'],
-  },
 };
 
 export default function RootLayout({

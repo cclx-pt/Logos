@@ -16,6 +16,112 @@
 
 ---
 
+## [02-06-2026] — V2.5 segurança/legal: rate limiter + RGPD (privacidade + apagar conta)
+
+Trabalho de conformidade legal e hardening na branch `launch/v2.5-security`, condição de lançamento para um site português que recolhe dados pessoais.
+
+**Conformidade RGPD (mínimo legal).** Análise concluiu que o único item *obrigatório por lei* é a Política de Privacidade (RGPD art. 13.º, dever de informação); Termos, banner de cookies e página `/cookies` separada **não** são exigidos (só cookies essenciais + analytics cookieless dispensam consentimento). Implementado o mínimo + o botão de apagar conta pedido pelo ministério. Responsável pelo tratamento: **CCLX - Comunidade Cristã de Lisboa**; contacto de privacidade: `logos@cclx.pt`.
+
+**Direito ao apagamento (art. 17.º)** via função `delete_own_account()` `SECURITY DEFINER`: resolve o alvo por `auth.uid()` (nunca aceita id, logo ninguém apaga conta de terceiros), apaga `profiles` antes de `auth.users` (FK `ON DELETE RESTRICT`), EXECUTE só para `authenticated`. Mesmo padrão de lockdown do `rate_limit` e dos helpers.
+
+### add
+- add: `supabase/migrations/20260602100000_delete_own_account.sql` — função `delete_own_account()` (RGPD art. 17), SECURITY DEFINER com `search_path` fixo, EXECUTE revogado de public/anon e concedido só a `authenticated`.
+- add: `src/app/privacidade/page.tsx` — Política de Privacidade PT-PT (server component) com as 9 secções do art. 13.º: responsável, dados e finalidade, fundamento jurídico, subcontratantes (Supabase/Vercel/Google/Resend), transferências internacionais, cookies (só essenciais, sem banner), conservação, direitos do titular (+ link para apagar conta e CNPD), alterações.
+- add: `src/components/site/delete-account-button.tsx` — botão de apagar conta com confirmação em dois passos (`role="alertdialog"`), no `/perfil`.
+- add: `src/lib/auth/actions.ts` → `deleteAccountAction()` — chama a RPC `delete_own_account`, termina sessão e redireciona para a home; lança sem terminar sessão se a RPC falhar.
+- add: `src/lib/auth/actions.test.ts` — 3 testes (wiring da RPC + signOut + redirect; RPC sem id de alvo; falha da RPC não termina sessão).
+- add: `supabase/migrations/20260530170000_rate_limit.sql` — rate limiter fixed-window em Postgres (`check_rate_limit()`), commitado nesta ronda. Primitiva de DB; caller na app ainda por ligar.
+
+### update
+- update: `src/app/perfil/page.tsx` — nova secção "Apagar conta" com `<DeleteAccountButton />` e link para a Política de Privacidade.
+- update: `src/components/site/footer.tsx` — link para `/privacidade`.
+
+- add: `src/components/site/home-hero.tsx` → aviso de consentimento no CTA de login (art. 13.º, ponto de recolha): "Entras com a tua conta Google. Ao continuar, aceitas a Política de Privacidade."
+
+### infra
+- infra: migrações aplicadas. **`logos-dev`** — só a nova `delete_own_account` (as de segurança já lá estavam via linha V3, sob outros timestamps). **`logos-prod`** — sequência pendente completa aplicada em ordem (`role_mutation_authority`, `revoke_execute...`, `profiles_update_lockdown`, `rate_limit`, `delete_own_account`), com a **versão exata de cada ficheiro** registada em `schema_migrations` (histórico de prod passa a coincidir com o repo). Advisor de segurança de prod: só avisos esperados.
+
+### docs
+- docs: `feature-docs/legal-privacidade.md` — decisão de âmbito (o que a lei obriga vs. recomendado), conteúdo da política, arquitetura do apagamento (+ caveat V3 dos FK `RESTRICT`), e o que falta a cargo da organização (DPAs com subcontratantes).
+- docs: `feature-docs/legal-pendencias.md` — checklist do que falta para conformidade plena (aviso de consentimento ✅, DPAs, RAT, art. 9.º categorias especiais, procedimento de violação de dados, menores, caveat V3 do apagamento).
+
+---
+
+## [26-05-2026] — V2.5: vídeo de apresentação na home (antes dos testemunhos) + copy final
+
+Acrescento à home — um vídeo de apresentação único do LOGOS posicionado **entre `HomeMotto` e `HomeTestimonials`**. Hosting decidido como **YouTube em modo "não listado"** no canal LOGOS / CCLX, embebido por iframe (`youtube-nocookie.com`, `loading="lazy"`, `referrerPolicy="strict-origin-when-cross-origin"`). Mantém-se a regra dura de `CLAUDE.md` §🚫: sem ficheiros de vídeo no sistema. A configuração reduz-se a uma constante `DEFAULT_VIDEO_ID` no componente; vazio renderiza placeholder em paleta laranja.
+
+Confirmação do ministério: **toda a copy de V2.5 é final**. Único bloqueio de copy restante antes do merge a `main` é o conteúdo dos testemunhos do carrossel (`feature-docs/v2-copy-and-conteudos.md` §8 actualizado).
+
+> Nota: a primeira iteração desta sessão colocou o vídeo no topo de `/conteudos`. O utilizador corrigiu o destino para a home. `/conteudos` voltou ao estado pré-acrescento; só ficou a versão home.
+
+### add
+- add: `src/components/site/home-presentation-video.tsx` — client component `<HomePresentationVideo />` com iframe YouTube (`youtube-nocookie`) e placeholder "Vídeo de apresentação em preparação" quando o ID está vazio. `<motion.section>` com `aria-label`, max-w-5xl, `aspect-video` 16:9, integrado no stagger via `staggerContainer`/`staggerItem`.
+- add: `src/components/site/home-presentation-video.test.tsx` — cobre `aria-label` da section, placeholder com `videoId=""` e iframe com `src` correcto + `loading="lazy"` + `allowFullScreen` quando `videoId="dQw4w9WgXcQ"`.
+
+### update
+- update: `src/app/page.tsx` — renderiza `<HomePresentationVideo />` entre `<HomeMotto />` e `<HomeTestimonials />`. Sem props; usa o `DEFAULT_VIDEO_ID` do componente.
+
+### docs
+- docs: `feature-docs/v2-copy-and-conteudos.md` §9 nova (vídeo de apresentação na home — decisão de hosting YouTube unlisted, ficheiros, passo único de configuração, verificações). §8 actualizada: cards de cursos do `/conteudos` marcados como copy final; único bloqueio de copy restante é o conteúdo dos testemunhos.
+
+---
+
+## [18-05-2026] — V2.5: rebase + fix do 404 + branch de preview
+
+Ronda V2.x (PR-A a PR-F) re-aplicada em cima de `main` após terem aterrado PR #27 (V2 PR3 roles UI), PR #32 (Cursos→Conteúdos hub) e PR #33 (copy do ministério). Conflitos resolvidos a favor do trabalho V2.x: `/conteudos` volta a ser página flat (intro justificada + bloco "Em breve" único), os sub-routes `/conteudos/cursos` e `/conteudos/escola-biblica` do hub anterior são eliminados. Branch `v2.5-copy-ux` pushed para preview-only — **não merge em `main`** enquanto os testemunhos forem placeholder.
+
+### add
+- add: `feature-docs/accounts.md` — mapa de *ownership* de todas as contas externas (GitHub, Vercel, Supabase, Google Cloud, Hostinger, Resend) sob `joaocanelasribeiro@gmail.com`. Esclarece a fronteira entre *ownership* (João, ministério) e acesso operacional (developer actual). Decisão para *bus factor* + sucessão centralizada no líder do ministério.
+
+### fix
+- fix: `src/app/not-found-content.tsx` — `Base UI: A component that acts as a button expected a native <button>` quando se carregava num 404. `Button render={<Link/>}` substituído por `<Link className={buttonVariants(...)}>` (mesmo padrão já usado em `home-hero.tsx`). Erro só aparecia no client porque a primitiva valida o contexto de render no browser.
+
+### update
+- update: `src/app/conteudos/{page,page.test,conteudos-content}.tsx` — versão flat da rota (alinhada com `feature-docs/v2-copy-and-conteudos.md` §3), com intro justificada + cartão "Em breve" único. Os ficheiros do hub anterior (`/conteudos/cursos/*` e `/conteudos/escola-biblica/*`) são eliminados.
+- update: `src/app/cursos/page.tsx` — fica como `permanentRedirect('/conteudos')`, agora no caminho final (recriado após o rename de `main` que tinha movido para `/conteudos/cursos/`).
+
+### infra
+- infra: branch `v2.5-copy-ux` push para `origin`. Vercel cria preview deploy automático em `https://logos-l4nq6ppd8-jcrninjas-projects.vercel.app/` (URL protegida por Vercel Authentication — só *signed in* na conta Vercel do João). Production em `logos.cclx.pt` continua intocada.
+
+### docs
+- docs: `status.md` actualizada para reflectir o estado de V2.5 (preview-only, à espera de testemunhos do ministério).
+
+---
+
+## [16-05-2026] — V2.x: Copy & UX (LOGOS, hero, /conteudos, testemunhos, /perfil)
+
+Ronda só de copy + UX (sem DB, sem auth) executada em 6 PRs locais (PR-A a PR-F). Plano e mapeamento das 19 pedidas do ministério em `feature-docs/v2-copy-and-conteudos.md`.
+
+### add
+- add: `src/components/site/home-motto.tsx` — lema do ministério em três linhas em itálico (`<aside>` com `aria-label="Lema do ministério LOGOS"`, bordas laranja subtis). Renderizado no `page.tsx` abaixo do hero.
+- add: `src/components/site/home-testimonials.tsx` — carrossel com 5 testemunhos placeholder PT-PT. embla-carousel-react@8.6.0 instalado como dep directa; carrossel custom shadcn-style (não copiado do CLI shadcn por hang) com loop infinito, 1/2/3 slides por breakpoint, setas prev/next acessíveis e dots tab-list com `aria-selected`. Sync inicial via `queueMicrotask` para evitar `react-hooks/set-state-in-effect`.
+- add: `src/app/conteudos/` (page + content + test) — nova rota pública que substitui `/cursos`. Parágrafo intro justificado com texto final do ministério, 3 cards placeholder "Em preparação" (badge laranja). H1 "Conteúdos".
+- add: `src/app/perfil/page.tsx` — placeholder de perfil para utilizadores autenticados. Avatar (Google `avatar_url` ou iniciais), nome, email (lido de `auth.users`, não duplicado em `profiles`), papel em PT-PT, data de criação. `notFound()` quando sem sessão.
+- add: `feature-docs/v2-copy-and-conteudos.md` — doc de planeamento das 6 PRs com escopo, verificações e mapeamento da checklist do ministério.
+
+### update
+- update: `src/components/site/home-hero.tsx` — logo `size="xl"` (`h-32 sm:h-44 md:h-52`, `priority`); h1 "Estudo Bíblico para uma Fé Enraizada." com capitalizações pedidas; CTA único centrado "Meus cursos"; comportamento depende de sessão (server resolve via `getCurrentUser()` e passa `isAuthenticated` + `ctaHref`): autenticado abre `<Link href={ctaHref}>`, sem sessão abre `<form action={signInWithGoogleAction}>` com hidden `next`. Parágrafo justificado.
+- update: `src/components/site/user-menu.tsx` — items finais: "Os meus cursos" (→ /conteudos), "Perfil" (→ /perfil), "Área admin" (condicional), separador, "Terminar sessão". Label "Sessão de X" agora envolvida em `<DropdownMenuGroup>` (corrige bug Base UI residual de PR3).
+- update: `src/lib/auth/actions.ts` — `signInWithGoogleAction(formData?)` aceita FormData opcional com campo `next`; valida com `safeNext` (mesma defesa anti-open-redirect do callback) e injecta `?next=` no `redirectTo`.
+- update: `src/lib/auth/index.ts` — re-exporta `SupabaseUser` (alias de `User` do `@supabase/supabase-js`) para que código fora de `lib/auth/**` possa tipar sem violar `no-restricted-imports`.
+- update: `src/lib/site-config.ts` — `name: 'LOGOS'`, descrição sem em dash, nav passa a ter `{ href: '/conteudos', label: 'Conteúdos' }` e `{ href: '/fala-connosco', label: 'Fala Connosco' }`.
+- update: `src/app/cursos/page.tsx` — passa a `permanentRedirect('/conteudos')` (308). `cursos-content.tsx` e `cursos/page.test.tsx` eliminados.
+- update: `src/app/conhece-nos/conhece-nos-content.tsx` — `Logos` → `LOGOS`, `fé` → `Fé`, `fala connosco` → `fala Connosco`. Todos os em dashes (—) em copy substituídos por vírgulas / ponto-e-vírgula / dois pontos. Três parágrafos longos com `text-justify hyphens-auto`. Frase "Sem prazos, sem barras de progresso, sem distrações" removida (tom IA).
+- update: `src/app/fala-connosco/fala-connosco-content.tsx` — título "Fala Connosco" (C maiúsculo), parágrafo intro substituído pelo texto novo do ministério com "Connosco" maiúsculo, justificado. Nota "Horários e morada da igreja em breve" eliminada. Subject email "Contacto LOGOS".
+- update: `src/components/site/logo.tsx` — novo tamanho `xl`; aria-label "LOGOS" (era "Logos"); em dash fora.
+- update: `src/app/admin/page.tsx`, `src/app/admin/utilizadores/page.tsx`, `src/app/fala-connosco/page.tsx`, `src/app/cursos/page.tsx`, `src/app/layout.tsx`: metadata title/description com `LOGOS`. UI em dashes substituídos por pontuação alternativa.
+- update: `src/app/not-found-content.tsx` + `not-found.test.tsx` — CTA "Ver conteúdos" → `/conteudos`.
+
+### infra
+- infra: `embla-carousel-react@^8.6.0` adicionado como dependência directa para suportar o carrossel de testemunhos.
+- infra: `src/test/setup.ts` ganha stubs mínimos de `matchMedia`, `ResizeObserver` e `IntersectionObserver` (jsdom não os tem; embla e motion tocam neles à montagem).
+
+### fix
+- fix: `src/components/site/user-menu.tsx` — `<DropdownMenuLabel>` agora envolvido em `<DropdownMenuGroup>` (fix do `MenuGroupRootContext is missing` reportado na PR3 em preview Vercel).
+
+---
+
 ## [14-05-2026] — V2 PR3: Roles UI (dropdown user + área /admin + promoção super_admin)
 
 ### add

@@ -1,11 +1,11 @@
 export const siteConfig = {
-  name: 'Logos',
+  name: 'LOGOS',
   url: 'https://logos.cclx.pt',
   description:
-    'Plataforma de estudo bíblico da CCLX — cursos para crescer no conhecimento das Escrituras.',
+    'Plataforma de estudo Bíblico da CCLX. Cursos para crescer no conhecimento das Escrituras.',
   organization: {
     name: 'CCLX',
-    fullName: 'Comunidade Cristã Lisboa',
+    fullName: 'Comunidade Cristã de Lisboa',
     website: 'https://cclx.pt',
     email: 'logos@cclx.pt',
   },
@@ -19,5 +19,5 @@ export type NavItem = {
 export const navItems: readonly NavItem[] = [
   { href: '/conhece-nos', label: 'Conhece-nos' },
   { href: '/conteudos', label: 'Conteúdos' },
-  { href: '/fala-connosco', label: 'Fala connosco' },
+  { href: '/fala-connosco', label: 'Fala Connosco' },
 ] as const;
