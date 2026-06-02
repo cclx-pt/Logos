@@ -22,18 +22,12 @@
 
 import { NextResponse } from 'next/server';
 import { getRouteHandlerClient } from '@/lib/auth';
-
-function safeNext(next: string | null): string {
-  // Aceita só caminhos relativos internos (começam por `/`, não `//`).
-  if (!next) return '/';
-  if (!next.startsWith('/') || next.startsWith('//')) return '/';
-  return next;
-}
+import { safeNextPath } from '@/lib/auth/redirect';
 
 export async function GET(request: Request): Promise<NextResponse> {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
-  const next = safeNext(url.searchParams.get('next'));
+  const next = safeNextPath(url.searchParams.get('next')) ?? '/';
 
   if (!code) {
     return NextResponse.redirect(new URL('/?auth_error=missing_code', url.origin));
