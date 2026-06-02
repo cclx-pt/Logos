@@ -16,6 +16,31 @@
 
 ---
 
+## [02-06-2026] — V2.5 segurança/legal: rate limiter + RGPD (privacidade + apagar conta)
+
+Trabalho de conformidade legal e hardening na branch `launch/v2.5-security`, condição de lançamento para um site português que recolhe dados pessoais.
+
+**Conformidade RGPD (mínimo legal).** Análise concluiu que o único item *obrigatório por lei* é a Política de Privacidade (RGPD art. 13.º, dever de informação); Termos, banner de cookies e página `/cookies` separada **não** são exigidos (só cookies essenciais + analytics cookieless dispensam consentimento). Implementado o mínimo + o botão de apagar conta pedido pelo ministério. Responsável pelo tratamento: **CCLX - Comunidade Cristã de Lisboa**; contacto de privacidade: `logos@cclx.pt`.
+
+**Direito ao apagamento (art. 17.º)** via função `delete_own_account()` `SECURITY DEFINER`: resolve o alvo por `auth.uid()` (nunca aceita id, logo ninguém apaga conta de terceiros), apaga `profiles` antes de `auth.users` (FK `ON DELETE RESTRICT`), EXECUTE só para `authenticated`. Mesmo padrão de lockdown do `rate_limit` e dos helpers.
+
+### add
+- add: `supabase/migrations/20260602100000_delete_own_account.sql` — função `delete_own_account()` (RGPD art. 17), SECURITY DEFINER com `search_path` fixo, EXECUTE revogado de public/anon e concedido só a `authenticated`.
+- add: `src/app/privacidade/page.tsx` — Política de Privacidade PT-PT (server component) com as 9 secções do art. 13.º: responsável, dados e finalidade, fundamento jurídico, subcontratantes (Supabase/Vercel/Google/Resend), transferências internacionais, cookies (só essenciais, sem banner), conservação, direitos do titular (+ link para apagar conta e CNPD), alterações.
+- add: `src/components/site/delete-account-button.tsx` — botão de apagar conta com confirmação em dois passos (`role="alertdialog"`), no `/perfil`.
+- add: `src/lib/auth/actions.ts` → `deleteAccountAction()` — chama a RPC `delete_own_account`, termina sessão e redireciona para a home; lança sem terminar sessão se a RPC falhar.
+- add: `src/lib/auth/actions.test.ts` — 3 testes (wiring da RPC + signOut + redirect; RPC sem id de alvo; falha da RPC não termina sessão).
+- add: `supabase/migrations/20260530170000_rate_limit.sql` — rate limiter fixed-window em Postgres (`check_rate_limit()`), commitado nesta ronda. Primitiva de DB; caller na app ainda por ligar.
+
+### update
+- update: `src/app/perfil/page.tsx` — nova secção "Apagar conta" com `<DeleteAccountButton />` e link para a Política de Privacidade.
+- update: `src/components/site/footer.tsx` — link para `/privacidade`.
+
+### docs
+- docs: `feature-docs/legal-privacidade.md` — decisão de âmbito (o que a lei obriga vs. recomendado), conteúdo da política, arquitetura do apagamento, e o que falta a cargo da organização (DPAs com subcontratantes).
+
+---
+
 ## [26-05-2026] — V2.5: vídeo de apresentação na home (antes dos testemunhos) + copy final
 
 Acrescento à home — um vídeo de apresentação único do LOGOS posicionado **entre `HomeMotto` e `HomeTestimonials`**. Hosting decidido como **YouTube em modo "não listado"** no canal LOGOS / CCLX, embebido por iframe (`youtube-nocookie.com`, `loading="lazy"`, `referrerPolicy="strict-origin-when-cross-origin"`). Mantém-se a regra dura de `CLAUDE.md` §🚫: sem ficheiros de vídeo no sistema. A configuração reduz-se a uma constante `DEFAULT_VIDEO_ID` no componente; vazio renderiza placeholder em paleta laranja.

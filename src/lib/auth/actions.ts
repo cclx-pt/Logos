@@ -84,3 +84,24 @@ export async function signOutAction(): Promise<void> {
   await supabase.auth.signOut();
   redirect('/');
 }
+
+/**
+ * Apaga a conta do utilizador autenticado — RGPD art. 17 (direito ao apagamento).
+ *
+ * Toda a autoridade vive na função SECURITY DEFINER `delete_own_account()`
+ * (migration 20260602100000): resolve o alvo por `auth.uid()`, por isso esta
+ * action não passa — nem podia passar — um id, e ninguém apaga a conta de outrem.
+ * Depois de apagar, a sessão fica órfã; o signOut limpa os cookies (best-effort,
+ * a sessão já pode estar inválida) e redirecionamos para a home.
+ */
+export async function deleteAccountAction(): Promise<void> {
+  const supabase = await getServerClient();
+
+  const { error } = await supabase.rpc('delete_own_account');
+  if (error) {
+    throw new Error(`Falha a apagar a conta: ${error.message}`);
+  }
+
+  await supabase.auth.signOut();
+  redirect('/');
+}

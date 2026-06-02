@@ -21,6 +21,9 @@ export function Footer() {
           >
             {siteConfig.organization.fullName}
           </Link>
+          <Link href="/privacidade" className="hover:text-orange-hover transition-colors">
+            Política de Privacidade
+          </Link>
           <p>
             © {year} {siteConfig.organization.name}. Todos os direitos reservados.
           </p>

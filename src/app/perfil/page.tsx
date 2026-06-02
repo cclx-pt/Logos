@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getCurrentUser, getServerClient, type Role, type SupabaseUser } from '@/lib/auth';
+import { DeleteAccountButton } from '@/components/site/delete-account-button';
 
 export const metadata: Metadata = {
   title: 'Perfil',
@@ -104,6 +105,19 @@ export default async function PerfilPage() {
         Edição de perfil em breve. Por agora, alterações ao nome ou foto são geridas na tua conta
         Google.
       </p>
+
+      <section className="border-border mt-12 border-t pt-10">
+        <h2 className="font-display text-ink text-xl font-medium tracking-tight">Apagar conta</h2>
+        <p className="text-muted-foreground mt-2 mb-5 max-w-prose font-sans text-sm">
+          Podes apagar a tua conta a qualquer momento. Removemos os teus dados e registos de forma
+          permanente. Sabe mais na{' '}
+          <a href="/privacidade" className="text-orange hover:text-orange-hover underline">
+            Política de Privacidade
+          </a>
+          .
+        </p>
+        <DeleteAccountButton />
+      </section>
     </section>
   );
 }
