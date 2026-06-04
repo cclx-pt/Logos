@@ -15,6 +15,7 @@
 - update: [04-06-2026] **testemunhos do carrossel da home anónimos**, alinhados com a versão em produção (V2/`main`). Os 4 quotes mantêm-se; removidos os nomes de autor (`author`/`<figcaption>`) que tinham sido acrescentados em `v3-cursos`. `home-testimonials.tsx` + teste atualizado (passa a verificar anonimato).
 
 ### docs
+- docs: [04-06-2026] **plano de login por email + código (OTP passwordless via Resend)** - decisão fechada de avançar (terceiro método de login para quem não tem Google/Microsoft, sem sistema de palavras-passe). Plano completo + setup Resend/SMTP/DNS/Turnstile em `feature-docs/email-otp-login.md`; handoff para implementação em `feature-docs/email-otp-handoff.md`. SPEC §17/§18/§19 atualizada (OTP entra em âmbito; password continua fora). Implementação por fazer.
 - docs: [04-06-2026] apagar handoff stale `feature-docs/v3-3-handoff.md` (listava PR5-PR8 como pendentes quando já estavam mergeadas: #38/#40/#41/#42/#43) e substituir pela entrada definitiva `feature-docs/v3-3-iteration.md`. Secção "Em progresso" do `status.md` reconciliada: V3.1/V3.2/V3.3 todas fechadas em código + DB; pré-requisitos sequenciais confirmados como adiados para V4. Bloqueador residual ao merge `v3-cursos → main` continua a ser testemunhos do ministério + smoke no preview.
 
 ### add

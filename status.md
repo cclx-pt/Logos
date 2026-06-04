@@ -119,7 +119,10 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
   - **Loading states**: novos componentes `Spinner` (Lucide Loader2 + `role="status"` + sr-only), `Skeleton` (`aria-hidden`, `animate-pulse`), `ProgressBar` indeterminada (keyframe `indeterminate` em `globals.css`), `SubmitButton` Client Component que usa `useFormStatus` para mostrar spinner + opcional ProgressBar enquanto a Server Action corre. Aplicado nos forms de criar/editar aula (uploads de PDF lentos). `loading.tsx` em `/admin/conteudos`, `/admin/conteudos/[courseId]` e `/conteudos` com skeletons que reflectem o layout real. 15 testes novos (163 → 178).
 
 ## 🚧 Em progresso
-**Nada em código.** V3.1, V3.2 e V3.3 estão todas fechadas do lado do código + DB em `v3-cursos`. Bloqueador residual ao merge `v3-cursos → main`: testemunhos finais do ministério + smoke test manual no preview Vercel.
+**Nada em código.** V3.1, V3.2 e V3.3 estão todas fechadas do lado do código + DB em `v3-cursos`. Bloqueador residual ao merge `v3-cursos → main`: smoke test manual no preview Vercel.
+
+- **Próximo (planeado, decisão fechada 04-06-2026):** **login por email + código OTP** (passwordless via Resend) como terceiro método, para quem não tem Google/Microsoft. Plano em `feature-docs/email-otp-login.md`; handoff de implementação em `feature-docs/email-otp-handoff.md`. Pré-condição: configurar Resend SMTP + DNS (SPF/DKIM Hostinger) + Turnstile no Supabase.
+- **Login Microsoft (Azure)** entregue em código (PR #49) - falta configurar o provider Azure no Supabase para funcionar (`feature-docs/microsoft-oauth-setup.md`).
 
 - **V3.3 — UX + estrutura + enrollment** ✅ fechada (PR1-PR8, PR4 descartada). Plano e resumo em `feature-docs/v3-3-iteration.md`. PR8 (#43) — enrollment explícito (`unenrolled_at`) + 3 vistas em `/conteudos/[courseId]` + RLS anónima — era o bloqueador final. Migrations aplicadas a `logos-dev`.
 - **V3.2 — Iteração de UI/UX** ✅ fechada. Plano em `feature-docs/v3-2-iteration.md`.

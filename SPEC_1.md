@@ -522,6 +522,7 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 - **Integração futura com shell partilhada CCLX** — não implementada agora, mas a fronteira de identidade do Logos foi estruturada para a tornar uma substituição de camada (e não uma reescrita): identidade isolada em `src/lib/auth/` como única importadora de `@supabase/ssr`, FKs sempre para `profiles.id` (nunca para `auth.users`), RLS via função helper `current_profile_id()`. O contrato concreto com a shell será definido em documento próprio quando a shell for desenhada. Detalhes em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
 - **Email/password como método alternativo de autenticação** — fora do âmbito V1-V9. Decisão tomada em 09-05-2026 para reduzir esforço da V2 (de ~13h para ~3.5h), eliminar dependências externas em Resend e DNS Hostinger, e acelerar a entrega da V3 (01-07-2026). Reabrir apenas se o ministério explicitamente pedir. Detalhes em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
 - **Providers OAuth suportados** — Google (desde V2) e **Microsoft/Entra (Azure)** (acrescentado em 04-06-2026, a pedido do líder do projeto, para incluir utilizadores com conta Microsoft). **Apple adiado**: "Sign in with Apple" exige Apple Developer Program (~99 USD/ano) + Services ID + chave de assinatura; reabrir quando justificado. O código está preparado para novos providers (basta uma entrada em `OAuthProvider` + um wrapper em `src/lib/auth/actions.ts`). As credenciais de cada provider vivem no painel Supabase Auth (`logos-dev` e, no lançamento, `logos-prod`), nunca no repositório.
+- **Login por email + código (OTP passwordless)** — **decidido avançar** em 04-06-2026 (líder do projeto): terceiro método de login para quem não tem Google nem Microsoft, sem sistema de palavras-passe. Código de 6 dígitos via Supabase OTP, email entregue por **Resend (SMTP do Supabase)**. Reabre a dependência de email/DNS que a V2 tinha adiado (SPF/DKIM Hostinger). **OTP não é palavra-passe** — login com password continua fora de âmbito (§18). Plano completo + setup em `feature-docs/email-otp-login.md`; implementação por fazer (`feature-docs/email-otp-handoff.md`).
 
 ---
 
@@ -540,7 +541,7 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 - Certificados de conclusão de curso para além do simples ecrã "Curso Concluído"
 - Ficheiros de vídeo alojados pelo próprio sistema
 - Barras de progresso, percentagens ou cálculos visuais de avanço (até pelo menos a V7, e mesmo aí só se justificado)
-- Login com email e palavra-passe (e respectivos fluxos: registo manual, recuperação de palavra-passe, validação de email) — a autenticação V1-V9 faz-se por OAuth social (Google + Microsoft); ver §17
+- Login com email e **palavra-passe** (e respectivos fluxos: registo manual, recuperação de palavra-passe) — continua fora de âmbito. A autenticação faz-se por OAuth social (Google + Microsoft) e, quando implementado, por **email + código OTP** (passwordless, sem gestão de palavras-passe); ver §17
 
 ---
 
@@ -551,7 +552,8 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 - **Alterações relativamente à v2.9:**
   - §9/§11 — célula Autenticação: de "Google OAuth (único método)" para "OAuth social: Google + Microsoft".
   - §17 — nova decisão: providers OAuth suportados (Google + Microsoft); Apple adiado por exigir Apple Developer Program pago. Código preparado para novos providers.
-  - §18 — "fora de âmbito" de email/password reformulado (a autenticação faz-se por OAuth social Google + Microsoft).
+  - §17 — nova decisão: avançar com **login por email + código OTP** (passwordless via Resend) como terceiro método; plano em `feature-docs/email-otp-login.md`.
+  - §18 — "fora de âmbito" reformulado: só login com **palavra-passe** fica de fora; OAuth (Google + Microsoft) e OTP por email estão dentro.
   - Pedido do líder do projeto em 04-06-2026.
 - **Alterações relativamente à v2.8:**
   - §6 — nova sub-secção "Conteúdos: o nível de topo": o ensino passa a organizar-se sob um nível de topo **Conteúdos** com duas áreas (Cursos + Escola Bíblica). A árvore Curso → Módulo → Aula passou a sub-secção "Árvore de Cursos".
