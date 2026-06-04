@@ -90,7 +90,12 @@ describe('getStartedCoursesForUser', () => {
       if (table === 'course_access_log')
         return makeBuilder({
           data: [
-            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', unenrolled_at: null, courses: courseEmbed },
+            {
+              course_id: 'course-1',
+              accessed_at: '2026-05-25T10:00:00Z',
+              unenrolled_at: null,
+              courses: courseEmbed,
+            },
           ],
           error: null,
         });
@@ -120,9 +125,24 @@ describe('getStartedCoursesForUser', () => {
         return makeBuilder({
           data: [
             // desc por accessed_at; primeiro é o mais recente
-            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', unenrolled_at: null, courses: courseEmbed },
-            { course_id: 'course-1', accessed_at: '2026-05-20T09:00:00Z', unenrolled_at: null, courses: courseEmbed },
-            { course_id: 'course-1', accessed_at: '2026-05-15T08:00:00Z', unenrolled_at: null, courses: courseEmbed },
+            {
+              course_id: 'course-1',
+              accessed_at: '2026-05-25T10:00:00Z',
+              unenrolled_at: null,
+              courses: courseEmbed,
+            },
+            {
+              course_id: 'course-1',
+              accessed_at: '2026-05-20T09:00:00Z',
+              unenrolled_at: null,
+              courses: courseEmbed,
+            },
+            {
+              course_id: 'course-1',
+              accessed_at: '2026-05-15T08:00:00Z',
+              unenrolled_at: null,
+              courses: courseEmbed,
+            },
           ],
           error: null,
         });
@@ -141,8 +161,18 @@ describe('getStartedCoursesForUser', () => {
       if (table === 'course_access_log')
         return makeBuilder({
           data: [
-            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', unenrolled_at: null, courses: courseEmbed },
-            { course_id: 'course-bad', accessed_at: '2026-05-24T10:00:00Z', unenrolled_at: null, courses: null },
+            {
+              course_id: 'course-1',
+              accessed_at: '2026-05-25T10:00:00Z',
+              unenrolled_at: null,
+              courses: courseEmbed,
+            },
+            {
+              course_id: 'course-bad',
+              accessed_at: '2026-05-24T10:00:00Z',
+              unenrolled_at: null,
+              courses: null,
+            },
           ],
           error: null,
         });
@@ -161,7 +191,12 @@ describe('getStartedCoursesForUser', () => {
       if (table === 'course_access_log')
         return makeBuilder({
           data: [
-            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', unenrolled_at: null, courses: courseEmbed },
+            {
+              course_id: 'course-1',
+              accessed_at: '2026-05-25T10:00:00Z',
+              unenrolled_at: null,
+              courses: courseEmbed,
+            },
           ],
           error: null,
         });
@@ -180,7 +215,12 @@ describe('getStartedCoursesForUser', () => {
       if (table === 'course_access_log')
         return makeBuilder({
           data: [
-            { course_id: 'course-1', accessed_at: '2026-05-25T10:00:00Z', unenrolled_at: null, courses: courseEmbed },
+            {
+              course_id: 'course-1',
+              accessed_at: '2026-05-25T10:00:00Z',
+              unenrolled_at: null,
+              courses: courseEmbed,
+            },
           ],
           error: null,
         });

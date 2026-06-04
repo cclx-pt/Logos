@@ -81,9 +81,7 @@ export function ConteudosContent({
     router.push(`/conteudos?${params.toString()}`, { scroll: false });
   }
 
-  const visibleSortOptions = SORT_OPTIONS.filter(
-    (opt) => !opt.authOnly || isAuthenticated,
-  );
+  const visibleSortOptions = SORT_OPTIONS.filter((opt) => !opt.authOnly || isAuthenticated);
   const sortIcon = sortKey === 'z-a' ? ArrowUpAZ : ArrowDownAZ;
   const SortIcon = sortIcon;
 

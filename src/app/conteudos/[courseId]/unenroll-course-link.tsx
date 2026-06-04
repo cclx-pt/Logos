@@ -35,8 +35,8 @@ export function UnenrollCourseLink({ courseId }: Props) {
         Sair do curso
       </button>
       <p className="text-muted-foreground mt-2 max-w-prose text-xs">
-        Tira o curso da tua lista. O teu progresso é preservado — voltas a vê-lo se te
-        inscreveres outra vez.
+        Tira o curso da tua lista. O teu progresso é preservado — voltas a vê-lo se te inscreveres
+        outra vez.
       </p>
     </form>
   );

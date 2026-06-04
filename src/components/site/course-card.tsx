@@ -63,8 +63,7 @@ export function CourseCard({
   // "Em breve" + disabled só faz sentido para utilizadores autenticados —
   // anon nunca poderia entrar mesmo num curso com aulas (cai no CTA de login).
   // Cursos concluídos no catálogo nunca ficam disabled — utilizador pode rever.
-  const isCatalogDisabled =
-    isCatalog && isAuthenticated && !isCompleted && !course.hasLessons;
+  const isCatalogDisabled = isCatalog && isAuthenticated && !isCompleted && !course.hasLessons;
   const showComingSoonBadge = isCatalogDisabled;
 
   const baseClasses =
