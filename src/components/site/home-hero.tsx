@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import { Logo } from './logo';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { signInWithGoogleAction } from '@/lib/auth/actions';
+import { buttonVariants } from '@/components/ui/button';
+import { ProviderSignIn } from './provider-sign-in';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 
 type HomeHeroProps = {
@@ -48,13 +48,7 @@ export function HomeHero({ isAuthenticated, ctaHref }: HomeHeroProps) {
             <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
           </Link>
         ) : (
-          <form action={signInWithGoogleAction}>
-            <input type="hidden" name="next" value={ctaHref} />
-            <Button type="submit" size="lg">
-              Meus cursos
-              <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-            </Button>
-          </form>
+          <ProviderSignIn next={ctaHref} size="lg" className="justify-center" />
         )}
       </motion.div>
     </motion.section>

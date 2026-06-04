@@ -336,7 +336,7 @@ A equipa do ministério organizou os pedidos por **prioridade** (P1 essencial �
 | Estilização                           | **Tailwind CSS**                         | Utility-first; rápido para humano e para Claude Code                                      |
 | Componentes UI                        | **shadcn/ui**                            | Acessíveis, configuráveis para a paleta creme + laranja                                   |
 | Base de dados                         | **Supabase (Postgres)** — 2 projetos: `logos-dev` e `logos-prod` | Auth da Supabase fixa-se ao schema `auth.users`; só projetos separados isolam contas. Plano gratuito acomoda 2 projetos |
-| Autenticação                          | **Supabase Auth** (Google OAuth) — único método; ver §17 e §18 | Integrada com a base de dados; trata de papéis e sessões. Sem signup/recovery de palavra-passe (decisão de scope V2 para reduzir esforço e dependências externas) |
+| Autenticação                          | **Supabase Auth** (OAuth social: Google + Microsoft) — ver §17 e §18 | Integrada com a base de dados; trata de papéis e sessões. Sem signup/recovery de palavra-passe (decisão de scope V2 para reduzir esforço e dependências externas). Microsoft (Entra/Azure) acrescentado em 04-06-2026; Apple adiado por exigir Apple Developer Program pago |
 | Armazenamento de ficheiros (PDFs)     | **Supabase Storage**                     | Mesma conta Supabase; URLs assinados para descarregar                                     |
 | Acesso à base de dados                | **Supabase JS client** (`@supabase/ssr` para SSR) | Sessão em Server Components/Actions via cookies httpOnly; migração para Drizzle adiada |
 | Migrations                            | **Supabase CLI** (`supabase/migrations/*.sql` versionado) | Schema replicado entre `logos-dev` e `logos-prod` com `supabase db push`; ficheiros SQL no Git |
@@ -520,7 +520,8 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 - **Design da funcionalidade de Q&A (V5)** — adiada na totalidade até a V4 estar estável.
 - **Decisão sobre indicadores de progresso (V7)** — só após V3+V4 em produção e feedback real de utilizadores.
 - **Integração futura com shell partilhada CCLX** — não implementada agora, mas a fronteira de identidade do Logos foi estruturada para a tornar uma substituição de camada (e não uma reescrita): identidade isolada em `src/lib/auth/` como única importadora de `@supabase/ssr`, FKs sempre para `profiles.id` (nunca para `auth.users`), RLS via função helper `current_profile_id()`. O contrato concreto com a shell será definido em documento próprio quando a shell for desenhada. Detalhes em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
-- **Email/password como método alternativo de autenticação** — fora do âmbito V1-V9. Decisão tomada em 09-05-2026 para reduzir esforço da V2 (de ~13h para ~3.5h), eliminar dependências externas em Resend e DNS Hostinger, e acelerar a entrega da V3 (01-07-2026). Reabrir apenas se o ministério explicitamente pedir inclusão de utilizadores sem Google account. Detalhes em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
+- **Email/password como método alternativo de autenticação** — fora do âmbito V1-V9. Decisão tomada em 09-05-2026 para reduzir esforço da V2 (de ~13h para ~3.5h), eliminar dependências externas em Resend e DNS Hostinger, e acelerar a entrega da V3 (01-07-2026). Reabrir apenas se o ministério explicitamente pedir. Detalhes em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
+- **Providers OAuth suportados** — Google (desde V2) e **Microsoft/Entra (Azure)** (acrescentado em 04-06-2026, a pedido do líder do projeto, para incluir utilizadores com conta Microsoft). **Apple adiado**: "Sign in with Apple" exige Apple Developer Program (~99 USD/ano) + Services ID + chave de assinatura; reabrir quando justificado. O código está preparado para novos providers (basta uma entrada em `OAuthProvider` + um wrapper em `src/lib/auth/actions.ts`). As credenciais de cada provider vivem no painel Supabase Auth (`logos-dev` e, no lançamento, `logos-prod`), nunca no repositório.
 
 ---
 
@@ -539,14 +540,19 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 - Certificados de conclusão de curso para além do simples ecrã "Curso Concluído"
 - Ficheiros de vídeo alojados pelo próprio sistema
 - Barras de progresso, percentagens ou cálculos visuais de avanço (até pelo menos a V7, e mesmo aí só se justificado)
-- Login com email e palavra-passe (e respectivos fluxos: registo manual, recuperação de palavra-passe, validação de email) — Google OAuth é o método único de autenticação V1-V9; ver §17
+- Login com email e palavra-passe (e respectivos fluxos: registo manual, recuperação de palavra-passe, validação de email) — a autenticação V1-V9 faz-se por OAuth social (Google + Microsoft); ver §17
 
 ---
 
 ## 19. Estado do Documento
 
-- **Versão:** 2.9
-- **Última atualização:** 14 de maio de 2026
+- **Versão:** 3.0
+- **Última atualização:** 4 de junho de 2026
+- **Alterações relativamente à v2.9:**
+  - §9/§11 — célula Autenticação: de "Google OAuth (único método)" para "OAuth social: Google + Microsoft".
+  - §17 — nova decisão: providers OAuth suportados (Google + Microsoft); Apple adiado por exigir Apple Developer Program pago. Código preparado para novos providers.
+  - §18 — "fora de âmbito" de email/password reformulado (a autenticação faz-se por OAuth social Google + Microsoft).
+  - Pedido do líder do projeto em 04-06-2026.
 - **Alterações relativamente à v2.8:**
   - §6 — nova sub-secção "Conteúdos: o nível de topo": o ensino passa a organizar-se sob um nível de topo **Conteúdos** com duas áreas (Cursos + Escola Bíblica). A árvore Curso → Módulo → Aula passou a sub-secção "Árvore de Cursos".
   - §9 V1 — "Página *Cursos* vazia" passa a "Página *Conteúdos*": hub com dois cartões (Cursos + Escola Bíblica), cada um a ligar a uma sub-página placeholder.

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-import { signInWithGoogleAction } from '@/lib/auth/actions';
+import { ProviderSignIn } from '@/components/site/provider-sign-in';
 import { logCourseAccessAction } from '@/lib/courses/access-actions';
 
 type StartCourseCtaProps = {
@@ -21,14 +21,7 @@ export function StartCourseCta({
 }: StartCourseCtaProps) {
   if (!isAuthenticated) {
     const next = `/conteudos/${courseId}/${firstLessonId}`;
-    return (
-      <form action={signInWithGoogleAction} className="mt-8 inline-block">
-        <input type="hidden" name="next" value={next} />
-        <button type="submit" className={BUTTON_CLASS}>
-          Inicia sessão para começar →
-        </button>
-      </form>
-    );
+    return <ProviderSignIn next={next} className="mt-8" />;
   }
 
   return (

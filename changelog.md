@@ -9,6 +9,15 @@
 ## [Unreleased]
 
 ### add
+- add: [04-06-2026] **login com Microsoft (Entra/Azure) além de Google**. A pedido do líder do projeto; override consciente da regra "Google OAuth apenas" (SPEC §17/§18 + CLAUDE.md atualizados; SPEC bump 2.9 → 3.0). Apple ficou de fora por exigir Apple Developer Program (~99 USD/ano). `src/lib/auth/actions.ts` ganha helper genérico `signInWithProvider(provider)` + wrappers `signInWithGoogleAction` / `signInWithMicrosoftAction` (Microsoft = slug `azure`, com `scopes: 'email'`). Novo componente reutilizável `src/components/site/provider-sign-in.tsx` (par de botões Google + Microsoft num só `<form>` com `next` partilhado via `formAction`). Aplicado em hero, `/meus-cursos` (estado anónimo), CTA de começar curso e vista anónima de `/conteudos/[courseId]`. `SignInButton` do cabeçalho passa a dropdown com os dois providers. **O código fica inerte até o provider Azure ser configurado no painel Supabase** (`logos-dev` e, no lançamento, `logos-prod`) - passo-a-passo em `feature-docs/microsoft-oauth-setup.md`. Tests: novo `provider-sign-in.test.tsx` (3) + ajustes em `page.test.tsx`, `meus-cursos-content.test.tsx`, `start-course-cta.test.tsx`.
+
+### update
+- update: [04-06-2026] **testemunhos do carrossel da home anónimos**, alinhados com a versão em produção (V2/`main`). Os 4 quotes mantêm-se; removidos os nomes de autor (`author`/`<figcaption>`) que tinham sido acrescentados em `v3-cursos`. `home-testimonials.tsx` + teste atualizado (passa a verificar anonimato).
+
+### docs
+- docs: [04-06-2026] apagar handoff stale `feature-docs/v3-3-handoff.md` (listava PR5-PR8 como pendentes quando já estavam mergeadas: #38/#40/#41/#42/#43) e substituir pela entrada definitiva `feature-docs/v3-3-iteration.md`. Secção "Em progresso" do `status.md` reconciliada: V3.1/V3.2/V3.3 todas fechadas em código + DB; pré-requisitos sequenciais confirmados como adiados para V4. Bloqueador residual ao merge `v3-cursos → main` continua a ser testemunhos do ministério + smoke no preview.
+
+### add
 - add: [02-06-2026] portar para `v3-cursos` o hardening de segurança da V2.5 (agora em prod). Cherry-pick dos 4 commits de segurança (sem o RGPD nem o copy/UX): headers HTTP + CSP enforcing + host allowlist (`next.config.ts`), patch Next 16.2.4 -> 16.2.6 + overrides pnpm (postcss/qs/brace-expansion), REVOKE EXECUTE nos helpers SECURITY DEFINER, lockdown da política UPDATE de `profiles`, rate limiter Postgres (`check_rate_limit`), fix de open-redirect em `next` (`src/lib/auth/redirect.ts`) e hardening do `getOrigin` contra host-header injection. Paridade de conteúdo verificada contra `main`. `bodySizeLimit` reconciliado para 25mb (a v3 faz upload de PDFs; o limite do Next é global, não por-action). 422/422 testes verdes. Caveat de migrações em `feature-docs/seguranca-port-v3.md`. (`sec/portar-seguranca-v2.5-para-v3`)
 
 ### infra

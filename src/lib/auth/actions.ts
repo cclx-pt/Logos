@@ -1,13 +1,16 @@
 'use server';
 
 /**
- * Server Actions de identidade — V2 PR2.
+ * Server Actions de identidade — V2 PR2 (multi-provider desde V3.3).
  *
- * Encapsulam o fluxo OAuth (Google) e logout. Importadas por componentes
- * client (`<form action={signInWithGoogleAction}>`) ou server.
+ * Encapsulam o fluxo OAuth e logout. Importadas por componentes client
+ * (`<form action={signInWithGoogleAction}>` / `formAction={...}`) ou server.
  *
- * Email/password está fora de âmbito V1-V9 (ver `SPEC_1.md` §17/§18); a
- * única função de sign-in exportada é `signInWithGoogleAction`.
+ * Providers suportados: Google e Microsoft (Entra/Azure). Apple fica fora
+ * de âmbito por agora (exige Apple Developer Program pago; reabrir quando
+ * justificado). Email/password continua fora de âmbito (ver `SPEC_1.md`
+ * §17/§18). Para adicionar um provider basta uma entrada em `OAuthProvider`
+ * + um wrapper exportado.
  */
 
 import { headers } from 'next/headers';
@@ -56,7 +59,15 @@ function getOrigin(headersList: Headers): string {
   return parsed.origin;
 }
 
-export async function signInWithGoogleAction(formData?: FormData): Promise<void> {
+// Providers OAuth suportados. A chave é o slug do Supabase Auth
+// (Microsoft = `azure`); o label é só para mensagens de erro.
+const PROVIDERS = {
+  google: 'Google',
+  azure: 'Microsoft',
+} as const;
+type OAuthProvider = keyof typeof PROVIDERS;
+
+async function signInWithProvider(provider: OAuthProvider, formData?: FormData): Promise<void> {
   const supabase = await getServerClient();
   const origin = getOrigin(await headers());
 
@@ -66,17 +77,30 @@ export async function signInWithGoogleAction(formData?: FormData): Promise<void>
     : `${origin}/auth/callback`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
+    provider,
     options: {
       redirectTo: callback,
+      // Entra/Azure só devolve o email com o scope explícito; Google já o
+      // inclui por omissão.
+      ...(provider === 'azure' ? { scopes: 'email' } : {}),
     },
   });
 
   if (error || !data?.url) {
-    throw new Error(`Falha a iniciar autenticação Google: ${error?.message ?? 'sem URL'}`);
+    throw new Error(
+      `Falha a iniciar autenticação ${PROVIDERS[provider]}: ${error?.message ?? 'sem URL'}`,
+    );
   }
 
   redirect(data.url);
+}
+
+export async function signInWithGoogleAction(formData?: FormData): Promise<void> {
+  return signInWithProvider('google', formData);
+}
+
+export async function signInWithMicrosoftAction(formData?: FormData): Promise<void> {
+  return signInWithProvider('azure', formData);
 }
 
 export async function signOutAction(): Promise<void> {

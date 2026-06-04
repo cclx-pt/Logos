@@ -15,7 +15,7 @@ import {
   isModuleComplete,
 } from '@/lib/courses/completion';
 import { getEnrollmentState } from '@/lib/courses/enrollment';
-import { signInWithGoogleAction } from '@/lib/auth/actions';
+import { ProviderSignIn } from '@/components/site/provider-sign-in';
 import { EnrollCourseCta } from './enroll-course-cta';
 import { UnenrollCourseLink } from './unenroll-course-link';
 import { StartCourseCta } from './start-course-cta';
@@ -109,15 +109,7 @@ function AnonCourseView({ courseId }: { courseId: string }) {
       <p className="text-ink mt-2 max-w-prose text-base leading-relaxed sm:text-lg">
         Inicia sessão para aceder ao conteúdo deste curso e a mais cursos.
       </p>
-      <form action={signInWithGoogleAction} className="mt-5">
-        <input type="hidden" name="next" value={next} />
-        <button
-          type="submit"
-          className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-11 items-center justify-center rounded-md px-6 text-sm font-medium text-white focus-visible:ring-2 focus-visible:outline-none"
-        >
-          Inicia sessão com Google →
-        </button>
-      </form>
+      <ProviderSignIn next={next} className="mt-5" />
     </div>
   );
 }

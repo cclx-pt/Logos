@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('@/lib/auth/actions', () => ({
   signInWithGoogleAction: vi.fn(),
+  signInWithMicrosoftAction: vi.fn(),
 }));
 vi.mock('@/lib/courses/access-actions', () => ({
   logCourseAccessAction: vi.fn(),
@@ -14,7 +15,7 @@ const courseId = '11111111-1111-1111-1111-111111111111';
 const firstLessonId = '22222222-2222-2222-2222-222222222222';
 
 describe('StartCourseCta — V3.1 T7', () => {
-  it('renderiza CTA "Inicia sessão para começar" + hidden next quando anónimo', () => {
+  it('renderiza botões de login (Google + Microsoft) + hidden next quando anónimo', () => {
     render(
       <StartCourseCta
         courseId={courseId}
@@ -23,9 +24,10 @@ describe('StartCourseCta — V3.1 T7', () => {
         isAuthenticated={false}
       />,
     );
-    const button = screen.getByRole('button', { name: /inicia sessão para começar/i });
-    expect(button).toBeInTheDocument();
-    const form = button.closest('form');
+    const google = screen.getByRole('button', { name: /continuar com google/i });
+    expect(google).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /continuar com microsoft/i })).toBeInTheDocument();
+    const form = google.closest('form');
     expect(form).not.toBeNull();
     const hidden = form?.querySelector('input[name="next"]');
     expect(hidden).toHaveAttribute('value', `/conteudos/${courseId}/${firstLessonId}`);

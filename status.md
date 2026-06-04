@@ -1,7 +1,7 @@
 # status.md — Logos
 
 > **Quando atualizar:** semanalmente, ou após uma sessão grande.
-> **Última atualização:** 02-06-2026 (**Port do hardening de segurança V2.5 para `v3-cursos`**: cherry-pick dos 4 commits de segurança da V2.5 - headers/CSP/host allowlist, patch Next 16.2.6, REVOKE helpers, lockdown UPDATE de `profiles`, rate limiter, fix de open-redirect. Paridade verificada contra `main`; 422/422 testes verdes. Caveat de divergência de versões de migração em `feature-docs/seguranca-port-v3.md`. Anterior: V3.3 PR8 enrollment + anon - 3 vistas em `/conteudos/[courseId]`, `unenrolled_at`, RLS anon. **V3.3 pronta para PR `v3-cursos` para `main` quando o ministério fechar testemunhos.**)
+> **Última atualização:** 04-06-2026 (**Login Microsoft + testemunhos anónimos + limpeza de docs**. (1) Login com Microsoft (Entra/Azure) além de Google - override consciente da regra "Google apenas" a pedido do líder; Apple fora por exigir conta paga. SPEC bump 3.0; helper `signInWithProvider` + `<ProviderSignIn>`; setup em `feature-docs/microsoft-oauth-setup.md`. **Código inerte até configurar o provider Azure no Supabase.** (2) Testemunhos do carrossel passam a anónimos, alinhados com prod (V2). (3) Handoff stale `v3-3-handoff.md` apagado e substituído por `feature-docs/v3-3-iteration.md`; "Em progresso" reconciliada - V3.1/V3.2/V3.3 fechadas em código + DB, só faltam testemunhos + smoke. Anterior: **Port do hardening de segurança V2.5 para `v3-cursos`**: cherry-pick dos 4 commits de segurança da V2.5 - headers/CSP/host allowlist, patch Next 16.2.6, REVOKE helpers, lockdown UPDATE de `profiles`, rate limiter, fix de open-redirect. Paridade verificada contra `main`; 422/422 testes verdes. Caveat de divergência de versões de migração em `feature-docs/seguranca-port-v3.md`. Anterior: V3.3 PR8 enrollment + anon - 3 vistas em `/conteudos/[courseId]`, `unenrolled_at`, RLS anon. **V3.3 pronta para PR `v3-cursos` para `main` quando o ministério fechar testemunhos.**)
 
 ## 🎯 Milestone atual
 **V3 fechada dev-side em `v3-cursos`.** À espera de testemunhos finais do ministério para abrir PR `v3-cursos` → `main` e fazer deploy a `logos.cclx.pt`. Detalhes da estratégia em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
@@ -18,7 +18,12 @@ Previews Vercel estão atrás de Vercel Authentication — login com a conta `jo
 
 V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3-plan.md` (PR1-PR9a ✅; PR9b adiada para V3.1).
 
-**Prazo absoluto V3:** 1 de julho de 2026. **Único bloqueador residual:** 4-5 testemunhos finais do ministério para o carrossel.
+**Prazo absoluto V3:** 1 de julho de 2026.
+
+**Bloqueadores/passos manuais residuais (não-código):**
+- ✅ ~~Testemunhos do carrossel~~ - resolvido 04-06-2026: ficam os 4 de prod (V2), anónimos (decisão do líder; "os 3 não fazemos sem ordem").
+- ⏳ **Configurar o provider Microsoft (Azure) no Supabase** (`logos-dev` agora; `logos-prod` no lançamento) para o botão "Continuar com Microsoft" funcionar. Passo-a-passo em `feature-docs/microsoft-oauth-setup.md`. Sem isto, só Google funciona.
+- ⏳ Smoke test manual no preview Vercel (incl. ambos os providers de login).
 
 ## ✅ Concluído
 - [x] Especificação `SPEC_1.md` v2.2 fechada
@@ -114,12 +119,13 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
   - **Loading states**: novos componentes `Spinner` (Lucide Loader2 + `role="status"` + sr-only), `Skeleton` (`aria-hidden`, `animate-pulse`), `ProgressBar` indeterminada (keyframe `indeterminate` em `globals.css`), `SubmitButton` Client Component que usa `useFormStatus` para mostrar spinner + opcional ProgressBar enquanto a Server Action corre. Aplicado nos forms de criar/editar aula (uploads de PDF lentos). `loading.tsx` em `/admin/conteudos`, `/admin/conteudos/[courseId]` e `/conteudos` com skeletons que reflectem o layout real. 15 testes novos (163 → 178).
 
 ## 🚧 Em progresso
-- **V3.2 — Iteração de UI/UX e prerequisitos** (5 PRs). Plano em `feature-docs/v3-2-iteration.md`.
-  - **PR1 — Banner opcional em cursos** (27-05-2026) ✅ código + migrations aplicadas a `logos-dev`; falta smoke no preview Vercel.
-  - **PR2 — Pré-requisito por aula** (locked + cadeado) — pendente.
-  - **PR3 — Pré-requisito por módulo** (locked) — pendente.
-  - **PR4 — Pré-requisito por curso** (invisível) — pendente; quebra a regra "conteúdo restrito é invisível" para aulas/módulos (cadeado em vez de invisível). Documentar em CLAUDE.md no PR2.
-  - **PR5 — "Meus cursos" na nav principal + duas secções + catálogo limpo** (28-05-2026) ✅ código pronto, 345/345 testes; falta smoke no preview Vercel.
+**Nada em código.** V3.1, V3.2 e V3.3 estão todas fechadas do lado do código + DB em `v3-cursos`. Bloqueador residual ao merge `v3-cursos → main`: testemunhos finais do ministério + smoke test manual no preview Vercel.
+
+- **V3.3 — UX + estrutura + enrollment** ✅ fechada (PR1-PR8, PR4 descartada). Plano e resumo em `feature-docs/v3-3-iteration.md`. PR8 (#43) — enrollment explícito (`unenrolled_at`) + 3 vistas em `/conteudos/[courseId]` + RLS anónima — era o bloqueador final. Migrations aplicadas a `logos-dev`.
+- **V3.2 — Iteração de UI/UX** ✅ fechada. Plano em `feature-docs/v3-2-iteration.md`.
+  - **PR1 — Banner opcional em cursos** (27-05-2026) ✅ código + migrations aplicadas a `logos-dev`.
+  - **PR5 — "Meus cursos" na nav principal + duas secções + catálogo limpo** (28-05-2026) ✅.
+  - Pré-requisitos sequenciais (aula/módulo/curso) **adiados para V4** (pós-01-07-2026) — fora do âmbito de V3.x.
 - **V3.1 fechada do lado do código + DB** — T1-T7 todas em `v3-cursos`. Hoje (26-05-2026): T7 + T4 + T5 + T6 implementados, testados (327/327), com commits separados. Migrations aplicadas a `logos-dev`: `20260520140000_drop_courses_slug` + `20260526180000_course_access_log_select_own`. Limpeza de tracking necessária: `20260519230230` (drop tags slug aplicada da outra máquina antes de a versão definitiva ser commited) marcada como `reverted`; `20260520120000_drop_tags_slug` marcada como `applied` (schema já estava na forma final). 11 migrations Local + Remote alinhadas. **Próximo (não-código):** smoke test manual no preview, esperar testemunhos do ministério antes de abrir PR `v3-cursos → main`. Plano completo em `feature-docs/v3-1-iteration.md`.
 - **V3 inteira fechada** (PR1-PR8 + PR9a). PR9b (Playwright E2E) **adiada para V3.1** — decisão do user 20-05-2026: setup de ~2 dias (cookie pré-preparado para satisfazer RLS) não justifica o ROI quando o smoke manual de §11 do `v3-plan.md` já cobre o happy-path. Reabrir se aparecerem regressões frequentes que mocks Vitest não apanhem.
 
