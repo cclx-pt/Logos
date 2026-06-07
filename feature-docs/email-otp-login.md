@@ -1,7 +1,22 @@
 # Login por email + código (OTP passwordless via Resend)
 
-> **Estado:** decisão fechada 04-06-2026 - **avançar com email OTP via Resend**. Planeamento feito; **implementação por fazer** (ver `feature-docs/email-otp-handoff.md`).
+> **Estado:** **código implementado em 07-06-2026** (V3.3). Fica **inerte até** configurares o SMTP/Resend + Email provider no Supabase (passos §5/§6). O handoff (`email-otp-handoff.md`) foi apagado ao fechar este trabalho.
 > **Objetivo:** dar um terceiro método de login a quem não tem Google nem Microsoft, sem construir nem manter um sistema de palavras-passe.
+
+## 0. Estado da implementação (07-06-2026)
+
+**Feito (código):**
+- Server Actions `sendEmailOtpAction` / `verifyEmailOtpAction` em `src/lib/auth/actions.ts` (padrão `useActionState`, 2 passos; `verifyOtp` → `redirect(safeNextPath)`).
+- Componente `src/components/site/email-otp-sign-in.tsx` (2 passos: email → código de 6 dígitos; reenviar; usar outro email).
+- `src/components/site/turnstile-widget.tsx` (captcha gated por `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; inerte se ausente).
+- Rota dedicada `src/app/entrar/page.tsx` (`?next=`): `<ProviderSignIn>` (Google/Microsoft) + separador "ou" + `<EmailOtpSignIn>`. Já-autenticado redireciona.
+- Item "Email (código)" no dropdown "Entrar" (`sign-in-button.tsx`) → `/entrar`.
+- `.env.example`: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
+- Testes: `email-otp-actions.test.ts` (9) + `email-otp-sign-in.test.tsx` (3).
+
+**Por fazer (config externa, tu):** §5 (Resend + DNS) e §6 (Email provider + OTP length/expiração + Turnstile) no Supabase. Sem isto, o envio de código falha (mensagem genérica na UI).
+
+**Decisão divergente do plano:** o rate-limiting via `check_rate_limit` (§8) **não foi ligado** — o RPC só dá EXECUTE a `service_role` e a app ainda não instancia um cliente service-role. A proteção ativa é o **Turnstile** + o rate-limiting nativo do Supabase para OTP. Ligar o `check_rate_limit` fica como follow-up (exige um helper de cliente service-role).
 
 ## 1. O que é
 

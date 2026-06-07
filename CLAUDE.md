@@ -14,7 +14,7 @@ Plataforma online de estudo bíblico da **CCLX** (igreja em Portugal). Cursos �
 
 ## 🏗️ Arquitetura
 - **Framework:** Next.js 16 + TypeScript (App Router)
-- **DB / Auth / Storage:** Supabase (Postgres, Supabase Auth com **OAuth social: Google + Microsoft** - email/password fora de âmbito, Apple adiado por exigir conta paga; ver `SPEC_1.md` §17/§18, Supabase Storage para PDFs)
+- **DB / Auth / Storage:** Supabase (Postgres, Supabase Auth com **OAuth social: Google + Microsoft** + **email OTP** (código de uso único, passwordless) - **login com palavra-passe** continua fora de âmbito, Apple adiado por exigir conta paga; ver `SPEC_1.md` §17/§18, Supabase Storage para PDFs)
 - **Estilização:** Tailwind CSS + shadcn/ui
 - **Forms:** react-hook-form + Zod
 - **Email transacional:** Resend

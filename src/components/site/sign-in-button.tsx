@@ -1,6 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
+import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 
 import { signInWithGoogleAction, signInWithMicrosoftAction } from '@/lib/auth/actions';
@@ -51,6 +52,8 @@ export function SignInButton() {
         >
           Microsoft
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem render={<Link href="/entrar" />}>Email (código)</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
