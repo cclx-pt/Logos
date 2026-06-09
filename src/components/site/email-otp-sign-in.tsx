@@ -8,12 +8,11 @@ import {
   type SendEmailOtpState,
   type VerifyEmailOtpState,
 } from '@/lib/auth/actions';
+import { SubmitButton } from '@/components/ui/submit-button';
 import { TurnstileWidget } from './turnstile-widget';
 
 const INPUT =
   'border-border bg-background text-ink focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none';
-const PRIMARY_BTN =
-  'bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-11 w-full items-center justify-center rounded-md px-5 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-60';
 const LINK_BTN =
   'text-orange-primary hover:text-orange-hover text-xs font-medium underline-offset-2 hover:underline disabled:opacity-60';
 
@@ -82,9 +81,9 @@ export function EmailOtpSignIn({ next }: { next?: string }) {
             </p>
           ) : null}
 
-          <button type="submit" disabled={verifyPending} className={PRIMARY_BTN}>
-            {verifyPending ? 'A verificar…' : 'Entrar'}
-          </button>
+          <SubmitButton pendingLabel="A verificar…" className="h-11 w-full">
+            Entrar
+          </SubmitButton>
         </form>
 
         {/* Reenviar: re-submete o passo 1 com o mesmo email. Tokens Turnstile
@@ -113,7 +112,16 @@ export function EmailOtpSignIn({ next }: { next?: string }) {
   }
 
   return (
-    <form action={sendAction} className="space-y-3">
+    // O wrapper repõe forceEmailStep antes de despachar: "Enviar código" a
+    // partir do passo do email tem de poder voltar a avançar para o código
+    // (o clique era onde isto vivia antes de o botão passar a SubmitButton).
+    <form
+      action={(formData) => {
+        setForceEmailStep(false);
+        sendAction(formData);
+      }}
+      className="space-y-3"
+    >
       <input type="hidden" name="captchaToken" value={captchaToken} />
       <label className="block">
         <span className="text-muted-foreground text-xs font-medium">Email</span>
@@ -137,14 +145,9 @@ export function EmailOtpSignIn({ next }: { next?: string }) {
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={sendPending}
-        onClick={() => setForceEmailStep(false)}
-        className={PRIMARY_BTN}
-      >
-        {sendPending ? 'A enviar…' : 'Enviar código'}
-      </button>
+      <SubmitButton pendingLabel="A enviar…" className="h-11 w-full">
+        Enviar código
+      </SubmitButton>
     </form>
   );
 }

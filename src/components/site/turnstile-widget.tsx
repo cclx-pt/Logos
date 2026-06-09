@@ -35,6 +35,13 @@ declare global {
 
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 
+// Quando o script já existe no DOM mas `window.turnstile` ainda não apareceu
+// (outro widget injetou-o e ainda está a carregar), fazemos poll. Com limite:
+// se nunca carregar (adblocker, rede), desistimos em vez de pollar para sempre
+// - o envio sem token falha com a mensagem genérica se o captcha for exigido.
+const POLL_INTERVAL_MS = 200;
+const MAX_POLL_ATTEMPTS = 75; // ~15s
+
 export function TurnstileWidget({ onVerify }: { onVerify: (token: string) => void }) {
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,12 +72,15 @@ export function TurnstileWidget({ onVerify }: { onVerify: (token: string) => voi
       script.addEventListener('load', renderWidget);
       document.head.appendChild(script);
     } else {
+      let attempts = 0;
       poll = setInterval(() => {
         if (window.turnstile) {
           if (poll) clearInterval(poll);
           renderWidget();
+        } else if (++attempts >= MAX_POLL_ATTEMPTS) {
+          if (poll) clearInterval(poll);
         }
-      }, 200);
+      }, POLL_INTERVAL_MS);
     }
 
     return () => {

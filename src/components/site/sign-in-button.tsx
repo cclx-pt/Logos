@@ -4,7 +4,7 @@ import { useTransition } from 'react';
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 
-import { signInWithGoogleAction, signInWithMicrosoftAction } from '@/lib/auth/actions';
+import { SIGN_IN_PROVIDERS } from '@/lib/auth/providers';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,8 +15,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 /**
- * Botão "Entrar" do cabeçalho. Abre um menu com os providers disponíveis
- * (Google + Microsoft). Sem `next` — após login, o callback aterra na home.
+ * Botão "Entrar" do cabeçalho. Abre um menu com os providers de
+ * `SIGN_IN_PROVIDERS` + a entrada de email OTP. Sem `next` — após login,
+ * o callback aterra na home.
  */
 export function SignInButton() {
   const [isPending, startTransition] = useTransition();
@@ -32,26 +33,19 @@ export function SignInButton() {
           Iniciar sessão com
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          disabled={isPending}
-          onClick={() => {
-            startTransition(() => {
-              void signInWithGoogleAction();
-            });
-          }}
-        >
-          Google
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled={isPending}
-          onClick={() => {
-            startTransition(() => {
-              void signInWithMicrosoftAction();
-            });
-          }}
-        >
-          Microsoft
-        </DropdownMenuItem>
+        {SIGN_IN_PROVIDERS.map((provider) => (
+          <DropdownMenuItem
+            key={provider.slug}
+            disabled={isPending}
+            onClick={() => {
+              startTransition(() => {
+                void provider.action();
+              });
+            }}
+          >
+            {provider.label}
+          </DropdownMenuItem>
+        ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem render={<Link href="/entrar" />}>Email (código)</DropdownMenuItem>
       </DropdownMenuContent>

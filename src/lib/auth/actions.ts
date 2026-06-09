@@ -68,8 +68,9 @@ const PROVIDERS = {
 type OAuthProvider = keyof typeof PROVIDERS;
 
 async function signInWithProvider(provider: OAuthProvider, formData?: FormData): Promise<void> {
-  const supabase = await getServerClient();
-  const origin = getOrigin(await headers());
+  // Independentes — em paralelo para não somar latências no caminho de login.
+  const [supabase, headersList] = await Promise.all([getServerClient(), headers()]);
+  const origin = getOrigin(headersList);
 
   const next = formData ? safeNextPath(formData.get('next')) : null;
   const callback = next
