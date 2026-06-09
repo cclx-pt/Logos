@@ -80,6 +80,9 @@ export function TurnstileWidget({ onVerify }: { onVerify: (token: string) => voi
         window.turnstile.remove(widgetId.current);
         widgetId.current = null;
       }
+      // O token pertence a este widget e é de uso único: ao desmontar (mudança
+      // de passo no fluxo OTP), limpa-o para nenhum form submeter token obsoleto.
+      onVerify('');
     };
   }, [siteKey, onVerify]);
 

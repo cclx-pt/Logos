@@ -23,7 +23,8 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
 **Bloqueadores/passos manuais residuais (não-código):**
 - ✅ ~~Testemunhos do carrossel~~ - resolvido 04-06-2026: ficam os 4 de prod (V2), anónimos (decisão do líder; "os 3 não fazemos sem ordem").
 - ⏳ **Configurar o provider Microsoft (Azure) no Supabase** (`logos-dev` agora; `logos-prod` no lançamento) para o botão "Continuar com Microsoft" funcionar. Passo-a-passo em `feature-docs/microsoft-oauth-setup.md`. Sem isto, só Google funciona.
-- ⏳ Smoke test manual no preview Vercel (incl. ambos os providers de login).
+- ⏳ **Pré-condições do login por email OTP** (código entregue 07-06-2026, inerte até isto): conta Resend + domínio verificado, DNS SPF/DKIM no Hostinger, SMTP custom + Email provider + Turnstile no Supabase. Passos em `feature-docs/email-otp-login.md` §5/§6.
+- ⏳ Smoke test manual no preview Vercel (incl. os 3 métodos de login: Google, Microsoft, email OTP).
 
 ## ✅ Concluído
 - [x] Especificação `SPEC_1.md` v2.2 fechada
@@ -121,7 +122,7 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
 ## 🚧 Em progresso
 **Nada em código.** V3.1, V3.2 e V3.3 estão todas fechadas do lado do código + DB em `v3-cursos`. Bloqueador residual ao merge `v3-cursos → main`: smoke test manual no preview Vercel.
 
-- **Próximo (planeado, decisão fechada 04-06-2026):** **login por email + código OTP** (passwordless via Resend) como terceiro método, para quem não tem Google/Microsoft. Plano em `feature-docs/email-otp-login.md`; handoff de implementação em `feature-docs/email-otp-handoff.md`. Pré-condição: configurar Resend SMTP + DNS (SPF/DKIM Hostinger) + Turnstile no Supabase.
+- **Login por email + código OTP** ✅ entregue em código (07-06-2026, na branch da PR #49): Server Actions `sendEmailOtpAction`/`verifyEmailOtpAction`, componente `EmailOtpSignIn` (2 passos), `TurnstileWidget`, rota `/entrar?next=`. Handoff apagado; plano em `feature-docs/email-otp-login.md`. Inerte até configurar Resend SMTP + DNS + Email provider + Turnstile no Supabase (ver bloqueadores acima).
 - **Login Microsoft (Azure)** entregue em código (PR #49) - falta configurar o provider Azure no Supabase para funcionar (`feature-docs/microsoft-oauth-setup.md`).
 
 - **V3.3 — UX + estrutura + enrollment** ✅ fechada (PR1-PR8, PR4 descartada). Plano e resumo em `feature-docs/v3-3-iteration.md`. PR8 (#43) — enrollment explícito (`unenrolled_at`) + 3 vistas em `/conteudos/[courseId]` + RLS anónima — era o bloqueador final. Migrations aplicadas a `logos-dev`.

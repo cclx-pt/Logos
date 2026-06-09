@@ -25,7 +25,7 @@
 ┌──────────────────────────────────────┐
 │            SUPABASE                  │
 │  • Postgres (esquema relacional)     │
-│  • Auth (OAuth: Google + Microsoft)  │
+│  • Auth (Google/Microsoft/email OTP) │
 │  • Storage (bucket: lesson-pdfs)     │
 │  • RLS policies                      │
 └──────────────────────────────────────┘
@@ -130,7 +130,8 @@ Todos `SECURITY DEFINER` (previnem recursão RLS — problema visto 3× em V2 PR
 
 ## 4. Autenticação e papéis
 
-- **Supabase Auth** com **OAuth social: Google + Microsoft** — gere identidade (login via provider, sessão, OAuth callback). Microsoft (Entra/Azure) acrescentado em 04-06-2026; Apple adiado por exigir Apple Developer Program pago. Email/password continua fora de âmbito V1-V9 (`SPEC_1.md` §17/§18). Cada provider tem um wrapper de Server Action em `src/lib/auth/actions.ts` (`signInWith*Action`) sobre o helper genérico `signInWithProvider`; adicionar provider = uma entrada em `OAuthProvider` + um wrapper + credenciais no painel Supabase.
+- **Supabase Auth** com **OAuth social (Google + Microsoft) + email OTP** — gere identidade (login via provider ou código de uso único, sessão, OAuth callback). Microsoft (Entra/Azure) acrescentado em 04-06-2026; Apple adiado por exigir Apple Developer Program pago. Login com **palavra-passe** continua fora de âmbito V1-V9 (`SPEC_1.md` §17/§18). Cada provider OAuth tem um wrapper de Server Action em `src/lib/auth/actions.ts` (`signInWith*Action`) sobre o helper genérico `signInWithProvider`; adicionar provider = uma entrada em `OAuthProvider` + um wrapper + credenciais no painel Supabase.
+- **Email OTP (passwordless)** acrescentado em 07-06-2026 como terceiro método: código de 6 dígitos enviado via SMTP do Supabase (Resend), fluxo de 2 passos (`sendEmailOtpAction` → `verifyEmailOtpAction` em `src/lib/auth/actions.ts`, componente `EmailOtpSignIn`, rota `/entrar?next=`). Anti-abuso: Cloudflare Turnstile (gated por `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) + rate-limit nativo do Supabase. Zero mudanças de DB — o trigger `on_auth_user_created` cobre também este caminho. Fica inerte até configurar SMTP + Email provider no Supabase (`feature-docs/email-otp-login.md` §5/§6).
 - **Identidade isolada em `src/lib/auth/`** (V2): única parte da app que importa `@supabase/ssr`. Resto da app consome `getCurrentUser()` / `getServerClient()`. Quando a identidade migrar para uma shell externa, só esta camada muda.
 - Papel guardado em `profiles.role` — fonte de verdade do Logos. RLS usa função helper `current_profile_id()` (STABLE em SQL) que faz o lookup `auth.uid() → profiles.external_auth_id → profiles.id`. As policies escrevem-se contra `current_profile_id()`, não contra `auth.uid()`. Quando a identidade vier de outra fonte, troca-se a implementação da função; as policies não mudam.
 - **Primeiro Super Admin:** `joaocanelasribeiro@gmail.com`. Seed manual em cada ambiente após o primeiro login Google: corre-se o SQL versionado `supabase/seed/super-admin.sql.example` (cópia local não versionada como `super-admin.sql`) que faz `update profiles set role='super_admin' where external_auth_id = (select id from auth.users where email = 'joaocanelasribeiro@gmail.com')`. Daí em diante, super_admin promove os outros via UI dedicada (V2). Esta UI **não desaparece** quando a shell existir — papéis continuam fonte de verdade do Logos.
@@ -140,7 +141,7 @@ Todos `SECURITY DEFINER` (previnem recursão RLS — problema visto 3× em V2 PR
 
 Esta separação entre **identidade** (quem és — pode migrar) e **autorização Logos** (o que podes fazer aqui — fica sempre cá) é a fronteira que torna possível migrar futuramente para identidade externa (ex.: shell partilhada CCLX) sem reescrever a app. Detalhes em `feature-docs/auth-architecture.md`.
 
-Se a shell partilhada CCLX vier a oferecer email/password ou mais providers no futuro, beneficia-se automaticamente — a camada `lib/auth/` continua a ser substituída de uma vez, sem condicionar a decisão de scope que hoje limita o Logos a OAuth social (Google + Microsoft).
+Se a shell partilhada CCLX vier a oferecer email/password ou mais providers no futuro, beneficia-se automaticamente — a camada `lib/auth/` continua a ser substituída de uma vez, sem condicionar a decisão de scope que hoje limita o Logos a OAuth social (Google + Microsoft) + email OTP.
 
 ## 5. Visibilidade por etiquetas
 
@@ -198,7 +199,7 @@ Estratégia de 3 camadas (com regras de promoção V2→V2.5→V3 e workflow de 
 
 **DNS (Hostinger):**
 - CNAME `logos.cclx.pt → 00f4337193415fe7.vercel-dns-017.com` activo desde 12-05-2026.
-- TXT (SPF) e CNAME (DKIM) para Resend — adiado para V5+ (login agora é só Google OAuth; Resend não é dependência V2).
+- TXT (SPF) e CNAME (DKIM) para Resend — **pré-condição do login por email OTP** (SMTP custom do Supabase via Resend); passos em `feature-docs/email-otp-login.md` §5. Até lá o OTP fica inerte.
 
 **Migrations:**
 - `supabase/migrations/*.sql` no Git (Supabase CLI).

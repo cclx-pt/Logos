@@ -87,24 +87,27 @@ export function EmailOtpSignIn({ next }: { next?: string }) {
           </button>
         </form>
 
-        <div className="flex items-center justify-between gap-3">
-          {/* Reenviar: re-submete o passo 1 com o mesmo email. */}
-          <form action={sendAction}>
-            <input type="hidden" name="email" value={email} />
-            <input type="hidden" name="captchaToken" value={captchaToken} />
+        {/* Reenviar: re-submete o passo 1 com o mesmo email. Tokens Turnstile
+            são de uso único (o do 1º envio já foi consumido), por isso este
+            form monta um desafio novo — null enquanto não houver site key. */}
+        <form action={sendAction} className="space-y-2">
+          <input type="hidden" name="email" value={email} />
+          <input type="hidden" name="captchaToken" value={captchaToken} />
+          <TurnstileWidget onVerify={onCaptcha} />
+          <div className="flex items-center justify-between gap-3">
             <button type="submit" disabled={sendPending} className={LINK_BTN}>
               {sendPending ? 'A reenviar…' : 'Reenviar código'}
             </button>
-          </form>
-          <button
-            type="button"
-            onClick={() => setForceEmailStep(true)}
-            className={LINK_BTN}
-            disabled={verifyPending}
-          >
-            Usar outro email
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => setForceEmailStep(true)}
+              className={LINK_BTN}
+              disabled={verifyPending}
+            >
+              Usar outro email
+            </button>
+          </div>
+        </form>
       </div>
     );
   }
