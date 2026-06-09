@@ -28,6 +28,7 @@
 - add: [02-06-2026] portar para `v3-cursos` o hardening de segurança da V2.5 (agora em prod). Cherry-pick dos 4 commits de segurança (sem o RGPD nem o copy/UX): headers HTTP + CSP enforcing + host allowlist (`next.config.ts`), patch Next 16.2.4 -> 16.2.6 + overrides pnpm (postcss/qs/brace-expansion), REVOKE EXECUTE nos helpers SECURITY DEFINER, lockdown da política UPDATE de `profiles`, rate limiter Postgres (`check_rate_limit`), fix de open-redirect em `next` (`src/lib/auth/redirect.ts`) e hardening do `getOrigin` contra host-header injection. Paridade de conteúdo verificada contra `main`. `bodySizeLimit` reconciliado para 25mb (a v3 faz upload de PDFs; o limite do Next é global, não por-action). 422/422 testes verdes. Caveat de migrações em `feature-docs/seguranca-port-v3.md`. (`sec/portar-seguranca-v2.5-para-v3`)
 
 ### infra
+- infra: [09-06-2026] **CI passa a correr em PRs contra `v3-cursos`** (e push à branch). Desde 19-05 todas as PRs de V3 (#38-#49) abriam contra `v3-cursos` sem nenhum check de CI - só pipeline local. A razão original de limitar a `main` (poupar minutos do plano gratuito) caducou quando o repo passou a público (Actions gratuito/ilimitado em repos públicos). `ci.yml` + `feature-docs/ci.md` §2 atualizados. Check informativo (sem branch protection em `v3-cursos`).
 - add: repositório GitHub privado inicial
 - add: estrutura de documentação (`CLAUDE.md`, `architecture.md`, `status.md`, `feature-docs/`)
 - add: `.env.example` com placeholders Supabase + Resend

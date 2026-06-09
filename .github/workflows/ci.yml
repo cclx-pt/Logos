@@ -1,10 +1,14 @@
 name: CI
 
+# v3-cursos incluida (09-06-2026): durante a fase de 3 camadas, as PRs de V3
+# abrem contra v3-cursos e ficavam sem CI nenhum (so pipeline local). O motivo
+# original de limitar a main era poupar minutos do plano gratuito, mas o repo
+# e publico desde 12-05-2026 e Actions e gratuito/ilimitado em repos publicos.
 on:
   pull_request:
-    branches: [main]
+    branches: [main, v3-cursos]
   push:
-    branches: [main]
+    branches: [main, v3-cursos]
 
 # Cancela runs in-progress no mesmo ref (PR ou branch) quando chega push novo.
 concurrency:
