@@ -3,16 +3,17 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('@/lib/auth/actions', () => ({
   signInWithGoogleAction: vi.fn(),
-  signInWithMicrosoftAction: vi.fn(),
 }));
 
 import { ProviderSignIn } from './provider-sign-in';
 
 describe('ProviderSignIn', () => {
-  it('renderiza um botão por provider (Google + Microsoft)', () => {
+  it('renderiza um botão por provider (só Google)', () => {
     render(<ProviderSignIn />);
     expect(screen.getByRole('button', { name: /continuar com google/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /continuar com microsoft/i })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /continuar com microsoft/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('inclui o hidden next quando fornecido', () => {

@@ -1,16 +1,15 @@
 'use server';
 
 /**
- * Server Actions de identidade — V2 PR2 (multi-provider desde V3.3).
+ * Server Actions de identidade — V2 PR2.
  *
  * Encapsulam o fluxo OAuth e logout. Importadas por componentes client
  * (`<form action={signInWithGoogleAction}>` / `formAction={...}`) ou server.
  *
- * Providers suportados: Google e Microsoft (Entra/Azure). Apple fica fora
- * de âmbito por agora (exige Apple Developer Program pago; reabrir quando
- * justificado). Email/password continua fora de âmbito (ver `SPEC_1.md`
- * §17/§18). Para adicionar um provider basta uma entrada em `OAuthProvider`
- * + um wrapper exportado.
+ * Métodos de login suportados: Google (OAuth) e email + código OTP
+ * (passwordless, ver mais abaixo). Microsoft/Entra foi removido (decisão do
+ * líder, 10-06-2026: ficar só com Google + email). Apple e login com
+ * palavra-passe continuam fora de âmbito (ver `SPEC_1.md` §17/§18).
  */
 
 import { headers } from 'next/headers';
@@ -59,15 +58,7 @@ function getOrigin(headersList: Headers): string {
   return parsed.origin;
 }
 
-// Providers OAuth suportados. A chave é o slug do Supabase Auth
-// (Microsoft = `azure`); o label é só para mensagens de erro.
-const PROVIDERS = {
-  google: 'Google',
-  azure: 'Microsoft',
-} as const;
-type OAuthProvider = keyof typeof PROVIDERS;
-
-async function signInWithProvider(provider: OAuthProvider, formData?: FormData): Promise<void> {
+export async function signInWithGoogleAction(formData?: FormData): Promise<void> {
   // Independentes — em paralelo para não somar latências no caminho de login.
   const [supabase, headersList] = await Promise.all([getServerClient(), headers()]);
   const origin = getOrigin(headersList);
@@ -78,30 +69,15 @@ async function signInWithProvider(provider: OAuthProvider, formData?: FormData):
     : `${origin}/auth/callback`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      redirectTo: callback,
-      // Entra/Azure só devolve o email com o scope explícito; Google já o
-      // inclui por omissão.
-      ...(provider === 'azure' ? { scopes: 'email' } : {}),
-    },
+    provider: 'google',
+    options: { redirectTo: callback },
   });
 
   if (error || !data?.url) {
-    throw new Error(
-      `Falha a iniciar autenticação ${PROVIDERS[provider]}: ${error?.message ?? 'sem URL'}`,
-    );
+    throw new Error(`Falha a iniciar autenticação Google: ${error?.message ?? 'sem URL'}`);
   }
 
   redirect(data.url);
-}
-
-export async function signInWithGoogleAction(formData?: FormData): Promise<void> {
-  return signInWithProvider('google', formData);
-}
-
-export async function signInWithMicrosoftAction(formData?: FormData): Promise<void> {
-  return signInWithProvider('azure', formData);
 }
 
 export async function signOutAction(): Promise<void> {
@@ -111,8 +87,8 @@ export async function signOutAction(): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Email OTP (passwordless) — V3.3. Terceiro método de login para quem não tem
-// Google nem Microsoft. Código de 6 dígitos via SMTP do Supabase (Resend).
+// Email OTP (passwordless) — V3.3. Segundo método de login para quem não tem
+// (ou não quer usar) Google. Código de 6 dígitos via SMTP do Supabase (Resend).
 // Plano: feature-docs/email-otp-login.md. Fluxo de 2 passos (enviar → verificar),
 // por isso usa `useActionState` em vez do `signInWithProvider` (que faz redirect
 // imediato). Sem mudanças de DB: o trigger `on_auth_user_created` cria o profile.

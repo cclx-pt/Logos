@@ -8,7 +8,7 @@ import { EmailOtpSignIn } from '@/components/site/email-otp-sign-in';
 
 export const metadata: Metadata = {
   title: 'Entrar · LOGOS',
-  description: 'Inicia sessão com Google, Microsoft ou com um código enviado para o teu email.',
+  description: 'Inicia sessão com Google ou com um código enviado para o teu email.',
 };
 
 type PageProps = {

@@ -1,7 +1,7 @@
 # Login por email + código (OTP passwordless via Resend)
 
 > **Estado:** **código implementado em 07-06-2026** (V3.3). Fica **inerte até** configurares o SMTP/Resend + Email provider no Supabase (passos §5/§6). O handoff (`email-otp-handoff.md`) foi apagado ao fechar este trabalho.
-> **Objetivo:** dar um terceiro método de login a quem não tem Google nem Microsoft, sem construir nem manter um sistema de palavras-passe.
+> **Objetivo:** dar um segundo método de login a quem não tem (ou não quer usar) Google, sem construir nem manter um sistema de palavras-passe.
 
 ## 0. Estado da implementação (07-06-2026)
 
@@ -9,7 +9,7 @@
 - Server Actions `sendEmailOtpAction` / `verifyEmailOtpAction` em `src/lib/auth/actions.ts` (padrão `useActionState`, 2 passos; `verifyOtp` → `redirect(safeNextPath)`).
 - Componente `src/components/site/email-otp-sign-in.tsx` (2 passos: email → código de 6 dígitos; reenviar; usar outro email).
 - `src/components/site/turnstile-widget.tsx` (captcha gated por `NEXT_PUBLIC_TURNSTILE_SITE_KEY`; inerte se ausente).
-- Rota dedicada `src/app/entrar/page.tsx` (`?next=`): `<ProviderSignIn>` (Google/Microsoft) + separador "ou" + `<EmailOtpSignIn>`. Já-autenticado redireciona.
+- Rota dedicada `src/app/entrar/page.tsx` (`?next=`): `<ProviderSignIn>` (Google) + separador "ou" + `<EmailOtpSignIn>`. Já-autenticado redireciona.
 - Item "Email (código)" no dropdown "Entrar" (`sign-in-button.tsx`) → `/entrar`.
 - `.env.example`: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
 - Testes: `email-otp-actions.test.ts` (9) + `email-otp-sign-in.test.tsx` (3).
@@ -95,7 +95,7 @@ Client Component de 2 passos:
 1. Passo "email": input email + Turnstile + botão "Enviar código".
 2. Passo "código": input de 6 dígitos (inputMode numeric) + botão "Entrar" + link "Reenviar" (respeitando rate limit) + "Usar outro email".
 
-Integrar **abaixo** do `<ProviderSignIn>` (Google/Microsoft) com um separador "ou", num componente comum de autenticação (considerar extrair `<SignInPanel>` que junta os dois). Avaliar uma rota dedicada `/entrar?next=` para o fluxo de 2 passos não poluir os CTAs inline - decisão na implementação.
+Integrar **abaixo** do `<ProviderSignIn>` (Google) com um separador "ou", num componente comum de autenticação (considerar extrair `<SignInPanel>` que junta os dois). Avaliar uma rota dedicada `/entrar?next=` para o fluxo de 2 passos não poluir os CTAs inline - decisão na implementação.
 
 ### Backend
 - **Nada a mudar** em `profiles`, RLS ou triggers. O insert em `auth.users` via OTP dispara o mesmo `on_auth_user_created`.
@@ -119,7 +119,7 @@ Reabre a decisão "email/password fora de âmbito" (§17/§18) - mas **OTP não 
 ## 10. Plano de testes
 
 - **Unit (Vitest, mocks):** `sendEmailOtpAction` (valida email, rate limit, captcha em falta, resposta genérica), `verifyEmailOtpAction` (código certo → redirect, código errado/expirado → erro, `next` validado). Componente `email-otp-sign-in` (transição passo 1 → passo 2, reenviar, usar outro email).
-- **Manual (preview, depois do SMTP configurado):** email real → recebe código → entra; código errado falha; código expirado falha; reenvio; criação de `profiles` no primeiro login; login Google/Microsoft continuam a funcionar lado a lado.
+- **Manual (preview, depois do SMTP configurado):** email real → recebe código → entra; código errado falha; código expirado falha; reenvio; criação de `profiles` no primeiro login; login Google continua a funcionar lado a lado.
 
 ## 11. Trade-offs / riscos
 

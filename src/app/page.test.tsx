@@ -28,10 +28,9 @@ describe('HomeHero', () => {
     expect(cta).toHaveAttribute('href', '/meus-cursos');
   });
 
-  it('sem sessão, expõe botões de login (Google + Microsoft) com hidden input next', () => {
+  it('sem sessão, expõe botão de login Google com hidden input next', () => {
     const { container } = render(<HomeHero isAuthenticated={false} ctaHref="/meus-cursos" />);
     expect(screen.getByRole('button', { name: /continuar com google/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /continuar com microsoft/i })).toBeInTheDocument();
     const hidden = container.querySelector('input[name="next"]');
     expect(hidden).toHaveAttribute('value', '/meus-cursos');
   });

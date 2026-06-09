@@ -3,7 +3,6 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('@/lib/auth/actions', () => ({
   signInWithGoogleAction: vi.fn(),
-  signInWithMicrosoftAction: vi.fn(),
 }));
 
 import { MeusCursosContent } from './meus-cursos-content';
@@ -31,11 +30,10 @@ describe('MeusCursosContent — V3.1 T4', () => {
     ).toBeInTheDocument();
   });
 
-  it('mostra CTA de login (Google + Microsoft) quando anónimo (com next=/meus-cursos)', () => {
+  it('mostra CTA de login Google quando anónimo (com next=/meus-cursos)', () => {
     render(<MeusCursosContent isAuthenticated={false} courses={[]} />);
     const google = screen.getByRole('button', { name: /continuar com google/i });
     expect(google).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /continuar com microsoft/i })).toBeInTheDocument();
     const form = google.closest('form');
     const hidden = form?.querySelector('input[name="next"]');
     expect(hidden).toHaveAttribute('value', '/meus-cursos');

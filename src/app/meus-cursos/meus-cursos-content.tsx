@@ -110,8 +110,8 @@ export function MeusCursosContent({ isAuthenticated, courses }: Props) {
             Inicia sessão para ver os teus cursos
           </h2>
           <p className="text-muted-foreground mt-4 max-w-xl font-sans text-base leading-relaxed sm:text-lg">
-            Aqui ficam guardados os cursos que já começaste. Inicia com a tua conta Google ou
-            Microsoft para começar.
+            Aqui ficam guardados os cursos que já começaste. Inicia sessão com a tua conta Google
+            para começar.
           </p>
           <ProviderSignIn next="/meus-cursos" className="mt-8 justify-center" />
         </motion.div>
