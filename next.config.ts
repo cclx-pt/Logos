@@ -17,10 +17,14 @@ const csp = [
   "object-src 'none'",
   "frame-ancestors 'self'",
   // Embeds de YouTube (video de apresentacao na home + aulas V3) + desafio
-  // Cloudflare Turnstile (captcha do login por email OTP, corre num iframe).
-  'frame-src https://www.youtube-nocookie.com https://www.youtube.com https://challenges.cloudflare.com',
-  // Avatares Google + imagens inline.
-  "img-src 'self' data: https://lh3.googleusercontent.com",
+  // Cloudflare Turnstile (captcha do login por email OTP, corre num iframe)
+  // + visualizador inline da apostila PDF (iframe com signed URL do bucket
+  // lesson-pdfs). O wildcard *.supabase.co cobre logos-dev e logos-prod sem
+  // acoplar a CSP a env vars de build - mesmo racional do connect-src.
+  'frame-src https://www.youtube-nocookie.com https://www.youtube.com https://challenges.cloudflare.com https://*.supabase.co',
+  // Avatares Google + imagens inline + banners de cursos (signed URLs do
+  // bucket course-banners, servidas de *.supabase.co - ver frame-src).
+  "img-src 'self' data: https://lh3.googleusercontent.com https://*.supabase.co",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   // va.vercel-scripts.com: telemetria Vercel. challenges.cloudflare.com: script

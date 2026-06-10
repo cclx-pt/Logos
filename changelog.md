@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### fix
+- fix: [10-06-2026] **CSP bloqueava o Supabase Storage - banners e apostilas PDF "desapareciam"**. Regressão silenciosa do port de hardening (#47): a paridade foi verificada contra `main`, mas `main` (V2) não tem banners de cursos nem visualizador inline de apostilas. `img-src` não permitia as signed URLs dos banners (`course-banners`, renderizados por `<CourseImage>` com `unoptimized` no catálogo, `/meus-cursos`, landing do curso e preview do admin) e `frame-src` só permitia YouTube + Turnstile, bloqueando o iframe da apostila (`lesson-pdfs`) na página de aula. `next.config.ts` ganha `https://*.supabase.co` nas duas directivas (wildcard cobre `logos-dev` e `logos-prod` sem acoplar a CSP a env vars - mesmo racional do `connect-src`). Teste de regressão novo `src/test/security-headers.test.ts` pina as origens externas de cada directiva + o conjunto completo de headers. 440 → 445 verdes.
+
 ### docs
 - docs: [10-06-2026] **runbook de configuração externa do email OTP** em `feature-docs/email-otp-setup-guide.md`: passo-a-passo do zero - conta Resend + domínio `logos.cclx.pt` (região EU), registos DNS (MX/SPF/DKIM/DMARC) na Hostinger com os nomes relativos certos, API key, SMTP custom + provider Email + **templates com `{{ .Token }}` em PT-PT** (por default o Supabase envia link, não código - Magic Link **e** Confirm signup) + rate limits em `logos-dev`, widget Turnstile (site key no deploy **antes** do secret no Supabase, senão o envio de OTP parte) e smoke test. Checklist de lançamento para `logos-prod`. `email-otp-login.md` §0/§5 e o bloqueador em `status.md` passam a apontar para o guia.
 
