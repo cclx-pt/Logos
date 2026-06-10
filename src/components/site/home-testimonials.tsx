@@ -8,24 +8,29 @@ import { cn } from '@/lib/utils';
 
 type Testimonial = {
   quote: string;
+  author: string;
 };
 
 const testimonials: readonly Testimonial[] = [
   {
     quote:
       'O ministério LOGOS está a ser uma benção na minha vida. Faz-me sair da zona de conforto e ir mais fundo nas Escrituras. Muito obrigado a todos os envolvidos! Deus vos abençoe.',
+    author: 'Bernardo Degues',
   },
   {
     quote:
       'O LOGOS tem servido para somar mais proximidade com a Palavra, descobrir novos detalhes, repensar na Sua mensagem e aplicá-la no meu dia-a-dia. Uma forma simples, leve mas profunda para estudar a Bíblia. Uma hora que voa e que nos deixa com vontade de mais! Prefiro as aulas presenciais, que são também excelentes oportunidades para fazer em casal. Obrigada aos professores!',
+    author: 'Sara Narciso',
   },
   {
     quote:
       'Este tempo no LOGOS foi extremamente proveitoso e edificante para mim. Aprendi muito sobre a Bíblia e tive contacto com temas e curiosidades que eu nunca tinha estudado com profundidade. Foi um conteúdo muito enriquecedor!',
+    author: 'Raniere Bruno',
   },
   {
     quote:
       'Nas aulas do LOGOS consigo aprofundar temas que muitas vezes numa pregação não há tempo para explorar. Também me fez desconstruir algumas ideias erradas que tinha há anos e perceber melhor a Palavra com mais contexto e maturidade. Sou muito grato por tudo o que tenho aprendido aqui.',
+    author: 'André Mata',
   },
 ] as const;
 
@@ -84,6 +89,9 @@ export function HomeTestimonials() {
                   <blockquote className="text-ink font-sans text-lg leading-relaxed sm:text-xl">
                     &ldquo;{t.quote}&rdquo;
                   </blockquote>
+                  <figcaption className="text-muted-foreground font-display mt-4 text-base font-medium">
+                    {t.author}
+                  </figcaption>
                 </div>
               </figure>
             </li>
