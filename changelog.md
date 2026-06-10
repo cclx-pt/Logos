@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### docs
+- docs: [10-06-2026] **runbook de configuração externa do email OTP** em `feature-docs/email-otp-setup-guide.md`: passo-a-passo do zero - conta Resend + domínio `logos.cclx.pt` (região EU), registos DNS (MX/SPF/DKIM/DMARC) na Hostinger com os nomes relativos certos, API key, SMTP custom + provider Email + **templates com `{{ .Token }}` em PT-PT** (por default o Supabase envia link, não código - Magic Link **e** Confirm signup) + rate limits em `logos-dev`, widget Turnstile (site key no deploy **antes** do secret no Supabase, senão o envio de OTP parte) e smoke test. Checklist de lançamento para `logos-prod`. `email-otp-login.md` §0/§5 e o bloqueador em `status.md` passam a apontar para o guia.
+
 ### update
 - update: [10-06-2026] **login com Microsoft (Entra/Azure) removido** - decisão do líder: os métodos de login passam a ser só **Google + email OTP**. O código Microsoft (adicionado a 04-06-2026) chegou a estar pronto na PR #49, mas o provider Azure nunca foi configurado no Supabase; foi retirado antes do merge. `src/lib/auth/actions.ts`: sai `signInWithMicrosoftAction` + o helper genérico `signInWithProvider` + o map `PROVIDERS`/`OAuthProvider`; `signInWithGoogleAction` passa a fazer o `signInWithOAuth({ provider: 'google' })` diretamente. `src/lib/auth/providers.ts`: registry `SIGN_IN_PROVIDERS` fica só com Google (slug `'google'`). Copy ajustada em `/entrar` (metadata) e `/meus-cursos` (estado anónimo). `feature-docs/microsoft-oauth-setup.md` apagado; SPEC bump 3.0 → 3.1; CLAUDE/architecture/status/supabase/email-otp-login reconciliados. Tests: 4 ficheiros ajustados (`provider-sign-in`, `page`, `meus-cursos-content`, `start-course-cta`) - deixam de exigir o botão Microsoft. 440 verdes.
 

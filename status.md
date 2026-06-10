@@ -23,7 +23,7 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
 **Bloqueadores/passos manuais residuais (não-código):**
 - ✅ ~~Testemunhos do carrossel~~ - resolvido 04-06-2026: ficam os 4 de prod (V2), anónimos (decisão do líder; "os 3 não fazemos sem ordem").
 - ~~Configurar o provider Microsoft (Azure) no Supabase~~ - **removido 10-06-2026** (decisão do líder: só Google + email OTP). Doc de setup apagado.
-- ⏳ **Pré-condições do login por email OTP** (código entregue 07-06-2026, inerte até isto): conta Resend + domínio verificado, DNS SPF/DKIM no Hostinger, SMTP custom + Email provider + Turnstile no Supabase. Passos em `feature-docs/email-otp-login.md` §5/§6.
+- ⏳ **Pré-condições do login por email OTP** (código entregue 07-06-2026, inerte até isto): conta Resend + domínio verificado, DNS SPF/DKIM no Hostinger, SMTP custom + Email provider + Turnstile no Supabase. Guia passo-a-passo em `feature-docs/email-otp-setup-guide.md`.
 - ⏳ Smoke test manual no preview Vercel (os 2 métodos de login: Google + email OTP).
 
 ## ✅ Concluído

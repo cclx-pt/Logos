@@ -14,7 +14,7 @@
 - `.env.example`: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
 - Testes: `email-otp-actions.test.ts` (9) + `email-otp-sign-in.test.tsx` (3).
 
-**Por fazer (config externa, tu):** §5 (Resend + DNS) e §6 (Email provider + OTP length/expiração + Turnstile) no Supabase. Sem isto, o envio de código falha (mensagem genérica na UI).
+**Por fazer (config externa, tu):** §5 (Resend + DNS) e §6 (Email provider + OTP length/expiração + Turnstile) no Supabase. Sem isto, o envio de código falha (mensagem genérica na UI). **Runbook passo-a-passo do zero em [`email-otp-setup-guide.md`](email-otp-setup-guide.md).**
 
 **Decisão divergente do plano:** o rate-limiting via `check_rate_limit` (§8) **não foi ligado** — o RPC só dá EXECUTE a `service_role` e a app ainda não instancia um cliente service-role. A proteção ativa é o **Turnstile** + o rate-limiting nativo do Supabase para OTP. Ligar o `check_rate_limit` fica como follow-up (exige um helper de cliente service-role).
 
@@ -50,6 +50,8 @@ Avançamos com **código de 6 dígitos** (não magic link):
 - É exatamente o que o líder pediu ("põe um email e envia um código").
 
 ## 5. Pré-requisitos externos (o utilizador executa)
+
+> Runbook operacional detalhado (do zero ao smoke test, com templates PT-PT e ordem segura do Turnstile): [`email-otp-setup-guide.md`](email-otp-setup-guide.md).
 
 1. **Conta Resend** + verificar o domínio `cclx.pt` (ou `logos.cclx.pt`) em Resend → Domains.
 2. **DNS na Hostinger:** adicionar os registos que o Resend indica - SPF (TXT), DKIM (CNAME/TXT) e, se pedido, DMARC. Esperar propagação + "Verified" no Resend.
