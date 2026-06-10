@@ -30,11 +30,11 @@ describe('MeusCursosContent — V3.1 T4', () => {
     ).toBeInTheDocument();
   });
 
-  it('mostra CTA de login quando anónimo (com next=/meus-cursos)', () => {
+  it('mostra CTA de login Google quando anónimo (com next=/meus-cursos)', () => {
     render(<MeusCursosContent isAuthenticated={false} courses={[]} />);
-    const button = screen.getByRole('button', { name: /inicia sessão com google/i });
-    expect(button).toBeInTheDocument();
-    const form = button.closest('form');
+    const google = screen.getByRole('button', { name: /continuar com google/i });
+    expect(google).toBeInTheDocument();
+    const form = google.closest('form');
     const hidden = form?.querySelector('input[name="next"]');
     expect(hidden).toHaveAttribute('value', '/meus-cursos');
     // Estado anónimo não deve mostrar grid nem link para o catálogo

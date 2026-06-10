@@ -7,7 +7,12 @@ function course(id: string, title: string): VisibleCourse {
   return { id, title, description: null, icon: null, bannerUrl: null, hasLessons: true };
 }
 
-const ALL = [course('a', 'Mateus'), course('b', 'Marcos'), course('c', 'Lucas'), course('d', 'João')];
+const ALL = [
+  course('a', 'Mateus'),
+  course('b', 'Marcos'),
+  course('c', 'Lucas'),
+  course('d', 'João'),
+];
 
 describe('isSortKey', () => {
   it('aceita as 4 chaves válidas', () => {

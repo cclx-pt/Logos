@@ -109,9 +109,7 @@ describe('getEnrollmentState', () => {
 
   it('devolve "not-enrolled" em caso de erro Supabase', async () => {
     mockGetCurrentUser.mockResolvedValue(profile());
-    mockFrom.mockReturnValue(
-      makeSelectBuilder({ data: null, error: { message: 'rls denied' } }),
-    );
+    mockFrom.mockReturnValue(makeSelectBuilder({ data: null, error: { message: 'rls denied' } }));
     const state = await getEnrollmentState(VALID_COURSE_ID);
     expect(state).toBe('not-enrolled');
   });

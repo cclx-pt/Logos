@@ -16,13 +16,16 @@ const csp = [
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'self'",
-  // Embeds de YouTube (video de apresentacao na home + aulas V3).
-  'frame-src https://www.youtube-nocookie.com https://www.youtube.com',
+  // Embeds de YouTube (video de apresentacao na home + aulas V3) + desafio
+  // Cloudflare Turnstile (captcha do login por email OTP, corre num iframe).
+  'frame-src https://www.youtube-nocookie.com https://www.youtube.com https://challenges.cloudflare.com',
   // Avatares Google + imagens inline.
   "img-src 'self' data: https://lh3.googleusercontent.com",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://va.vercel-scripts.com`,
+  // va.vercel-scripts.com: telemetria Vercel. challenges.cloudflare.com: script
+  // do Turnstile (api.js) carregado pelo TurnstileWidget quando ha site key.
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://va.vercel-scripts.com https://challenges.cloudflare.com`,
   // Supabase (auth/db/storage) + telemetria Vercel.
   "connect-src 'self' https://*.supabase.co https://*.supabase.in https://va.vercel-scripts.com https://vitals.vercel-insights.com",
   "form-action 'self'",

@@ -19,12 +19,14 @@ describe('HomeTestimonials', () => {
     expect(testimonialSlides).toHaveLength(4);
   });
 
-  it('atribui cada testemunho ao seu autor', () => {
+  it('mantém os testemunhos anónimos (sem nomes de autor)', () => {
     render(<HomeTestimonials />);
-    expect(screen.getByText('Bernardo Degues')).toBeInTheDocument();
-    expect(screen.getByText('Sara Narciso')).toBeInTheDocument();
-    expect(screen.getByText('Raniere')).toBeInTheDocument();
-    expect(screen.getByText('André Mata')).toBeInTheDocument();
+    expect(screen.queryByText('Bernardo Degues')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sara Narciso')).not.toBeInTheDocument();
+    expect(screen.queryByText('Raniere')).not.toBeInTheDocument();
+    expect(screen.queryByText('André Mata')).not.toBeInTheDocument();
+    // Os quotes continuam presentes.
+    expect(screen.getByText(/sair da zona de conforto/i)).toBeInTheDocument();
   });
 
   it('expõe controlos de navegação anterior/seguinte', () => {

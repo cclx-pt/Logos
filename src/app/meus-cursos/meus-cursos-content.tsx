@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 
 import { CourseCard } from '@/components/site/course-card';
-import { signInWithGoogleAction } from '@/lib/auth/actions';
+import { ProviderSignIn } from '@/components/site/provider-sign-in';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 import type { StartedCourse } from '@/lib/courses/started';
 
@@ -110,18 +110,10 @@ export function MeusCursosContent({ isAuthenticated, courses }: Props) {
             Inicia sessão para ver os teus cursos
           </h2>
           <p className="text-muted-foreground mt-4 max-w-xl font-sans text-base leading-relaxed sm:text-lg">
-            Aqui ficam guardados os cursos que já começaste. Inicia com a tua conta Google para
-            começar.
+            Aqui ficam guardados os cursos que já começaste. Inicia sessão com a tua conta Google
+            para começar.
           </p>
-          <form action={signInWithGoogleAction} className="mt-8">
-            <input type="hidden" name="next" value="/meus-cursos" />
-            <button
-              type="submit"
-              className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-11 items-center justify-center rounded-md px-6 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
-            >
-              Inicia sessão com Google →
-            </button>
-          </form>
+          <ProviderSignIn next="/meus-cursos" className="mt-8 justify-center" />
         </motion.div>
       ) : isEmpty ? (
         <motion.div

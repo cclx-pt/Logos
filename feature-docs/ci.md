@@ -29,15 +29,16 @@ Este documento descreve o workflow `ci.yml`, as decisões de design, e o roadmap
 ```yaml
 on:
   pull_request:
-    branches: [main]
+    branches: [main, v3-cursos]
   push:
-    branches: [main]
+    branches: [main, v3-cursos]
 ```
 
-- **`pull_request`** — corre em qualquer PR aberto contra `main`. É a salvaguarda principal.
-- **`push` para `main`** — corre depois do squash-merge para garantir que `main` está sempre verde (ex.: se algo entrou via merge conflict resolution).
+- **`pull_request`** — corre em qualquer PR aberto contra `main` ou `v3-cursos`. É a salvaguarda principal.
+- **`push`** — corre depois do merge para garantir que a branch alvo está sempre verde (ex.: se algo entrou via merge conflict resolution).
+- **`v3-cursos` incluída em 09-06-2026.** Durante a fase de 3 camadas (`feature-docs/branch-strategy.md`), as PRs de V3 abrem contra `v3-cursos` e ficavam sem CI nenhum — só a pipeline local. O motivo original de limitar a `main` era poupar minutos do plano gratuito, mas o repo é público desde 12-05-2026 e o GitHub Actions é gratuito/ilimitado em repos públicos. Nota: `v3-cursos` não tem branch protection (ao contrário de `main`), por isso o check é informativo, não bloqueante.
 
-Não corre noutros pushes (ex.: feature branches sem PR aberto) para poupar minutos do plano gratuito.
+Não corre noutros pushes (ex.: feature branches sem PR aberto).
 
 ---
 
