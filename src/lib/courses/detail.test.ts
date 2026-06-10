@@ -47,7 +47,6 @@ import {
   getCourseDetailById,
   getLessonDetailById,
   getLessonNavigation,
-  getFirstLessonOfCourse,
   type CourseDetail,
 } from './detail';
 
@@ -235,34 +234,5 @@ describe('getLessonNavigation', () => {
       previous: null,
       next: null,
     });
-  });
-});
-
-describe('getFirstLessonOfCourse', () => {
-  it('devolve a primeira aula do primeiro módulo com aulas', () => {
-    expect(getFirstLessonOfCourse(fakeCourse())).toEqual({ id: 'l1' });
-  });
-
-  it('salta módulos sem aulas até encontrar uma', () => {
-    const c: CourseDetail = {
-      ...fakeCourse(),
-      modules: [
-        { id: 'm0', title: 'Empty', description: null, position: 0, lessons: [] },
-        ...fakeCourse().modules,
-      ],
-    };
-    expect(getFirstLessonOfCourse(c)).toEqual({ id: 'l1' });
-  });
-
-  it('devolve null se nenhum módulo tem aulas', () => {
-    const c: CourseDetail = {
-      id: COURSE_ID,
-      title: 'X',
-      description: null,
-      icon: null,
-      bannerUrl: null,
-      modules: [{ id: 'm1', title: 'M', description: null, position: 0, lessons: [] }],
-    };
-    expect(getFirstLessonOfCourse(c)).toBeNull();
   });
 });

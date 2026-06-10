@@ -69,6 +69,7 @@ vi.mock('@/lib/auth', () => ({
 
 import {
   getCompletedLessonIds,
+  getFirstIncompleteLesson,
   getNextModuleWithLessons,
   getOrCreateCourseCompletion,
   isCourseComplete,
@@ -112,6 +113,29 @@ function makeCourse(modules: ModuleWithLessons[]): CourseDetail {
     modules: modules.map((m, i) => ({ ...m, position: i })),
   };
 }
+
+describe('getFirstIncompleteLesson', () => {
+  it('sem progresso devolve a primeira aula do curso (saltando módulos vazios)', () => {
+    const course = makeCourse([makeModule('m0', []), makeModule('m1', ['l1', 'l2'])]);
+    expect(getFirstIncompleteLesson(course, new Set())?.id).toBe('l1');
+  });
+
+  it('com progresso devolve a primeira não concluída, atravessando módulos', () => {
+    const course = makeCourse([makeModule('m1', ['l1', 'l2']), makeModule('m2', ['l3'])]);
+    expect(getFirstIncompleteLesson(course, new Set(['l1', 'l2']))?.id).toBe('l3');
+  });
+
+  it('progresso fora de ordem retoma na primeira lacuna', () => {
+    const course = makeCourse([makeModule('m1', ['l1', 'l2', 'l3'])]);
+    expect(getFirstIncompleteLesson(course, new Set(['l1', 'l3']))?.id).toBe('l2');
+  });
+
+  it('devolve null com tudo concluído ou sem aulas', () => {
+    const done = makeCourse([makeModule('m1', ['l1'])]);
+    expect(getFirstIncompleteLesson(done, new Set(['l1']))).toBeNull();
+    expect(getFirstIncompleteLesson(makeCourse([makeModule('m1', [])]), new Set())).toBeNull();
+  });
+});
 
 describe('getCompletedLessonIds', () => {
   beforeEach(() => {

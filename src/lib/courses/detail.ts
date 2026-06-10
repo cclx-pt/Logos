@@ -175,15 +175,3 @@ export function getLessonNavigation(
     next: idx < flat.length - 1 ? flat[idx + 1]! : null,
   };
 }
-
-/**
- * Devolve a primeira aula do curso (ordem natural por módulos/posições).
- * Usado pelo botão "Começar curso" / "Continuar curso" em PR6. Em PR7
- * passa a "primeira aula incompleta" — assinatura fica preparada.
- */
-export function getFirstLessonOfCourse(course: CourseDetail): { id: string } | null {
-  for (const m of course.modules) {
-    if (m.lessons.length > 0) return { id: m.lessons[0]!.id };
-  }
-  return null;
-}

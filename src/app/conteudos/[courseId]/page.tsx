@@ -7,9 +7,10 @@ import { getCurrentUser } from '@/lib/auth';
 import { UUID_RE } from '@/lib/validation';
 import { formatDate } from '@/lib/format';
 import { CourseImage } from '@/lib/courses/course-image';
-import { getCourseDetailById, getFirstLessonOfCourse } from '@/lib/courses/detail';
+import { getCourseDetailById } from '@/lib/courses/detail';
 import {
   getCompletedLessonIds,
+  getFirstIncompleteLesson,
   getOrCreateCourseCompletion,
   isCourseComplete,
   isModuleComplete,
@@ -118,7 +119,8 @@ type CourseForView = Awaited<ReturnType<typeof getCourseDetailById>>;
 
 /**
  * Vista "logado, não inscrito": mostra estrutura (módulos + aulas) em
- * read-only (não clicáveis) + CTA grande "Começar curso" para inscrever.
+ * read-only (não clicáveis) + CTA grande "Adicionar a Meus cursos" para
+ * inscrever.
  */
 function NotEnrolledCourseView({ course }: { course: NonNullable<CourseForView> }) {
   const hasAnyLesson = course.modules.some((m) => m.lessons.length > 0);
@@ -210,7 +212,10 @@ async function EnrolledCourseView({
   const allLessonIds = course.modules.flatMap((m) => m.lessons.map((l) => l.id));
   const completed = await getCompletedLessonIds(allLessonIds);
 
-  const firstLesson = getFirstLessonOfCourse(course);
+  const hasProgress = completed.size > 0;
+  // Próxima aula a ver: a primeira não concluída (= primeira aula do curso
+  // quando não há progresso). Alvo dos CTAs "Começar/Continuar curso".
+  const nextLesson = getFirstIncompleteLesson(course, completed);
   const courseDone = isCourseComplete(course, completed);
   const completedAt = courseDone ? await getOrCreateCourseCompletion(course.id) : null;
 
@@ -232,11 +237,12 @@ async function EnrolledCourseView({
             .
           </p>
         </div>
-      ) : firstLesson ? (
+      ) : nextLesson ? (
         <StartCourseCta
           courseId={course.id}
-          firstLessonId={firstLesson.id}
-          hasProgress={completed.size > 0}
+          lessonId={nextLesson.id}
+          lessonTitle={nextLesson.title}
+          hasProgress={hasProgress}
           isAuthenticated={userPresent}
         />
       ) : (
