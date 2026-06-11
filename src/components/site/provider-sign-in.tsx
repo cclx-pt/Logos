@@ -1,6 +1,4 @@
-'use client';
-
-import { SIGN_IN_PROVIDERS } from '@/lib/auth/providers';
+import { SIGN_IN_PROVIDERS, providerLoginHref } from '@/lib/auth/providers';
 import { cn } from '@/lib/utils';
 
 type ProviderSignInProps = {
@@ -17,22 +15,27 @@ const BASE =
 /**
  * Botões de início de sessão, um por provider de `SIGN_IN_PROVIDERS`.
  *
- * Um único `<form>` com um `next` partilhado; cada botão usa `formAction`
- * para escolher o provider. O primeiro provider do registry é o primário
- * (sólido laranja); os restantes são outline. Sem logótipos de marca (lucide
- * não os fornece e evitamos manutenção/licenciamento de SVGs de marca) - o
- * contexto à volta explica o "porquê".
+ * São simples `<a>` para o route handler `/auth/login/<provider>` (que faz o
+ * 307 real para o provider) - não Server Actions. O `redirect()` externo numa
+ * Server Action invocada pelo cliente rebenta no Next 16 ("Connection closed",
+ * 500) - foi o bug do botão "Entrar". Um link normal funciona sempre, com ou
+ * sem JS, sem depender de hidratação. Usamos `<a>` (não `<Link>`) de propósito:
+ * o prefetch do `<Link>` dispararia o início do OAuth ao passar o rato.
+ *
+ * O primeiro provider do registry é o primário (sólido laranja); os restantes
+ * são outline. Sem logótipos de marca (lucide não os fornece e evitamos
+ * manutenção/licenciamento de SVGs de marca) - o contexto à volta explica o
+ * "porquê".
  */
 export function ProviderSignIn({ next, size = 'md', className }: ProviderSignInProps) {
   const sizeClass = size === 'lg' ? 'h-12 px-6 text-base' : 'h-11 px-5 text-sm';
   return (
-    <form className={cn('flex flex-col gap-3 sm:flex-row sm:items-center', className)}>
-      {next ? <input type="hidden" name="next" value={next} /> : null}
+    <div className={cn('flex flex-col gap-3 sm:flex-row sm:items-center', className)}>
       {SIGN_IN_PROVIDERS.map((provider, index) => (
-        <button
+        <a
           key={provider.slug}
-          type="submit"
-          formAction={provider.action}
+          href={providerLoginHref(provider.slug, next)}
+          data-next={next}
           className={cn(
             BASE,
             sizeClass,
@@ -42,8 +45,8 @@ export function ProviderSignIn({ next, size = 'md', className }: ProviderSignInP
           )}
         >
           Continuar com {provider.label}
-        </button>
+        </a>
       ))}
-    </form>
+    </div>
   );
 }

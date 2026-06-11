@@ -2,8 +2,8 @@
  * OAuth callback do Google (via Supabase Auth) — V2 PR2.
  *
  * Fluxo:
- *  1. User clica "Entrar com Google" → `signInWithGoogleAction` redirecciona
- *     para Google.
+ *  1. User clica "Continuar com Google" → o route handler `/auth/login/google`
+ *     redirecciona para Google.
  *  2. Google redirecciona de volta para `${origin}/auth/callback?code=...`.
  *  3. Aqui trocamos `code` por sessão (cookies de auth) via
  *     `exchangeCodeForSession`. O profile correspondente em `profiles` é

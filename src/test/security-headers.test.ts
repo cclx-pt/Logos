@@ -1,0 +1,89 @@
+/**
+ * Regressão dos headers de segurança (next.config.ts).
+ *
+ * Razão de existir: o port do hardening V2.5 (#47) trouxe uma CSP verificada
+ * por paridade contra `main` - mas `main` não tem banners de cursos nem
+ * visualizador inline de apostilas, e a CSP bloqueou silenciosamente o
+ * Supabase Storage em `img-src`/`frame-src` (banners e PDFs desapareceram
+ * no preview). Estes testes pinam as origens externas reais de que cada
+ * directiva depende, para a próxima revisão de CSP não repetir o erro.
+ */
+import { describe, expect, it } from 'vitest';
+
+import nextConfig from '../../next.config';
+
+async function getSecurityHeaders(): Promise<{ key: string; value: string }[]> {
+  if (!nextConfig.headers) throw new Error('next.config.ts sem headers()');
+  const rules = await nextConfig.headers();
+  const rule = rules.find((r) => r.source === '/:path*');
+  if (!rule) throw new Error('regra de headers para /:path* não encontrada');
+  return rule.headers;
+}
+
+async function getCspDirectives(): Promise<Map<string, string>> {
+  const headers = await getSecurityHeaders();
+  const csp = headers.find((h) => h.key === 'Content-Security-Policy');
+  if (!csp) throw new Error('Content-Security-Policy não encontrada');
+  const directives = new Map<string, string>();
+  for (const part of csp.value.split(';')) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const [name, ...sources] = trimmed.split(/\s+/);
+    directives.set(name, sources.join(' '));
+  }
+  return directives;
+}
+
+describe('CSP (next.config.ts)', () => {
+  it('img-src permite avatares Google e banners do Supabase Storage', async () => {
+    const csp = await getCspDirectives();
+    const imgSrc = csp.get('img-src') ?? '';
+    expect(imgSrc).toContain("'self'");
+    expect(imgSrc).toContain('https://lh3.googleusercontent.com');
+    // Banners de cursos: signed URLs do bucket course-banners (CourseImage
+    // com `unoptimized` renderiza <img> com o URL do Storage directo).
+    expect(imgSrc).toContain('https://*.supabase.co');
+  });
+
+  it('frame-src permite YouTube, Turnstile e apostilas PDF do Supabase Storage', async () => {
+    const csp = await getCspDirectives();
+    const frameSrc = csp.get('frame-src') ?? '';
+    expect(frameSrc).toContain('https://www.youtube-nocookie.com');
+    expect(frameSrc).toContain('https://challenges.cloudflare.com');
+    // Apostilas: a página de aula embebe o PDF num <iframe> com signed URL
+    // do bucket lesson-pdfs.
+    expect(frameSrc).toContain('https://*.supabase.co');
+  });
+
+  it('connect-src permite Supabase (auth/db/storage) e telemetria Vercel', async () => {
+    const csp = await getCspDirectives();
+    const connectSrc = csp.get('connect-src') ?? '';
+    expect(connectSrc).toContain("'self'");
+    expect(connectSrc).toContain('https://*.supabase.co');
+    expect(connectSrc).toContain('https://va.vercel-scripts.com');
+  });
+
+  it('mantém as directivas restritivas de base', async () => {
+    const csp = await getCspDirectives();
+    expect(csp.get('object-src')).toBe("'none'");
+    expect(csp.get('base-uri')).toBe("'self'");
+    expect(csp.get('frame-ancestors')).toBe("'self'");
+    expect(csp.get('form-action')).toBe("'self'");
+  });
+});
+
+describe('headers de segurança (next.config.ts)', () => {
+  it('aplica o conjunto completo a todas as rotas', async () => {
+    const keys = (await getSecurityHeaders()).map((h) => h.key);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        'Content-Security-Policy',
+        'X-Content-Type-Options',
+        'X-Frame-Options',
+        'Referrer-Policy',
+        'Permissions-Policy',
+        'Strict-Transport-Security',
+      ]),
+    );
+  });
+});

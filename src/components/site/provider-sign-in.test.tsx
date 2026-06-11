@@ -1,32 +1,30 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-
-vi.mock('@/lib/auth/actions', () => ({
-  signInWithGoogleAction: vi.fn(),
-}));
+import { describe, it, expect } from 'vitest';
 
 import { ProviderSignIn } from './provider-sign-in';
 
 describe('ProviderSignIn', () => {
-  it('renderiza um botão por provider (só Google)', () => {
+  it('renderiza um link por provider (só Google)', () => {
     render(<ProviderSignIn />);
-    expect(screen.getByRole('button', { name: /continuar com google/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /continuar com google/i })).toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: /continuar com microsoft/i }),
+      screen.queryByRole('link', { name: /continuar com microsoft/i }),
     ).not.toBeInTheDocument();
   });
 
-  it('inclui o hidden next quando fornecido', () => {
+  it('aponta para o route handler de login, com o next no href', () => {
+    // O início do OAuth é um route handler (307 real), não uma Server Action -
+    // ver nota em provider-sign-in.tsx. Regressão do "This page couldn't load".
     render(<ProviderSignIn next="/conteudos/abc" />);
-    const form = screen.getByRole('button', { name: /continuar com google/i }).closest('form');
-    const hidden = form?.querySelector('input[name="next"]');
-    expect(hidden).toHaveAttribute('type', 'hidden');
-    expect(hidden).toHaveAttribute('value', '/conteudos/abc');
+    const google = screen.getByRole('link', { name: /continuar com google/i });
+    expect(google).toHaveAttribute('href', '/auth/login/google?next=%2Fconteudos%2Fabc');
+    expect(google).toHaveAttribute('data-next', '/conteudos/abc');
   });
 
-  it('omite o hidden next quando não fornecido', () => {
+  it('sem next, aponta para o route handler sem query', () => {
     render(<ProviderSignIn />);
-    const form = screen.getByRole('button', { name: /continuar com google/i }).closest('form');
-    expect(form?.querySelector('input[name="next"]')).toBeNull();
+    const google = screen.getByRole('link', { name: /continuar com google/i });
+    expect(google).toHaveAttribute('href', '/auth/login/google');
+    expect(google).not.toHaveAttribute('data-next');
   });
 });

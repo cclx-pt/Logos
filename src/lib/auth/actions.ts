@@ -3,82 +3,23 @@
 /**
  * Server Actions de identidade — V2 PR2.
  *
- * Encapsulam o fluxo OAuth e logout. Importadas por componentes client
- * (`<form action={signInWithGoogleAction}>` / `formAction={...}`) ou server.
+ * Encapsulam logout e o login por email OTP. Importadas por componentes client.
  *
- * Métodos de login suportados: Google (OAuth) e email + código OTP
- * (passwordless, ver mais abaixo). Microsoft/Entra foi removido (decisão do
- * líder, 10-06-2026: ficar só com Google + email). Apple e login com
- * palavra-passe continuam fora de âmbito (ver `SPEC_1.md` §17/§18).
+ * **O início do OAuth (Google) não vive aqui** - é o route handler
+ * `src/app/auth/login/[provider]/route.ts`, que devolve um 307 HTTP real para
+ * o provider. Server Actions que fazem `redirect()` para um URL *externo*
+ * rebentam quando invocadas pelo cliente (Next 16, "Connection closed", 500 -
+ * foi o bug do botão "Entrar"). Os `redirect()` *internos* abaixo são seguros.
+ *
+ * Métodos de login suportados: Google (OAuth, via route handler) e email +
+ * código OTP (passwordless, ver mais abaixo). Microsoft/Entra foi removido
+ * (decisão do líder, 10-06-2026: ficar só com Google + email). Apple e login
+ * com palavra-passe continuam fora de âmbito (ver `SPEC_1.md` §17/§18).
  */
 
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getServerClient } from './index';
 import { safeNextPath } from './redirect';
-
-// Hosts legítimos para o callback OAuth: produção, dev local e previews Vercel.
-function isAllowedHost(host: string): boolean {
-  const hostname = (host.split(':')[0] ?? '').toLowerCase();
-  return (
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname === 'logos.cclx.pt' ||
-    hostname.endsWith('.vercel.app')
-  );
-}
-
-function getOrigin(headersList: Headers): string {
-  const originHeader = headersList.get('origin');
-  let candidate: string;
-  if (originHeader) {
-    candidate = originHeader;
-  } else {
-    const proto = headersList.get('x-forwarded-proto') ?? 'https';
-    const host = headersList.get('x-forwarded-host') ?? headersList.get('host');
-    if (!host) {
-      throw new Error('Não consigo determinar o origin do request (host header em falta).');
-    }
-    candidate = `${proto}://${host}`;
-  }
-
-  // Defesa em profundidade contra host-header injection: o origin que compõe o
-  // redirectTo do OAuth tem de ser um host conhecido. O allowlist do Supabase já
-  // rejeita callbacks forjados; validamos aqui também para nunca construir um
-  // redirectTo apontado a um domínio de atacante.
-  let parsed: URL;
-  try {
-    parsed = new URL(candidate);
-  } catch {
-    throw new Error('Origin do request inválido.');
-  }
-  if (!isAllowedHost(parsed.host)) {
-    throw new Error(`Origin não permitido: ${parsed.host}`);
-  }
-  return parsed.origin;
-}
-
-export async function signInWithGoogleAction(formData?: FormData): Promise<void> {
-  // Independentes — em paralelo para não somar latências no caminho de login.
-  const [supabase, headersList] = await Promise.all([getServerClient(), headers()]);
-  const origin = getOrigin(headersList);
-
-  const next = formData ? safeNextPath(formData.get('next')) : null;
-  const callback = next
-    ? `${origin}/auth/callback?next=${encodeURIComponent(next)}`
-    : `${origin}/auth/callback`;
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: callback },
-  });
-
-  if (error || !data?.url) {
-    throw new Error(`Falha a iniciar autenticação Google: ${error?.message ?? 'sem URL'}`);
-  }
-
-  redirect(data.url);
-}
 
 export async function signOutAction(): Promise<void> {
   const supabase = await getServerClient();

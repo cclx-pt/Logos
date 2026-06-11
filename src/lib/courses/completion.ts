@@ -10,7 +10,7 @@
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 
-import type { CourseDetail, ModuleWithLessons } from './detail';
+import type { CourseDetail, LessonSummary, ModuleWithLessons } from './detail';
 
 /**
  * Devolve o conjunto de ids das aulas concluídas pelo utilizador actual,
@@ -63,6 +63,26 @@ export function getNextModuleWithLessons(
   for (let i = idx + 1; i < course.modules.length; i++) {
     const m = course.modules[i]!;
     if (m.lessons.length > 0) return m;
+  }
+  return null;
+}
+
+/**
+ * Devolve a primeira aula (na ordem do curso) ainda não concluída, ou
+ * `null` se não houver aulas ou estiverem todas concluídas. Com o set
+ * vazio devolve simplesmente a primeira aula do curso — por isso serve
+ * os dois CTAs da página de curso: "Começar curso" (sem progresso) e
+ * "Continuar curso" (retoma onde o utilizador parou, atravessando
+ * fronteiras de módulo; módulos sem aulas são ignorados por natureza).
+ */
+export function getFirstIncompleteLesson(
+  course: CourseDetail,
+  completedLessonIds: Set<string>,
+): LessonSummary | null {
+  for (const m of course.modules) {
+    for (const lesson of m.lessons) {
+      if (!completedLessonIds.has(lesson.id)) return lesson;
+    }
   }
   return null;
 }

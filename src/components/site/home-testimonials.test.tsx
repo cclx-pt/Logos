@@ -19,12 +19,13 @@ describe('HomeTestimonials', () => {
     expect(testimonialSlides).toHaveLength(4);
   });
 
-  it('mantém os testemunhos anónimos (sem nomes de autor)', () => {
+  it('assina cada testemunho com o nome do autor (ordem do líder, 10-06-2026)', () => {
     render(<HomeTestimonials />);
-    expect(screen.queryByText('Bernardo Degues')).not.toBeInTheDocument();
-    expect(screen.queryByText('Sara Narciso')).not.toBeInTheDocument();
-    expect(screen.queryByText('Raniere')).not.toBeInTheDocument();
-    expect(screen.queryByText('André Mata')).not.toBeInTheDocument();
+    expect(screen.getByText('Bernardo Degues')).toBeInTheDocument();
+    expect(screen.getByText('Sara Narciso')).toBeInTheDocument();
+    // Nome completo confirmado pelo líder (era só "Raniere").
+    expect(screen.getByText('Raniere Bruno')).toBeInTheDocument();
+    expect(screen.getByText('André Mata')).toBeInTheDocument();
     // Os quotes continuam presentes.
     expect(screen.getByText(/sair da zona de conforto/i)).toBeInTheDocument();
   });

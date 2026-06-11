@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import { redirect } from 'next/navigation';
 
 import { enrollAction } from '@/lib/courses/enrollment';
@@ -7,9 +8,12 @@ type Props = {
 };
 
 /**
- * CTA "Começar curso" — usado na vista "logado, não inscrito" do
+ * CTA "Adicionar a Meus cursos" — usado na vista "logado, não inscrito" do
  * `/conteudos/[courseId]`. Em sucesso, `revalidatePath` no enrollAction
  * faz a página re-render como "inscrito" (clickable modules + lessons).
+ *
+ * Copy deliberadamente distinta de "Começar curso" (CTA da vista inscrita):
+ * inscrever não navega para nenhuma aula, acrescenta o curso a /meus-cursos.
  *
  * Em erro, redireccionamos com `?erro=generico` para o `<SaveToastListener />`
  * apanhar e mostrar toast. O listener só está montado no layout admin —
@@ -33,9 +37,10 @@ export function EnrollCourseCta({ courseId }: Props) {
     >
       <button
         type="submit"
-        className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-11 items-center justify-center rounded-md px-6 text-sm font-medium text-white focus-visible:ring-2 focus-visible:outline-none"
+        className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-11 items-center justify-center gap-2 rounded-md px-6 text-sm font-medium text-white focus-visible:ring-2 focus-visible:outline-none"
       >
-        Começar curso →
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        Adicionar a “Meus cursos”
       </button>
     </form>
   );

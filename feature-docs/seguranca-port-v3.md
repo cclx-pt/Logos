@@ -44,3 +44,11 @@ As migrações de segurança **já estão aplicadas em `logos-dev`** (objetos co
 > Nota: as restantes migrações de V3 mantêm divergência ficheiro-vs-ledger pré-existente (ex.: `allow_super_admin_promotion` ficheiro `…120000` vs ledger `…172850`). Fora do âmbito deste port; tratar na reconciliação geral antes do lançamento.
 
 **No lançamento (01-07-2026):** estas 3 migrações já estão em `logos-prod` desde a V2.5; o processo de subida de V3 a prod tem de as saltar (não re-aplicar), tal como já acontece com as restantes migrações de V3 com versões divergentes.
+
+## Adenda (10-06-2026): regressão de CSP nos assets do Storage
+
+A "paridade com prod" (§acima) tinha um ponto cego: `main` não tem banners de cursos nem visualizador inline de PDF, por isso a CSP portada não contemplava o Supabase Storage. Em `v3-cursos`, `img-src` bloqueava os banners (`course-banners` via `<CourseImage>`) e `frame-src` bloqueava o iframe da apostila (`lesson-pdfs`) - ambos servidos por signed URLs de `*.supabase.co`. Os assets "desapareciam" silenciosamente (só o console do browser acusava a violação de CSP).
+
+**Corrigido a 10-06-2026:** wildcard `https://*.supabase.co` em `img-src` e `frame-src` (mesmo racional do `connect-src`) + teste de regressão `src/test/security-headers.test.ts` que pina as origens externas de cada directiva.
+
+**Lição:** portar uma CSP exige reauditar as origens externas que a branch **destino** usa (storage, embeds, captcha), não só verificar paridade com a branch origem.
