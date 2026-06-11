@@ -31,4 +31,4 @@
 
 ## Estado da migration
 
-`supabase/migrations/20260611120000_security_review_hardening.sql` - 4 statements idempotentes (REVOKE/GRANT/ALTER). **Aplicação a `logos-dev` + registo da versão no ledger** segue o procedimento anti-divergência (ver MEMORY "Divergência de migrações Supabase"). No lançamento sobe a `logos-prod` com as restantes de V3.
+`supabase/migrations/20260611120000_security_review_hardening.sql` - 4 statements idempotentes (REVOKE/GRANT/ALTER). **Aplicada a `logos-dev` a 11-06-2026** com a versão exata registada no ledger (`schema_migrations`: `20260611120000 | security_review_hardening` - procedimento anti-divergência, ver MEMORY "Divergência de migrações Supabase"). Verificação pós-aplicação: os lints `function_search_path_mutable` (set_updated_at) e `anon_security_definer` (count_registered_users) desapareceram dos advisors; restam só os falsos-positivos documentados. No lançamento sobe a `logos-prod` com as restantes de V3.
