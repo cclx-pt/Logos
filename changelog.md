@@ -12,6 +12,7 @@
 - update: [02-06-2026] testemunhos do carrossel da home passam a anónimos - removidos os nomes dos autores (`figcaption`) e o campo `author` de `home-testimonials.tsx`. As citações mantêm-se inalteradas. (`fix/testemunhos-anonimos`)
 
 ### infra
+- add: [11-06-2026] conta Resend criada e domínio `logos.cclx.pt` ligado (região `eu-west-1`) — DKIM, SPF e MX publicados no DNS Hostinger e confirmados por consulta DNS pública. Integração na app fica para V5 (Q&A). Setup documentado em `feature-docs/resend.md`.
 - add: repositório GitHub privado inicial
 - add: estrutura de documentação (`CLAUDE.md`, `architecture.md`, `status.md`, `feature-docs/`)
 - add: `.env.example` com placeholders Supabase + Resend

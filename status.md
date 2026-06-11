@@ -70,7 +70,7 @@
 - [ ] **V2 PR4 — Etiquetas (fundação)**. Detalhes em `feature-docs/v2-auth.md` §4.
 - [ ] Substituir copy placeholder de Conhece-nos e Fala connosco por texto final do ministério (sem alteração de estrutura). *Bloqueado por: ministério.*
 - [ ] Acrescentar morada + horários da igreja a Fala connosco. *Bloqueado por: ministério.*
-- [ ] *(adiado para V5+)* Resend + SPF/DKIM no DNS Hostinger — sem urgência V2 por o login ser apenas Google; necessário para notificações de Q&A em V5.
+- [x] **Resend + SPF/DKIM no DNS Hostinger** (11-06-2026) — conta criada, domínio `logos.cclx.pt` adicionado (região `eu-west-1`); DKIM (`resend._domainkey`), SPF e MX (`send.logos.cclx.pt`) confirmados por consulta DNS pública. Falta: teste de envio com a API key (e key no `.env.local`/Vercel quando V5 a usar). Detalhes em `feature-docs/resend.md`.
 
 ## 🗺️ Roadmap por versão (resumo)
 
