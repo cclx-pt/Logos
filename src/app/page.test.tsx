@@ -28,11 +28,10 @@ describe('HomeHero', () => {
     expect(cta).toHaveAttribute('href', '/meus-cursos');
   });
 
-  it('sem sessão, expõe botão de login Google com hidden input next', () => {
-    const { container } = render(<HomeHero isAuthenticated={false} ctaHref="/meus-cursos" />);
-    expect(screen.getByRole('button', { name: /continuar com google/i })).toBeInTheDocument();
-    const hidden = container.querySelector('input[name="next"]');
-    expect(hidden).toHaveAttribute('value', '/meus-cursos');
+  it('sem sessão, expõe botão de login Google com next via data-next', () => {
+    render(<HomeHero isAuthenticated={false} ctaHref="/meus-cursos" />);
+    const google = screen.getByRole('button', { name: /continuar com google/i });
+    expect(google).toHaveAttribute('data-next', '/meus-cursos');
   });
 
   it('não tem o botão "Conhece o projeto"', () => {

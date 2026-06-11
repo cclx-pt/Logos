@@ -15,7 +15,7 @@ const lessonId = '22222222-2222-2222-2222-222222222222';
 const lessonTitle = 'Introdução à Bíblia';
 
 describe('StartCourseCta — V3.1 T7', () => {
-  it('renderiza botão de login Google + hidden next quando anónimo', () => {
+  it('renderiza botão de login Google + next via data-next quando anónimo', () => {
     render(
       <StartCourseCta
         courseId={courseId}
@@ -26,12 +26,7 @@ describe('StartCourseCta — V3.1 T7', () => {
       />,
     );
     const google = screen.getByRole('button', { name: /continuar com google/i });
-    expect(google).toBeInTheDocument();
-    const form = google.closest('form');
-    expect(form).not.toBeNull();
-    const hidden = form?.querySelector('input[name="next"]');
-    expect(hidden).toHaveAttribute('value', `/conteudos/${courseId}/${lessonId}`);
-    expect(hidden).toHaveAttribute('type', 'hidden');
+    expect(google).toHaveAttribute('data-next', `/conteudos/${courseId}/${lessonId}`);
   });
 
   it('sem progresso: "Começar curso" com o nome da primeira aula', () => {

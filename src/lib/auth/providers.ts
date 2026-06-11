@@ -5,8 +5,12 @@ export type SignInProvider = {
   slug: 'google';
   /** Nome visível na UI ("Continuar com {label}", item do dropdown). */
   label: string;
-  /** Server Action que inicia o fluxo OAuth (aceita FormData com `next`). */
-  action: (formData?: FormData) => Promise<void>;
+  /**
+   * Server Action que inicia o fluxo OAuth. Recebe o `next` (caminho interno
+   * de retorno) e **devolve o URL** do provider para o cliente navegar com
+   * `window.location` - ver nota em `actions.ts`.
+   */
+  action: (next?: string) => Promise<string>;
 };
 
 /**

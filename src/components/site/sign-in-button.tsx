@@ -38,8 +38,11 @@ export function SignInButton() {
             key={provider.slug}
             disabled={isPending}
             onClick={() => {
-              startTransition(() => {
-                void provider.action();
+              // A action devolve o URL do OAuth; navegamos no cliente (não há
+              // redirect() server-side para externo - ver nota em actions.ts).
+              startTransition(async () => {
+                const url = await provider.action();
+                window.location.assign(url);
               });
             }}
           >

@@ -3,8 +3,14 @@
 /**
  * Server Actions de identidade — V2 PR2.
  *
- * Encapsulam o fluxo OAuth e logout. Importadas por componentes client
- * (`<form action={signInWithGoogleAction}>` / `formAction={...}`) ou server.
+ * Encapsulam o fluxo OAuth e logout. Importadas por componentes client.
+ *
+ * `signInWithGoogleAction` **devolve o URL** do OAuth (não faz `redirect()`):
+ * o cliente navega com `window.location`. Server Actions hidratadas que fazem
+ * `redirect()` para um URL *externo* rebentam no Next 16 com "Connection closed"
+ * (500) - o caminho no-JS funcionava (303), o hidratado não. Devolver o URL e
+ * navegar no cliente é o padrão da Supabase para client components e evita a
+ * fragilidade. (Os `redirect()` *internos* das outras actions são seguros.)
  *
  * Métodos de login suportados: Google (OAuth) e email + código OTP
  * (passwordless, ver mais abaixo). Microsoft/Entra foi removido (decisão do
@@ -58,14 +64,14 @@ function getOrigin(headersList: Headers): string {
   return parsed.origin;
 }
 
-export async function signInWithGoogleAction(formData?: FormData): Promise<void> {
+export async function signInWithGoogleAction(next?: string): Promise<string> {
   // Independentes — em paralelo para não somar latências no caminho de login.
   const [supabase, headersList] = await Promise.all([getServerClient(), headers()]);
   const origin = getOrigin(headersList);
 
-  const next = formData ? safeNextPath(formData.get('next')) : null;
-  const callback = next
-    ? `${origin}/auth/callback?next=${encodeURIComponent(next)}`
+  const safeNext = safeNextPath(next);
+  const callback = safeNext
+    ? `${origin}/auth/callback?next=${encodeURIComponent(safeNext)}`
     : `${origin}/auth/callback`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -77,7 +83,10 @@ export async function signInWithGoogleAction(formData?: FormData): Promise<void>
     throw new Error(`Falha a iniciar autenticação Google: ${error?.message ?? 'sem URL'}`);
   }
 
-  redirect(data.url);
+  // Devolve o URL para o cliente navegar (window.location). Ver nota no topo.
+  // Os cookies de PKCE (code_verifier) escritos por signInWithOAuth viajam na
+  // resposta da Server Action e são aplicados antes da navegação do cliente.
+  return data.url;
 }
 
 export async function signOutAction(): Promise<void> {
