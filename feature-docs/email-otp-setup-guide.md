@@ -41,6 +41,16 @@
    - **Não tocar** no CNAME existente `logos` → Vercel. Estes registos vivem em subdomínios dele; não há conflito.
 6. Voltar ao Resend → **Verify**. Propagação demora normalmente 5-30 min. Quando ficar **Verified**, seguir em frente.
 
+> **Registos DNS confirmados em `cclx.pt` (11-06-2026, domínio Verified):** região Resend **`eu-west-1`** (Amazon SES). Guardados aqui como referência para o lançamento (repetir/confirmar para `logos-prod`):
+>
+> | Tipo | Nome | Valor (resumo) | Função |
+> |---|---|---|---|
+> | TXT | `resend._domainkey.logos.cclx.pt` | `p=MIGfMA0GCSqGSIb3DQEB…` | DKIM |
+> | TXT | `send.logos.cclx.pt` | `v=spf1 include:amazonses.com ~all` | SPF |
+> | MX | `send.logos.cclx.pt` | `feedback-smtp.eu-west-1.amazonses.com` (prio 10) | Bounces |
+>
+> DMARC: não há `_dmarc.logos.cclx.pt`, mas o organizacional `_dmarc.cclx.pt` → `v=DMARC1; p=none` cobre os subdomínios. Suficiente para já; endurecer (`p=quarantine`) só com volume real de envio.
+
 ## Parte C - API key do Resend (~2 min)
 
 7. Resend → **API Keys → Create API Key** → nome `Logos Supabase SMTP`, permissão **Sending access** chega. **Copiar imediatamente** - só é mostrada uma vez. Esta key serve de password SMTP no passo 8.
