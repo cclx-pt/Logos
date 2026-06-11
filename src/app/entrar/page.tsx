@@ -29,9 +29,7 @@ export default async function EntrarPage({ searchParams }: PageProps) {
     <section className="mx-auto max-w-md px-4 py-16 sm:py-20">
       <header className="text-center">
         <h1 className="font-display text-ink text-3xl font-medium tracking-tight">Entrar</h1>
-        <p className="text-muted-foreground mt-2 text-sm">
-          Escolhe como queres iniciar sessão. É sempre gratuito.
-        </p>
+        <p className="text-muted-foreground mt-2 text-sm">Escolhe como queres iniciar sessão.</p>
       </header>
 
       <div className="mt-8">
