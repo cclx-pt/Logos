@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import { Logo } from './logo';
 import { buttonVariants } from '@/components/ui/button';
-import { ProviderSignIn } from './provider-sign-in';
+import { SignInCta } from './sign-in-cta';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 
 type HomeHeroProps = {
@@ -48,7 +48,7 @@ export function HomeHero({ isAuthenticated, ctaHref }: HomeHeroProps) {
             <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
           </Link>
         ) : (
-          <ProviderSignIn next={ctaHref} size="lg" className="justify-center" />
+          <SignInCta next={ctaHref} size="lg" label="Entrar" />
         )}
       </motion.div>
     </motion.section>

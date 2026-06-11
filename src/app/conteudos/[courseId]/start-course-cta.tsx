@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-import { ProviderSignIn } from '@/components/site/provider-sign-in';
+import { SignInCta } from '@/components/site/sign-in-cta';
 import { logCourseAccessAction } from '@/lib/courses/access-actions';
 
 type StartCourseCtaProps = {
@@ -24,7 +24,7 @@ export function StartCourseCta({
 }: StartCourseCtaProps) {
   if (!isAuthenticated) {
     const next = `/conteudos/${courseId}/${lessonId}`;
-    return <ProviderSignIn next={next} className="mt-8" />;
+    return <SignInCta next={next} label="Entrar para começar" className="mt-8" />;
   }
 
   return (

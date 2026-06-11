@@ -12,7 +12,7 @@ const lessonId = '22222222-2222-2222-2222-222222222222';
 const lessonTitle = 'Introdução à Bíblia';
 
 describe('StartCourseCta — V3.1 T7', () => {
-  it('renderiza link de login Google para o route handler com next quando anónimo', () => {
+  it('renderiza CTA "Entrar para começar" para a página de login geral com next quando anónimo', () => {
     render(
       <StartCourseCta
         courseId={courseId}
@@ -22,10 +22,10 @@ describe('StartCourseCta — V3.1 T7', () => {
         isAuthenticated={false}
       />,
     );
-    const google = screen.getByRole('link', { name: /continuar com google/i });
-    expect(google).toHaveAttribute(
+    const entrar = screen.getByRole('link', { name: /entrar para começar/i });
+    expect(entrar).toHaveAttribute(
       'href',
-      `/auth/login/google?next=${encodeURIComponent(`/conteudos/${courseId}/${lessonId}`)}`,
+      `/entrar?next=${encodeURIComponent(`/conteudos/${courseId}/${lessonId}`)}`,
     );
   });
 

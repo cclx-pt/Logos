@@ -28,10 +28,10 @@ describe('HomeHero', () => {
     expect(cta).toHaveAttribute('href', '/meus-cursos');
   });
 
-  it('sem sessão, expõe link de login Google para o route handler com next', () => {
+  it('sem sessão, expõe CTA "Entrar" para a página de login geral com next', () => {
     render(<HomeHero isAuthenticated={false} ctaHref="/meus-cursos" />);
-    const google = screen.getByRole('link', { name: /continuar com google/i });
-    expect(google).toHaveAttribute('href', '/auth/login/google?next=%2Fmeus-cursos');
+    const entrar = screen.getByRole('link', { name: /^entrar$/i });
+    expect(entrar).toHaveAttribute('href', '/entrar?next=%2Fmeus-cursos');
   });
 
   it('não tem o botão "Conhece o projeto"', () => {

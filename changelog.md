@@ -14,6 +14,9 @@
 ### fix
 - fix: [11-06-2026] **Turnstile carregava mas nunca resolvia ("não foi possível conectar ao site")** - a CSP permitia o script (`script-src`) e a frame (`frame-src`) do `challenges.cloudflare.com` mas faltava no **`connect-src`**, por isso o fetch que valida o desafio era bloqueado: desafio emitido, nunca resolvido, e o envio de OTP falhava por `captcha_token` em falta/inválido. `next.config.ts` ganha `https://challenges.cloudflare.com` no `connect-src`; teste de `connect-src` em `security-headers.test.ts` passa a exigir o domínio. (O sintoma somava-se a um segundo problema do utilizador: testar no URL único do deployment, fora dos hostnames do widget - resolve-se usando o alias da branch.)
 
+### update
+- update: [11-06-2026] **CTAs de login dos estados anónimos vão para `/entrar` (login geral), não direto ao Google**. Em "não autenticado", a home, a página de curso e "Os meus cursos" mostravam botões "Continuar com Google" que iniciavam o OAuth do Google diretamente - escondiam o login por email. Passam a um CTA único para `/entrar?next=...` (a página que junta Google + email OTP), com nome geral: "Entrar" (home + meus cursos) e "Entrar para começar" (página de curso). Novo componente `SignInCta` (link `<Link>` para `/entrar`, com prefetch seguro - ao contrário do `ProviderSignIn`, que vai direto a um provider e fica só na `/entrar`). Copy de "Os meus cursos" perde "com a tua conta Google". 3 testes adaptados (home, meus-cursos, start-course-cta) - href passa de `/auth/login/google?next=` para `/entrar?next=`.
+
 ### feat
 - feat: [11-06-2026] **cabeçalho mostra só a parte antes do `@` para utilizadores de email** - quem entra por email OTP tem o email como `display_name`, e o cabeçalho mostrava "Olá, joao@gmail.com" / "Sessão de joao@gmail.com". `user-menu.tsx` ganha um helper `localPart` que tira o domínio na camada de apresentação (no-op para utilizadores de Google, que têm nome real). Teste novo para o caso do email.
 

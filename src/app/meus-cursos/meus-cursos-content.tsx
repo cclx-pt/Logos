@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 
 import { CourseCard } from '@/components/site/course-card';
-import { ProviderSignIn } from '@/components/site/provider-sign-in';
+import { SignInCta } from '@/components/site/sign-in-cta';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 import type { StartedCourse } from '@/lib/courses/started';
 
@@ -110,10 +110,9 @@ export function MeusCursosContent({ isAuthenticated, courses }: Props) {
             Inicia sessão para ver os teus cursos
           </h2>
           <p className="text-muted-foreground mt-4 max-w-xl font-sans text-base leading-relaxed sm:text-lg">
-            Aqui ficam guardados os cursos que já começaste. Inicia sessão com a tua conta Google
-            para começar.
+            Aqui ficam guardados os cursos que já começaste. Inicia sessão para começar.
           </p>
-          <ProviderSignIn next="/meus-cursos" className="mt-8 justify-center" />
+          <SignInCta next="/meus-cursos" className="mt-8" />
         </motion.div>
       ) : isEmpty ? (
         <motion.div
