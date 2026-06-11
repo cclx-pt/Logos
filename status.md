@@ -25,6 +25,7 @@ V2 PR4 (Etiquetas) absorvida em V3 PR1. Plano completo de V3 em `feature-docs/v3
 - ~~Configurar o provider Microsoft (Azure) no Supabase~~ - **removido 10-06-2026** (decisão do líder: só Google + email OTP). Doc de setup apagado.
 - ⏳ **Pré-condições do login por email OTP** (código entregue 07-06-2026, inerte até isto): conta Resend + domínio verificado, DNS SPF/DKIM no Hostinger, SMTP custom + Email provider + Turnstile no Supabase. Guia passo-a-passo em `feature-docs/email-otp-setup-guide.md`.
 - ⏳ Smoke test manual no preview Vercel (os 2 métodos de login: Google + email OTP).
+- ⏳ **Pré-condição do login Google em previews** (descoberto 10-06-2026, "erro de Vercel" ao entrar): adicionar `https://logos-*-jcrninjas-projects.vercel.app/**` às **Redirect URLs** do `logos-dev` (Supabase → Authentication → URL Configuration) - passo de `branch-strategy.md` §"Testar Auth" que nunca foi aplicado; sem ele o pós-Google cai no Site URL `localhost:3000`. Para testar noutro dispositivo: login Vercel nesse browser primeiro, ou desativar Deployment Protection nos previews.
 
 ## ✅ Concluído
 - [x] Especificação `SPEC_1.md` v2.2 fechada

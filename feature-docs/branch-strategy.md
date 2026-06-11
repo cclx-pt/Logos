@@ -89,6 +89,7 @@ pnpm dlx vercel ls --meta githubCommitRef=v3-cursos | head
 - O preview corre contra `logos-dev` (Supabase project ref `dknrnqyqlojvnhspwjrd`).
 - O OAuth callback do Supabase só permite a Site URL `https://logos.cclx.pt/` e a Redirect URL `http://localhost:3000/**` por defeito. Para os Vercel previews, **adicionar** o pattern `https://logos-*-jcrninjas-projects.vercel.app/**` nas Redirect URLs do `logos-dev` (Supabase Dashboard → Authentication → URL Configuration). Isto está documentado em `feature-docs/google-oauth-setup.md`.
 - Se Auth falhar com "URL not allowed", verificar essa lista.
+- ⚠️ **Incidente 10-06-2026 (diagnóstico confirmado por logs):** este passo nunca tinha sido aplicado. Sintoma: login Google num preview termina com o Supabase a mandar o browser para o **Site URL** (`http://localhost:3000`) em vez do preview - com dev server local ligado o login "funciona" em localhost sem se notar; sem ele, o utilizador cai em erro. Em cima disso, o **Vercel Deployment Protection** devolve 401 "Authentication Required" a qualquer salto sem cookie de SSO (ex.: regresso do OAuth noutro browser/dispositivo), que é lido como "erro de Vercel". Correções: (1) adicionar o wildcard acima às Redirect URLs; (2) para testes de login cross-device, ou fazer login na Vercel nesse browser primeiro, ou desativar Vercel Authentication para previews (Vercel → Settings → Deployment Protection), ou usar um Shareable Link.
 
 ### Testar mudanças de schema (migrations V3)
 
