@@ -30,8 +30,10 @@ const csp = [
   // va.vercel-scripts.com: telemetria Vercel. challenges.cloudflare.com: script
   // do Turnstile (api.js) carregado pelo TurnstileWidget quando ha site key.
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://va.vercel-scripts.com https://challenges.cloudflare.com`,
-  // Supabase (auth/db/storage) + telemetria Vercel.
-  "connect-src 'self' https://*.supabase.co https://*.supabase.in https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+  // Supabase (auth/db/storage) + telemetria Vercel + validacao do desafio
+  // Turnstile (o fetch que resolve o captcha bate aqui - sem isto o widget
+  // carrega e renderiza mas nunca resolve: "nao foi possivel conectar ao site").
+  "connect-src 'self' https://*.supabase.co https://*.supabase.in https://va.vercel-scripts.com https://vitals.vercel-insights.com https://challenges.cloudflare.com",
   "form-action 'self'",
   "manifest-src 'self'",
 ].join('; ');

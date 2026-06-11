@@ -55,12 +55,15 @@ describe('CSP (next.config.ts)', () => {
     expect(frameSrc).toContain('https://*.supabase.co');
   });
 
-  it('connect-src permite Supabase (auth/db/storage) e telemetria Vercel', async () => {
+  it('connect-src permite Supabase, telemetria Vercel e validação do Turnstile', async () => {
     const csp = await getCspDirectives();
     const connectSrc = csp.get('connect-src') ?? '';
     expect(connectSrc).toContain("'self'");
     expect(connectSrc).toContain('https://*.supabase.co');
     expect(connectSrc).toContain('https://va.vercel-scripts.com');
+    // O fetch que resolve o desafio Turnstile bate aqui - sem isto o captcha
+    // carrega mas nunca resolve ("não foi possível conectar ao site").
+    expect(connectSrc).toContain('https://challenges.cloudflare.com');
   });
 
   it('mantém as directivas restritivas de base', async () => {
