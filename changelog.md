@@ -8,6 +8,18 @@
 
 ## [Unreleased]
 
+### add
+- add: [11-06-2026] **login por email OTP validado ponta-a-ponta** em `logos-dev` - o caminho que estava inerte desde a PR #49 ficou operacional. SMTP custom do **Resend** ligado no Supabase (domínio `logos.cclx.pt` Verified, região `eu-west-1`; DKIM/SPF/MX confirmados no DNS - registos guardados em `email-otp-setup-guide.md` Parte B), rate limit de email subido de 2/h para 30/h (só possível com SMTP custom), templates Magic Link + Confirm signup com `{{ .Token }}`, e **Turnstile** ativo. Fluxo `/entrar` → email → código de 6 dígitos → entrar a funcionar; primeiro login com email novo cria linha em `profiles`. Pendentes #1 e #2 do handoff fechados.
+
+### fix
+- fix: [11-06-2026] **Turnstile carregava mas nunca resolvia ("não foi possível conectar ao site")** - a CSP permitia o script (`script-src`) e a frame (`frame-src`) do `challenges.cloudflare.com` mas faltava no **`connect-src`**, por isso o fetch que valida o desafio era bloqueado: desafio emitido, nunca resolvido, e o envio de OTP falhava por `captcha_token` em falta/inválido. `next.config.ts` ganha `https://challenges.cloudflare.com` no `connect-src`; teste de `connect-src` em `security-headers.test.ts` passa a exigir o domínio. (O sintoma somava-se a um segundo problema do utilizador: testar no URL único do deployment, fora dos hostnames do widget - resolve-se usando o alias da branch.)
+
+### feat
+- feat: [11-06-2026] **cabeçalho mostra só a parte antes do `@` para utilizadores de email** - quem entra por email OTP tem o email como `display_name`, e o cabeçalho mostrava "Olá, joao@gmail.com" / "Sessão de joao@gmail.com". `user-menu.tsx` ganha um helper `localPart` que tira o domínio na camada de apresentação (no-op para utilizadores de Google, que têm nome real). Teste novo para o caso do email.
+
+### docs
+- docs: [11-06-2026] **handoff de pendentes pré-lançamento** em `feature-docs/pre-lancamento-handoff.md` (OTP, Resend SMTP, lançamento). Registos DNS Resend confirmados salvados para `email-otp-setup-guide.md` (Parte B) a partir do draft #52, que foi fechado por ter base antiga e enquadramento errado para V3 (dava Resend como adiado para V5 / login Google puro).
+
 ### sec
 - sec: [11-06-2026] **revisão de segurança V3 pré-lançamento** (`pnpm audit` + Supabase advisors + column-scoping das policies UPDATE + código de auth novo). Achados corrigidos: (1) 4 vulns moderate em `hono` (transitiva do CLI `shadcn`, tooling) - pnpm override `>=4.12.21` + `shadcn` movido para devDependencies, audit a zero; (2) `count_registered_users()` deixa de estar executável por `anon` via RPC (gate interno já existia; REVOKE reduz superfície); (3) **column-scoping em `course_access_log`** - a policy UPDATE own limitava a linha mas não as colunas (dava para falsificar `course_id`/`accessed_at` via REST); GRANT passa a cobrir só `unenrolled_at`, a única coluna que a app escreve; (4) `search_path` fixo em `set_updated_at()`. Migration `20260611120000_security_review_hardening.sql`. Falsos-positivos dos advisors documentados (helpers RLS para anon/authenticated, `delete_own_account`, `rate_limit` deny-all, leaked-password N/A sem palavras-passe). Relatório completo em `feature-docs/revisao-seguranca-v3.md`. 457 verdes.
 
