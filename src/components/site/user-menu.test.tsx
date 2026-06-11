@@ -30,6 +30,13 @@ describe('UserMenu (V2 PR3) — trigger', () => {
     expect(screen.getByText(/olá, joão/i)).toBeInTheDocument();
   });
 
+  it('utilizador de email OTP: mostra só a parte antes do @ (sem domínio)', () => {
+    const emailUser = { ...makeUser('user'), displayName: 'joana@gmail.com' };
+    render(<UserMenu user={emailUser} />);
+    expect(screen.getByText('Olá, joana')).toBeInTheDocument();
+    expect(screen.queryByText(/@gmail\.com/)).not.toBeInTheDocument();
+  });
+
   it('trigger é um button acessível cujo accessible name inclui o texto visível', () => {
     // WCAG SC 2.5.3 (Label in Name): accessible name tem de incluir
     // o texto visível. Sem aria-label, o accessible name passa a ser

@@ -16,8 +16,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { Profile } from '@/lib/auth';
 
+// Utilizadores de email OTP têm o email como display_name (sem nome real).
+// Mostramos só a parte antes do "@" para o cabeçalho não expor o domínio.
+// Para utilizadores de Google (display_name = nome real, sem "@") é no-op.
+function localPart(displayName: string): string {
+  const at = displayName.indexOf('@');
+  return at === -1 ? displayName : displayName.slice(0, at);
+}
+
 function firstName(displayName: string): string {
-  return displayName.trim().split(/\s+/)[0] ?? displayName;
+  const label = localPart(displayName).trim();
+  return label.split(/\s+/)[0] || displayName;
 }
 
 export function UserMenu({ user }: { user: Profile }) {
@@ -41,7 +50,7 @@ export function UserMenu({ user }: { user: Profile }) {
       <DropdownMenuContent align="end" sideOffset={6} className="min-w-56">
         <DropdownMenuGroup>
           <DropdownMenuLabel className="text-muted-foreground text-xs">
-            Sessão de <span className="text-ink font-medium">{user.displayName}</span>
+            Sessão de <span className="text-ink font-medium">{localPart(user.displayName)}</span>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
