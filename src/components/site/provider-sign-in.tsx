@@ -1,8 +1,4 @@
-'use client';
-
-import { useTransition } from 'react';
-
-import { SIGN_IN_PROVIDERS } from '@/lib/auth/providers';
+import { SIGN_IN_PROVIDERS, providerLoginHref } from '@/lib/auth/providers';
 import { cn } from '@/lib/utils';
 
 type ProviderSignInProps = {
@@ -14,41 +10,32 @@ type ProviderSignInProps = {
 };
 
 const BASE =
-  'focus-visible:ring-ring inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70';
+  'focus-visible:ring-ring inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none';
 
 /**
  * Botões de início de sessão, um por provider de `SIGN_IN_PROVIDERS`.
  *
- * Cada botão chama a Server Action do provider (que **devolve o URL** do OAuth)
- * e navega com `window.location`. Não usamos `<form action>` com `redirect()`
- * server-side porque o `redirect()` para um URL externo numa Server Action
- * hidratada rebenta no Next 16 ("Connection closed", 500) - ver nota em
- * `src/lib/auth/actions.ts`. Trade-off assumido: o login passa a exigir JS
- * (aceitável - a app inteira já depende de JS para tudo o resto).
+ * São simples `<a>` para o route handler `/auth/login/<provider>` (que faz o
+ * 307 real para o provider) - não Server Actions. O `redirect()` externo numa
+ * Server Action invocada pelo cliente rebenta no Next 16 ("Connection closed",
+ * 500) - foi o bug do botão "Entrar". Um link normal funciona sempre, com ou
+ * sem JS, sem depender de hidratação. Usamos `<a>` (não `<Link>`) de propósito:
+ * o prefetch do `<Link>` dispararia o início do OAuth ao passar o rato.
  *
  * O primeiro provider do registry é o primário (sólido laranja); os restantes
  * são outline. Sem logótipos de marca (lucide não os fornece e evitamos
  * manutenção/licenciamento de SVGs de marca) - o contexto à volta explica o
- * "porquê". O `next` fica em `data-next` (testável + lido pelo handler).
+ * "porquê".
  */
 export function ProviderSignIn({ next, size = 'md', className }: ProviderSignInProps) {
-  const [isPending, startTransition] = useTransition();
   const sizeClass = size === 'lg' ? 'h-12 px-6 text-base' : 'h-11 px-5 text-sm';
-
   return (
     <div className={cn('flex flex-col gap-3 sm:flex-row sm:items-center', className)}>
       {SIGN_IN_PROVIDERS.map((provider, index) => (
-        <button
+        <a
           key={provider.slug}
-          type="button"
-          disabled={isPending}
+          href={providerLoginHref(provider.slug, next)}
           data-next={next}
-          onClick={() =>
-            startTransition(async () => {
-              const url = await provider.action(next);
-              window.location.assign(url);
-            })
-          }
           className={cn(
             BASE,
             sizeClass,
@@ -58,7 +45,7 @@ export function ProviderSignIn({ next, size = 'md', className }: ProviderSignInP
           )}
         >
           Continuar com {provider.label}
-        </button>
+        </a>
       ))}
     </div>
   );

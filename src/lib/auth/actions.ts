@@ -3,91 +3,23 @@
 /**
  * Server Actions de identidade — V2 PR2.
  *
- * Encapsulam o fluxo OAuth e logout. Importadas por componentes client.
+ * Encapsulam logout e o login por email OTP. Importadas por componentes client.
  *
- * `signInWithGoogleAction` **devolve o URL** do OAuth (não faz `redirect()`):
- * o cliente navega com `window.location`. Server Actions hidratadas que fazem
- * `redirect()` para um URL *externo* rebentam no Next 16 com "Connection closed"
- * (500) - o caminho no-JS funcionava (303), o hidratado não. Devolver o URL e
- * navegar no cliente é o padrão da Supabase para client components e evita a
- * fragilidade. (Os `redirect()` *internos* das outras actions são seguros.)
+ * **O início do OAuth (Google) não vive aqui** - é o route handler
+ * `src/app/auth/login/[provider]/route.ts`, que devolve um 307 HTTP real para
+ * o provider. Server Actions que fazem `redirect()` para um URL *externo*
+ * rebentam quando invocadas pelo cliente (Next 16, "Connection closed", 500 -
+ * foi o bug do botão "Entrar"). Os `redirect()` *internos* abaixo são seguros.
  *
- * Métodos de login suportados: Google (OAuth) e email + código OTP
- * (passwordless, ver mais abaixo). Microsoft/Entra foi removido (decisão do
- * líder, 10-06-2026: ficar só com Google + email). Apple e login com
- * palavra-passe continuam fora de âmbito (ver `SPEC_1.md` §17/§18).
+ * Métodos de login suportados: Google (OAuth, via route handler) e email +
+ * código OTP (passwordless, ver mais abaixo). Microsoft/Entra foi removido
+ * (decisão do líder, 10-06-2026: ficar só com Google + email). Apple e login
+ * com palavra-passe continuam fora de âmbito (ver `SPEC_1.md` §17/§18).
  */
 
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getServerClient } from './index';
 import { safeNextPath } from './redirect';
-
-// Hosts legítimos para o callback OAuth: produção, dev local e previews Vercel.
-function isAllowedHost(host: string): boolean {
-  const hostname = (host.split(':')[0] ?? '').toLowerCase();
-  return (
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname === 'logos.cclx.pt' ||
-    hostname.endsWith('.vercel.app')
-  );
-}
-
-function getOrigin(headersList: Headers): string {
-  const originHeader = headersList.get('origin');
-  let candidate: string;
-  if (originHeader) {
-    candidate = originHeader;
-  } else {
-    const proto = headersList.get('x-forwarded-proto') ?? 'https';
-    const host = headersList.get('x-forwarded-host') ?? headersList.get('host');
-    if (!host) {
-      throw new Error('Não consigo determinar o origin do request (host header em falta).');
-    }
-    candidate = `${proto}://${host}`;
-  }
-
-  // Defesa em profundidade contra host-header injection: o origin que compõe o
-  // redirectTo do OAuth tem de ser um host conhecido. O allowlist do Supabase já
-  // rejeita callbacks forjados; validamos aqui também para nunca construir um
-  // redirectTo apontado a um domínio de atacante.
-  let parsed: URL;
-  try {
-    parsed = new URL(candidate);
-  } catch {
-    throw new Error('Origin do request inválido.');
-  }
-  if (!isAllowedHost(parsed.host)) {
-    throw new Error(`Origin não permitido: ${parsed.host}`);
-  }
-  return parsed.origin;
-}
-
-export async function signInWithGoogleAction(next?: string): Promise<string> {
-  // Independentes — em paralelo para não somar latências no caminho de login.
-  const [supabase, headersList] = await Promise.all([getServerClient(), headers()]);
-  const origin = getOrigin(headersList);
-
-  const safeNext = safeNextPath(next);
-  const callback = safeNext
-    ? `${origin}/auth/callback?next=${encodeURIComponent(safeNext)}`
-    : `${origin}/auth/callback`;
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: callback },
-  });
-
-  if (error || !data?.url) {
-    throw new Error(`Falha a iniciar autenticação Google: ${error?.message ?? 'sem URL'}`);
-  }
-
-  // Devolve o URL para o cliente navegar (window.location). Ver nota no topo.
-  // Os cookies de PKCE (code_verifier) escritos por signInWithOAuth viajam na
-  // resposta da Server Action e são aplicados antes da navegação do cliente.
-  return data.url;
-}
 
 export async function signOutAction(): Promise<void> {
   const supabase = await getServerClient();

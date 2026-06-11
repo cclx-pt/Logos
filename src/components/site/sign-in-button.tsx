@@ -1,10 +1,9 @@
 'use client';
 
-import { useTransition } from 'react';
 import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 
-import { SIGN_IN_PROVIDERS } from '@/lib/auth/providers';
+import { SIGN_IN_PROVIDERS, providerLoginHref } from '@/lib/auth/providers';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,10 +17,14 @@ import {
  * Botão "Entrar" do cabeçalho. Abre um menu com os providers de
  * `SIGN_IN_PROVIDERS` + a entrada de email OTP. Sem `next` — após login,
  * o callback aterra na home.
+ *
+ * Cada provider é um `<a>` para o route handler `/auth/login/<provider>` (307
+ * real para o provider). Não usamos Server Action programática aqui: o
+ * `redirect()` externo numa action invocada via `startTransition` rebentava no
+ * Next 16 ("Connection closed", 500) - era exactamente este botão. `<a>` em vez
+ * de `<Link>` evita o prefetch que dispararia o início do OAuth.
  */
 export function SignInButton() {
-  const [isPending, startTransition] = useTransition();
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-9 items-center gap-1.5 rounded-md px-4 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none">
@@ -36,15 +39,7 @@ export function SignInButton() {
         {SIGN_IN_PROVIDERS.map((provider) => (
           <DropdownMenuItem
             key={provider.slug}
-            disabled={isPending}
-            onClick={() => {
-              // A action devolve o URL do OAuth; navegamos no cliente (não há
-              // redirect() server-side para externo - ver nota em actions.ts).
-              startTransition(async () => {
-                const url = await provider.action();
-                window.location.assign(url);
-              });
-            }}
+            render={<a href={providerLoginHref(provider.slug)} />}
           >
             {provider.label}
           </DropdownMenuItem>

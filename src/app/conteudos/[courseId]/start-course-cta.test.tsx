@@ -1,9 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('@/lib/auth/actions', () => ({
-  signInWithGoogleAction: vi.fn(),
-}));
 vi.mock('@/lib/courses/access-actions', () => ({
   logCourseAccessAction: vi.fn(),
 }));
@@ -15,7 +12,7 @@ const lessonId = '22222222-2222-2222-2222-222222222222';
 const lessonTitle = 'Introdução à Bíblia';
 
 describe('StartCourseCta — V3.1 T7', () => {
-  it('renderiza botão de login Google + next via data-next quando anónimo', () => {
+  it('renderiza link de login Google para o route handler com next quando anónimo', () => {
     render(
       <StartCourseCta
         courseId={courseId}
@@ -25,8 +22,11 @@ describe('StartCourseCta — V3.1 T7', () => {
         isAuthenticated={false}
       />,
     );
-    const google = screen.getByRole('button', { name: /continuar com google/i });
-    expect(google).toHaveAttribute('data-next', `/conteudos/${courseId}/${lessonId}`);
+    const google = screen.getByRole('link', { name: /continuar com google/i });
+    expect(google).toHaveAttribute(
+      'href',
+      `/auth/login/google?next=${encodeURIComponent(`/conteudos/${courseId}/${lessonId}`)}`,
+    );
   });
 
   it('sem progresso: "Começar curso" com o nome da primeira aula', () => {
