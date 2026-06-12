@@ -114,7 +114,9 @@ Helper de navegação módulo-scoped (primeira/última/meio), `lesson-tree` (cur
 
 ---
 
-## PR3 - Cabeçalho do módulo (item 7)
+## PR3 - Cabeçalho do módulo (item 7) — ✅ IMPLEMENTADO
+
+> Branch `v3-4-pr3-cabecalho-modulo` (ramificada de `v3-cursos`, independente do PR2). 461 testes verdes; lint/typecheck/format limpos. Mudança puramente apresentacional em `modulos/[moduleId]/page.tsx`: fora o eyebrow "Módulo N de M" e o indicador de conclusão solto; header = título + descrição (alinhada à esquerda); "{x}/{total} concluídas" + "✓ concluído" movido para junto do título "Aulas"; breadcrumb mostra o título do módulo. **Decisão (item 7, era aberto):** o indicador foi para ao lado de "Aulas". Se quiseres outro sítio/forma, é ajuste rápido.
 
 Ficheiro: `src/app/conteudos/[courseId]/modulos/[moduleId]/page.tsx`.
 

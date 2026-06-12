@@ -82,49 +82,47 @@ export default async function CourseModulePage({ params }: PageProps) {
           {course.title}
         </Link>
         <span aria-hidden="true">›</span>
-        <span className="text-ink line-clamp-1">Módulo {moduleIndex + 1}</span>
+        <span className="text-ink line-clamp-1">{mod.title}</span>
       </nav>
 
       <header>
-        <p className="text-muted-foreground text-xs tracking-wide uppercase">
-          Módulo {moduleIndex + 1} de {course.modules.length}
-        </p>
-        <h1 className="font-display text-ink mt-2 text-3xl font-medium tracking-tight sm:text-4xl">
+        <h1 className="font-display text-ink text-3xl font-medium tracking-tight sm:text-4xl">
           {mod.title}
         </h1>
         {mod.description ? (
-          <p className="text-muted-foreground mt-4 max-w-prose text-justify font-sans text-base leading-relaxed hyphens-auto">
+          <p className="text-muted-foreground mt-4 max-w-prose font-sans text-base leading-relaxed">
             {mod.description}
-          </p>
-        ) : null}
-        {total > 0 ? (
-          <p className="text-muted-foreground mt-4 inline-flex items-center gap-2 text-xs tracking-wide uppercase">
-            <span
-              className={
-                moduleDone
-                  ? 'text-orange-primary font-medium tabular-nums'
-                  : 'text-muted-foreground tabular-nums'
-              }
-            >
-              {completedInModule}/{total} concluídas
-            </span>
-            {moduleDone && (
-              <>
-                <Check aria-label="Módulo concluído" className="text-orange-primary h-4 w-4" />
-                <span className="text-orange-primary font-medium">Módulo concluído</span>
-              </>
-            )}
           </p>
         ) : null}
       </header>
 
       <section aria-labelledby="aulas-heading" className="mt-10">
-        <h2
-          id="aulas-heading"
-          className="text-muted-foreground text-sm font-semibold tracking-wide uppercase"
-        >
-          Aulas
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2
+            id="aulas-heading"
+            className="text-muted-foreground text-sm font-semibold tracking-wide uppercase"
+          >
+            Aulas
+          </h2>
+          {total > 0 ? (
+            <p className="inline-flex items-center gap-2 text-xs tracking-wide uppercase">
+              <span
+                className={
+                  moduleDone
+                    ? 'text-orange-primary font-medium tabular-nums'
+                    : 'text-muted-foreground tabular-nums'
+                }
+              >
+                {completedInModule}/{total} concluídas
+              </span>
+              {moduleDone && (
+                <span className="text-orange-primary inline-flex items-center gap-1 font-medium">
+                  <Check aria-label="Módulo concluído" className="h-4 w-4" /> concluído
+                </span>
+              )}
+            </p>
+          ) : null}
+        </div>
         {total === 0 ? (
           <p className="text-muted-foreground mt-4 text-sm">Sem aulas neste módulo.</p>
         ) : (
