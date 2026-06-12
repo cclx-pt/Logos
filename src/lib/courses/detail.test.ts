@@ -47,6 +47,7 @@ import {
   getCourseDetailById,
   getLessonDetailById,
   getLessonNavigation,
+  getModuleLessonNavigation,
   type CourseDetail,
 } from './detail';
 
@@ -234,5 +235,33 @@ describe('getLessonNavigation', () => {
       previous: null,
       next: null,
     });
+  });
+});
+
+describe('getModuleLessonNavigation', () => {
+  const m1 = fakeCourse().modules[0]!; // l1, l2
+  const m2 = fakeCourse().modules[1]!; // l3
+
+  it('primeira aula do módulo tem previous=null', () => {
+    expect(getModuleLessonNavigation(m1, 'l1').previous).toBeNull();
+  });
+
+  it('última aula do módulo tem next=null (não atravessa para o módulo seguinte)', () => {
+    const nav = getModuleLessonNavigation(m1, 'l2');
+    expect(nav.next).toBeNull();
+    expect(nav.previous).toEqual({ id: 'l1', title: 'L1' });
+  });
+
+  it('aula do meio tem previous e next dentro do módulo', () => {
+    const nav = getModuleLessonNavigation(m1, 'l1');
+    expect(nav.next).toEqual({ id: 'l2', title: 'L2' });
+  });
+
+  it('módulo de uma só aula tem previous e next null', () => {
+    expect(getModuleLessonNavigation(m2, 'l3')).toEqual({ previous: null, next: null });
+  });
+
+  it('lessonId fora do módulo devolve ambos null', () => {
+    expect(getModuleLessonNavigation(m1, 'l3')).toEqual({ previous: null, next: null });
   });
 });

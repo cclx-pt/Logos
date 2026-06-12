@@ -24,7 +24,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/lib/courses/detail', () => ({
   getCourseDetailById: vi.fn(),
   getLessonDetailById: vi.fn(),
-  getLessonNavigation: vi.fn(),
+  getModuleLessonNavigation: vi.fn(),
 }));
 vi.mock('@/lib/courses/youtube', () => ({ extractYoutubeId: vi.fn() }));
 vi.mock('@/lib/courses/access-actions', () => ({ getLessonPdfSignedUrlAction: vi.fn() }));
