@@ -56,17 +56,6 @@ export default async function CoursePage({ params }: PageProps) {
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-      <nav
-        aria-label="Breadcrumb"
-        className="text-muted-foreground mb-6 flex items-center gap-2 text-xs"
-      >
-        <Link href="/conteudos" className="hover:text-ink transition-colors">
-          Conteúdos
-        </Link>
-        <span aria-hidden="true">›</span>
-        <span className="text-ink line-clamp-1">{course.title}</span>
-      </nav>
-
       <CourseImage
         bannerUrl={course.bannerUrl}
         iconSlug={course.icon}
@@ -79,7 +68,7 @@ export default async function CoursePage({ params }: PageProps) {
           {course.title}
         </h1>
         {course.description ? (
-          <p className="text-muted-foreground mt-3 max-w-3xl text-justify font-sans text-base leading-relaxed hyphens-auto">
+          <p className="text-muted-foreground mt-3 font-sans text-base leading-relaxed">
             {course.description}
           </p>
         ) : null}

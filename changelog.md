@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### update
+- update: [12-06-2026] **leitor: breadcrumbs removidas + descrições na coluna central** (V3.4 PR5, pedido do líder). Removida a breadcrumb ("Conteúdos › Curso › Módulo") das páginas de **curso** e **módulo** - a navegação faz-se pela árvore (na aula), pela lista de aulas e pela saída para o curso. A página de módulo (que não tem árvore) ganha um "← Voltar ao curso" no topo, igual à vista de aula. As descrições do **curso** e do **módulo** passam a preencher a coluna central (saíram `max-w-prose`/`max-w-3xl` estreito + `text-justify` + `hyphens-auto`): deixam de ficar encostadas/justificadas e ficam alinhadas com a vista de aula já aprovada.
+
 ### fix
 - fix: [12-06-2026] **leitor de aula: conteúdo principal centrado + sticky da árvore corrigido** (V3.4 PR4, ajuste do líder ao PR2). (1) O vídeo/apostila/descrição ficavam puxados à esquerda porque a árvore deslocava o grupo; agora o artigo fica **centrado na página** via um espelho invisível da árvore à esquerda (`max-w-[84rem]` + flanco `w-64` de cada lado), com a árvore só no lado direito. (2) A árvore sticky enfiava-se por baixo do cabeçalho fixo (h-16), aparecendo cortada a meio: passa de `top-6` para `top-20` (abaixo do cabeçalho) + `max-h-[calc(100vh-7rem)] overflow-y-auto` - o quadrado fica todo visível com margem e faz scroll interno se for mais alto que o ecrã.
 
