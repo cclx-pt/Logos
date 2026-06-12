@@ -1,6 +1,6 @@
 # V3.4 - Aulas: template só-vídeo + UX do leitor (handoff/plano)
 
-> **Status:** EM CURSO. **PR1 implementado** (branch `v3-4-pr1-template-video`); PR2 e PR3 por arrancar. Vive em `v3-cursos` (nunca mergea em `main` antes de 01-07-2026). Cada PR ramifica de `v3-cursos` e volta a `v3-cursos`.
+> **Status:** EM CURSO. **PR1 mergeado em `v3-cursos`** (#53); **PR2 implementado** (branch `v3-4-pr2-leitor-aula`); PR3 por arrancar. Vive em `v3-cursos` (nunca mergea em `main` antes de 01-07-2026). Cada PR ramifica de `v3-cursos` e volta a `v3-cursos`.
 >
 > Este ficheiro é o plano-mestre das 7 mudanças pedidas pelo líder (12-06-2026). À medida que cada PR fecha, a sua secção passa de "Plano" a "Feito" com o nº do PR. Quando todas fecharem, este handoff dá lugar a `feature-docs/v3-4-iteration.md`.
 
@@ -84,7 +84,9 @@ SPEC_1.md (tabela "Modelos de aula" ganha `video`; bump de versão), `architectu
 
 ---
 
-## PR2 - Leitor de aula: navegação + layout (itens 3 + 4 + 5 + 6)
+## PR2 - Leitor de aula: navegação + layout (itens 3 + 4 + 5 + 6) — ✅ IMPLEMENTADO
+
+> Branch `v3-4-pr2-leitor-aula`. 469 testes verdes; lint/typecheck/format limpos. Ficheiros: `[lessonId]/page.tsx` (layout flex + botão de saída + nav módulo-scoped), novo `lesson-tree.tsx` (+ teste), `detail.ts` (`getModuleLessonNavigation` + teste). **Decisões do item 6 (a confirmar pelo líder):** removido o breadcrumb do topo ("a parte de cima") e colocado um botão claro **"← Voltar ao curso"** no topo-esquerdo; alvo = landing do curso. Se o líder quiser outra coisa (manter breadcrumb, botão no fundo, texto "Sair do curso", ou árvore também a ligar a páginas de módulo), é ajuste rápido.
 
 Ficheiro central: `src/app/conteudos/[courseId]/[lessonId]/page.tsx`.
 

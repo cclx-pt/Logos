@@ -178,3 +178,24 @@ export function getLessonNavigation(
     next: idx < flat.length - 1 ? flat[idx + 1]! : null,
   };
 }
+
+/**
+ * Navegação entre aulas DENTRO de um único módulo. Ao contrário de
+ * `getLessonNavigation` (que atravessa módulos), aqui a última aula do
+ * módulo tem `next: null` e a primeira tem `previous: null`. A progressão
+ * entre módulos é tratada à parte (banner "Módulo concluído → próximo
+ * módulo" + a árvore de navegação da vista de aula).
+ */
+export function getModuleLessonNavigation(
+  module: ModuleWithLessons,
+  currentLessonId: string,
+): LessonNavigation {
+  const idx = module.lessons.findIndex((l) => l.id === currentLessonId);
+  if (idx === -1) return { previous: null, next: null };
+  const prev = idx > 0 ? module.lessons[idx - 1]! : null;
+  const next = idx < module.lessons.length - 1 ? module.lessons[idx + 1]! : null;
+  return {
+    previous: prev ? { id: prev.id, title: prev.title } : null,
+    next: next ? { id: next.id, title: next.title } : null,
+  };
+}
