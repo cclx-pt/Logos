@@ -67,30 +67,24 @@ export default async function CourseModulePage({ params }: PageProps) {
 
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-      <nav
-        aria-label="Breadcrumb"
-        className="text-muted-foreground mb-6 flex flex-wrap items-center gap-2 text-xs"
-      >
-        <Link href="/conteudos" className="hover:text-ink transition-colors">
-          Conteúdos
-        </Link>
-        <span aria-hidden="true">›</span>
+      {/* Sem breadcrumb (item do líder): a navegação faz-se pela árvore/aulas
+          e pela saída para o curso. Aqui não há árvore, por isso fica um
+          "Voltar ao curso" no topo, igual à vista de aula. */}
+      <div className="mb-6">
         <Link
           href={`/conteudos/${course.id}`}
-          className="hover:text-ink line-clamp-1 transition-colors"
+          className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
         >
-          {course.title}
+          ← Voltar ao curso
         </Link>
-        <span aria-hidden="true">›</span>
-        <span className="text-ink line-clamp-1">{mod.title}</span>
-      </nav>
+      </div>
 
       <header>
         <h1 className="font-display text-ink text-3xl font-medium tracking-tight sm:text-4xl">
           {mod.title}
         </h1>
         {mod.description ? (
-          <p className="text-muted-foreground mt-4 max-w-prose font-sans text-base leading-relaxed">
+          <p className="text-muted-foreground mt-4 font-sans text-base leading-relaxed">
             {mod.description}
           </p>
         ) : null}
