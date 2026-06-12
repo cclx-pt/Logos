@@ -30,12 +30,12 @@ export function UnenrollCourseLink({ courseId }: Props) {
     >
       <button
         type="submit"
-        className="text-muted-foreground hover:text-destructive focus-visible:ring-ring inline-flex items-center rounded-sm text-xs font-medium underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
+        className="border-destructive/50 text-ink hover:border-destructive hover:text-destructive hover:bg-destructive/5 focus-visible:ring-ring inline-flex h-11 items-center justify-center rounded-md border px-5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
       >
         Sair do curso
       </button>
-      <p className="text-muted-foreground mt-2 max-w-prose text-xs">
-        Tira o curso da tua lista. O teu progresso é preservado — voltas a vê-lo se te inscreveres
+      <p className="text-muted-foreground mt-3 max-w-prose text-sm">
+        Tira o curso da tua lista. O teu progresso é preservado - voltas a vê-lo se te inscreveres
         outra vez.
       </p>
     </form>
