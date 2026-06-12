@@ -36,7 +36,10 @@ export function LessonTree({
 }: Props) {
   return (
     <aside aria-label="Aulas do curso" className="hidden w-64 shrink-0 xl:block">
-      <div className="border-border bg-card sticky top-6 rounded-lg border p-4">
+      {/* `top-20` desce abaixo do cabeçalho sticky (h-16); `max-h`+overflow
+          mantêm o quadrado todo visível com margem e fazem scroll interno se
+          a árvore for mais alta que o ecrã. */}
+      <div className="border-border bg-card sticky top-20 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-lg border p-4">
         <header className="border-border mb-3 border-b pb-2">
           <h2 className="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase">
             Aulas do curso

@@ -106,7 +106,10 @@ export default async function LessonPage({ params }: PageProps) {
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl justify-center gap-8 px-4 py-12 sm:px-6 sm:py-16">
+    <div className="mx-auto flex max-w-[84rem] justify-center gap-8 px-4 py-12 sm:px-6 sm:py-16">
+      {/* Espelho invisível da árvore (mesma largura) para o conteúdo principal
+          ficar centrado na página, com a árvore só no lado direito. */}
+      <div className="hidden w-64 shrink-0 xl:block" aria-hidden="true" />
       <article className="w-full max-w-3xl min-w-0">
         <LessonViewBeacon lessonId={lesson.id} />
 
