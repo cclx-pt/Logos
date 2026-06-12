@@ -1,6 +1,6 @@
 # V3.4 - Aulas: template só-vídeo + UX do leitor (handoff/plano)
 
-> **Status:** LOTE COMPLETO (os 7 itens). **PR1 #53** (template só-vídeo), **PR2 #54** (leitor de aula) e **PR3 #55** (cabeçalho do módulo) mergeados em `v3-cursos`. Vive em `v3-cursos` (nunca mergea em `main` antes de 01-07-2026). Pendente: confirmação do líder às decisões dos itens 6 e 7 (ajustáveis); depois este handoff dá lugar a `feature-docs/v3-4-iteration.md`.
+> **Status:** LOTE COMPLETO (os 7 itens). **PR1 #53** (template só-vídeo), **PR2 #54** (leitor de aula) e **PR3 #55** (cabeçalho do módulo) mergeados em `v3-cursos`. **PR4 (`v3-4-pr4-leitor-layout`)** ajusta o leitor a pedido do líder: conteúdo principal centrado na página + sticky da árvore corrigido (deixava de enfiar por baixo do cabeçalho). Vive em `v3-cursos` (nunca mergea em `main` antes de 01-07-2026). Pendente: confirmação do líder às restantes decisões dos itens 6 e 7 (ajustáveis); depois este handoff dá lugar a `feature-docs/v3-4-iteration.md`.
 >
 > Este ficheiro é o plano-mestre das 7 mudanças pedidas pelo líder (12-06-2026). À medida que cada PR fecha, a sua secção passa de "Plano" a "Feito" com o nº do PR. Quando todas fecharem, este handoff dá lugar a `feature-docs/v3-4-iteration.md`.
 
