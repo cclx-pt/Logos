@@ -8,13 +8,16 @@
  *   2. RLS em `lessons` (policies lessons_insert/update/delete_admin) garante
  *      que escritas por outro role nunca tocam dados.
  *   3. CHECK constraints na DB (position >= 0, length(title) 1-120,
- *      template in ('pdf','video_pdf'), pdf_storage_path not null,
- *      video_pdf ⇒ youtube_url not null) defendem contra inputs maliciosos.
+ *      template in ('pdf','video','video_pdf'); vídeo ⇒ youtube_url not null;
+ *      apostila (pdf|video_pdf) ⇒ pdf_storage_path not null) defendem contra
+ *      inputs maliciosos. Migration de 12-06-2026 (V3.4).
  *
- * Coerência de template (decidida 19-05-2026, v3-plan.md §10):
- *   - pdf → video_pdf exige `youtube_url` preenchido no mesmo submit.
- *   - video_pdf → pdf limpa `youtube_url` automaticamente.
- *   - PDF mantém-se em ambos — schema exige `pdf_storage_path not null`.
+ * Coerência de template (V3.4 estende a decisão de 19-05-2026, v3-plan.md §10):
+ *   - Templates com vídeo (video, video_pdf) exigem `youtube_url` no mesmo
+ *     submit; template `pdf` limpa qualquer URL antigo.
+ *   - Templates com apostila (pdf, video_pdf) exigem PDF; `video` (só vídeo)
+ *     não tem apostila e guarda `pdf_storage_path = null` (ficheiro removido
+ *     best-effort ao migrar de/para esse template).
  *
  * Upload PDF: bucket `lesson-pdfs/<courseId>/<lessonId>.pdf`, MIME
  * application/pdf, tamanho ≤ 20 MB (alinhado com `storage.buckets`
@@ -45,13 +48,22 @@ export type LessonActionResult = { ok: true } | { ok: false; error: string };
 
 const YOUTUBE_RE =
   /^https?:\/\/(?:www\.)?(?:youtu\.be\/[A-Za-z0-9_-]{6,}|youtube\.com\/watch\?v=[A-Za-z0-9_-]{6,})\S*$/i;
-const TEMPLATES = ['pdf', 'video_pdf'] as const;
+const TEMPLATES = ['pdf', 'video', 'video_pdf'] as const;
 type Template = (typeof TEMPLATES)[number];
 const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20 MB — alinhado com storage.buckets em PR2.
 
+// Coerência template ↔ campos (V3.4): vídeo exige YouTube; só 'video'
+// dispensa apostila. Espelha os CHECK em `lessons` (migration de 12-06-2026).
+function templateHasVideo(template: Template): boolean {
+  return template !== 'pdf';
+}
+function templateHasPdf(template: Template): boolean {
+  return template !== 'video';
+}
+
 function validateTemplate(raw: unknown): Ok<Template> | Err {
   if (typeof raw !== 'string' || !TEMPLATES.includes(raw as Template)) {
-    return { ok: false, error: 'Template tem de ser "pdf" ou "video_pdf".' };
+    return { ok: false, error: 'Template tem de ser "pdf", "video" ou "video_pdf".' };
   }
   return { ok: true, value: raw as Template };
 }
@@ -130,14 +142,15 @@ export async function createLessonAction(formData: FormData): Promise<CreateLess
   if (!template.ok) return template;
 
   let youtubeUrl: string | null = null;
-  if (template.value === 'video_pdf') {
+  if (templateHasVideo(template.value)) {
     const ytResult = validateYoutubeUrl(formData.get('youtube_url'));
     if (!ytResult.ok) return ytResult;
     youtubeUrl = ytResult.value;
   }
 
   const pdfFile = formData.get('pdf');
-  if (!(pdfFile instanceof File) || pdfFile.size === 0) {
+  const hasPdfFile = pdfFile instanceof File && pdfFile.size > 0;
+  if (templateHasPdf(template.value) && !hasPdfFile) {
     return { ok: false, error: 'É obrigatório anexar um PDF.' };
   }
 
@@ -156,7 +169,32 @@ export async function createLessonAction(formData: FormData): Promise<CreateLess
   }
   const nextPosition = maxRow ? maxRow.position + 1 : 0;
 
-  // Insert primeiro com placeholder no `pdf_storage_path` (NOT NULL na DB).
+  // Só vídeo: sem apostila. Insert directo com pdf_storage_path null - não há
+  // upload nem placeholder a reconciliar.
+  if (!templateHasPdf(template.value)) {
+    const { data: inserted, error: insertError } = await supabase
+      .from('lessons')
+      .insert({
+        module_id: moduleId.value,
+        title: title.value,
+        description: description.value,
+        template: template.value,
+        youtube_url: youtubeUrl,
+        pdf_storage_path: null,
+        position: nextPosition,
+      })
+      .select('id')
+      .single<{ id: string }>();
+
+    if (insertError || !inserted) {
+      return { ok: false, error: `Falha a criar aula: ${insertError?.message ?? 'sem dados'}` };
+    }
+
+    revalidateLessonPages(courseId.value, moduleId.value);
+    return { ok: true, id: inserted.id };
+  }
+
+  // pdf | video_pdf: insert com placeholder no `pdf_storage_path` (NOT NULL na DB).
   // Substitui-se pelo path real após upload bem-sucedido. Se o upload falhar,
   // faz-se rollback do row.
   const placeholderPath = `pending-${Date.now()}`;
@@ -178,7 +216,8 @@ export async function createLessonAction(formData: FormData): Promise<CreateLess
     return { ok: false, error: `Falha a criar aula: ${insertError?.message ?? 'sem dados'}` };
   }
 
-  const upload = await uploadLessonPdf(pdfFile, courseId.value, inserted.id);
+  // `hasPdfFile` garantiu acima que isto é um File não vazio.
+  const upload = await uploadLessonPdf(pdfFile as File, courseId.value, inserted.id);
   if (!upload.ok) {
     // Rollback — apaga a aula inserida com placeholder para não ficar órfã.
     await supabase.from('lessons').delete().eq('id', inserted.id);
@@ -221,27 +260,31 @@ export async function updateLessonAction(formData: FormData): Promise<LessonActi
   if (!template.ok) return template;
 
   let youtubeUrl: string | null = null;
-  if (template.value === 'video_pdf') {
-    // Coerência: ao escolher video_pdf é obrigatório fornecer URL no mesmo
-    // submit, mesmo que o template anterior já fosse video_pdf (admin pode
-    // ter alterado o URL).
+  if (templateHasVideo(template.value)) {
+    // Coerência: ao escolher um template com vídeo (video ou video_pdf) é
+    // obrigatório fornecer URL no mesmo submit, mesmo que o anterior já
+    // tivesse vídeo (o admin pode ter alterado o URL).
     const ytResult = validateYoutubeUrl(formData.get('youtube_url'));
     if (!ytResult.ok) return ytResult;
     youtubeUrl = ytResult.value;
   }
   // Se template === 'pdf', youtubeUrl mantém-se null — limpa qualquer URL
-  // antigo (regra de coerência video_pdf → pdf).
+  // antigo (regra de coerência → pdf).
 
   const supabase = await getServerClient();
 
-  // PDF é opcional em edit. Se vier um novo File com size > 0, fazemos upload
-  // (substitui o anterior por upsert). Se não, mantemos o pdf_storage_path
-  // actual — leitura prévia para preservá-lo no update.
+  // Coerência de apostila por template:
+  //   - video        → sem apostila: pdf_storage_path = null (ficheiro órfão
+  //     removido best-effort após o update).
+  //   - pdf|video_pdf → novo File anexado faz upload (upsert); senão mantém o
+  //     path actual. Se a aula vinha de 'video' (sem apostila), exige upload.
   const pdfFile = formData.get('pdf');
   const hasNewPdf = pdfFile instanceof File && pdfFile.size > 0;
 
-  let pdfStoragePath: string;
-  if (hasNewPdf) {
+  let pdfStoragePath: string | null;
+  if (!templateHasPdf(template.value)) {
+    pdfStoragePath = null;
+  } else if (hasNewPdf) {
     const upload = await uploadLessonPdf(pdfFile as File, courseId.value, id.value);
     if (!upload.ok) return upload;
     pdfStoragePath = upload.value;
@@ -254,8 +297,11 @@ export async function updateLessonAction(formData: FormData): Promise<LessonActi
     if (lookupError) {
       return { ok: false, error: `Falha a carregar aula: ${lookupError.message}` };
     }
-    if (!current || !current.pdf_storage_path) {
-      return { ok: false, error: 'Aula não encontrada ou sem PDF actual.' };
+    if (!current) {
+      return { ok: false, error: 'Aula não encontrada.' };
+    }
+    if (!current.pdf_storage_path) {
+      return { ok: false, error: 'Esta aula passou a ter apostila - anexa um PDF.' };
     }
     pdfStoragePath = current.pdf_storage_path;
   }
@@ -273,6 +319,12 @@ export async function updateLessonAction(formData: FormData): Promise<LessonActi
 
   if (updateError) {
     return { ok: false, error: `Falha a atualizar aula: ${updateError.message}` };
+  }
+
+  // Só vídeo: a apostila deixou de fazer parte da aula - remove o ficheiro do
+  // bucket (best-effort, pós-update; se falhar fica órfão até limpeza manual).
+  if (!templateHasPdf(template.value)) {
+    await supabase.storage.from('lesson-pdfs').remove([`${courseId.value}/${id.value}.pdf`]);
   }
 
   revalidateLessonPages(courseId.value, moduleId.value);

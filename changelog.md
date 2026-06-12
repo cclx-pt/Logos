@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### feat
+- feat: [12-06-2026] **modelo de aula só-vídeo (`video`)** (V3.4 PR1) - uma aula passa a poder ser `pdf` (só apostila), `video` (só vídeo do YouTube) ou `video_pdf` (ambos). DB: migration `20260612120000_lessons_video_only_template.sql` relaxa os CHECK de `lessons` (apostila deixa de ser sempre obrigatória; vídeo passa a exigir `youtube_url`; só-vídeo guarda `pdf_storage_path = null`) - **só `logos-dev`**. Server Actions (`createLessonAction`/`updateLessonAction`) validam YouTube quando o template tem vídeo e PDF quando tem apostila; trocar para `video` limpa o path e remove o ficheiro do bucket best-effort. **Form de aula condicional** (item 2): novo Client Component `lesson-form.tsx` mostra só os campos do template escolhido (só PDF → ficheiro; só vídeo → URL; ambos → os dois). Leitor de aula renderiza vídeo/apostila conforme o template; etiquetas dos 3 modelos no admin (`só pdf`/`só vídeo`/`vídeo + pdf`) e no leitor (`pdf`/`vídeo`/`vídeo + pdf`, via `template-label.ts`). SPEC bump 3.2; tipos `LessonTemplate` + `pdf_storage_path` nullable em `detail.ts`. 461 verdes.
+
 ### add
 - add: [11-06-2026] **login por email OTP validado ponta-a-ponta** em `logos-dev` - o caminho que estava inerte desde a PR #49 ficou operacional. SMTP custom do **Resend** ligado no Supabase (domínio `logos.cclx.pt` Verified, região `eu-west-1`; DKIM/SPF/MX confirmados no DNS - registos guardados em `email-otp-setup-guide.md` Parte B), rate limit de email subido de 2/h para 30/h (só possível com SMTP custom), templates Magic Link + Confirm signup com `{{ .Token }}`, e **Turnstile** ativo. Fluxo `/entrar` → email → código de 6 dígitos → entrar a funcionar; primeiro login com email novo cria linha em `profiles`. Pendentes #1 e #2 do handoff fechados.
 

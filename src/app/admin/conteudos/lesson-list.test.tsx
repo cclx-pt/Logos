@@ -39,8 +39,8 @@ function makeLessons(): LessonListItem[] {
       id: 'l-c',
       title: 'Aula C',
       description: 'desc C',
-      template: 'pdf',
-      youtube_url: null,
+      template: 'video',
+      youtube_url: 'https://youtu.be/xyz789',
       position: 2,
     },
   ];
@@ -77,7 +77,7 @@ describe('LessonList — render', () => {
     expect(screen.getByText('2.3')).toBeInTheDocument();
   });
 
-  it('mostra pill do template (pdf / vídeo + pdf)', () => {
+  it('mostra pill do template (só pdf / só vídeo / vídeo + pdf)', () => {
     render(
       <LessonList
         initial={makeLessons()}
@@ -86,11 +86,12 @@ describe('LessonList — render', () => {
         modulePosition={2}
       />,
     );
-    expect(screen.getAllByText(/só pdf/i).length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText(/vídeo \+ pdf/i)).toBeInTheDocument();
+    expect(screen.getByText('só pdf')).toBeInTheDocument();
+    expect(screen.getByText('só vídeo')).toBeInTheDocument();
+    expect(screen.getByText('vídeo + pdf')).toBeInTheDocument();
   });
 
-  it('renderiza link YouTube apenas para aulas video_pdf', () => {
+  it('renderiza link YouTube para qualquer template com vídeo (video e video_pdf), nunca só-pdf', () => {
     render(
       <LessonList
         initial={makeLessons()}
@@ -99,10 +100,14 @@ describe('LessonList — render', () => {
         modulePosition={2}
       />,
     );
-    const link = screen.getByRole('link', { name: /youtu\.be\/abc123/i });
-    expect(link).toHaveAttribute('href', 'https://youtu.be/abc123');
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    const videoPdfLink = screen.getByRole('link', { name: /youtu\.be\/abc123/i });
+    expect(videoPdfLink).toHaveAttribute('href', 'https://youtu.be/abc123');
+    expect(videoPdfLink).toHaveAttribute('target', '_blank');
+    expect(videoPdfLink).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    // Aula só-vídeo também mostra o link.
+    expect(screen.getByRole('link', { name: /youtu\.be\/xyz789/i })).toBeInTheDocument();
+    // Apenas as duas aulas com vídeo têm link (a só-pdf não).
+    expect(screen.getAllByRole('link', { name: /youtu\.be/i })).toHaveLength(2);
   });
 
   it('substitui o item editingId pelo editingNode pré-renderizado', () => {
