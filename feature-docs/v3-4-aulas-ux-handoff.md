@@ -1,6 +1,6 @@
 # V3.4 - Aulas: template só-vídeo + UX do leitor (handoff/plano)
 
-> **Status:** EM CURSO. **PR1 mergeado em `v3-cursos`** (#53); **PR2 implementado** (branch `v3-4-pr2-leitor-aula`); PR3 por arrancar. Vive em `v3-cursos` (nunca mergea em `main` antes de 01-07-2026). Cada PR ramifica de `v3-cursos` e volta a `v3-cursos`.
+> **Status:** LOTE COMPLETO (os 7 itens). **PR1 #53** (template só-vídeo), **PR2 #54** (leitor de aula) e **PR3 #55** (cabeçalho do módulo) mergeados em `v3-cursos`. Vive em `v3-cursos` (nunca mergea em `main` antes de 01-07-2026). Pendente: confirmação do líder às decisões dos itens 6 e 7 (ajustáveis); depois este handoff dá lugar a `feature-docs/v3-4-iteration.md`.
 >
 > Este ficheiro é o plano-mestre das 7 mudanças pedidas pelo líder (12-06-2026). À medida que cada PR fecha, a sua secção passa de "Plano" a "Feito" com o nº do PR. Quando todas fecharem, este handoff dá lugar a `feature-docs/v3-4-iteration.md`.
 
@@ -116,7 +116,9 @@ Helper de navegação módulo-scoped (primeira/última/meio), `lesson-tree` (cur
 
 ---
 
-## PR3 - Cabeçalho do módulo (item 7)
+## PR3 - Cabeçalho do módulo (item 7) — ✅ IMPLEMENTADO
+
+> Branch `v3-4-pr3-cabecalho-modulo` (ramificada de `v3-cursos`, independente do PR2). 461 testes verdes; lint/typecheck/format limpos. Mudança puramente apresentacional em `modulos/[moduleId]/page.tsx`: fora o eyebrow "Módulo N de M" e o indicador de conclusão solto; header = título + descrição (alinhada à esquerda); "{x}/{total} concluídas" + "✓ concluído" movido para junto do título "Aulas"; breadcrumb mostra o título do módulo. **Decisão (item 7, era aberto):** o indicador foi para ao lado de "Aulas". Se quiseres outro sítio/forma, é ajuste rápido.
 
 Ficheiro: `src/app/conteudos/[courseId]/modulos/[moduleId]/page.tsx`.
 
