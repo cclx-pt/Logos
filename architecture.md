@@ -53,9 +53,9 @@ lessons
  ├─ module_id (FK → modules)
  ├─ position (int)
  ├─ title, description
- ├─ template ('pdf' | 'video_pdf' | …)
- ├─ youtube_url (nullable)
- ├─ pdf_storage_path (nullable)
+ ├─ template ('pdf' | 'video' | 'video_pdf' | …)
+ ├─ youtube_url (nullable; obrigatório se o template tem vídeo)
+ ├─ pdf_storage_path (nullable; null só quando template = 'video')
  ├─ required_tags[] (V4)
 tags
  ├─ id (uuid, PK)

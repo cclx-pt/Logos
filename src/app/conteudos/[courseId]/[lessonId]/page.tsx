@@ -85,14 +85,20 @@ export default async function LessonPage({ params }: PageProps) {
 
   const nav = getLessonNavigation(course, lesson.id);
 
-  // Vídeo (template = video_pdf)
-  const youtubeId = lesson.template === 'video_pdf' ? extractYoutubeId(lesson.youtube_url) : null;
+  // Vídeo (templates com vídeo: video | video_pdf).
+  const hasVideo = lesson.template !== 'pdf';
+  const hasPdf = lesson.template !== 'video';
+  const youtubeId = hasVideo ? extractYoutubeId(lesson.youtube_url) : null;
 
   // PDF inline: gera URL assinada server-side. Passamos ao iframe via prop.
   // RLS já validou visibilidade no select acima; createSignedUrl não acrescenta
-  // gating mas é a forma canónica de acesso ao bucket privado.
-  const pdfResult = await getLessonPdfSignedUrlAction(lesson.id);
-  const pdfUrl = pdfResult.ok ? pdfResult.url : null;
+  // gating mas é a forma canónica de acesso ao bucket privado. Aulas só-vídeo
+  // não têm apostila - saltamos o signing.
+  let pdfUrl: string | null = null;
+  if (hasPdf) {
+    const pdfResult = await getLessonPdfSignedUrlAction(lesson.id);
+    pdfUrl = pdfResult.ok ? pdfResult.url : null;
+  }
 
   return (
     <article className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
@@ -148,39 +154,41 @@ export default async function LessonPage({ params }: PageProps) {
             className="h-full w-full"
           />
         </div>
-      ) : lesson.template === 'video_pdf' ? (
+      ) : hasVideo ? (
         <p className="text-muted-foreground mt-8 inline-flex items-center rounded-md border border-dashed px-4 py-3 text-sm">
           O vídeo desta aula não está disponível.
         </p>
       ) : null}
 
-      <section aria-labelledby="apostila-heading" className="mt-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2
-            id="apostila-heading"
-            className="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
-          >
-            Apostila
-          </h2>
-          <PdfDownloadButton lessonId={lesson.id} lessonTitle={lesson.title} />
-        </div>
-        {pdfUrl ? (
-          <div className="border-border bg-card mt-3 h-[75vh] w-full overflow-hidden rounded-2xl border">
-            <iframe
-              src={pdfUrl}
-              title={`Apostila: ${lesson.title}`}
-              className="h-full w-full"
-              // O bucket é privado; só este iframe (com URL assinada de 5 min) e o
-              // botão de download conseguem ler. Em mobile, alguns browsers ignoram
-              // o iframe e abrem o PDF na app nativa — comportamento aceitável.
-            />
+      {hasPdf ? (
+        <section aria-labelledby="apostila-heading" className="mt-8">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2
+              id="apostila-heading"
+              className="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
+            >
+              Apostila
+            </h2>
+            <PdfDownloadButton lessonId={lesson.id} lessonTitle={lesson.title} />
           </div>
-        ) : (
-          <p className="text-muted-foreground mt-3 inline-flex items-center rounded-md border border-dashed px-4 py-3 text-sm">
-            Não foi possível carregar a apostila. Usa o botão “Descarregar apostila” para a obter.
-          </p>
-        )}
-      </section>
+          {pdfUrl ? (
+            <div className="border-border bg-card mt-3 h-[75vh] w-full overflow-hidden rounded-2xl border">
+              <iframe
+                src={pdfUrl}
+                title={`Apostila: ${lesson.title}`}
+                className="h-full w-full"
+                // O bucket é privado; só este iframe (com URL assinada de 5 min) e o
+                // botão de download conseguem ler. Em mobile, alguns browsers ignoram
+                // o iframe e abrem o PDF na app nativa - comportamento aceitável.
+              />
+            </div>
+          ) : (
+            <p className="text-muted-foreground mt-3 inline-flex items-center rounded-md border border-dashed px-4 py-3 text-sm">
+              Não foi possível carregar a apostila. Usa o botão “Descarregar apostila” para a obter.
+            </p>
+          )}
+        </section>
+      ) : null}
 
       <div className="mt-8">
         <MarkCompleteButton lessonId={lesson.id} initiallyCompleted={completed.has(lesson.id)} />

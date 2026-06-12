@@ -9,11 +9,13 @@ import { getServerClient } from '@/lib/auth';
 
 import { getBannerUrlForPath } from './banner';
 
+export type LessonTemplate = 'pdf' | 'video' | 'video_pdf';
+
 export type LessonSummary = {
   id: string;
   title: string;
   description: string | null;
-  template: 'pdf' | 'video_pdf';
+  template: LessonTemplate;
   position: number;
 };
 
@@ -86,9 +88,10 @@ export type LessonDetail = {
   id: string;
   title: string;
   description: string | null;
-  template: 'pdf' | 'video_pdf';
+  template: LessonTemplate;
   youtube_url: string | null;
-  pdf_storage_path: string;
+  /** `null` quando template = video (aula sem apostila). */
+  pdf_storage_path: string | null;
   position: number;
   module: { id: string; title: string; position: number };
   course: { id: string; title: string; icon: string | null };
@@ -98,9 +101,9 @@ type LessonRow = {
   id: string;
   title: string;
   description: string | null;
-  template: 'pdf' | 'video_pdf';
+  template: LessonTemplate;
   youtube_url: string | null;
-  pdf_storage_path: string;
+  pdf_storage_path: string | null;
   position: number;
   module: {
     id: string;

@@ -46,13 +46,17 @@ export async function getLessonPdfSignedUrlAction(lessonId: string): Promise<Sig
     .from('lessons')
     .select('id, pdf_storage_path')
     .eq('id', lessonId)
-    .maybeSingle<{ id: string; pdf_storage_path: string }>();
+    .maybeSingle<{ id: string; pdf_storage_path: string | null }>();
 
   if (error) {
     return { ok: false, error: `Falha a carregar aula: ${error.message}` };
   }
   if (!lesson) {
     return { ok: false, error: 'Aula não encontrada ou sem acesso.' };
+  }
+  // Aulas só-vídeo (template = video) não têm apostila.
+  if (!lesson.pdf_storage_path) {
+    return { ok: false, error: 'Esta aula não tem apostila.' };
   }
 
   const { data: signed, error: signedError } = await supabase.storage

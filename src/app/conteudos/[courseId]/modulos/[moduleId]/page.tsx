@@ -11,6 +11,7 @@ import {
   isModuleComplete,
 } from '@/lib/courses/completion';
 import { getEnrollmentState } from '@/lib/courses/enrollment';
+import { LESSON_TEMPLATE_LABEL } from '@/lib/courses/template-label';
 
 type PageProps = {
   params: Promise<{ courseId: string; moduleId: string }>;
@@ -156,7 +157,7 @@ export default async function CourseModulePage({ params }: PageProps) {
                       {lesson.title}
                     </span>
                     <span className="text-muted-foreground text-[10px] tracking-wide uppercase">
-                      {lesson.template === 'video_pdf' ? 'vídeo + pdf' : 'pdf'}
+                      {LESSON_TEMPLATE_LABEL[lesson.template]}
                     </span>
                   </Link>
                 </li>

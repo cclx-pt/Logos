@@ -146,6 +146,7 @@ Cada aula tem um **modelo** que define o tipo de conteúdo que entrega. Modelos 
 | Modelo       | Conteúdo                                                       |
 |--------------|----------------------------------------------------------------|
 | `pdf`        | Apenas um PDF descarregável                                    |
+| `video`      | Apenas um vídeo do YouTube embebido (sem apostila)            |
 | `video_pdf`  | Vídeo do YouTube embebido **mais** um PDF descarregável        |
 
 O sistema deve ser desenhado para permitir adicionar novos modelos no futuro (por exemplo, `live_stream`, `quiz`, `text_only`) sem reescrever o modelo de dados. O modelo é guardado como campo de texto na aula; a lógica da aplicação decide que campos são obrigatórios para cada modelo.
@@ -250,7 +251,7 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 
 - CRUD de admin para Cursos → Módulos → Aulas
 - Upload de PDFs e colagem de URLs do YouTube
-- Modelos de aula: `pdf` e `video_pdf` (com possibilidade de adicionar mais no futuro)
+- Modelos de aula: `pdf`, `video` e `video_pdf` (com possibilidade de adicionar mais no futuro)
 - **Restrição apenas ao nível do curso:** ao criar um curso, o admin pode anexar etiquetas exigidas. Cursos sem etiquetas são públicos; cursos com etiquetas só aparecem a utilizadores autenticados que tenham pelo menos uma das etiquetas
 - Catálogo público mostra cursos sem etiquetas a todos. Cursos restritos só aparecem após login a utilizadores com etiqueta correspondente
 - Página de visualização de aula (corresponde ao mockup superior esquerdo, **sem** o campo de perguntas): vídeo embebido, descarregar PDF, barra lateral de módulo com lista de aulas, botões "Próxima aula" e "Próximo módulo"
@@ -312,7 +313,7 @@ A equipa do ministério organizou os pedidos por **prioridade** (P1 essencial �
 | Login com email/palavra-passe e Google                | PDF P1A              |     P1     |   V2   |
 | Sistema de etiquetas (fundação)                       | PDF P1A              |     P1     |   V2   |
 | CRUD de Cursos / Módulos / Aulas                      | PDF P1B              |     P1     |   V3   |
-| Modelos de aula (`pdf`, `video_pdf`)                  | PDF P1B              |     P1     |   V3   |
+| Modelos de aula (`pdf`, `video`, `video_pdf`)         | PDF P1B              |     P1     |   V3   |
 | Restrição de cursos por etiqueta                      | PDF P1A              |     P1     |   V3   |
 | Marcação binária de aulas concluídas                  | Especificação        |     —      |   V3   |
 | Ecrã "Curso Concluído"                                | Especificação        |     —      |   V3   |
@@ -548,8 +549,10 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 
 ## 19. Estado do Documento
 
-- **Versão:** 3.1
-- **Última atualização:** 10 de junho de 2026
+- **Versão:** 3.2
+- **Última atualização:** 12 de junho de 2026
+- **Alterações relativamente à v3.1:**
+  - §6 (Modelos de aula) e §9/§10 — novo modelo de aula **`video`** (só vídeo do YouTube, sem apostila). Uma aula passa a poder ser `pdf` (só apostila), `video` (só vídeo) ou `video_pdf` (ambos). É a extensibilidade prevista na própria secção "Modelos de aula"; sem mudança de âmbito de versão. DB: CHECK de `lessons` relaxado (apostila deixa de ser sempre obrigatória; vídeo passa a exigir `youtube_url`) - migration `20260612120000` (V3.4 PR1, só `logos-dev`). O formulário de aula no admin mostra apenas os campos do modelo escolhido.
 - **Alterações relativamente à v3.0:**
   - §9/§11, §17 e §18 — **Microsoft/Entra (Azure) removido** como provider OAuth (decisão do líder do projeto, 10-06-2026: simplificar para Google + email OTP). O código Microsoft chegou a estar pronto na branch da PR #49 mas o provider nunca foi configurado no Supabase; foi retirado antes do merge. Os métodos de login passam a ser **Google + email OTP**.
 - **Alterações relativamente à v2.9:**

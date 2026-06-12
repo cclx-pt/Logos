@@ -11,9 +11,15 @@ export type LessonListItem = {
   id: string;
   title: string;
   description: string | null;
-  template: 'pdf' | 'video_pdf';
+  template: 'pdf' | 'video' | 'video_pdf';
   youtube_url: string | null;
   position: number;
+};
+
+const TEMPLATE_LABEL: Record<LessonListItem['template'], string> = {
+  pdf: 'só pdf',
+  video: 'só vídeo',
+  video_pdf: 'vídeo + pdf',
 };
 
 type Props = {
@@ -106,9 +112,9 @@ export function LessonList({
               <p className="text-ink font-medium">{lesson.title}</p>
               <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-xs">
                 <span className="border-border bg-muted/40 inline-flex items-center rounded-sm border px-1.5 py-0.5 text-[10px] tracking-wide uppercase">
-                  {lesson.template === 'video_pdf' ? 'vídeo + pdf' : 'só pdf'}
+                  {TEMPLATE_LABEL[lesson.template]}
                 </span>
-                {lesson.template === 'video_pdf' && lesson.youtube_url ? (
+                {lesson.template !== 'pdf' && lesson.youtube_url ? (
                   <a
                     href={lesson.youtube_url}
                     target="_blank"

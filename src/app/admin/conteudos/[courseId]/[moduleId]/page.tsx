@@ -11,6 +11,7 @@ import { CourseTree } from '../../course-tree';
 import { createLessonAction, deleteLessonAction, updateLessonAction } from '../../lessons-actions';
 import { deleteModuleAction, updateModuleAction } from '../../modules-actions';
 import { LessonList, type LessonListItem } from '../../lesson-list';
+import { LessonForm } from '../../lesson-form';
 
 export const metadata = {
   title: 'Módulo · Área admin · LOGOS',
@@ -96,110 +97,24 @@ export default async function ModuloDetalhePage({ params, searchParams }: PagePr
   const deletingLesson = apagar ? lessons.find((l) => l.id === apagar) : undefined;
 
   const lessonEditingNode = editingLesson ? (
-    <form
+    <LessonForm
+      mode="edit"
       action={async (formData: FormData) => {
         'use server';
         const result = await updateLessonAction(formData);
         redirect(result.ok ? `${backHref}?guardado=aula_atualizada` : `${backHref}?erro=generico`);
       }}
-      encType="multipart/form-data"
-      className="space-y-4"
-    >
-      <input type="hidden" name="id" value={editingLesson.id} />
-      <input type="hidden" name="course_id" value={course.id} />
-      <input type="hidden" name="module_id" value={module.id} />
-
-      <label className="block">
-        <span className="text-muted-foreground text-xs font-medium">Título</span>
-        <input
-          type="text"
-          name="title"
-          required
-          minLength={1}
-          maxLength={120}
-          defaultValue={editingLesson.title}
-          className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-        />
-      </label>
-
-      <label className="block">
-        <span className="text-muted-foreground text-xs font-medium">Descrição (opcional)</span>
-        <textarea
-          name="description"
-          rows={2}
-          maxLength={4000}
-          defaultValue={editingLesson.description ?? ''}
-          className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full resize-y rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-        />
-      </label>
-
-      <fieldset className="border-border rounded-md border p-4">
-        <legend className="text-muted-foreground px-1 text-xs font-medium">Template</legend>
-        <div className="flex flex-wrap gap-3">
-          <label className="border-border bg-background hover:bg-muted/40 has-checked:bg-orange-primary/10 has-checked:border-orange-primary/40 inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors">
-            <input
-              type="radio"
-              name="template"
-              value="pdf"
-              defaultChecked={editingLesson.template === 'pdf'}
-              className="text-orange-primary focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none"
-            />
-            <span>Só PDF</span>
-          </label>
-          <label className="border-border bg-background hover:bg-muted/40 has-checked:bg-orange-primary/10 has-checked:border-orange-primary/40 inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors">
-            <input
-              type="radio"
-              name="template"
-              value="video_pdf"
-              defaultChecked={editingLesson.template === 'video_pdf'}
-              className="text-orange-primary focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none"
-            />
-            <span>Vídeo + PDF</span>
-          </label>
-        </div>
-      </fieldset>
-
-      <label className="block">
-        <span className="text-muted-foreground text-xs font-medium">
-          URL do YouTube{' '}
-          <span className="text-muted-foreground/70 font-normal">(obrigatório se Vídeo + PDF)</span>
-        </span>
-        <input
-          type="url"
-          name="youtube_url"
-          defaultValue={editingLesson.youtube_url ?? ''}
-          placeholder="https://youtu.be/… ou https://www.youtube.com/watch?v=…"
-          className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-        />
-      </label>
-
-      <label className="block">
-        <span className="text-muted-foreground text-xs font-medium">
-          Substituir apostila (opcional, até 20 MB)
-        </span>
-        <input
-          type="file"
-          name="pdf"
-          accept="application/pdf"
-          className="border-border bg-background text-ink file:bg-muted file:text-ink hover:file:bg-muted/80 focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:px-3 file:py-1 file:text-xs file:font-medium focus-visible:ring-2 focus-visible:outline-none"
-        />
-        <span className="text-muted-foreground mt-1 block text-[11px]">
-          Deixar vazio mantém a apostila actual.
-        </span>
-      </label>
-
-      <div className="flex flex-wrap items-start gap-2">
-        <SubmitButton pendingLabel="A guardar…" showProgressBar className="h-9 px-3 text-xs">
-          Guardar
-        </SubmitButton>
-        <Link
-          href={backHref}
-          className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-medium focus-visible:ring-2 focus-visible:outline-none"
-        >
-          Cancelar
-        </Link>
-      </div>
-    </form>
+      courseId={course.id}
+      moduleId={module.id}
+      lessonId={editingLesson.id}
+      defaults={{
+        title: editingLesson.title,
+        description: editingLesson.description,
+        template: editingLesson.template,
+        youtube_url: editingLesson.youtube_url,
+      }}
+      backHref={backHref}
+    />
   ) : null;
 
   const lessonDeletingNode = deletingLesson ? (
@@ -325,8 +240,9 @@ export default async function ModuloDetalhePage({ params, searchParams }: PagePr
               title={`Aulas (${lessons.length})`}
               subtitle={
                 <>
-                  Cada aula tem obrigatoriamente uma apostila (PDF). O vídeo do YouTube é opcional —
-                  escolhe o template <strong>Vídeo + PDF</strong> se a aula tiver ambos.
+                  Escolhe o template conforme o conteúdo: <strong>Só PDF</strong> (apostila),{' '}
+                  <strong>Só vídeo</strong> (YouTube embebido) ou <strong>Vídeo + PDF</strong>{' '}
+                  (ambos). Os campos a preencher mudam com o template.
                 </>
               }
             >
@@ -335,109 +251,23 @@ export default async function ModuloDetalhePage({ params, searchParams }: PagePr
                   <h3 className="text-ink text-sm font-semibold tracking-wide uppercase">
                     Nova aula
                   </h3>
-                  <form
-                    action={async (formData: FormData) => {
-                      'use server';
-                      const result = await createLessonAction(formData);
-                      redirect(
-                        result.ok
-                          ? `${backHref}?guardado=aula_criada`
-                          : `${backHref}?erro=generico`,
-                      );
-                    }}
-                    encType="multipart/form-data"
-                    className="mt-4 space-y-4"
-                  >
-                    <input type="hidden" name="course_id" value={course.id} />
-                    <input type="hidden" name="module_id" value={module.id} />
-
-                    <label className="block">
-                      <span className="text-muted-foreground text-xs font-medium">Título</span>
-                      <input
-                        type="text"
-                        name="title"
-                        required
-                        minLength={1}
-                        maxLength={120}
-                        placeholder="Ex.: A entrada de Jesus em Jerusalém"
-                        className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-                      />
-                    </label>
-
-                    <label className="block">
-                      <span className="text-muted-foreground text-xs font-medium">
-                        Descrição (opcional)
-                      </span>
-                      <textarea
-                        name="description"
-                        rows={2}
-                        maxLength={4000}
-                        placeholder="Frase curta a explicar o foco da aula."
-                        className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full resize-y rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-                      />
-                    </label>
-
-                    <fieldset className="border-border rounded-md border p-4">
-                      <legend className="text-muted-foreground px-1 text-xs font-medium">
-                        Template
-                      </legend>
-                      <div className="flex flex-wrap gap-3">
-                        <label className="border-border bg-background hover:bg-muted/40 has-checked:bg-orange-primary/10 has-checked:border-orange-primary/40 inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors">
-                          <input
-                            type="radio"
-                            name="template"
-                            value="pdf"
-                            defaultChecked
-                            className="text-orange-primary focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none"
-                          />
-                          <span>Só PDF</span>
-                        </label>
-                        <label className="border-border bg-background hover:bg-muted/40 has-checked:bg-orange-primary/10 has-checked:border-orange-primary/40 inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors">
-                          <input
-                            type="radio"
-                            name="template"
-                            value="video_pdf"
-                            className="text-orange-primary focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none"
-                          />
-                          <span>Vídeo + PDF</span>
-                        </label>
-                      </div>
-                    </fieldset>
-
-                    <label className="block">
-                      <span className="text-muted-foreground text-xs font-medium">
-                        URL do YouTube{' '}
-                        <span className="text-muted-foreground/70 font-normal">
-                          (obrigatório se template = Vídeo + PDF)
-                        </span>
-                      </span>
-                      <input
-                        type="url"
-                        name="youtube_url"
-                        placeholder="https://youtu.be/… ou https://www.youtube.com/watch?v=…"
-                        className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
-                      />
-                    </label>
-
-                    <label className="block">
-                      <span className="text-muted-foreground text-xs font-medium">
-                        Apostila PDF (até 20 MB)
-                      </span>
-                      <input
-                        type="file"
-                        name="pdf"
-                        accept="application/pdf"
-                        required
-                        className="border-border bg-background text-ink file:bg-muted file:text-ink hover:file:bg-muted/80 focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:px-3 file:py-1 file:text-xs file:font-medium focus-visible:ring-2 focus-visible:outline-none"
-                      />
-                    </label>
-
-                    <div className="flex justify-end">
-                      <SubmitButton pendingLabel="A enviar PDF…" showProgressBar>
-                        Adicionar aula
-                      </SubmitButton>
-                    </div>
-                  </form>
+                  <div className="mt-4">
+                    <LessonForm
+                      mode="create"
+                      action={async (formData: FormData) => {
+                        'use server';
+                        const result = await createLessonAction(formData);
+                        redirect(
+                          result.ok
+                            ? `${backHref}?guardado=aula_criada`
+                            : `${backHref}?erro=generico`,
+                        );
+                      }}
+                      courseId={course.id}
+                      moduleId={module.id}
+                      backHref={backHref}
+                    />
+                  </div>
                 </div>
 
                 <LessonList

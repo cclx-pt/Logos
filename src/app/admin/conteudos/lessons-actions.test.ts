@@ -294,6 +294,39 @@ describe('createLessonAction (V3 PR4b)', () => {
     expect(mockDelete).toHaveBeenCalled();
     expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
+
+  it('recusa template video sem youtube_url', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    const result = await createLessonAction(formDataOf({ ...BASE_FIELDS, template: 'video' }));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/youtube/i) });
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it('aula só-vídeo (video): insert directo com pdf null, sem upload nem PDF', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    setQueue(
+      { data: null, error: null }, // max query empty → position 0
+      { data: { id: LESSON_ID }, error: null }, // insert
+    );
+
+    const result = await createLessonAction(
+      formDataOf({ ...BASE_FIELDS, template: 'video', youtube_url: 'https://youtu.be/abcdef' }),
+    );
+
+    expect(result).toEqual({ ok: true, id: LESSON_ID });
+    expect(mockInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        template: 'video',
+        youtube_url: 'https://youtu.be/abcdef',
+        pdf_storage_path: null,
+        position: 0,
+      }),
+    );
+    // Sem apostila: nem upload nem o update do path acontecem.
+    expect(mockStorageUpload).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/conteudos/${COURSE_ID}/${MODULE_ID}`);
+  });
 });
 
 describe('updateLessonAction (V3 PR4b)', () => {
@@ -359,6 +392,32 @@ describe('updateLessonAction (V3 PR4b)', () => {
     expect(mockUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ pdf_storage_path: `${COURSE_ID}/${LESSON_ID}.pdf` }),
     );
+  });
+
+  it('coerência: muda para video limpa pdf_storage_path e remove o ficheiro', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockStorageRemove.mockResolvedValue({ data: [], error: null });
+    setQueue({ data: null, error: null }); // update final (sem lookup de PDF)
+
+    const result = await updateLessonAction(
+      formDataOf({
+        ...BASE_FIELDS,
+        id: LESSON_ID,
+        template: 'video',
+        youtube_url: 'https://youtu.be/abcdef',
+      }),
+    );
+
+    expect(result).toEqual({ ok: true });
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        template: 'video',
+        youtube_url: 'https://youtu.be/abcdef',
+        pdf_storage_path: null,
+      }),
+    );
+    expect(mockStorageUpload).not.toHaveBeenCalled();
+    expect(mockStorageRemove).toHaveBeenCalledWith([`${COURSE_ID}/${LESSON_ID}.pdf`]);
   });
 });
 

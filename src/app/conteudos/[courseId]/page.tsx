@@ -8,6 +8,7 @@ import { UUID_RE } from '@/lib/validation';
 import { formatDate } from '@/lib/format';
 import { CourseImage } from '@/lib/courses/course-image';
 import { getCourseDetailById } from '@/lib/courses/detail';
+import { LESSON_TEMPLATE_LABEL } from '@/lib/courses/template-label';
 import {
   getCompletedLessonIds,
   getFirstIncompleteLesson,
@@ -177,7 +178,7 @@ function NotEnrolledCourseView({ course }: { course: NonNullable<CourseForView> 
                             {lesson.title}
                           </span>
                           <span className="text-muted-foreground text-[10px] tracking-wide uppercase">
-                            {lesson.template === 'video_pdf' ? 'vídeo + pdf' : 'pdf'}
+                            {LESSON_TEMPLATE_LABEL[lesson.template]}
                           </span>
                         </li>
                       ))}
