@@ -8,6 +8,16 @@
 
 ## [Unreleased]
 
+### update
+- update: [13-06-2026] **Q&A das aulas validado ponta-a-ponta no preview de #61** - aluno submete pergunta → toast de sucesso → pergunta aparece na inbox `/admin/perguntas` → **email de notificação com Reply-To = email do aluno**. Curso de teste "Oficina EB - Apocalipse" (publicado, 2 módulos, 3 aulas) em `logos-dev`. Fecha o "Operacional pendente" da feature para dev/preview - só falta repetir as env vars no scope Production com os valores de `logos-prod` + subir as migrations a `logos-prod` no lançamento.
+
+### infra
+- infra: [13-06-2026] **config operacional do Q&A para dev/preview** - env vars `LOGOS_QUESTIONS_TO_EMAIL`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL` e `SUPABASE_SERVICE_ROLE_KEY` definidas no scope **Preview** da Vercel (lêem de `logos-dev`) e no `.env.local`. `SUPABASE_SERVICE_ROLE_KEY` (chave `sb_secret_...` nova de `logos-dev`) validada contra `logos-dev` (RPC `check_rate_limit` respondeu `true`). Domínio Resend `logos.cclx.pt` já Verified (reutilizado do login OTP), logo sem trabalho de DNS.
+- infra: [13-06-2026] **commit vazio para disparar redeploy do preview de #61** (apanha as env vars do scope Preview; sem mudança de código).
+
+### docs
+- docs: [13-06-2026] **guia de ativação operacional do Q&A** em `feature-docs/qa-perguntas-setup-guide.md` - runbook dos passos fora do código: merge dos 3 PRs, domínio Resend, env vars, migrations só no lançamento, smoke test e troubleshooting. A feature degrada com elegância: sem config, a pergunta grava na inbox; a config só acrescenta a notificação por email.
+
 ### feat
 - feat: [13-06-2026] **Q&A das aulas: inbox de admin** (V3.5 PR3) - nova área `/admin/perguntas` (nível admin): lista de perguntas em cartões com **filtro por estado** (Todas/Novas/Respondidas/Arquivadas + contagens), pesquisa por aluno/curso/aula/texto, e **triagem** (marcar como respondida, arquivar, reabrir) via `setQuestionStatusAction` (recusa não-admin; RLS + column-scoping a `status` garantem o resto). Entrada "Perguntas" na nav do admin. Migration `20260612230000` acrescenta o snapshot `author_name` a `lesson_questions` (a inbox mostra "quem perguntou" sem depender da RLS de `profiles`, que só deixa super_admin ler perfis de outros) - **só `logos-dev`**. 503 verdes.
 - feat: [13-06-2026] **Q&A das aulas: submissão do aluno + email** (V3.5 PR2) - caixa "Pergunta aos professores" no leitor de aula (flanco esquerdo em `xl+`, no fluxo do artigo em mobile) → Dialog (Base UI) estilo email. `submitQuestionAction`: o cliente envia só `{lessonId, body}`; identidade e contexto (curso/módulo/aula) são re-derivados no servidor; ordem validação → inscrição → rate-limit (5/h, via `check_rate_limit` + cliente service-role) → **INSERT (fonte de verdade)** → **email best-effort** (se o Resend falhar, a pergunta já está guardada). Email via `fetch` à API REST do Resend (**sem dependência nova**), Reply-To = email do aluno. `getCurrentAuthEmail()` lê o email de `auth.users` on-demand (nunca persistido). Env nova `LOGOS_QUESTIONS_TO_EMAIL`. 496 verdes.
