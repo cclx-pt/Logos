@@ -54,17 +54,19 @@ ligada**:
 
 ## Estado atual (13-06-2026)
 
-**PR1 e PR2 entregues e validados no preview pelo líder.** A pilha vive em
-PRs empilhados (ainda **não mergeados** em `v3-cursos`):
+**PR1, PR2 e PR3 entregues.** PR1+PR2 validados no preview pelo líder; PR3 fecha
+a resposta no admin (testes verdes). A pilha vive em PRs empilhados (ainda **não
+mergeados** em `v3-cursos`):
 
-- `v3-cursos` ← **#62** (PR1, schema) ← **#63** (PR2, emails). Mergeiam juntos no
-  fim da fatia (padrão V3.5: validar no preview do topo e fechar a pilha).
+- `v3-cursos` ← **#62** (PR1, schema) ← **#63** (PR2, emails) ← **PR3** (resposta no
+  admin, `v3-6-pr3-resposta-admin`). Mergeiam juntos no fim da fatia (padrão V3.5:
+  validar no preview do topo e fechar a pilha).
 - Migration `20260613120000_lesson_question_threads.sql` aplicada **só a
   `logos-dev`** (advisors: zero lints novos). Os 3 threads de teste já em dev
-  apanharam `thread_code` válido.
-- Suite a **519** verdes. Zero env vars novas.
+  apanharam `thread_code` válido. PR3 **sem migration nova**.
+- Suite a **539** verdes. Zero env vars novas.
 
-**Falta: PR3 (responder no admin) e PR4 (conversa do aluno + docs).**
+**Falta: PR4 (conversa do aluno + docs).**
 
 ## Plano de PRs (empilhados em `v3-cursos`; nada toca `main`/`logos-prod` até 01-07)
 
@@ -81,58 +83,25 @@ PRs empilhados (ainda **não mergeados** em `v3-cursos`):
   - `submitQuestionAction`: relê `thread_code` (`.insert().select().single()`,
     possível pela policy SELECT-own do PR1) e envia 2 emails (equipa + aluno).
 
-- ⏳ **PR3 - Conversa no admin: responder (Feature 1)** - PRÓXIMO. Branch sugerida
-  `v3-6-pr3-resposta-admin`, a partir de `v3-6-pr2-copia-aluno-emails`.
+- ✅ **PR3 - Conversa no admin: responder (Feature 1)** (`v3-6-pr3-resposta-admin`,
+  a partir de `v3-6-pr2-copia-aluno-emails`). **Entregue (539 verdes).**
 
-  **Ler primeiro:** `src/app/admin/perguntas/page.tsx` (lista atual),
-  `src/app/admin/perguntas/actions.ts` (`setQuestionStatusAction`, padrão de guarda
-  admin + `revalidatePath`), `src/app/admin/perguntas/loading.tsx`,
-  `src/app/admin/layout.tsx` + `save-toast-listener.tsx` (toasts via searchParam,
-  ex.: `pergunta_atualizada`), `src/components/ui/dialog.tsx` + `textarea.tsx`,
-  `src/lib/auth/index.ts` (`getCurrentAuthEmail`) + `src/lib/auth/service-client.ts`
-  (`getServiceRoleClient`) + `src/lib/auth/guards.ts` (`isAdmin`).
+  Implementado tal como planeado abaixo:
+  1. `getAuthEmailByProfileId(profileId)` na fronteira de identidade (service-role:
+     `profiles.external_auth_id` → `auth.admin.getUserById` → email; nunca persistido).
+  2. `buildAnswerEmail(...)` em `email.ts` (assunto `Re: A tua pergunta · <curso>
+     [CODE]`, cita a pergunta, assina, `threadHeaders`; Reply-To = `logos@cclx.pt`).
+  3. Vista de conversa `src/app/admin/perguntas/[id]/page.tsx` (+ `loading.tsx`):
+     contexto + estado + `thread_code` + abertura + balões + composer; composer
+     escondido em `archived`. Transições de estado reusam `setQuestionStatusAction`.
+  4. `postAdminReplyAction` em `[id]/actions.ts`: guarda admin → valida → INSERT
+     em `lesson_question_messages` (trigger põe `answered`) → email best-effort →
+     `revalidatePath`. Toast `resposta_enviada`.
+  5. Lista `page.tsx`: cada cartão liga a `/admin/perguntas/[id]` ("Ver conversa →").
+  6. Flip do PR2: `buildQuestionEmail` (equipa) passa a "Responde dentro da Logos:
+     <adminUrl>" (Reply-To = aluno mantido como rede de segurança).
 
-  **Trabalho:**
-  1. **`src/lib/auth/` - `getAuthEmailByProfileId(profileId)`** (na fronteira de
-     identidade). Um admin não-super NÃO lê perfis alheios nem `auth.users`, por
-     isso usa **service-role**: `getServiceRoleClient()` →
-     `from('profiles').select('external_auth_id').eq('id', profileId).maybeSingle()`
-     → `client.auth.admin.getUserById(external_auth_id)` → `data.user?.email ?? null`.
-     Teste com mock do service client.
-  2. **`email.ts` - `buildAnswerEmail({ authorName, courseTitle, lessonTitle,
-     questionBody, answerBody, threadCode, conversationUrl })`**: assunto
-     `Re: A tua pergunta · <curso> [CODE]` (o `Re:` + mesma base do receipt agrupa
-     na caixa do aluno); corpo = saudação + "A equipa respondeu:" + resposta + cita
-     a pergunta original + link da conversa + `EMAIL_SIGNATURE`. `headers:
-     threadHeaders(code)`. Envio com `replyTo = LOGOS_QUESTIONS_TO_EMAIL`. Testes.
-  3. **`src/app/admin/perguntas/[id]/page.tsx`** (novo): vista de conversa.
-     Server Component. Busca a pergunta por `id` (RLS admin) + as mensagens
-     (`lesson_question_messages` por `created_at`). Renderiza contexto + estado +
-     `thread_code` + pergunta de abertura + thread (balões aluno/admin) + **composer**
-     (textarea + "Enviar resposta", `<form action={postAdminReplyAction}>`).
-     Composer escondido/desativado se `status='archived'` (arquivado = fechado;
-     reabrir primeiro). `loading.tsx` opcional.
-  4. **`postAdminReplyAction`** (em `[id]/actions.ts` ou no `actions.ts` existente):
-     guarda admin (recusa user/sem sessão, como `setQuestionStatusAction`) → valida
-     `questionId` (UUID) + `body` (`validateMessageBody`) → INSERT em
-     `lesson_question_messages` `{ question_id, author_role:'admin',
-     author_profile_id: caller.id, author_name: caller.displayName, body }` (RLS
-     `lqm_insert_admin`; o **trigger** põe `status='answered'`) → lê a pergunta
-     (`profile_id`, `thread_code`, títulos) → `getAuthEmailByProfileId` → envia
-     `buildAnswerEmail` best-effort → `revalidatePath`. Toast `resposta_enviada`.
-     Testes: recusa não-admin (regra dura), validação, INSERT com role+caller,
-     email best-effort, ok.
-  5. **Lista `page.tsx`**: cada cartão liga a `/admin/perguntas/[id]`. Manter a
-     triagem de estado.
-  6. **Flip do PR2 (pequeno):** agora que o composer existe, mudar o corpo de
-     `buildQuestionEmail` (equipa) de "Responde a este email..." para "Responde
-     dentro da Logos: <adminUrl>" (manter Reply-To = aluno como rede de segurança).
-     Ajustar o teste.
-
-  **Sem migration** (a RLS do PR1 já cobre admin SELECT + INSERT). Sem env nova.
-  **Decisões fechadas:** rota por `id` no admin; conversa multi-turno (sem
-  one-shot); Reply-To da resposta = `logos@cclx.pt`; composer indisponível em
-  `archived`.
+  Sem migration, sem env nova.
 
 - ⏳ **PR4 - Conversa do aluno + seguimentos + DOCS.** Branch `v3-6-pr4-conversa-aluno`.
   - Rota do aluno (lista + detalhe por `thread_code` + composer de seguimento;

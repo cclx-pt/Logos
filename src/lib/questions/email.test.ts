@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
   buildQuestionEmail,
   buildQuestionReceiptEmail,
+  buildAnswerEmail,
   threadHeaders,
   EMAIL_SIGNATURE,
 } from './email';
@@ -49,6 +50,11 @@ describe('buildQuestionEmail (equipa)', () => {
     expect(text).toContain(`Conversa: ${THREAD}`);
     expect(text).toContain(base.body);
     expect(text).toContain(base.adminUrl);
+  });
+
+  it('encaminha a equipa para responder dentro da Logos', () => {
+    const { text } = buildQuestionEmail(base);
+    expect(text).toContain(`Responde dentro da Logos: ${base.adminUrl}`);
   });
 
   it('cai só para o nome quando não há email', () => {
@@ -98,3 +104,47 @@ describe('buildQuestionReceiptEmail (aluno)', () => {
     expect(headers['References']).toBe(threadHeaders(THREAD)['References']);
   });
 });
+
+describe('buildAnswerEmail (resposta da equipa ao aluno)', () => {
+  const answerInput = {
+    authorName: 'João Silva',
+    courseTitle: 'Fundamentos da Fé',
+    lessonTitle: 'Justificação pela fé',
+    questionBody: 'Não percebi a diferença entre justificação e santificação.',
+    answerBody: 'Justificação é o acto; santificação é o processo que se segue.',
+    threadCode: THREAD,
+    conversationUrl: 'https://logos.cclx.pt/perguntas/LOGOS-7F3AKM',
+  };
+
+  it('usa "Re:" e o código no assunto para agrupar com a cópia da pergunta', () => {
+    const { subject } = buildAnswerEmail(answerInput);
+    expect(subject).toContain('Re: A tua pergunta');
+    expect(subject).toContain('Fundamentos da Fé');
+    expect(subject).toContain(`[${THREAD}]`);
+  });
+
+  it('saúda o aluno, traz a resposta e cita a pergunta original', () => {
+    const { text } = buildAnswerEmail(answerInput);
+    expect(text).toContain('Olá João Silva');
+    expect(text).toContain(answerInput.answerBody);
+    expect(text).toContain('A tua pergunta:');
+    expect(text).toContain(answerInput.questionBody);
+  });
+
+  it('inclui o link da conversa e a assinatura genérica', () => {
+    const { text } = buildAnswerEmail(answerInput);
+    expect(text).toContain(answerInput.conversationUrl);
+    expect(text).toContain(EMAIL_SIGNATURE);
+  });
+
+  it('não revela quem respondeu (sem nome de admin no corpo)', () => {
+    const { text } = buildAnswerEmail(answerInput);
+    expect(text).not.toMatch(/respondido por/i);
+  });
+
+  it('partilha a âncora de thread com os outros emails da conversa', () => {
+    const { headers } = buildAnswerEmail(answerInput);
+    expect(headers['References']).toBe(threadHeaders(THREAD)['References']);
+  });
+});
+

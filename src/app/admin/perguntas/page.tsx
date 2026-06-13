@@ -101,9 +101,9 @@ export default async function PerguntasPage({
       <header>
         <h1 className="font-display text-ink text-3xl font-medium tracking-tight">Perguntas</h1>
         <p className="text-muted-foreground mt-2 max-w-prose text-sm">
-          Perguntas dos alunos às aulas. Cada uma chega também por email a{' '}
-          <strong className="font-medium">logos@cclx.pt</strong>, com o endereço do aluno em
-          Reply-To - responde por aí. Aqui podes triar: marcar como respondida ou arquivar.
+          Perguntas dos alunos às aulas. Abre uma conversa para responder dentro da Logos - a
+          resposta vai por email ao aluno e fica registada aqui. Cada pergunta chega também a{' '}
+          <strong className="font-medium">logos@cclx.pt</strong> como aviso.
         </p>
       </header>
 
@@ -166,7 +166,13 @@ export default async function PerguntasPage({
                   {q.body}
                 </p>
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <Link
+                    href={`/admin/perguntas/${q.id}`}
+                    className="border-orange-primary/30 text-orange-primary hover:bg-orange-primary/10 focus-visible:ring-ring inline-flex h-9 items-center rounded-md border px-3 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  >
+                    Ver conversa →
+                  </Link>
                   {TRANSITIONS[q.status].map((t) => (
                     <form
                       key={t.status}

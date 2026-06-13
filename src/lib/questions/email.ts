@@ -63,8 +63,52 @@ export function buildQuestionEmail(input: QuestionEmailInput): QuestionEmail {
     SEPARATOR,
     input.body,
     '',
-    `Responde a este email para falar diretamente com o aluno.`,
-    `Ver na Logos: ${input.adminUrl}`,
+    `Responde dentro da Logos: ${input.adminUrl}`,
+  ].join('\n');
+
+  return { subject, text, headers: threadHeaders(input.threadCode) };
+}
+
+// =============================================================================
+// Resposta da equipa ao aluno (Feature 1, V3.6 PR3)
+// =============================================================================
+
+export type AnswerEmailInput = {
+  authorName: string;
+  courseTitle: string;
+  lessonTitle: string;
+  /** Pergunta de abertura do thread (citada para dar contexto). */
+  questionBody: string;
+  /** Resposta escrita pela equipa no composer de admin. */
+  answerBody: string;
+  threadCode: string;
+  /** Link para a conversa do aluno na app. */
+  conversationUrl: string;
+};
+
+/**
+ * Email com a resposta da equipa. O `Re:` + a mesma base de assunto do recibo
+ * fazem o cliente do aluno agrupar este email com a cópia da pergunta. A
+ * assinatura é genérica (não expõe quem respondeu). Reply-To é definido por
+ * quem envia (`= LOGOS_QUESTIONS_TO_EMAIL`, rede de segurança).
+ */
+export function buildAnswerEmail(input: AnswerEmailInput): QuestionEmail {
+  const subject = `Re: A tua pergunta · ${input.courseTitle} [${input.threadCode}]`;
+
+  const text = [
+    `Olá ${input.authorName},`,
+    '',
+    'A equipa respondeu à tua pergunta:',
+    '',
+    input.answerBody,
+    SEPARATOR,
+    'A tua pergunta:',
+    input.questionBody,
+    SEPARATOR,
+    '',
+    `Podes ler e dar seguimento à conversa aqui: ${input.conversationUrl}`,
+    '',
+    EMAIL_SIGNATURE,
   ].join('\n');
 
   return { subject, text, headers: threadHeaders(input.threadCode) };

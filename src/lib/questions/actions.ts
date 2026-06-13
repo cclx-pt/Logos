@@ -100,7 +100,7 @@ export async function submitQuestionAction(
   // aluno). O email do aluno é lido on-demand da camada de identidade.
   const threadCode = inserted.thread_code;
   const conversationUrl = `${siteConfig.url}/perguntas/${threadCode}`;
-  const adminUrl = `${siteConfig.url}/admin/perguntas`;
+  const adminUrl = `${siteConfig.url}/admin/perguntas/${inserted.id}`;
   const authorEmail = await getCurrentAuthEmail();
 
   // 2a) Notificação à equipa (inbox interna).
