@@ -1,10 +1,13 @@
 /**
  * Composição (pura) dos emails de uma conversa de pergunta à aula.
  *
- * Separada do envio (`@/lib/email/send`) para ser testável sem rede. Dois
- * destinatários:
- *   - a equipa (inbox interna): notificação de pergunta nova;
- *   - o aluno: cópia/confirmação da pergunta que fez (Feature 2, V3.6).
+ * Separada do envio (`@/lib/email/send`) para ser testável sem rede. Cada
+ * mensagem de uma conversa gera email para os DOIS lados (decisão do líder,
+ * 14-06-2026) - o email é o arquivo de tudo:
+ *   - a equipa (inbox interna): pergunta nova, seguimento do aluno, e cópia das
+ *     respostas que a equipa envia;
+ *   - o aluno: cópia/confirmação da pergunta, recibo dos seus seguimentos, e a
+ *     resposta da equipa.
  *
  * Todos os emails de uma conversa partilham um código (`LOGOS-XXXXXX`) no
  * assunto e uma âncora em `References`/`In-Reply-To`, para os clientes de email
@@ -159,6 +162,47 @@ export function buildAnswerEmail(input: AnswerEmailInput): QuestionEmail {
 }
 
 // =============================================================================
+// Cópia da resposta da equipa → inbox interna (V3.6 PR5)
+// =============================================================================
+
+export type AnswerTeamCopyEmailInput = {
+  /** Nome do aluno a quem se respondeu. */
+  authorName: string;
+  /** Nome do membro da equipa que respondeu (interno; nunca vai ao aluno). */
+  repliedByName: string;
+  courseTitle: string;
+  lessonTitle: string;
+  /** Resposta escrita pela equipa. */
+  answerBody: string;
+  threadCode: string;
+  /** Link para a conversa na inbox de admin. */
+  adminUrl: string;
+};
+
+/**
+ * Cópia interna da resposta da equipa, para a inbox ficar com o arquivo completo
+ * da conversa. Partilha o código e os headers de thread com a pergunta original
+ * (a equipa agrupa-os); o `Re:` sobre a base de assunto da equipa reforça-o.
+ */
+export function buildAnswerTeamCopyEmail(input: AnswerTeamCopyEmailInput): QuestionEmail {
+  const subject = `Re: Pergunta · ${input.courseTitle} · ${input.lessonTitle} [${input.threadCode}]`;
+
+  const text = [
+    `${input.repliedByName} respondeu a ${input.authorName}.`,
+    '',
+    `Curso: ${input.courseTitle}`,
+    `Aula: ${input.lessonTitle}`,
+    `Conversa: ${input.threadCode}`,
+    SEPARATOR,
+    input.answerBody,
+    '',
+    `Ver a conversa: ${input.adminUrl}`,
+  ].join('\n');
+
+  return { subject, text, headers: threadHeaders(input.threadCode) };
+}
+
+// =============================================================================
 // Cópia/confirmação ao aluno (Feature 2)
 // =============================================================================
 
@@ -191,6 +235,50 @@ export function buildQuestionReceiptEmail(input: QuestionReceiptEmailInput): Que
     SEPARATOR,
     '',
     `Podes acompanhar e dar seguimento à conversa aqui: ${input.conversationUrl}`,
+    '',
+    EMAIL_SIGNATURE,
+  ].join('\n');
+
+  return { subject, text, headers: threadHeaders(input.threadCode) };
+}
+
+// =============================================================================
+// Recibo do seguimento ao aluno (V3.6 PR5)
+// =============================================================================
+
+export type FollowupReceiptEmailInput = {
+  authorName: string;
+  courseTitle: string;
+  lessonTitle: string;
+  /** Texto do seguimento que o aluno escreveu. */
+  body: string;
+  threadCode: string;
+  /** Link para a conversa do aluno na app. */
+  conversationUrl: string;
+};
+
+/**
+ * Recibo ao aluno do seguimento que ele próprio enviou (o email é o arquivo de
+ * tudo). O `Re:` + a mesma base de assunto da pergunta fazem o cliente do aluno
+ * agrupar este email com o recibo da pergunta e a resposta da equipa.
+ */
+export function buildFollowupReceiptEmail(input: FollowupReceiptEmailInput): QuestionEmail {
+  const subject = `Re: A tua pergunta · ${input.courseTitle} [${input.threadCode}]`;
+
+  const text = [
+    `Olá ${input.authorName},`,
+    '',
+    'Recebemos o teu seguimento. A equipa responde-te por email assim que puder.',
+    '',
+    `Curso: ${input.courseTitle}`,
+    `Aula: ${input.lessonTitle}`,
+    `Conversa: ${input.threadCode}`,
+    SEPARATOR,
+    'A tua mensagem:',
+    input.body,
+    SEPARATOR,
+    '',
+    `Podes acompanhar a conversa aqui: ${input.conversationUrl}`,
     '',
     EMAIL_SIGNATURE,
   ].join('\n');

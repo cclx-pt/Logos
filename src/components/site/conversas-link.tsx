@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 type ConversasLinkProps = {
-  /** Mostra um ponto de aviso quando a equipa já respondeu a alguma conversa. */
+  /** Ponto de aviso quando há resposta da equipa que o aluno ainda não leu. */
   hasUnread?: boolean;
   className?: string;
   onNavigate?: () => void;
@@ -12,9 +12,9 @@ type ConversasLinkProps = {
 /**
  * Link de cabeçalho "As minhas conversas" - vista do aluno das perguntas às
  * aulas. Só montado para utilizadores com sessão. O ponto laranja aparece
- * quando há pelo menos uma conversa em estado 'answered' (a equipa respondeu e
- * o aluno ainda não deu seguimento): sinal leve de "tens resposta", sem
- * percentagens nem gamificação.
+ * quando há uma conversa respondida que o aluno ainda não abriu (answered +
+ * updated_at > owner_seen_at): sinal leve de "tens resposta por ler", sem
+ * percentagens nem gamificação. Apaga quando o aluno abre a conversa.
  */
 export function ConversasLink({ hasUnread = false, className, onNavigate }: ConversasLinkProps) {
   return (

@@ -8,28 +8,51 @@
  * validação TS apanha cedo, o CHECK é a última linha).
  */
 
-export const QUESTION_STATUSES = ['new', 'answered', 'archived'] as const;
+// Dois estados (V3.6 PR5): a conversa está "Por responder" (new) ou "Respondida"
+// (answered). 'archived' foi removido — uma conversa respondida fica sempre
+// acessível e qualquer resposta do aluno reabre-a (volta a new). Espelha o CHECK
+// `status in ('new','answered')` da migration 20260614120000.
+export const QUESTION_STATUSES = ['new', 'answered'] as const;
 export type QuestionStatus = (typeof QUESTION_STATUSES)[number];
 
-/** Etiqueta PT-PT por estado. Usada na inbox de admin (PR3). */
+/** Etiqueta PT-PT por estado. Usada na inbox de admin. */
 export const QUESTION_STATUS_LABEL: Record<QuestionStatus, string> = {
-  new: 'Nova',
+  new: 'Por responder',
   answered: 'Respondida',
-  archived: 'Arquivada',
 };
 
 /**
  * Etiqueta PT-PT por estado, na perspetiva do aluno (vista "as minhas
- * conversas", PR4). `new` lê-se como "à espera da equipa", não "nova".
+ * conversas"). Mesma terminologia da inbox de admin: a equipa ainda tem de
+ * responder ("Por responder") ou já respondeu ("Respondida").
  */
 export const QUESTION_STATUS_LABEL_OWNER: Record<QuestionStatus, string> = {
-  new: 'Em espera',
+  new: 'Por responder',
   answered: 'Respondida',
-  archived: 'Arquivada',
 };
 
 export function isQuestionStatus(value: unknown): value is QuestionStatus {
   return typeof value === 'string' && (QUESTION_STATUSES as readonly string[]).includes(value);
+}
+
+/**
+ * Regra única do "não lido" do aluno (V3.6 PR5). Uma conversa está por ler
+ * quando a equipa respondeu (`answered`) e há actividade posterior à última
+ * abertura do aluno: ou nunca a abriu (`ownerSeenAt` null) ou houve resposta
+ * nova (`updatedAt` > `ownerSeenAt`). A RPC `mark_thread_seen` põe
+ * `owner_seen_at = now()` no mesmo statement em que o trigger põe
+ * `updated_at = now()`, por isso logo após abrir os dois são iguais e isto dá
+ * `false` até a equipa responder de novo. Partilhada pelo cabeçalho (ponto) e
+ * pela lista do aluno (highlight).
+ */
+export function isConversationUnread(input: {
+  status: QuestionStatus;
+  updatedAt: string;
+  ownerSeenAt: string | null;
+}): boolean {
+  if (input.status !== 'answered') return false;
+  if (input.ownerSeenAt === null) return true;
+  return new Date(input.updatedAt).getTime() > new Date(input.ownerSeenAt).getTime();
 }
 
 /** Limites do corpo — espelham o CHECK `length(body) between 10 and 2000`. */

@@ -43,14 +43,13 @@ type MessageRow = {
 const STATUS_BADGE: Record<QuestionStatus, string> = {
   new: 'border-orange-primary/30 bg-orange-primary/10 text-orange-primary',
   answered: 'border-border bg-accent/40 text-ink',
-  archived: 'border-border bg-muted text-muted-foreground',
 };
 
-// Transições oferecidas a partir de cada estado (alvo + rótulo do botão).
+// Transições manuais (alvo + rótulo do botão). Responder marca 'answered'
+// sozinho (trigger); estes botões fecham/reabrem sem escrever resposta.
 const TRANSITIONS: Record<QuestionStatus, { status: QuestionStatus; label: string }[]> = {
-  new: [{ status: 'archived', label: 'Arquivar' }],
-  answered: [{ status: 'archived', label: 'Arquivar' }],
-  archived: [{ status: 'new', label: 'Reabrir' }],
+  new: [{ status: 'answered', label: 'Marcar como respondida' }],
+  answered: [{ status: 'new', label: 'Reabrir' }],
 };
 
 export default async function PerguntaConversaPage({
@@ -94,7 +93,6 @@ export default async function PerguntaConversaPage({
   const messages = messageData ?? [];
 
   const studentName = question.author_name ?? 'Aluno';
-  const isArchived = question.status === 'archived';
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -171,42 +169,36 @@ export default async function PerguntaConversaPage({
         ))}
       </div>
 
-      {/* Composer - escondido quando a conversa está arquivada. */}
-      {isArchived ? (
-        <p className="text-muted-foreground rounded-lg border border-dashed px-4 py-6 text-center text-sm">
-          Esta conversa está arquivada. Reabre-a para voltar a responder.
+      {/* Composer - sempre disponível (a conversa nunca fecha de vez). */}
+      <section className="border-border bg-card space-y-3 rounded-2xl border p-5">
+        <h2 className="font-display text-ink text-lg font-medium">Responder ao aluno</h2>
+        <p className="text-muted-foreground text-xs">
+          A resposta vai por email ao aluno e à equipa, e fica registada nesta conversa.
         </p>
-      ) : (
-        <section className="border-border bg-card space-y-3 rounded-2xl border p-5">
-          <h2 className="font-display text-ink text-lg font-medium">Responder ao aluno</h2>
-          <p className="text-muted-foreground text-xs">
-            A resposta vai por email ao aluno e fica registada nesta conversa.
-          </p>
-          <form
-            action={async (formData: FormData) => {
-              'use server';
-              const result = await postAdminReplyAction(formData);
-              redirect(
-                result.ok
-                  ? `/admin/perguntas/${question.id}?guardado=resposta_enviada`
-                  : `/admin/perguntas/${question.id}?erro=generico`,
-              );
-            }}
-            className="space-y-3"
-          >
-            <input type="hidden" name="questionId" value={question.id} />
-            <Textarea
-              name="body"
-              required
-              maxLength={MESSAGE_BODY_MAX}
-              rows={5}
-              placeholder="Escreve a resposta da equipa..."
-              aria-label="Resposta ao aluno"
-            />
-            <SubmitButton pendingLabel="A enviar…">Enviar resposta</SubmitButton>
-          </form>
-        </section>
-      )}
+        <form
+          action={async (formData: FormData) => {
+            'use server';
+            const result = await postAdminReplyAction(formData);
+            redirect(
+              result.ok
+                ? `/admin/perguntas/${question.id}?guardado=resposta_enviada`
+                : `/admin/perguntas/${question.id}?erro=generico`,
+            );
+          }}
+          className="space-y-3"
+        >
+          <input type="hidden" name="questionId" value={question.id} />
+          <Textarea
+            name="body"
+            required
+            maxLength={MESSAGE_BODY_MAX}
+            rows={5}
+            placeholder="Escreve a resposta da equipa..."
+            aria-label="Resposta ao aluno"
+          />
+          <SubmitButton pendingLabel="A enviar…">Enviar resposta</SubmitButton>
+        </form>
+      </section>
     </div>
   );
 }

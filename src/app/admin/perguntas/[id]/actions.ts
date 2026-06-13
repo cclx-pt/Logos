@@ -3,10 +3,11 @@
 /**
  * Server Action da resposta do admin a uma conversa de pergunta - V3.6 PR3.
  *
- * A equipa responde DENTRO da app; a resposta vai por email ao aluno. Ordem:
+ * A equipa responde DENTRO da app; a resposta vai por email ao aluno E uma
+ * cópia à inbox interna (o email é o arquivo de tudo). Ordem:
  *   guarda admin → validação → INSERT em lesson_question_messages (o trigger
  *   sync_question_status_from_message põe a pergunta em 'answered') → lê o
- *   contexto do thread → email best-effort ao aluno.
+ *   contexto do thread → emails best-effort (aluno + equipa).
  *
  * Defesa em profundidade: a action recusa quem não for admin/super_admin; a RLS
  * `lqm_insert_admin` exige `author_role='admin'` + autor=caller. O email é
@@ -21,7 +22,7 @@ import { sendEmail } from '@/lib/email/send';
 import { siteConfig } from '@/lib/site-config';
 import { UUID_RE } from '@/lib/validation';
 import { validateMessageBody } from '@/lib/questions/question';
-import { buildAnswerEmail } from '@/lib/questions/email';
+import { buildAnswerEmail, buildAnswerTeamCopyEmail } from '@/lib/questions/email';
 
 export type PostAdminReplyResult = { ok: true } | { ok: false; error: string };
 
@@ -72,6 +73,10 @@ export async function postAdminReplyAction(formData: FormData): Promise<PostAdmi
     }>();
 
   if (question) {
+    const conversationUrl = `${siteConfig.url}/perguntas/${question.thread_code}`;
+    const teamInbox = process.env.LOGOS_QUESTIONS_TO_EMAIL;
+
+    // 2a) Resposta ao aluno. Reply-To = inbox da equipa (rede de segurança).
     const studentEmail = await getAuthEmailByProfileId(question.profile_id);
     if (studentEmail) {
       const mail = buildAnswerEmail({
@@ -81,14 +86,35 @@ export async function postAdminReplyAction(formData: FormData): Promise<PostAdmi
         questionBody: question.body,
         answerBody: bodyResult.value,
         threadCode: question.thread_code,
-        conversationUrl: `${siteConfig.url}/perguntas/${question.thread_code}`,
+        conversationUrl,
       });
       await sendEmail({
         to: studentEmail,
         subject: mail.subject,
         text: mail.text,
         headers: mail.headers,
-        replyTo: process.env.LOGOS_QUESTIONS_TO_EMAIL ?? undefined,
+        replyTo: teamInbox ?? undefined,
+      });
+    }
+
+    // 2b) Cópia interna à equipa (o email é o arquivo de tudo). Reply-To = aluno,
+    // para a equipa poder seguir por email se precisar.
+    if (teamInbox) {
+      const copy = buildAnswerTeamCopyEmail({
+        authorName: question.author_name ?? 'aluno',
+        repliedByName: caller.displayName,
+        courseTitle: question.course_title,
+        lessonTitle: question.lesson_title,
+        answerBody: bodyResult.value,
+        threadCode: question.thread_code,
+        adminUrl: `${siteConfig.url}/admin/perguntas/${questionId}`,
+      });
+      await sendEmail({
+        to: teamInbox,
+        subject: copy.subject,
+        text: copy.text,
+        headers: copy.headers,
+        replyTo: studentEmail ?? undefined,
       });
     }
   }

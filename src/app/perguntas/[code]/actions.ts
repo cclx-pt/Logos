@@ -4,11 +4,10 @@
  * Server Action do seguimento do aluno a uma conversa de pergunta - V3.6 PR4.
  *
  * O aluno responde DENTRO da app à sua própria conversa; a equipa é notificada
- * por email. Ordem (espelha o composer de admin do PR3):
+ * por email e o aluno recebe recibo (o email é o arquivo de tudo). Ordem:
  *   guarda sessão → validação (código + corpo) → resolve thread_code → INSERT em
- *   lesson_question_messages (o trigger sync_question_status_from_message põe a
- *   pergunta de volta em 'new', exceto se estiver 'archived') → email best-effort
- *   à equipa.
+ *   lesson_question_messages (o trigger sync_question_status_from_message repõe a
+ *   pergunta em 'new', reabrindo a conversa) → emails best-effort (equipa + aluno).
  *
  * Defesa em profundidade: a RLS `lqm_insert_student_own_thread` exige
  * `author_role='student'`, autor=caller e que o thread seja dele. A resolução do
@@ -23,7 +22,7 @@ import { getServiceRoleClient } from '@/lib/auth/service-client';
 import { sendEmail } from '@/lib/email/send';
 import { siteConfig } from '@/lib/site-config';
 import { isThreadCode, validateMessageBody } from '@/lib/questions/question';
-import { buildFollowupEmail } from '@/lib/questions/email';
+import { buildFollowupEmail, buildFollowupReceiptEmail } from '@/lib/questions/email';
 
 export type PostStudentFollowupResult = { ok: true } | { ok: false; error: string };
 
@@ -100,8 +99,8 @@ export async function postStudentFollowupAction(
   }
 
   // 2) INSERT é a fonte de verdade. A RLS força author_role='student' + autor=
-  // caller + thread dele. O trigger sincroniza o status do cabeçalho para 'new'
-  // (exceto se a conversa estiver 'archived' - aí fica como está).
+  // caller + thread dele. O trigger repõe o status do cabeçalho em 'new'
+  // (qualquer resposta do aluno reabre a conversa).
   const { error: insertError } = await supabase.from('lesson_question_messages').insert({
     question_id: question.id,
     author_role: 'student',
@@ -113,12 +112,14 @@ export async function postStudentFollowupAction(
     return { ok: false, error: 'Não foi possível enviar a mensagem. Tenta de novo.' };
   }
 
-  // 3) Email best-effort à equipa (a mensagem já está guardada; a falha não é
-  // revelada ao aluno). Reply-To = email do aluno, para a equipa poder responder
-  // por email se precisar.
-  const to = process.env.LOGOS_QUESTIONS_TO_EMAIL;
-  if (to) {
-    const authorEmail = await getCurrentAuthEmail();
+  // 3) Emails best-effort (a mensagem já está guardada; a falha não é revelada ao
+  // aluno). O email é o arquivo de tudo: avisa a equipa e dá recibo ao aluno.
+  const teamInbox = process.env.LOGOS_QUESTIONS_TO_EMAIL;
+  const authorEmail = await getCurrentAuthEmail();
+  const conversationUrl = `${siteConfig.url}/perguntas/${question.thread_code}`;
+
+  // 3a) Aviso à equipa. Reply-To = aluno, para a equipa poder seguir por email.
+  if (teamInbox) {
     const mail = buildFollowupEmail({
       authorName: caller.displayName,
       authorEmail,
@@ -129,11 +130,30 @@ export async function postStudentFollowupAction(
       adminUrl: `${siteConfig.url}/admin/perguntas/${question.id}`,
     });
     await sendEmail({
-      to,
+      to: teamInbox,
       subject: mail.subject,
       text: mail.text,
       headers: mail.headers,
       replyTo: authorEmail ?? undefined,
+    });
+  }
+
+  // 3b) Recibo ao aluno do seu seguimento. Reply-To = inbox da equipa.
+  if (authorEmail) {
+    const receipt = buildFollowupReceiptEmail({
+      authorName: caller.displayName,
+      courseTitle: question.course_title,
+      lessonTitle: question.lesson_title,
+      body: bodyResult.value,
+      threadCode: question.thread_code,
+      conversationUrl,
+    });
+    await sendEmail({
+      to: authorEmail,
+      subject: receipt.subject,
+      text: receipt.text,
+      headers: receipt.headers,
+      replyTo: teamInbox ?? undefined,
     });
   }
 
@@ -143,3 +163,27 @@ export async function postStudentFollowupAction(
   revalidatePath('/admin/perguntas');
   return { ok: true };
 }
+
+/**
+ * Marca a conversa do próprio como vista (V3.6 PR5). Chamada quando o aluno abre
+ * `/perguntas/[code]` (via <MarkThreadSeen>), para apagar o highlight de "não
+ * lido". Delega na RPC `mark_thread_seen`, que é SECURITY DEFINER e se restringe
+ * ao dono por `current_profile_id()` - um código alheio não toca linhas. Não
+ * usamos service role: a RPC já confirma a posse no lado da BD e usa o `now()`
+ * da BD (igual ao do trigger set_updated_at), evitando desvios de relógio.
+ *
+ * Best-effort e silenciosa: marcar como visto nunca pode quebrar a vista da
+ * conversa. Sem revalidate - o estado do ponto/highlight actualiza no próximo
+ * carregamento de página.
+ */
+export async function markThreadSeenAction(code: string): Promise<void> {
+  const caller = await getCurrentUser();
+  if (!caller || !isThreadCode(code)) return;
+  try {
+    const supabase = await getServerClient();
+    await supabase.rpc('mark_thread_seen', { p_thread_code: code });
+  } catch {
+    // best-effort: marcar como visto nunca quebra a vista.
+  }
+}
+

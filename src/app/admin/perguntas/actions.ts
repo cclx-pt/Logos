@@ -1,9 +1,12 @@
 'use server';
 
 /**
- * Server Action de triagem da inbox de perguntas - V3.5 PR3.
+ * Server Action de triagem da inbox de perguntas - V3.5 PR3 (dois estados, PR5).
  *
- * Muda só o `status` de uma pergunta (new → answered → archived e de volta).
+ * Muda só o `status` de uma pergunta entre `new` (Por responder) e `answered`
+ * (Respondida). Responder ao aluno marca `answered` sozinho (trigger); esta
+ * action cobre o fecho/reabertura manual sem escrever resposta (ex.: o aluno só
+ * agradeceu). `isQuestionStatus` recusa qualquer valor fora de new/answered.
  * Defesa em profundidade:
  *   1. Esta action recusa se o caller não for admin nem super_admin.
  *   2. RLS `lesson_questions_update_status_admin` garante que o UPDATE por

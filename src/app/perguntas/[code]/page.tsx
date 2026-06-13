@@ -13,6 +13,7 @@ import {
   type QuestionStatus,
 } from '@/lib/questions/question';
 import { postStudentFollowupAction } from './actions';
+import { MarkThreadSeen } from './mark-thread-seen';
 
 export const metadata = {
   title: 'A minha conversa',
@@ -39,7 +40,6 @@ type MessageRow = {
 const STATUS_BADGE: Record<QuestionStatus, string> = {
   new: 'border-orange-primary/30 bg-orange-primary/10 text-orange-primary',
   answered: 'border-border bg-accent/40 text-ink',
-  archived: 'border-border bg-muted text-muted-foreground',
 };
 
 export default async function MinhaConversaPage({ params }: { params: Promise<{ code: string }> }) {
@@ -85,10 +85,12 @@ export default async function MinhaConversaPage({ params }: { params: Promise<{ 
     throw new Error(`Falha a carregar as mensagens: ${messagesError.message}`);
   }
   const messages = messageData ?? [];
-  const isArchived = question.status === 'archived';
 
   return (
     <section className="mx-auto max-w-3xl space-y-6 px-4 py-12 sm:px-6 sm:py-16">
+      {/* Abrir a conversa marca-a como vista (apaga o highlight de "nao lido").
+          Sem UI - corre no cliente depois do render. */}
+      <MarkThreadSeen code={question.thread_code} />
       <div>
         <Link
           href="/perguntas"
@@ -136,15 +138,13 @@ export default async function MinhaConversaPage({ params }: { params: Promise<{ 
         ))}
       </div>
 
-      {/* Composer do seguimento. Fica sempre disponível, mesmo arquivada: um
-          seguimento numa conversa arquivada é guardado e a equipa é avisada,
-          mas o estado não reabre sozinho (só a equipa reabre). */}
+      {/* Composer do seguimento. Fica sempre disponível: qualquer mensagem do
+          aluno reabre a conversa (volta a "Por responder") e avisa a equipa por
+          email. */}
       <div className="border-border bg-card space-y-3 rounded-2xl border p-5">
         <h2 className="font-display text-ink text-lg font-medium">Dar seguimento</h2>
         <p className="text-muted-foreground text-xs">
-          {isArchived
-            ? 'Esta conversa foi arquivada pela equipa. Podes escrever na mesma - a equipa é avisada por email.'
-            : 'A tua mensagem fica registada aqui e a equipa é avisada por email.'}
+          A tua mensagem fica registada aqui e a equipa é avisada por email.
         </p>
         <form
           action={async (formData: FormData) => {

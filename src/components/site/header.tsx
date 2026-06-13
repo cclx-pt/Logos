@@ -6,24 +6,35 @@ import { MobileNav } from './mobile-nav';
 import { SignInButton } from './sign-in-button';
 import { UserMenu } from './user-menu';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { isConversationUnread } from '@/lib/questions/question';
 
 export async function Header() {
   const user = await getCurrentUser();
   const showAdminBadge = user !== null && user.role !== 'user';
 
-  // Indicador leve "tens resposta": conta as conversas do próprio em 'answered'
-  // (filtro explícito por profile_id - a RLS de admin é permissiva). head-count,
-  // sem trazer linhas. Falha-aberto (ponto apagado) se a query falhar.
+  // Indicador leve "tens resposta": acende quando há uma conversa do próprio que
+  // a equipa respondeu e o aluno ainda não abriu (answered + updated_at >
+  // owner_seen_at). Filtro explícito por profile_id - a RLS de admin é
+  // permissiva. Falha-aberto (ponto apagado) se a query falhar.
   let conversasHasUnread = false;
   if (user) {
     try {
       const supabase = await getServerClient();
-      const { count } = await supabase
+      const { data } = await supabase
         .from('lesson_questions')
-        .select('id', { count: 'exact', head: true })
+        .select('status, updated_at, owner_seen_at')
         .eq('profile_id', user.id)
-        .eq('status', 'answered');
-      conversasHasUnread = (count ?? 0) > 0;
+        .eq('status', 'answered')
+        .returns<
+          { status: 'new' | 'answered'; updated_at: string; owner_seen_at: string | null }[]
+        >();
+      conversasHasUnread = (data ?? []).some((r) =>
+        isConversationUnread({
+          status: r.status,
+          updatedAt: r.updated_at,
+          ownerSeenAt: r.owner_seen_at,
+        }),
+      );
     } catch {
       conversasHasUnread = false;
     }

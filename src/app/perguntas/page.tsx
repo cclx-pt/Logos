@@ -4,7 +4,11 @@ import Link from 'next/link';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { formatDate } from '@/lib/format';
-import { QUESTION_STATUS_LABEL_OWNER, type QuestionStatus } from '@/lib/questions/question';
+import {
+  QUESTION_STATUS_LABEL_OWNER,
+  isConversationUnread,
+  type QuestionStatus,
+} from '@/lib/questions/question';
 
 export const metadata: Metadata = {
   title: 'As minhas conversas',
@@ -18,13 +22,14 @@ type ThreadRow = {
   lesson_title: string;
   body: string;
   status: QuestionStatus;
+  created_at: string;
   updated_at: string;
+  owner_seen_at: string | null;
 };
 
 const STATUS_BADGE: Record<QuestionStatus, string> = {
   new: 'border-orange-primary/30 bg-orange-primary/10 text-orange-primary',
   answered: 'border-border bg-accent/40 text-ink',
-  archived: 'border-border bg-muted text-muted-foreground',
 };
 
 export default async function MinhasConversasPage() {
@@ -36,11 +41,14 @@ export default async function MinhasConversasPage() {
 
   // Filtro explícito por profile_id (a RLS de admin vê tudo - esta vista é
   // pessoal). Ordenadas pela atividade mais recente: o trigger de status toca
-  // `updated_at` a cada mensagem nova.
+  // `updated_at` a cada mensagem nova. `owner_seen_at` alimenta o highlight de
+  // "não lido" (conversa respondida que o aluno ainda não abriu).
   const supabase = await getServerClient();
   const { data, error } = await supabase
     .from('lesson_questions')
-    .select('id, thread_code, course_title, lesson_title, body, status, updated_at')
+    .select(
+      'id, thread_code, course_title, lesson_title, body, status, created_at, updated_at, owner_seen_at',
+    )
     .eq('profile_id', user.id)
     .order('updated_at', { ascending: false })
     .returns<ThreadRow[]>();
@@ -77,30 +85,53 @@ export default async function MinhasConversasPage() {
         </div>
       ) : (
         <ul className="mt-8 space-y-3">
-          {threads.map((t) => (
-            <li key={t.id}>
-              <Link
-                href={`/perguntas/${t.thread_code}`}
-                className="border-border bg-card hover:border-orange-primary/40 focus-visible:ring-ring block rounded-2xl border p-5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[t.status]}`}
-                  >
-                    {QUESTION_STATUS_LABEL_OWNER[t.status]}
-                  </span>
-                  <span className="text-muted-foreground font-mono text-xs">{t.thread_code}</span>
-                  <span className="text-muted-foreground ml-auto text-xs">
-                    {formatDate(t.updated_at)}
-                  </span>
-                </div>
-                <p className="text-ink mt-2 text-sm font-medium">
-                  {t.course_title} › {t.lesson_title}
-                </p>
-                <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">{t.body}</p>
-              </Link>
-            </li>
-          ))}
+          {threads.map((t) => {
+            // "Não lido": a equipa respondeu (answered) e há actividade posterior
+            // à última abertura do aluno. Destaca o cartão e anuncia a leitores
+            // de ecrã. Apaga-se quando o aluno abre a conversa (mark_thread_seen).
+            const unread = isConversationUnread({
+              status: t.status,
+              updatedAt: t.updated_at,
+              ownerSeenAt: t.owner_seen_at,
+            });
+            return (
+              <li key={t.id}>
+                <Link
+                  href={`/perguntas/${t.thread_code}`}
+                  className={`focus-visible:ring-ring block rounded-2xl border p-5 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none ${
+                    unread
+                      ? 'border-orange-primary/50 bg-orange-primary/5'
+                      : 'border-border bg-card hover:border-orange-primary/40'
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    {unread && (
+                      <span
+                        className="bg-orange-primary inline-flex h-2 w-2 rounded-full"
+                        aria-hidden="true"
+                      />
+                    )}
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[t.status]}`}
+                    >
+                      {QUESTION_STATUS_LABEL_OWNER[t.status]}
+                    </span>
+                    <span className="text-muted-foreground ml-auto font-mono text-xs">
+                      {t.thread_code}
+                    </span>
+                  </div>
+                  <p className="text-ink mt-2 text-sm font-medium">
+                    {t.lesson_title} - {formatDate(t.created_at)}
+                    {unread && (
+                      <span className="sr-only"> (a equipa respondeu, ainda não lida)</span>
+                    )}
+                  </p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">{t.course_title}</p>
+                  <p className="text-muted-foreground mt-1 line-clamp-1 text-sm">{t.body}</p>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
