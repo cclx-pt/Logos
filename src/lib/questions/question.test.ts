@@ -7,6 +7,12 @@ import {
   QUESTION_BODY_MAX,
   isQuestionStatus,
   validateQuestionBody,
+  MESSAGE_AUTHOR_ROLES,
+  MESSAGE_BODY_MIN,
+  MESSAGE_BODY_MAX,
+  isMessageAuthorRole,
+  validateMessageBody,
+  isThreadCode,
 } from './question';
 
 describe('isQuestionStatus', () => {
@@ -63,5 +69,66 @@ describe('validateQuestionBody', () => {
   it('aceita exactamente no limite mínimo', () => {
     const exact = 'x'.repeat(QUESTION_BODY_MIN);
     expect(validateQuestionBody(exact)).toEqual({ ok: true, value: exact });
+  });
+});
+
+describe('isMessageAuthorRole', () => {
+  it('aceita os papéis válidos', () => {
+    for (const r of MESSAGE_AUTHOR_ROLES) {
+      expect(isMessageAuthorRole(r)).toBe(true);
+    }
+  });
+
+  it('rejeita valores fora do conjunto e não-strings', () => {
+    expect(isMessageAuthorRole('teacher')).toBe(false);
+    expect(isMessageAuthorRole('super_admin')).toBe(false);
+    expect(isMessageAuthorRole('')).toBe(false);
+    expect(isMessageAuthorRole(null)).toBe(false);
+    expect(isMessageAuthorRole(2)).toBe(false);
+  });
+});
+
+describe('validateMessageBody', () => {
+  it('rejeita não-strings', () => {
+    expect(validateMessageBody(null)).toEqual({ ok: false, error: 'Escreve a tua mensagem.' });
+    expect(validateMessageBody(undefined)).toEqual({ ok: false, error: 'Escreve a tua mensagem.' });
+  });
+
+  it('rejeita corpo curto de mais (após trim)', () => {
+    expect(validateMessageBody('  a  ').ok).toBe(false);
+    expect(validateMessageBody('   ').ok).toBe(false);
+  });
+
+  it('rejeita corpo longo de mais', () => {
+    expect(validateMessageBody('a'.repeat(MESSAGE_BODY_MAX + 1)).ok).toBe(false);
+  });
+
+  it('aceita e normaliza (trim) uma mensagem válida', () => {
+    expect(validateMessageBody('  Sim, exactamente.  ')).toEqual({
+      ok: true,
+      value: 'Sim, exactamente.',
+    });
+  });
+
+  it('aceita exactamente no limite mínimo', () => {
+    const exact = 'x'.repeat(MESSAGE_BODY_MIN);
+    expect(validateMessageBody(exact)).toEqual({ ok: true, value: exact });
+  });
+});
+
+describe('isThreadCode', () => {
+  it('aceita um código no formato LOGOS-XXXXXX (alfabeto sem ambíguos)', () => {
+    expect(isThreadCode('LOGOS-7F3AKM')).toBe(true);
+    expect(isThreadCode('LOGOS-ABCDEF')).toBe(true);
+  });
+
+  it('rejeita comprimento errado, prefixo errado e caracteres ambíguos', () => {
+    expect(isThreadCode('LOGOS-7F3AK')).toBe(false); // 5 chars
+    expect(isThreadCode('LOGOS-7F3AKMN')).toBe(false); // 7 chars
+    expect(isThreadCode('logos-7F3AKM')).toBe(false); // minúsculas
+    expect(isThreadCode('LOGOS-7F3AKO')).toBe(false); // 'O' ambíguo
+    expect(isThreadCode('LOGOS-7F3AK1')).toBe(false); // '1' ambíguo
+    expect(isThreadCode('OUTRO-7F3AKM')).toBe(false); // prefixo
+    expect(isThreadCode(null)).toBe(false);
   });
 });

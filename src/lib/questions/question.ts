@@ -51,3 +51,64 @@ export function validateQuestionBody(raw: unknown): QuestionBodyResult {
   }
   return { ok: true, value };
 }
+
+// =============================================================================
+// Conversa (thread) — V3.6
+// =============================================================================
+
+/**
+ * Papel do autor de uma mensagem da conversa. Espelha o CHECK
+ * `author_role in ('student', 'admin')` de `lesson_question_messages`.
+ * `student` = seguimento do aluno; `admin` = resposta da equipa.
+ */
+export const MESSAGE_AUTHOR_ROLES = ['student', 'admin'] as const;
+export type MessageAuthorRole = (typeof MESSAGE_AUTHOR_ROLES)[number];
+
+export function isMessageAuthorRole(value: unknown): value is MessageAuthorRole {
+  return typeof value === 'string' && (MESSAGE_AUTHOR_ROLES as readonly string[]).includes(value);
+}
+
+/**
+ * Limites do corpo de uma mensagem (resposta da equipa ou seguimento do aluno).
+ * Espelham o CHECK `length(body) between 2 and 5000` de
+ * `lesson_question_messages`. Mínimo baixo de propósito: uma resposta pode ser
+ * curta ("Sim, exactamente."); o teto é generoso para respostas com explicação.
+ */
+export const MESSAGE_BODY_MIN = 2;
+export const MESSAGE_BODY_MAX = 5000;
+
+/**
+ * Normaliza (trim) e valida o corpo de uma mensagem da conversa contra os mesmos
+ * limites do CHECK da BD. Partilhada pelo composer de admin (PR3) e pelo
+ * seguimento do aluno (PR4). Mensagens em PT-PT (mostradas ao utilizador).
+ */
+export function validateMessageBody(raw: unknown): QuestionBodyResult {
+  if (typeof raw !== 'string') {
+    return { ok: false, error: 'Escreve a tua mensagem.' };
+  }
+  const value = raw.trim();
+  if (value.length < MESSAGE_BODY_MIN) {
+    return {
+      ok: false,
+      error: `A mensagem é curta de mais (mínimo ${MESSAGE_BODY_MIN} caracteres).`,
+    };
+  }
+  if (value.length > MESSAGE_BODY_MAX) {
+    return {
+      ok: false,
+      error: `A mensagem é longa de mais (máximo ${MESSAGE_BODY_MAX} caracteres).`,
+    };
+  }
+  return { ok: true, value };
+}
+
+/**
+ * Formato do código de conversa gerado por `gen_thread_code()` na BD:
+ * `LOGOS-` + 6 chars do alfabeto sem ambíguos (sem I, L, O, 0, 1). Usado para
+ * validar o parâmetro de rota do link "ver conversa" (PR4) antes de ir à BD.
+ */
+export const THREAD_CODE_RE = /^LOGOS-[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/;
+
+export function isThreadCode(value: unknown): value is string {
+  return typeof value === 'string' && THREAD_CODE_RE.test(value);
+}
