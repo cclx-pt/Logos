@@ -61,6 +61,12 @@ mergeados** em `v3-cursos`):
 - `v3-cursos` ← **#62** (PR1, schema) ← **#63** (PR2, emails) ← **PR3** (resposta no
   admin, `v3-6-pr3-resposta-admin`). Mergeiam juntos no fim da fatia (padrão V3.5:
   validar no preview do topo e fechar a pilha).
+- **PR3 já pushed** para `origin/v3-6-pr3-resposta-admin` (preview Vercel a construir
+  em `https://logos-git-v3-6-pr3-resposta-admin-jcrninjas-projects.vercel.app/`). O
+  **PR no GitHub fica por abrir à mão** (`gh`/integração do VS Code estão autenticados
+  na conta EMU da Microsoft, que o GitHub bloqueia de criar PRs neste repo pessoal):
+  abrir em `https://github.com/cclx-pt/Logos/pull/new/v3-6-pr3-resposta-admin` com
+  base = `v3-6-pr2-copia-aluno-emails`.
 - Migration `20260613120000_lesson_question_threads.sql` aplicada **só a
   `logos-dev`** (advisors: zero lints novos). Os 3 threads de teste já em dev
   apanharam `thread_code` válido. PR3 **sem migration nova**.
