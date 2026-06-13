@@ -254,7 +254,7 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 - Modelos de aula: `pdf`, `video` e `video_pdf` (com possibilidade de adicionar mais no futuro)
 - **Restrição apenas ao nível do curso:** ao criar um curso, o admin pode anexar etiquetas exigidas. Cursos sem etiquetas são públicos; cursos com etiquetas só aparecem a utilizadores autenticados que tenham pelo menos uma das etiquetas
 - Catálogo público mostra cursos sem etiquetas a todos. Cursos restritos só aparecem após login a utilizadores com etiqueta correspondente
-- Página de visualização de aula (corresponde ao mockup superior esquerdo; o **campo de perguntas** foi acrescentado em **V3.5** - ver §V5): vídeo embebido, descarregar PDF, barra lateral de módulo com lista de aulas, botões "Próxima aula" e "Próximo módulo"
+- Página de visualização de aula (corresponde ao mockup superior esquerdo; o **campo de perguntas** foi acrescentado em **V3.5** e virou **conversa ligada** em V3.6 - ver §V5): vídeo embebido, descarregar PDF, barra lateral de módulo com lista de aulas, botões "Próxima aula" e "Próximo módulo"
 - "Marcar como concluída" por aula, com check ✓ visível
 - Ecrã "Curso Concluído" com data de conclusão
 - Pesquisa e navegação no catálogo
@@ -273,8 +273,8 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 
 ### V5 — Perguntas & Respostas e Estatísticas
 
-- **Q&A puxado para V3.5 (13-06-2026):** o campo de perguntas por aula, a gravação em base de dados (`lesson_questions`), a vista de "caixa de entrada" para a equipa (`/admin/perguntas`) e a notificação por email (via Resend) foram **antecipados** para o ciclo V3 - tal como as estatísticas (30-05). A equipa responde ao aluno **por email** (Reply-To = aluno). Migrations `20260612220000` + `20260612230000` (só `logos-dev`). Ver `feature-docs/qa-perguntas.md`.
-- **Fica para V5:** respostas estruturadas dentro da plataforma (inbox do aluno / thread bidirecional). Por agora a equipa responde fora da app, pelo email com o Reply-To do aluno.
+- **Q&A puxado para V3.5/V3.6 (13-06-2026):** o campo de perguntas por aula, a gravação em base de dados (`lesson_questions`), a vista de "caixa de entrada" para a equipa (`/admin/perguntas`) e a notificação por email (via Resend) foram **antecipados** para o ciclo V3 - tal como as estatísticas (30-05). Em **V3.6** puxou-se também o **thread bidirecional / inbox do aluno**: a equipa responde **dentro da app** (a resposta vai por email ao aluno), o aluno recebe cópia da pergunta e pode dar **seguimento** em `/perguntas`, tudo ligado por um código `LOGOS-XXXXXX`. Migrations `20260612220000` + `20260612230000` + `20260613120000` (só `logos-dev`). Ver `feature-docs/qa-perguntas.md`.
+- **Fica para V5:** FAQ pública / agrupar os temas mais pedidos a partir das conversas guardadas. (As respostas estruturadas dentro da plataforma - thread bidirecional + inbox do aluno - foram entregues em V3.6.)
 - **Dashboard de estatísticas mais profundo:** ~~conclusões por curso~~, **taxas de conclusão** e **segmentação por etiqueta**. *(As contagens — conclusões/inscrições/visitas por curso, módulo, aula e utilizador — foram puxadas para V3 em 30-05-2026, ver §9 V3 e `feature-docs/admin-estatisticas.md`. Ficam para V5 apenas as percentagens/taxas e a segmentação por etiqueta.)*
 
 ### V6 — Live Stream e Tema
@@ -473,7 +473,7 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 
 3. **Detalhe de curso**: bloco hero com ícone do curso, título, descrição e botão "Iniciar". Abaixo, uma lista horizontal numerada dos módulos (1 → 2 → 3 → 4 → 5 → ...) com os títulos de módulo por baixo de cada número. **Esta numeração é navegação, não progresso.**
 
-4. **Visualização de aula**: player de vídeo (área principal), barra lateral do módulo com lista de aulas, botão "Próxima aula", linha "Apostila.pdf" com "Descarregar". A sidebar mostra as aulas com indicação visual mínima da aula atual e check ✓ nas concluídas. **A sidebar é navegação, não barra de progresso.** O campo "Deixa a tua pergunta" visível no mockup foi entregue em **V3.5** (Q&A puxado de V5, 13-06-2026): caixa "Pergunta aos professores" no leitor → guarda em `lesson_questions` + notificação por email à equipa (Reply-To = aluno) + inbox em `/admin/perguntas`. A resposta ao aluno é por email; não há inbox do aluno na app. Ver §V5 e `feature-docs/qa-perguntas.md`.
+4. **Visualização de aula**: player de vídeo (área principal), barra lateral do módulo com lista de aulas, botão "Próxima aula", linha "Apostila.pdf" com "Descarregar". A sidebar mostra as aulas com indicação visual mínima da aula atual e check ✓ nas concluídas. **A sidebar é navegação, não barra de progresso.** O campo "Deixa a tua pergunta" visível no mockup foi entregue em **V3.5** (Q&A puxado de V5, 13-06-2026): caixa "Pergunta aos professores" no leitor → guarda em `lesson_questions` + notificação por email à equipa (Reply-To = aluno) + inbox em `/admin/perguntas`. Em **V3.6** virou **conversa ligada**: a equipa responde dentro da app (resposta por email ao aluno) e o aluno acompanha e dá seguimento na sua conversa em `/perguntas`. Ver §V5 e `feature-docs/qa-perguntas.md`.
 
 5. **Visualização de PDF**: título "Título Apostila", botão "Descarregar" no canto superior direito, conteúdo do PDF renderizado em linha na página.
 
@@ -547,8 +547,10 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 
 ## 19. Estado do Documento
 
-- **Versão:** 3.3
+- **Versão:** 3.4
 - **Última atualização:** 13 de junho de 2026
+- **Alterações relativamente à v3.3:**
+  - §V5, §9 (V3), §13.5 (mockups §4) — **Q&A evolui de "resposta por email" para conversa ligada dentro da app** (V3.6; decisão do líder, 13-06-2026; mais uma fatia de V5 puxada). A equipa passa a **responder dentro da Logos** (a resposta vai por email ao aluno), o aluno recebe **cópia da pergunta** e pode dar **seguimento** sem sair da app, e pergunta + respostas + seguimentos ficam **ligados numa conversa** por um código `LOGOS-XXXXXX` partilhado no assunto e nos headers de thread dos emails. Nova vista do aluno em `/perguntas` (lista) e `/perguntas/[code]` (conversa, alvo dos links dos emails), com entrada de cabeçalho "As minhas conversas" (indicador quando a equipa respondeu). DB: migration `20260613120000_lesson_question_threads.sql` (`thread_code` em `lesson_questions` + tabela `lesson_question_messages` + RLS do aluno/equipa + trigger que conduz o `status`), **só `logos-dev`**. Sem dependência nova, sem env nova. Detalhe em `feature-docs/qa-perguntas.md`.
 - **Alterações relativamente à v3.2:**
   - §V5, §9 (V3), §13.5 (mockups §4) — **Q&A das aulas puxado de V5 para V3.5** (decisão do líder, 12/13-06-2026; mesmo padrão da antecipação das estatísticas em 30-05). Entregue: caixa "Pergunta aos professores" no leitor → grava em `lesson_questions` + notifica a equipa por email (Reply-To = aluno) + inbox de triagem em `/admin/perguntas` (estados new/answered/archived). **Sem** inbox do aluno na app (a resposta vai por email) - essa parte (thread bidirecional) fica para V5. DB: migrations `20260612220000` (tabela + RLS column-scoped) e `20260612230000` (snapshot `author_name`), **só `logos-dev`**. Sem dependência nova (email via `fetch` à API do Resend). Plano e detalhe em `feature-docs/qa-perguntas.md`.
 - **Alterações relativamente à v3.1:**

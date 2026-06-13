@@ -1,6 +1,6 @@
 # Guia de Ativação - Q&A das aulas ("Pergunta aos professores")
 
-> **Para quê:** passos **operacionais** (fora do código) para ligar a feature de perguntas. O código já está pronto nos PRs #59/#60/#61. Faz isto quando quiseres ativar - de preferência testa primeiro no preview de `v3-cursos`, e repete em produção no lançamento.
+> **Para quê:** passos **operacionais** (fora do código) para ligar a feature de perguntas. O código já está pronto: V3.5 nos PRs #59/#60/#61 (inbox da equipa) e V3.6 nos PRs #62/#63/PR3/PR4 (conversa ligada). Faz isto quando quiseres ativar - de preferência testa primeiro no preview de `v3-cursos`, e repete em produção no lançamento.
 >
 > **Boa notícia:** a feature **degrada com elegância**. Mesmo sem nada configurado, a pergunta grava-se em base de dados e aparece na inbox `/admin/perguntas`. A configuração de email só acrescenta a **notificação** para a equipa. Por isso, se ficares a meio, nada se perde.
 
@@ -8,7 +8,7 @@
 
 ## ✅ Checklist rápida
 
-- [ ] 1. Merge dos 3 PRs pela ordem #59 → #60 → #61
+- [ ] 1. Merge da pilha de PRs por ordem - V3.5: #59 → #60 → #61; depois V3.6: #62 → #63 → PR3 → PR4
 - [ ] 2. Resend: ter uma API key e confirmar o domínio verificado
 - [ ] 3. Variáveis de ambiente no Vercel (e no `.env.local` se testares localmente)
 - [ ] 4. Testar o fluxo no preview de `v3-cursos`
@@ -18,11 +18,18 @@
 
 ## 1. Merge dos PRs
 
-São **3 PRs empilhados** - tem de ser por ordem:
+É uma **pilha de PRs empilhados** - têm de fechar por ordem. Primeiro a V3.5 (inbox da equipa):
 
 1. **#59** - schema (`v3-5-pr1-perguntas-schema` → `v3-cursos`)
 2. **#60** - submissão + email (re-aponta para `v3-cursos` quando o #59 fechar)
 3. **#61** - inbox de admin + docs (re-aponta quando o #60 fechar)
+
+Depois a V3.6 (conversa ligada), por cima:
+
+4. **#62** - schema do thread (`thread_code` + `lesson_question_messages` + RLS + trigger)
+5. **#63** - cópia ao aluno + código `LOGOS-XXXXXX` nos emails
+6. **PR3** - responder no admin (`/admin/perguntas/[id]` + composer)
+7. **PR4** - conversa do aluno (`/perguntas` + seguimentos + "As minhas conversas")
 
 O GitHub re-aponta automaticamente a base de cada PR ao fechar o anterior. Nada mergea em `main` até ao lançamento (regra do projeto).
 
@@ -70,12 +77,13 @@ Notas:
 
 ## 4. Migrations (só no lançamento, em `logos-prod`)
 
-As duas migrations da feature estão aplicadas **só em `logos-dev`**:
+As três migrations da feature estão aplicadas **só em `logos-dev`**:
 
-- `20260612220000_lesson_questions.sql` (tabela + RLS)
-- `20260612230000_lesson_questions_author_name.sql` (snapshot do nome)
+- `20260612220000_lesson_questions.sql` (tabela + RLS) - V3.5
+- `20260612230000_lesson_questions_author_name.sql` (snapshot do nome) - V3.5
+- `20260613120000_lesson_question_threads.sql` (`thread_code` + `lesson_question_messages` + RLS do thread + trigger de status) - V3.6
 
-Sobem a `logos-prod` **no dia do lançamento**, com o resto das migrations V3 (regra dura: nada toca em prod antes de 01-07). Lembra-te de registar a versão exata do ficheiro em `schema_migrations` para alinhar com prod - ver [`seguranca-port-v3.md`](seguranca-port-v3.md).
+Sobem a `logos-prod` **no dia do lançamento**, com o resto das migrations V3 (regra dura: nada toca em prod antes de 01-07). Lembra-te de registar a versão exata do ficheiro em `schema_migrations` para alinhar com prod - ver [`seguranca-port-v3.md`](seguranca-port-v3.md). A V3.6 (conversa do aluno) **não acrescenta env nova** - as quatro variáveis da V3.5 chegam.
 
 ---
 
