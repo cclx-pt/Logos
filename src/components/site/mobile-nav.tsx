@@ -3,14 +3,21 @@
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { AdminBadgeLink } from './admin-badge-link';
+import { ConversasLink } from './conversas-link';
 import { NavLinks } from './nav-links';
 import { cn } from '@/lib/utils';
 
 type MobileNavProps = {
   showAdminLink?: boolean;
+  showConversasLink?: boolean;
+  conversasHasUnread?: boolean;
 };
 
-export function MobileNav({ showAdminLink = false }: MobileNavProps) {
+export function MobileNav({
+  showAdminLink = false,
+  showConversasLink = false,
+  conversasHasUnread = false,
+}: MobileNavProps) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -52,6 +59,15 @@ export function MobileNav({ showAdminLink = false }: MobileNavProps) {
           )}
         >
           <NavLinks orientation="vertical" onNavigate={() => setOpen(false)} />
+          {showConversasLink && (
+            <div className="border-border mt-6 border-t pt-6">
+              <ConversasLink
+                hasUnread={conversasHasUnread}
+                onNavigate={() => setOpen(false)}
+                className="text-base"
+              />
+            </div>
+          )}
           {showAdminLink && (
             <div className="border-border mt-6 border-t pt-6">
               <AdminBadgeLink onNavigate={() => setOpen(false)} />

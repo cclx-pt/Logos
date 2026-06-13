@@ -3,9 +3,9 @@ import Link from 'next/link';
 
 import { SubmitButton } from '@/components/ui/submit-button';
 import { Textarea } from '@/components/ui/textarea';
+import { ConversationBubble } from '@/components/site/conversation-bubble';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { isAdmin } from '@/lib/auth/guards';
-import { formatDateTime } from '@/lib/format';
 import {
   MESSAGE_BODY_MAX,
   QUESTION_STATUS_LABEL,
@@ -208,41 +208,5 @@ export default async function PerguntaConversaPage({
         </section>
       )}
     </div>
-  );
-}
-
-function ConversationBubble({
-  align,
-  name,
-  at,
-  body,
-  label,
-}: {
-  align: 'start' | 'end';
-  name: string;
-  at: string;
-  body: string;
-  label?: string;
-}) {
-  const isEnd = align === 'end';
-  return (
-    <article className={isEnd ? 'flex justify-end' : 'flex justify-start'}>
-      <div
-        className={`max-w-[85%] rounded-2xl border p-4 ${
-          isEnd ? 'border-orange-primary/30 bg-orange-primary/5' : 'border-border bg-card'
-        }`}
-      >
-        <div className="mb-1 flex flex-wrap items-center gap-2">
-          <span className="text-ink text-sm font-medium">{name}</span>
-          {label ? (
-            <span className="text-muted-foreground bg-muted rounded-full px-2 py-0.5 text-xs">
-              {label}
-            </span>
-          ) : null}
-          <span className="text-muted-foreground text-xs">{formatDateTime(at)}</span>
-        </div>
-        <p className="text-ink text-sm leading-relaxed whitespace-pre-wrap">{body}</p>
-      </div>
-    </article>
   );
 }

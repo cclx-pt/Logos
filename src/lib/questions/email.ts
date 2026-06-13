@@ -70,6 +70,50 @@ export function buildQuestionEmail(input: QuestionEmailInput): QuestionEmail {
 }
 
 // =============================================================================
+// Seguimento do aluno → notificação à equipa (V3.6 PR4)
+// =============================================================================
+
+export type FollowupEmailInput = {
+  authorName: string;
+  /** Email do aluno; pode faltar em casos-limite (vira só o nome). */
+  authorEmail: string | null;
+  courseTitle: string;
+  lessonTitle: string;
+  /** Texto do seguimento escrito pelo aluno. */
+  body: string;
+  threadCode: string;
+  /** Link para a conversa na inbox de admin. */
+  adminUrl: string;
+};
+
+/**
+ * Notifica a equipa de que o aluno deu seguimento à conversa. Partilha o código
+ * e os headers de thread com a pergunta original (o cliente da equipa agrupa-os);
+ * o `Re:` sobre a mesma base de assunto reforça-o. O corpo traz o seguimento e o
+ * link para responder dentro da app.
+ */
+export function buildFollowupEmail(input: FollowupEmailInput): QuestionEmail {
+  const subject = `Re: Pergunta · ${input.courseTitle} · ${input.lessonTitle} [${input.threadCode}]`;
+
+  const who = input.authorEmail ? `${input.authorName} (${input.authorEmail})` : input.authorName;
+
+  const text = [
+    `${input.authorName} deu seguimento à conversa.`,
+    '',
+    `De: ${who}`,
+    `Curso: ${input.courseTitle}`,
+    `Aula: ${input.lessonTitle}`,
+    `Conversa: ${input.threadCode}`,
+    SEPARATOR,
+    input.body,
+    '',
+    `Responde dentro da Logos: ${input.adminUrl}`,
+  ].join('\n');
+
+  return { subject, text, headers: threadHeaders(input.threadCode) };
+}
+
+// =============================================================================
 // Resposta da equipa ao aluno (Feature 1, V3.6 PR3)
 // =============================================================================
 

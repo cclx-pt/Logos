@@ -18,6 +18,16 @@ export const QUESTION_STATUS_LABEL: Record<QuestionStatus, string> = {
   archived: 'Arquivada',
 };
 
+/**
+ * Etiqueta PT-PT por estado, na perspetiva do aluno (vista "as minhas
+ * conversas", PR4). `new` lê-se como "à espera da equipa", não "nova".
+ */
+export const QUESTION_STATUS_LABEL_OWNER: Record<QuestionStatus, string> = {
+  new: 'Em espera',
+  answered: 'Respondida',
+  archived: 'Arquivada',
+};
+
 export function isQuestionStatus(value: unknown): value is QuestionStatus {
   return typeof value === 'string' && (QUESTION_STATUSES as readonly string[]).includes(value);
 }

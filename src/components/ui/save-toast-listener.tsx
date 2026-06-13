@@ -33,6 +33,8 @@ const SAVED_MESSAGES: Record<string, string> = {
   // Perguntas (inbox de admin)
   pergunta_atualizada: 'Pergunta atualizada.',
   resposta_enviada: 'Resposta enviada ao aluno.',
+  // Perguntas (conversa do aluno)
+  seguimento_enviado: 'Mensagem enviada. A equipa foi avisada.',
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
