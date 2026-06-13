@@ -11,8 +11,9 @@ sem redirecionar para o youtube.com.
 
 - **Ao vivo:** a entrada fica clicável e mostra um badge **"Ao vivo"** (vermelho
   `#FF0000`, ponto a pulsar). Clicar abre `/live` com o leitor embebido.
-- **Offline:** a entrada aparece cinzenta, com badge **"Offline"**, **não
-  clicável** (`aria-disabled`, fora do tab order).
+- **Offline:** a entrada aparece a cinzento legível (`text-muted-foreground`),
+  com badge **"Offline"**, **não clicável** (`aria-disabled`, fora do tab order).
+  A página `/live` mostra **"Obrigado por assistires, a Live terminou."**
 - **A carregar:** cinzenta, sem badge, não clicável.
 - **Subscrever canal:** botão (link) que abre o YouTube já na caixa de
   confirmação de subscrição (`sub_confirmation=1`), visível em qualquer estado.
@@ -47,6 +48,13 @@ unidades** → no máximo **100 pesquisas/dia**. Proteção em duas camadas:
 100`, que deve ficar confortavelmente < 10.000.
 Ex.: 1 janela de 3h/dia, TTL 180s → 60 chamadas × 100 = **6.000 unidades/dia**.
 
+> **Confirmação de fim de emissão:** quando o `search.list` devolve um candidato
+> live, confirmamos com `videos.list` (`part=snippet,liveStreamingDetails`, **1
+> unidade**, cache 60s) se a emissão ainda está a decorrer. O custo é desprezável
+> face às 100 unidades do `search.list`, mas evita reproduzir a gravação (VOD)
+> depois de a live terminar (ver §4) - o `search.list?eventType=live` tem atraso
+> de propagação e continua a listar a emissão durante minutos após o fim.
+
 ## 4. Fail-safe
 
 Qualquer incerteza resolve para **offline** (nunca mostrar "ao vivo" sem
@@ -59,6 +67,8 @@ confirmação):
 | Erro / `5xx` / quota esgotada | `live:false` + `stale:true` |
 | Resposta sem `items` | `live:false` (canal parado, caso normal) |
 | Resposta malformada | `live:false` |
+| Emissão terminou (`search` ainda lista, mas `videos.list` tem `actualEndTime`) | `live:false` |
+| Verificação `videos.list` falha (erro/quota) | mantém `live:true` + `stale:true` |
 
 `stale:true` serve para log/monitorização; a página nunca parte.
 
@@ -67,7 +77,7 @@ confirmação):
 | Ficheiro | Papel |
 |---|---|
 | `src/lib/youtube/live-windows.ts` | Parsing + gating das janelas (puro, testável) |
-| `src/lib/youtube/live-status.ts` | Chamada à YouTube API + fail-safe + Data Cache (servidor) |
+| `src/lib/youtube/live-status.ts` | `search.list` + confirmação de fim via `videos.list` + fail-safe + Data Cache (servidor) |
 | `src/lib/youtube/use-live-status.ts` | Hook de polling (60s) ao nosso endpoint (cliente) |
 | `src/lib/youtube/channel.ts` | IDs/links públicos do canal (subscrição) |
 | `src/app/api/youtube/live-status/route.ts` | Endpoint que expõe o estado ao cliente |
@@ -117,9 +127,10 @@ e define-se nos scopes Preview/Production da Vercel + `.env.local`.
 ## 10. Evolução futura (fora de âmbito)
 
 - **WebSub/PubSubHubbub (push):** o YouTube notifica o servidor quando o canal
-  inicia conteúdo, sem consumo de quota e em tempo real; a confirmação passa a
-  poder usar `videos.list` (1 unidade) em vez de `search.list` (100). Recomendado
-  se for preciso deteção fiável fora de janelas ou latência < 60s.
+  inicia conteúdo, sem consumo de quota e em tempo real, dispensando o
+  `search.list` (100 unidades) para a *deteção de início*. (A *confirmação de
+  fim* já usa `videos.list`, 1 unidade - ver §3/§4.) Recomendado se for preciso
+  deteção fiável fora de janelas ou latência < 60s.
 - Galeria de vídeos recentes; contagem de espetadores (`concurrentViewers`).
 - Deteção de "já és subscritor" — **explicitamente fora de âmbito** (exigiria
   OAuth com scope sensível `youtube.readonly` e verificação da app pelo Google).
@@ -129,5 +140,7 @@ e define-se nos scopes Preview/Production da Vercel + `.env.local`.
 - `live-windows.test.ts` — parsing e gating de janelas (DST Europe/Lisbon, fim
   exclusivo, fail-safe sem janelas).
 - `live-status.test.ts` — live/offline/stale, sem chamada fora de janela ou sem
-  chave, parsing de respostas malformadas.
+  chave, parsing de respostas malformadas, **confirmação de fim de emissão**
+  (`parseVideoLiveState` + cai para offline quando `videos.list` tem
+  `actualEndTime`; mantém live+stale quando a verificação falha).
 - `live-badge.test.tsx` — texto e presença/ausência do pulsar.

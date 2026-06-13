@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { getLiveStatus, parseSearchResponse } from './live-status';
+import { getLiveStatus, parseSearchResponse, parseVideoLiveState } from './live-status';
 
 const ALL_DAY =
   'SUN 00:00-23:59; MON 00:00-23:59; TUE 00:00-23:59; WED 00:00-23:59; THU 00:00-23:59; FRI 00:00-23:59; SAT 00:00-23:59';
@@ -8,7 +8,7 @@ const ALL_DAY =
 // 2026-06-16 12:00Z é terça e cai em qualquer janela "all day".
 const NOW = new Date('2026-06-16T12:00:00Z');
 
-function mockFetch(impl: () => Promise<unknown>) {
+function mockFetch(impl: (input: URL | RequestInfo) => Promise<unknown>) {
   const fn = vi.fn(impl);
   vi.stubGlobal('fetch', fn);
   return fn;
@@ -38,6 +38,46 @@ describe('parseSearchResponse', () => {
   });
 });
 
+describe('parseVideoLiveState', () => {
+  it('true quando o vídeo continua em direto', () => {
+    expect(
+      parseVideoLiveState({
+        items: [{ snippet: { liveBroadcastContent: 'live' }, liveStreamingDetails: {} }],
+      }),
+    ).toBe(true);
+  });
+
+  it('false quando a emissão já terminou (actualEndTime)', () => {
+    expect(
+      parseVideoLiveState({
+        items: [
+          {
+            snippet: { liveBroadcastContent: 'live' },
+            liveStreamingDetails: { actualEndTime: '2026-06-16T13:00:00Z' },
+          },
+        ],
+      }),
+    ).toBe(false);
+  });
+
+  it('false quando o broadcast já não é live', () => {
+    expect(
+      parseVideoLiveState({
+        items: [{ snippet: { liveBroadcastContent: 'none' }, liveStreamingDetails: {} }],
+      }),
+    ).toBe(false);
+  });
+
+  it('false quando o vídeo foi removido (sem itens)', () => {
+    expect(parseVideoLiveState({ items: [] })).toBe(false);
+  });
+
+  it('null quando a forma é indeterminada', () => {
+    expect(parseVideoLiveState(null)).toBeNull();
+    expect(parseVideoLiveState({})).toBeNull();
+  });
+});
+
 describe('getLiveStatus', () => {
   beforeEach(() => {
     process.env.YOUTUBE_API_KEY = 'test-key';
@@ -53,14 +93,27 @@ describe('getLiveStatus', () => {
   });
 
   it('devolve live quando a API confirma transmissão', async () => {
-    const fetchFn = mockFetch(async () => ({
-      ok: true,
-      json: async () => ({ items: [{ id: { videoId: 'live9' }, snippet: { title: 'Ao vivo' } }] }),
-    }));
+    const fetchFn = mockFetch(async (input) => {
+      if (String(input).includes('/search')) {
+        return {
+          ok: true,
+          json: async () => ({
+            items: [{ id: { videoId: 'live9' }, snippet: { title: 'Ao vivo' } }],
+          }),
+        };
+      }
+      // videos.list: confirma que continua em direto.
+      return {
+        ok: true,
+        json: async () => ({
+          items: [{ snippet: { liveBroadcastContent: 'live' }, liveStreamingDetails: {} }],
+        }),
+      };
+    });
     const status = await getLiveStatus(NOW);
     expect(status.live).toBe(true);
     expect(status.videoId).toBe('live9');
-    expect(fetchFn).toHaveBeenCalledOnce();
+    expect(fetchFn).toHaveBeenCalledTimes(2);
   });
 
   it('devolve offline quando a API não tem itens', async () => {
@@ -102,5 +155,51 @@ describe('getLiveStatus', () => {
     expect(status.live).toBe(false);
     expect(status.stale).toBe(true);
     expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it('offline confirmado quando o search lista mas a emissão já terminou', async () => {
+    const fetchFn = mockFetch(async (input) => {
+      if (String(input).includes('/search')) {
+        return {
+          ok: true,
+          json: async () => ({
+            items: [{ id: { videoId: 'ended1' }, snippet: { title: 'Acabou' } }],
+          }),
+        };
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          items: [
+            {
+              snippet: { liveBroadcastContent: 'none' },
+              liveStreamingDetails: { actualEndTime: '2026-06-16T11:30:00Z' },
+            },
+          ],
+        }),
+      };
+    });
+    const status = await getLiveStatus(NOW);
+    expect(status.live).toBe(false);
+    expect(status.stale).toBeUndefined();
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+
+  it('mantém live (stale) quando a verificação falha', async () => {
+    mockFetch(async (input) => {
+      if (String(input).includes('/search')) {
+        return {
+          ok: true,
+          json: async () => ({
+            items: [{ id: { videoId: 'live9' }, snippet: { title: 'Ao vivo' } }],
+          }),
+        };
+      }
+      return { ok: false, json: async () => ({}) };
+    });
+    const status = await getLiveStatus(NOW);
+    expect(status.live).toBe(true);
+    expect(status.videoId).toBe('live9');
+    expect(status.stale).toBe(true);
   });
 });

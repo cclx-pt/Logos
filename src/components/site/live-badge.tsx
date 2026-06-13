@@ -19,7 +19,7 @@ export function LiveBadge({ live, className }: LiveBadgeProps) {
     <span
       className={cn(
         'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-medium',
-        live ? 'text-white' : 'bg-muted/20 text-muted',
+        live ? 'text-white' : 'bg-muted-foreground/10 text-muted-foreground',
         className,
       )}
       style={live ? { backgroundColor: '#FF0000' } : undefined}
@@ -28,7 +28,7 @@ export function LiveBadge({ live, className }: LiveBadgeProps) {
         aria-hidden="true"
         className={cn(
           'h-[7px] w-[7px] rounded-full',
-          live ? 'animate-live-pulse bg-white' : 'bg-muted',
+          live ? 'animate-live-pulse bg-white' : 'bg-muted-foreground',
         )}
       />
       {live ? 'Ao vivo' : 'Offline'}

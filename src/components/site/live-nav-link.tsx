@@ -71,7 +71,7 @@ export function LiveNavLink({
       aria-disabled="true"
       aria-label={loading ? `${LABEL} (a carregar)` : `${LABEL} (offline)`}
       className={cn(
-        'cursor-not-allowed font-sans text-muted select-none',
+        'text-muted-foreground cursor-not-allowed font-sans select-none',
         baseLayout,
         className,
       )}

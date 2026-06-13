@@ -55,11 +55,11 @@ export function LivePlayer({ initialStatus }: LivePlayerProps) {
             />
           </div>
         ) : (
-          <div className="bg-cream-card/40 flex aspect-video w-full flex-col items-center justify-center gap-3 px-6 text-center">
+          <div className="bg-cream-card flex aspect-video w-full flex-col items-center justify-center gap-3 px-6 text-center">
             <span className="text-ink font-display text-xl sm:text-2xl">
-              Sem transmissão em direto neste momento
+              Obrigado por assistires, a Live terminou.
             </span>
-            <p className="text-muted font-sans text-sm sm:text-base">
+            <p className="text-muted-foreground font-sans text-sm sm:text-base">
               Subscreve o canal para seres avisado quando a próxima começar.
             </p>
           </div>
