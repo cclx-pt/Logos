@@ -5,6 +5,7 @@ import { Menu, X } from 'lucide-react';
 import { AdminBadgeLink } from './admin-badge-link';
 import { ConversasLink } from './conversas-link';
 import { NavLinks } from './nav-links';
+import { LiveNavLink } from './live-nav-link';
 import { cn } from '@/lib/utils';
 
 type MobileNavProps = {
@@ -59,6 +60,9 @@ export function MobileNav({
           )}
         >
           <NavLinks orientation="vertical" onNavigate={() => setOpen(false)} />
+          <div className="mt-1">
+            <LiveNavLink orientation="vertical" onNavigate={() => setOpen(false)} />
+          </div>
           {showConversasLink && (
             <div className="border-border mt-6 border-t pt-6">
               <ConversasLink

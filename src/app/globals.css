@@ -229,3 +229,28 @@
     transform: translateX(400%);
   }
 }
+
+/*
+ * Pulsar do ponto do badge "Ao vivo" (src/components/site/live-badge.tsx).
+ * Spec §6.2: opacidade 1 → 0.3 → 1, ciclo de 1.4s. Desligado para quem pede
+ * menos movimento.
+ */
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.animate-live-pulse {
+  animation: live-pulse 1.4s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-live-pulse {
+    animation: none;
+  }
+}

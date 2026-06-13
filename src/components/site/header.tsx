@@ -2,6 +2,7 @@ import { AdminBadgeLink } from './admin-badge-link';
 import { ConversasLink } from './conversas-link';
 import { Logo } from './logo';
 import { NavLinks } from './nav-links';
+import { LiveNavLink } from './live-nav-link';
 import { MobileNav } from './mobile-nav';
 import { SignInButton } from './sign-in-button';
 import { UserMenu } from './user-menu';
@@ -52,8 +53,12 @@ export async function Header() {
           <Logo size="md" />
         </div>
         <div className="flex items-center gap-4 sm:gap-6">
-          <nav aria-label="Navegação principal" className="hidden md:block">
+          <nav
+            aria-label="Navegação principal"
+            className="hidden items-center gap-6 md:flex lg:gap-8"
+          >
             <NavLinks orientation="horizontal" />
+            <LiveNavLink orientation="horizontal" />
           </nav>
           {user && (
             <ConversasLink hasUnread={conversasHasUnread} className="hidden md:inline-flex" />

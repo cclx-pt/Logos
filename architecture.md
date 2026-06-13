@@ -105,6 +105,8 @@ profiles  -- fonte de verdade do Logos para o utilizador
 
 Migrations V3 sobem a `logos-prod` apenas no dia do lançamento (01-07-2026). Ver `feature-docs/branch-strategy.md`.
 
+**Realtime + interruptor de live (V3.6):** a tabela singleton `live_override` (`id=1`, `is_live`, `video_id`, `armed_until`; migration `20260613120000`, **só `logos-dev`** até ao lançamento) guarda o estado que a equipa liga/desliga em `/admin/live` ("Estamos no ar"/"Terminámos"). Está na publicação `supabase_realtime` — **primeira utilização de Supabase Realtime no Logos**: o cliente subscreve via `src/lib/auth/browser-client.ts` (`subscribeToTable`, dentro da camada de identidade), pelo que o estado se propaga a todos os clientes em < 1s sem polling pesado. Reusa as env públicas do Supabase (sem infra nova). Escrita protegida por RLS (`current_profile_role() in ('admin','super_admin')`) e só feita por Server Actions admin; a leitura (`getLiveStatus` em `src/lib/youtube/`) é pura e nunca escreve.
+
 **Helpers SQL (SECURITY DEFINER + STABLE) — única forma de policies tocarem `profiles`/`user_tags`:**
 
 | Helper | Devolve | Usado em |

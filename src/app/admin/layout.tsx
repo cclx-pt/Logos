@@ -55,6 +55,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               Perguntas
             </Link>
           )}
+          {canSeeCourses && (
+            <Link
+              href="/admin/live"
+              className="text-ink hover:text-orange-hover focus-visible:ring-ring rounded-md px-2 py-1.5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            >
+              Live
+            </Link>
+          )}
           {canSeeUsers && (
             <Link
               href="/admin/utilizadores"
