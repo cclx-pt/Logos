@@ -30,6 +30,8 @@ const SAVED_MESSAGES: Record<string, string> = {
   etiqueta_apagada: 'Etiqueta apagada.',
   // Roles / permissões
   papel_atualizado: 'Papel actualizado.',
+  // Perguntas (inbox de admin)
+  pergunta_atualizada: 'Pergunta atualizada.',
 };
 
 const ERROR_MESSAGES: Record<string, string> = {

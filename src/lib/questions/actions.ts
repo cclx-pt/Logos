@@ -80,6 +80,7 @@ export async function submitQuestionAction(
   const { error: insertError } = await supabase.from('lesson_questions').insert({
     lesson_id: lesson.id,
     profile_id: user.id,
+    author_name: user.displayName,
     course_title: lesson.course.title,
     module_title: lesson.module.title,
     lesson_title: lesson.title,

@@ -117,6 +117,7 @@ describe('submitQuestionAction', () => {
     expect(insertMock).toHaveBeenCalledWith({
       lesson_id: LESSON_ID,
       profile_id: PROFILE_ID,
+      author_name: 'João Silva',
       course_title: 'Fundamentos da Fé',
       module_title: 'A Graça',
       lesson_title: 'Justificação pela fé',

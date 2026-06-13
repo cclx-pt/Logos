@@ -1,7 +1,8 @@
 # Q&A — Perguntas às aulas ("Pergunta aos professores")
 
-> **Estado:** em curso em `v3-cursos` (iteração V3.5). **Nada mergea em `main` até 01-07-2026.**
-> **Origem:** pedido do líder (12-06-2026). Funcionalidade de **V5** antecipada para o ciclo V3.
+> **Estado:** entregue em 3 PRs empilhados em `v3-cursos` (#59, #60, #61) e **validada ponta-a-ponta no preview de #61 (13-06-2026)**. **Nada mergea em `main` até 01-07-2026.**
+> **Origem:** pedido do líder (12-06-2026). Funcionalidade de **V5** antecipada para o ciclo V3. SPEC bump 3.3.
+> **Runbook operacional:** [`qa-perguntas-setup-guide.md`](qa-perguntas-setup-guide.md) (env vars, Resend, migrations, smoke test, troubleshooting).
 
 ## Contexto e decisão de scope
 
@@ -59,8 +60,8 @@ Admin (/admin/perguntas)         → lista + detalhe + marcar estado (UPDATE sta
 |----|----------|--------|
 | **PR1** | Schema `lesson_questions` + RLS column-scoped + domínio partilhado (`src/lib/questions/`) + testes | em revisão (#59) |
 | **PR2** | Infra de email (`fetch` ao Resend) + submissão do aluno (card + dialog + `submitQuestionAction` + rate-limit) + wiring no leitor + testes | **em revisão** (empilhado sobre PR1) |
-| **PR3** | Inbox `/admin/perguntas` (lista + filtro + detalhe + marcar estado) + entrada no nav + testes | a fazer |
-| **Docs** | SPEC bump (Q&A V5→V3) + changelog + status | com o PR final |
+| **PR3** | Inbox `/admin/perguntas` (lista + filtro + marcar estado) + `author_name` + nav + docs + testes | entregue (#61); validado no preview (13-06-2026) |
+| **Docs** | SPEC bump 3.3 (Q&A V5→V3, §257/§478/§V5) + changelog + status + runbook operacional | entregue (#61) |
 
 ### PR1 — entregue (`v3-5-pr1-perguntas-schema`, #59)
 - `supabase/migrations/20260612220000_lesson_questions.sql` (aplicada a `logos-dev`; **não** a prod).
@@ -79,11 +80,29 @@ Admin (/admin/perguntas)         → lista + detalhe + marcar estado (UPDATE sta
 - Env nova: `LOGOS_QUESTIONS_TO_EMAIL` (`logos@cclx.pt` por agora).
 - Testes: `email`, `send` (fetch mock), `actions` (9 - validação/inscrição/rate-limit/insert/email best-effort), `ask-question-card` (trigger). Suite: 496 ✓.
 
-## Pendente / a confirmar
+### PR3 — entregue (`v3-5-pr3-perguntas-inbox`, empilhado sobre PR2)
+- Migration `20260612230000_lesson_questions_author_name.sql` - snapshot `author_name` (a inbox mostra "quem perguntou" sem depender da RLS de `profiles`, que só deixa super_admin ler perfis de outros). `submitQuestionAction` passa a popular `author_name`. **Só `logos-dev`**.
+- `src/app/admin/perguntas/page.tsx` - inbox: cartões com badge de estado, data, autor, contexto e corpo; **tabs de filtro por estado** (Todas/Novas/Respondidas/Arquivadas + contagens) e pesquisa (`ListSearch`). Estado vazio tratado.
+- `src/app/admin/perguntas/actions.ts` - `setQuestionStatusAction` (recusa não-admin; muda só `status`). `loading.tsx` skeleton.
+- `src/app/admin/layout.tsx` - entrada "Perguntas" na nav (nível admin). `save-toast-listener.tsx` - mensagem `pergunta_atualizada`.
+- Docs: SPEC 3.3 (§257/§478/§V5/§19), changelog, status, este ficheiro.
+- Testes: `setQuestionStatusAction` (7 - inclui recusa de `user`/sem-sessão = regra dura). Suite: **503 ✓**.
 
-- **Endereço da inbox do Logos** (env `LOGOS_QUESTIONS_TO_EMAIL`) - placeholder no `.env.example` em PR2; valor real configurado no Vercel.
-- **Verificação do domínio no Resend.** O OTP já envia de `logos.cclx.pt` via SMTP do Supabase; confirmar no dashboard do Resend que o domínio está verificado para envio via API (de-risca entregabilidade) antes de PR2.
-- **Service-role client para `check_rate_limit()`** - confirmar o padrão usado pelo login OTP e reutilizar em PR2.
+## Operacional
+
+> Runbook completo (passo-a-passo) em [`qa-perguntas-setup-guide.md`](qa-perguntas-setup-guide.md).
+
+### ✅ Feito e validado para dev/preview (13-06-2026)
+- **Domínio no Resend:** `logos.cclx.pt` já **Verified** (reutilizado do login OTP - a verificação é por domínio e serve SMTP e API). Sem trabalho de DNS.
+- **Env no scope Preview da Vercel** (lêem de `logos-dev`) + `.env.local`: `LOGOS_QUESTIONS_TO_EMAIL` (=`logos@cclx.pt` por agora), `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `SUPABASE_SERVICE_ROLE_KEY`. A `SUPABASE_SERVICE_ROLE_KEY` (chave `sb_secret_...` nova de `logos-dev`) foi validada com um teste real (RPC `check_rate_limit` respondeu `true`).
+- **Smoke test no preview de #61:** com o curso "Oficina EB - Apocalipse" (publicado, 2 módulos, 3 aulas), o aluno submeteu uma pergunta → toast de sucesso → pergunta na inbox `/admin/perguntas` → **email de notificação chegou com Reply-To = email do aluno**. Tudo a funcionar.
+
+### ⏳ Falta no lançamento (01-07-2026, lado do líder)
+- **Repetir as 4 env vars no scope Production** com os valores de **`logos-prod`**.
+- **Subir as migrations** `lesson_questions` / `lesson_questions_author_name` a `logos-prod` (regra dura: nada toca em prod antes do lançamento).
+
+### Ordem de merge (já fechada nos PRs)
+- #59 → #60 → #61 (o GitHub re-aponta a base ao fechar cada um).
 
 ## Notas
 - Migration só em `logos-dev`. Sobe a prod no lançamento com o resto das migrations V3 (registar a versão exacta do ficheiro em `schema_migrations` - ver `feature-docs/seguranca-port-v3.md`).
