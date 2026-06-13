@@ -17,12 +17,10 @@ export default async function LivePage() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-      <header className="mb-8 space-y-2">
-        <h1 className="text-ink font-display text-3xl sm:text-4xl">Live</h1>
-        <p className="text-muted font-sans text-sm sm:text-base">
-          Transmissão em direto do canal LOGOS. Quando estamos no ar, o vídeo aparece aqui.
-        </p>
-      </header>
+      {/* Sem texto visível durante a emissão: só o leitor e o botão de
+          subscrever. O título fica sr-only (acessibilidade + SEO). A única
+          mensagem de texto aparece no fim da Live, dentro do LivePlayer. */}
+      <h1 className="sr-only">Live</h1>
 
       <LivePlayer initialStatus={initialStatus} />
     </main>

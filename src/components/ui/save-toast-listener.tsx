@@ -32,6 +32,9 @@ const SAVED_MESSAGES: Record<string, string> = {
   papel_atualizado: 'Papel actualizado.',
   // Perguntas (inbox de admin)
   pergunta_atualizada: 'Pergunta atualizada.',
+  // Transmissão em direto (interruptor admin)
+  live_ligada: 'Estamos no ar.',
+  live_terminada: 'Transmissão terminada.',
 };
 
 const ERROR_MESSAGES: Record<string, string> = {

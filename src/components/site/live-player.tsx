@@ -28,17 +28,19 @@ function YoutubeGlyph() {
 
 /**
  * Leitor da transmissão dentro do portal (spec §6.3).
- *  - Ao vivo: embed responsivo 16:9 via `youtube-nocookie` com o `videoId`.
- *  - Offline: mensagem de ausência de transmissão.
- * O botão "Subscrever canal" aparece em ambos os estados (spec §6.4).
+ *  - Ao vivo (videoId resolvido): embed responsivo 16:9 via `youtube-nocookie`.
+ *  - A ligar (no ar, videoId ainda por resolver): indicador de espera, sem texto.
+ *  - Fora do ar / terminada: mensagem "a Live terminou".
+ * O botão "Subscrever canal" aparece em todos os estados (spec §6.4).
  *
- * Continua a fazer polling (60s) para que uma transmissão que comece enquanto
- * o utilizador espera apareça sem recarregar.
+ * O estado muda em <1s quando o admin liga/desliga o interruptor (Supabase
+ * Realtime, ver useLiveStatus), com polling de 60s como backstop.
  */
 export function LivePlayer({ initialStatus }: LivePlayerProps) {
   const { status } = useLiveStatus(initialStatus);
   const live = status?.live === true;
   const videoId = status?.videoId ?? null;
+  const connecting = live && videoId === null;
 
   return (
     <div className="space-y-4">
@@ -53,6 +55,14 @@ export function LivePlayer({ initialStatus }: LivePlayerProps) {
               referrerPolicy="strict-origin-when-cross-origin"
               className="h-full w-full"
             />
+          </div>
+        ) : connecting ? (
+          <div className="bg-cream-card flex aspect-video w-full items-center justify-center px-6 text-center">
+            <span
+              className="border-border border-t-orange h-10 w-10 animate-spin rounded-full border-4"
+              aria-hidden="true"
+            />
+            <span className="sr-only">A ligar à transmissão em direto.</span>
           </div>
         ) : (
           <div className="bg-cream-card flex aspect-video w-full flex-col items-center justify-center gap-3 px-6 text-center">
