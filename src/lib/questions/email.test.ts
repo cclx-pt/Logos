@@ -4,6 +4,7 @@ import {
   buildQuestionEmail,
   buildQuestionReceiptEmail,
   buildAnswerEmail,
+  buildFollowupEmail,
   threadHeaders,
   EMAIL_SIGNATURE,
 } from './email';
@@ -144,6 +145,48 @@ describe('buildAnswerEmail (resposta da equipa ao aluno)', () => {
 
   it('partilha a âncora de thread com os outros emails da conversa', () => {
     const { headers } = buildAnswerEmail(answerInput);
+    expect(headers['References']).toBe(threadHeaders(THREAD)['References']);
+  });
+});
+
+describe('buildFollowupEmail (seguimento do aluno → equipa)', () => {
+  const followupInput = {
+    authorName: 'João Silva',
+    authorEmail: 'joao@exemplo.pt',
+    courseTitle: 'Fundamentos da Fé',
+    lessonTitle: 'Justificação pela fé',
+    body: 'Obrigado - mas e quanto à perseverança dos santos?',
+    threadCode: THREAD,
+    adminUrl: 'https://logos.cclx.pt/admin/perguntas/abc',
+  };
+
+  it('usa "Re: Pergunta" + curso/aula + código no assunto para agrupar na inbox', () => {
+    const { subject } = buildFollowupEmail(followupInput);
+    expect(subject).toContain('Re: Pergunta');
+    expect(subject).toContain('Fundamentos da Fé');
+    expect(subject).toContain('Justificação pela fé');
+    expect(subject).toContain(`[${THREAD}]`);
+  });
+
+  it('sinaliza que é um seguimento e identifica o autor com nome e email', () => {
+    const { text } = buildFollowupEmail(followupInput);
+    expect(text).toContain('deu seguimento à conversa');
+    expect(text).toContain('De: João Silva (joao@exemplo.pt)');
+    expect(text).toContain(followupInput.body);
+  });
+
+  it('encaminha a equipa para responder dentro da Logos', () => {
+    const { text } = buildFollowupEmail(followupInput);
+    expect(text).toContain(`Responde dentro da Logos: ${followupInput.adminUrl}`);
+  });
+
+  it('cai só para o nome quando não há email', () => {
+    const { text } = buildFollowupEmail({ ...followupInput, authorEmail: null });
+    expect(text).toContain('De: João Silva');
+  });
+
+  it('partilha a âncora de thread com os outros emails da conversa', () => {
+    const { headers } = buildFollowupEmail(followupInput);
     expect(headers['References']).toBe(threadHeaders(THREAD)['References']);
   });
 });
