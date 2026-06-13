@@ -123,11 +123,16 @@ describe('postAdminReplyAction (V3.6 PR3)', () => {
     );
   });
 
-  it('não bloqueia quando o aluno não tem email conhecido', async () => {
+  it('sem email do aluno não bloqueia (mas a cópia à equipa segue)', async () => {
     vi.mocked(getAuthEmailByProfileId).mockResolvedValue(null);
     const r = await postAdminReplyAction(formDataOf({ questionId: QUESTION_ID, body: validBody }));
     expect(r.ok).toBe(true);
-    expect(sendEmail).not.toHaveBeenCalled();
+    // sem resposta ao aluno (email desconhecido), mas a cópia interna à equipa segue na mesma
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    expect(sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'logos@cclx.pt' }));
+    expect(sendEmail).not.toHaveBeenCalledWith(
+      expect.objectContaining({ to: 'joao@exemplo.pt' }),
+    );
   });
 
   it('não bloqueia quando o envio do email falha', async () => {

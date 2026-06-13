@@ -142,11 +142,13 @@ describe('postStudentFollowupAction (V3.6 PR4)', () => {
     );
   });
 
-  it('não envia email quando a caixa da equipa não está configurada', async () => {
+  it('sem caixa da equipa não avisa a equipa (mas o recibo ao aluno segue)', async () => {
     vi.stubEnv('LOGOS_QUESTIONS_TO_EMAIL', '');
     const r = await postStudentFollowupAction(formDataOf({ threadCode: THREAD, body: validBody }));
     expect(r.ok).toBe(true);
-    expect(sendEmail).not.toHaveBeenCalled();
+    // sem aviso à equipa (caixa não configurada), mas o recibo ao aluno segue na mesma
+    expect(sendEmail).toHaveBeenCalledTimes(1);
+    expect(sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'joao@exemplo.pt' }));
   });
 
   it('não bloqueia quando o envio do email falha', async () => {
