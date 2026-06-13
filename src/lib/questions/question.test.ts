@@ -3,9 +3,11 @@ import { describe, it, expect } from 'vitest';
 import {
   QUESTION_STATUSES,
   QUESTION_STATUS_LABEL,
+  QUESTION_STATUS_LABEL_OWNER,
   QUESTION_BODY_MIN,
   QUESTION_BODY_MAX,
   isQuestionStatus,
+  isConversationUnread,
   validateQuestionBody,
   MESSAGE_AUTHOR_ROLES,
   MESSAGE_BODY_MIN,
@@ -16,7 +18,7 @@ import {
 } from './question';
 
 describe('isQuestionStatus', () => {
-  it('aceita os três estados válidos', () => {
+  it('aceita os dois estados válidos', () => {
     for (const s of QUESTION_STATUSES) {
       expect(isQuestionStatus(s)).toBe(true);
     }
@@ -24,6 +26,7 @@ describe('isQuestionStatus', () => {
 
   it('rejeita valores fora do conjunto e não-strings', () => {
     expect(isQuestionStatus('done')).toBe(false);
+    expect(isQuestionStatus('archived')).toBe(false);
     expect(isQuestionStatus('')).toBe(false);
     expect(isQuestionStatus(null)).toBe(false);
     expect(isQuestionStatus(undefined)).toBe(false);
@@ -35,10 +38,55 @@ describe('QUESTION_STATUS_LABEL', () => {
   it('tem etiqueta PT-PT para cada estado', () => {
     for (const s of QUESTION_STATUSES) {
       expect(QUESTION_STATUS_LABEL[s]).toBeTruthy();
+      expect(QUESTION_STATUS_LABEL_OWNER[s]).toBeTruthy();
     }
-    expect(QUESTION_STATUS_LABEL.new).toBe('Nova');
+    expect(QUESTION_STATUS_LABEL.new).toBe('Por responder');
     expect(QUESTION_STATUS_LABEL.answered).toBe('Respondida');
-    expect(QUESTION_STATUS_LABEL.archived).toBe('Arquivada');
+  });
+});
+
+describe('isConversationUnread', () => {
+  it('uma conversa por responder (new) nunca está por ler', () => {
+    expect(
+      isConversationUnread({ status: 'new', updatedAt: '2026-06-14T12:00:00Z', ownerSeenAt: null }),
+    ).toBe(false);
+  });
+
+  it('respondida e nunca aberta (owner_seen_at null) está por ler', () => {
+    expect(
+      isConversationUnread({
+        status: 'answered',
+        updatedAt: '2026-06-14T12:00:00Z',
+        ownerSeenAt: null,
+      }),
+    ).toBe(true);
+  });
+
+  it('respondida com actividade posterior à última abertura está por ler', () => {
+    expect(
+      isConversationUnread({
+        status: 'answered',
+        updatedAt: '2026-06-14T12:00:01Z',
+        ownerSeenAt: '2026-06-14T12:00:00Z',
+      }),
+    ).toBe(true);
+  });
+
+  it('respondida e já aberta (seen >= updated) não está por ler', () => {
+    expect(
+      isConversationUnread({
+        status: 'answered',
+        updatedAt: '2026-06-14T12:00:00Z',
+        ownerSeenAt: '2026-06-14T12:00:00Z',
+      }),
+    ).toBe(false);
+    expect(
+      isConversationUnread({
+        status: 'answered',
+        updatedAt: '2026-06-14T12:00:00Z',
+        ownerSeenAt: '2026-06-14T12:00:05Z',
+      }),
+    ).toBe(false);
   });
 });
 

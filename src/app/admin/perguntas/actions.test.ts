@@ -82,7 +82,7 @@ describe('setQuestionStatusAction (V3.5 PR3)', () => {
   it('admin actualiza o estado e revalida', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin'));
     const r = await setQuestionStatusAction(
-      formDataOf({ questionId: QUESTION_ID, status: 'archived' }),
+      formDataOf({ questionId: QUESTION_ID, status: 'answered' }),
     );
     expect(r.ok).toBe(true);
     expect(mockUpdateEq).toHaveBeenCalledWith('id', QUESTION_ID);

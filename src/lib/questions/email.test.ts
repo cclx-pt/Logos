@@ -4,7 +4,9 @@ import {
   buildQuestionEmail,
   buildQuestionReceiptEmail,
   buildAnswerEmail,
+  buildAnswerTeamCopyEmail,
   buildFollowupEmail,
+  buildFollowupReceiptEmail,
   threadHeaders,
   EMAIL_SIGNATURE,
 } from './email';
@@ -187,6 +189,78 @@ describe('buildFollowupEmail (seguimento do aluno → equipa)', () => {
 
   it('partilha a âncora de thread com os outros emails da conversa', () => {
     const { headers } = buildFollowupEmail(followupInput);
+    expect(headers['References']).toBe(threadHeaders(THREAD)['References']);
+  });
+});
+
+describe('buildAnswerTeamCopyEmail (cópia da resposta da equipa → inbox)', () => {
+  const copyInput = {
+    authorName: 'João Silva',
+    repliedByName: 'Pastor André',
+    courseTitle: 'Fundamentos da Fé',
+    lessonTitle: 'Justificação pela fé',
+    answerBody: 'Justificação é o acto; santificação é o processo que se segue.',
+    threadCode: THREAD,
+    adminUrl: 'https://logos.cclx.pt/admin/perguntas/abc',
+  };
+
+  it('usa "Re: Pergunta" + curso/aula + código no assunto para agrupar na inbox', () => {
+    const { subject } = buildAnswerTeamCopyEmail(copyInput);
+    expect(subject).toContain('Re: Pergunta');
+    expect(subject).toContain('Fundamentos da Fé');
+    expect(subject).toContain('Justificação pela fé');
+    expect(subject).toContain(`[${THREAD}]`);
+  });
+
+  it('regista quem respondeu a quem, o contexto e a resposta', () => {
+    const { text } = buildAnswerTeamCopyEmail(copyInput);
+    expect(text).toContain('Pastor André respondeu a João Silva.');
+    expect(text).toContain('Curso: Fundamentos da Fé');
+    expect(text).toContain('Aula: Justificação pela fé');
+    expect(text).toContain(`Conversa: ${THREAD}`);
+    expect(text).toContain(copyInput.answerBody);
+    expect(text).toContain(`Ver a conversa: ${copyInput.adminUrl}`);
+  });
+
+  it('partilha a âncora de thread com os outros emails da conversa', () => {
+    const { headers } = buildAnswerTeamCopyEmail(copyInput);
+    expect(headers['References']).toBe(threadHeaders(THREAD)['References']);
+  });
+});
+
+describe('buildFollowupReceiptEmail (recibo do seguimento ao aluno)', () => {
+  const receiptInput = {
+    authorName: 'João Silva',
+    courseTitle: 'Fundamentos da Fé',
+    lessonTitle: 'Justificação pela fé',
+    body: 'Obrigado - mas e quanto à perseverança dos santos?',
+    threadCode: THREAD,
+    conversationUrl: 'https://logos.cclx.pt/perguntas/LOGOS-7F3AKM',
+  };
+
+  it('usa "Re: A tua pergunta" + código no assunto para agrupar no cliente do aluno', () => {
+    const { subject } = buildFollowupReceiptEmail(receiptInput);
+    expect(subject).toContain('Re: A tua pergunta');
+    expect(subject).toContain('Fundamentos da Fé');
+    expect(subject).toContain(`[${THREAD}]`);
+  });
+
+  it('saúda o aluno, confirma o seguimento e devolve uma cópia da mensagem', () => {
+    const { text } = buildFollowupReceiptEmail(receiptInput);
+    expect(text).toContain('Olá João Silva');
+    expect(text).toContain('Recebemos o teu seguimento');
+    expect(text).toContain('A tua mensagem:');
+    expect(text).toContain(receiptInput.body);
+  });
+
+  it('inclui o link da conversa e a assinatura', () => {
+    const { text } = buildFollowupReceiptEmail(receiptInput);
+    expect(text).toContain(receiptInput.conversationUrl);
+    expect(text).toContain(EMAIL_SIGNATURE);
+  });
+
+  it('partilha a âncora de thread com os outros emails da conversa', () => {
+    const { headers } = buildFollowupReceiptEmail(receiptInput);
     expect(headers['References']).toBe(threadHeaders(THREAD)['References']);
   });
 });
