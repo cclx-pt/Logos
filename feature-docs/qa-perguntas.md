@@ -1,6 +1,6 @@
 # Q&A — Perguntas às aulas ("Pergunta aos professores")
 
-> **Estado:** entregue em **7 PRs empilhados** em `v3-cursos` - V3.5 (#59, #60, #61: schema + submissão + inbox de admin) e V3.6 (#62, #63, PR3, PR4: thread + cópia ao aluno + resposta no admin + conversa do aluno). V3.5 validada ponta-a-ponta no preview de #61 (13-06-2026). **Nada mergea em `main` até 01-07-2026.**
+> **Estado:** entregue em **8 PRs empilhados** em `v3-cursos` - V3.5 (#59, #60, #61: schema + submissão + inbox de admin) e V3.6 (#62, #63, PR3, PR4, PR5: thread + cópia ao aluno + resposta no admin + conversa do aluno + simplificação a 2 estados com "não lido"). V3.5 validada ponta-a-ponta no preview de #61 (13-06-2026). **Nada mergea em `main` até 01-07-2026.**
 > **Origem:** pedido do líder (12/13-06-2026). Funcionalidade de **V5** antecipada para o ciclo V3 (primeiro a inbox da equipa, depois a conversa ligada). SPEC bump 3.3 → 3.4.
 > **Runbook operacional:** [`qa-perguntas-setup-guide.md`](qa-perguntas-setup-guide.md) (env vars, Resend, migrations, smoke test, troubleshooting).
 
@@ -44,7 +44,9 @@ Uma **conversa** = um cabeçalho (`lesson_questions`, a pergunta de abertura) + 
 1. guarda admin (regra dura: recusa user/sem-sessão)
 2. validateMessageBody
 3. INSERT lesson_question_messages (author_role='admin')   ← trigger põe status='answered'
-4. email ao aluno (buildAnswerEmail, assinado, com link p/ a conversa)  ← best-effort
+4. emails best-effort a AMBOS (o email é o arquivo de tudo):
+   a) ao aluno   (buildAnswerEmail, assinado, link p/ a conversa; Reply-To = caixa da equipa)
+   b) à equipa   (buildAnswerTeamCopyEmail, cópia interna; Reply-To = aluno)
    (email do aluno lido por profile_id via service-role; nunca persistido)
 ```
 
@@ -55,11 +57,13 @@ Uma **conversa** = um cabeçalho (`lesson_questions`, a pergunta de abertura) + 
 2. valida thread_code (isThreadCode) + corpo (validateMessageBody)
 3. resolve thread_code → conversa do PRÓPRIO (filtro .eq('profile_id') + RLS own)
 4. rate-limit por utilizador (chave followup:, 5/h, fail-open)
-5. INSERT lesson_question_messages (author_role='student')  ← trigger põe status='new' (a não ser 'archived')
-6. email à equipa (buildFollowupEmail, Reply-To = aluno)    ← best-effort
+5. INSERT lesson_question_messages (author_role='student')  ← trigger põe status='new' (reabre sempre)
+6. emails best-effort a AMBOS (o email é o arquivo de tudo):
+   a) à equipa   (buildFollowupEmail, Reply-To = aluno)
+   b) ao aluno   (buildFollowupReceiptEmail, recibo; Reply-To = caixa da equipa)
 ```
 
-O `status` do cabeçalho é conduzido pela conversa via trigger `sync_question_status_from_message`: mensagem de admin → `answered`; seguimento de aluno → `new`. Conversas `archived` (fechadas à mão) **não** ressuscitam com um seguimento - o seguimento grava e avisa a equipa, mas reabrir é uma acção manual de admin.
+O `status` do cabeçalho é conduzido pela conversa via trigger `sync_question_status_from_message`: mensagem de admin → `answered`; seguimento de aluno → `new`. **Só há 2 estados** (`new` = "Por responder", `answered` = "Respondida"); **qualquer resposta do aluno reabre** a conversa (o trigger já não tem a guarda do antigo `archived`). A triagem manual do admin ("Marcar como respondida" / "Reabrir") é um flip **silencioso** do `status` (sem email). Spam fecha-se por **DELETE** (super_admin), não por um estado.
 
 ### Modelo de dados (só `logos-dev`)
 
@@ -72,9 +76,10 @@ O `status` do cabeçalho é conduzido pela conversa via trigger `sync_question_s
 | `course_title` / `module_title` / `lesson_title` | **snapshots** - inbox legível após rename/delete |
 | `author_name` | snapshot do nome (a RLS de `profiles` só deixa super_admin ler perfis alheios) |
 | `body` | a pergunta de abertura. CHECK `length between 10 and 2000` (espelha `validateQuestionBody`) |
-| `status` | `new \| answered \| archived`, default `new`; conduzido pelo trigger |
+| `status` | `new \| answered`, default `new`; conduzido pelo trigger (2 estados; spam = DELETE pelo super_admin) |
 | `thread_code` | `LOGOS-XXXXXX`, UNIQUE, default `gen_thread_code()` (alfabeto sem ambíguos). Partilhado nos emails; alvo do link "ver conversa" |
 | `created_at` / `updated_at` | `updated_at` via trigger `set_updated_at()` |
+| `owner_seen_at` | nullable (migration `20260614120000`). Última vez que o **dono** abriu a conversa, escrito pela RPC `mark_thread_seen` (SECURITY DEFINER, self-scoped por `current_profile_id()`, com o `now()` da BD - igual ao `updated_at` do mesmo statement, logo sem desvio de relógio). Alimenta o destaque de "não lido" da lista do aluno (`isConversationUnread`: `answered` **e** (`owner_seen_at` nulo **ou** `updated_at > owner_seen_at`)) |
 
 **`lesson_question_messages`** = ida-e-volta após a abertura (migration `20260613120000`):
 
@@ -131,7 +136,7 @@ O `status` do cabeçalho é conduzido pela conversa via trigger `sync_question_s
 
 ### PR3 — entregue (`v3-5-pr3-perguntas-inbox`, empilhado sobre PR2)
 - Migration `20260612230000_lesson_questions_author_name.sql` - snapshot `author_name` (a inbox mostra "quem perguntou" sem depender da RLS de `profiles`, que só deixa super_admin ler perfis de outros). `submitQuestionAction` passa a popular `author_name`. **Só `logos-dev`**.
-- `src/app/admin/perguntas/page.tsx` - inbox: cartões com badge de estado, data, autor, contexto e corpo; **tabs de filtro por estado** (Todas/Novas/Respondidas/Arquivadas + contagens) e pesquisa (`ListSearch`). Estado vazio tratado.
+- `src/app/admin/perguntas/page.tsx` - inbox: cartões com badge de estado, data, autor, contexto e corpo; **tabs de filtro por estado** (Todas/Por responder/Respondidas + contagens) e pesquisa (`ListSearch`). Estado vazio tratado.
 - `src/app/admin/perguntas/actions.ts` - `setQuestionStatusAction` (recusa não-admin; muda só `status`). `loading.tsx` skeleton.
 - `src/app/admin/layout.tsx` - entrada "Perguntas" na nav (nível admin). `save-toast-listener.tsx` - mensagem `pergunta_atualizada`.
 - Docs: SPEC 3.3 (§257/§478/§V5/§19), changelog, status, este ficheiro.
@@ -147,15 +152,25 @@ Empilhados sobre a fatia V3.5. Migration nova só em `logos-dev`; nada toca `mai
 | **PR2** | Cópia ao aluno (`buildQuestionReceiptEmail`) + código `[LOGOS-XXXXXX]` no assunto + `References`/`In-Reply-To` (`threadHeaders`); `email/send.ts` aceita `headers` | entregue (#63) |
 | **PR3** | Conversa no admin: vista `/admin/perguntas/[id]` + composer + `postAdminReplyAction` + `buildAnswerEmail` + `getAuthEmailByProfileId`; flip do email à equipa para "Responde dentro da Logos" | entregue |
 | **PR4** | Conversa do aluno: `/perguntas` (lista) + `/perguntas/[code]` (detalhe) + `postStudentFollowupAction` + `buildFollowupEmail` + entrada de cabeçalho "As minhas conversas" (indicador) + **estes docs** | entregue |
+| **PR5** | Conversa de **2 estados** (`archived` removido; qualquer resposta do aluno reabre) + **email a ambas as partes** em cada mensagem (`buildAnswerTeamCopyEmail` + `buildFollowupReceiptEmail`) + **destaque de "não lido"** na lista do aluno (`owner_seen_at` + RPC `mark_thread_seen` + `isConversationUnread`) + cartão "Aula - data" | entregue |
 
 ### PR4 — conversa do aluno (`v3-6-pr4-conversa-aluno`)
 - `src/app/perguntas/page.tsx` - lista das conversas do aluno (cartões com estado, código, contexto, data; ordenada por `updated_at`). Estado vazio liga a `/conteudos`.
 - `src/app/perguntas/[code]/page.tsx` - a conversa: pergunta de abertura + balões (aluno à direita "Tu", equipa à esquerda "Equipa LOGOS" - nunca expõe qual admin) + composer de seguimento. Auth-guard com `redirect('/entrar?next=...')`; `thread_code` validado com `isThreadCode` (senão `notFound()`). A query filtra `profile_id` (a RLS de admin é permissiva).
-- `src/app/perguntas/[code]/actions.ts` - `postStudentFollowupAction`: login → valida código/corpo → resolve a conversa do próprio → rate-limit (`followup:`, fail-open) → INSERT `author_role='student'` → email à equipa best-effort. Composer disponível mesmo em `archived` (grava + avisa; não reabre).
+- `src/app/perguntas/[code]/actions.ts` - `postStudentFollowupAction`: login → valida código/corpo → resolve a conversa do próprio → rate-limit (`followup:`, fail-open) → INSERT `author_role='student'` → emails best-effort a ambas as partes (equipa + recibo ao aluno). Qualquer seguimento **reabre** a conversa (`status` volta a `new`).
 - `src/components/site/conversation-bubble.tsx` - balão partilhado (extraído da vista de admin).
 - `src/components/site/conversas-link.tsx` + `header.tsx`/`mobile-nav.tsx` - entrada "As minhas conversas" (só com sessão), com ponto laranja quando há conversa em `answered` (a equipa respondeu).
-- `QUESTION_STATUS_LABEL_OWNER` (etiquetas viradas ao aluno: "Em espera"/"Respondida"/"Arquivada").
+- `QUESTION_STATUS_LABEL_OWNER` (etiquetas viradas ao aluno: "Por responder"/"Respondida").
 - Testes: `buildFollowupEmail`, `postStudentFollowupAction` (login/código/corpo/não-dono/rate-limit/insert/email), `ConversasLink`. **Sem migration, sem env nova.**
+
+### PR5 — conversa de 2 estados + "não lido" (`v3-6-pr5-estado-conversas`)
+- **2 estados** (`new` = "Por responder", `answered` = "Respondida"). O `archived` é removido: a migration `20260614120000_question_two_states_and_seen.sql` migra `archived`→`answered`, reescreve o CHECK para 2 estados e tira a guarda do `archived` ao trigger - **qualquer resposta do aluno reabre** a conversa. Spam fecha-se por **DELETE** (super_admin). **Só `logos-dev`.**
+- **Email a ambas as partes em cada mensagem escrita** (o email é o arquivo de tudo): `postAdminReplyAction` envia ao aluno (`buildAnswerEmail`) **e** cópia interna à equipa (`buildAnswerTeamCopyEmail`); `postStudentFollowupAction` avisa a equipa (`buildFollowupEmail`) **e** dá recibo ao aluno (`buildFollowupReceiptEmail`). Quando falta um destinatário (email do aluno desconhecido / caixa da equipa não configurada), o outro email segue na mesma.
+- **Destaque de "não lido"** na lista do aluno: coluna `owner_seen_at` + RPC `mark_thread_seen` (SECURITY DEFINER, self-scoped por `current_profile_id()`, com o `now()` da BD - igual ao `updated_at` do mesmo statement, logo o "não lido" apaga-se mal a conversa abre, sem desvio de relógio). `<MarkThreadSeen>` (client) chama a RPC ao abrir `/perguntas/[code]`. O helper `isConversationUnread` (`answered` **e** (`owner_seen_at` nulo **ou** `updated_at > owner_seen_at`)) é partilhado pela lista (`/perguntas`) e pelo ponto laranja do cabeçalho.
+- **Lista do aluno** relabel: cartão "**Aula - data**" (título da aula + data de abertura) + curso por baixo + excerto de 1 linha, ordenado por actividade recente (`updated_at desc`); o cartão por ler ganha realce (contorno/fundo laranja + ponto).
+- **Inbox de admin** a 3 tabs (Todas / Por responder / Respondidas). A triagem manual ("Marcar como respondida" / "Reabrir") mantém-se como flip **silencioso** do `status` (sem email).
+- Etiquetas: `QUESTION_STATUS_LABEL` e `QUESTION_STATUS_LABEL_OWNER` a 2 estados ("Por responder"/"Respondida").
+- Testes: `isConversationUnread` (4), os novos builders de email (`buildAnswerTeamCopyEmail`, `buildFollowupReceiptEmail`), estados a 2 valores, e os asserts de "email a ambos". **569 verdes.**
 
 ## Operacional
 

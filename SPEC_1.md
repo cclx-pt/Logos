@@ -547,8 +547,10 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 
 ## 19. Estado do Documento
 
-- **Versão:** 3.4
-- **Última atualização:** 13 de junho de 2026
+- **Versão:** 3.5
+- **Última atualização:** 14 de junho de 2026
+- **Alterações relativamente à v3.4:**
+  - §V5, §9 (V3) — **Q&A simplifica para conversa de 2 estados + "não lido" do aluno** (V3.6 PR5; decisão do líder, 14-06-2026). O estado da conversa reduz-se a **`new` (Por responder) / `answered` (Respondida)** - o `archived` é removido (a limpeza de spam passa a ser **DELETE** pelo super_admin). **Qualquer resposta do aluno reabre** a conversa. **Toda a mensagem escrita** (resposta da equipa + seguimento do aluno) **avisa por email ambas as partes** (aluno + caixa da equipa) - o email é o arquivo de tudo. A lista do aluno ganha **destaque de "não lido"** (conversa respondida que o aluno ainda não abriu), suportado por `owner_seen_at` + RPC `mark_thread_seen` (SECURITY DEFINER, com o `now()` da BD para não haver desvio de relógio). DB: migration `20260614120000_question_two_states_and_seen.sql` (migra `archived`→`answered`, CHECK a 2 estados, coluna `owner_seen_at`, RPC), **só `logos-dev`**. Sem dependência nova, sem env nova. Detalhe em `feature-docs/qa-perguntas.md`.
 - **Alterações relativamente à v3.3:**
   - §V5, §9 (V3), §13.5 (mockups §4) — **Q&A evolui de "resposta por email" para conversa ligada dentro da app** (V3.6; decisão do líder, 13-06-2026; mais uma fatia de V5 puxada). A equipa passa a **responder dentro da Logos** (a resposta vai por email ao aluno), o aluno recebe **cópia da pergunta** e pode dar **seguimento** sem sair da app, e pergunta + respostas + seguimentos ficam **ligados numa conversa** por um código `LOGOS-XXXXXX` partilhado no assunto e nos headers de thread dos emails. Nova vista do aluno em `/perguntas` (lista) e `/perguntas/[code]` (conversa, alvo dos links dos emails), com entrada de cabeçalho "As minhas conversas" (indicador quando a equipa respondeu). DB: migration `20260613120000_lesson_question_threads.sql` (`thread_code` em `lesson_questions` + tabela `lesson_question_messages` + RLS do aluno/equipa + trigger que conduz o `status`), **só `logos-dev`**. Sem dependência nova, sem env nova. Detalhe em `feature-docs/qa-perguntas.md`.
 - **Alterações relativamente à v3.2:**
