@@ -143,3 +143,18 @@ export async function getCurrentUser(): Promise<Profile | null> {
     createdAt: data.created_at,
   };
 }
+
+/**
+ * Email da sessão activa, lido da camada de identidade (`auth.users`), ou
+ * `null` se não houver sessão. Existe porque o `Profile` **não** transporta o
+ * email (regra dura: email não é duplicado em tabelas Logos; vive em
+ * `auth.users`). Quem precisar dele - p.ex. o Reply-To das perguntas às aulas -
+ * pede-o aqui, on-demand, sem o persistir.
+ */
+export async function getCurrentAuthEmail(): Promise<string | null> {
+  const supabase = await getServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user?.email ?? null;
+}

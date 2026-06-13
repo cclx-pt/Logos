@@ -57,16 +57,27 @@ Admin (/admin/perguntas)         → lista + detalhe + marcar estado (UPDATE sta
 
 | PR | Conteúdo | Estado |
 |----|----------|--------|
-| **PR1** | Schema `lesson_questions` + RLS column-scoped + domínio partilhado (`src/lib/questions/`) + testes | **em revisão** |
-| **PR2** | Infra de email (`resend` + `src/lib/email/`) + submissão do aluno (card + dialog + `submitQuestionAction` + rate-limit) + wiring no leitor + testes | a fazer |
+| **PR1** | Schema `lesson_questions` + RLS column-scoped + domínio partilhado (`src/lib/questions/`) + testes | em revisão (#59) |
+| **PR2** | Infra de email (`fetch` ao Resend) + submissão do aluno (card + dialog + `submitQuestionAction` + rate-limit) + wiring no leitor + testes | **em revisão** (empilhado sobre PR1) |
 | **PR3** | Inbox `/admin/perguntas` (lista + filtro + detalhe + marcar estado) + entrada no nav + testes | a fazer |
 | **Docs** | SPEC bump (Q&A V5→V3) + changelog + status | com o PR final |
 
-### PR1 — entregue nesta branch (`v3-5-pr1-perguntas-schema`)
+### PR1 — entregue (`v3-5-pr1-perguntas-schema`, #59)
 - `supabase/migrations/20260612220000_lesson_questions.sql` (aplicada a `logos-dev`; **não** a prod).
 - `src/lib/questions/question.ts` - `QuestionStatus`, `QUESTION_STATUS_LABEL`, limites do corpo, `validateQuestionBody()`. Partilhado por PR2 (action) e PR3 (inbox).
 - `src/lib/questions/question.test.ts`.
 - Advisors de segurança: zero lints novos para `lesson_questions`.
+
+### PR2 — entregue (`v3-5-pr2-perguntas-submissao`, empilhado sobre PR1)
+- **Sem dependência nova:** `src/lib/email/send.ts` faz `fetch` à API REST do Resend.
+- `src/lib/auth/service-client.ts` - cliente service-role (server-only, fronteira de identidade) para o `check_rate_limit()`.
+- `src/lib/auth/index.ts` - `getCurrentAuthEmail()` (lê o email de `auth.users` on-demand, para o Reply-To).
+- `src/lib/questions/email.ts` - `buildQuestionEmail()` (composição pura, testável).
+- `src/lib/questions/actions.ts` - `submitQuestionAction`: valida → inscrição → rate-limit (5/h) → INSERT → email best-effort.
+- `src/components/ui/dialog.tsx` (Base UI) + `src/components/ui/textarea.tsx`.
+- `src/app/conteudos/[courseId]/[lessonId]/ask-question-card.tsx` - caixa + dialog; ligada no leitor (flanco esquerdo xl+, e no fluxo do artigo em mobile).
+- Env nova: `LOGOS_QUESTIONS_TO_EMAIL` (`logos@cclx.pt` por agora).
+- Testes: `email`, `send` (fetch mock), `actions` (9 - validação/inscrição/rate-limit/insert/email best-effort), `ask-question-card` (trigger). Suite: 496 ✓.
 
 ## Pendente / a confirmar
 

@@ -21,6 +21,7 @@ import { PdfDownloadButton } from './pdf-download-button';
 import { MarkCompleteButton } from './mark-complete-button';
 import { LessonViewBeacon } from './lesson-view-beacon';
 import { LessonTree } from './lesson-tree';
+import { AskQuestionCard } from './ask-question-card';
 
 type PageProps = {
   params: Promise<{ courseId: string; lessonId: string }>;
@@ -107,9 +108,17 @@ export default async function LessonPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto flex max-w-[84rem] justify-center gap-8 px-4 py-12 sm:px-6 sm:py-16">
-      {/* Espelho invisível da árvore (mesma largura) para o conteúdo principal
-          ficar centrado na página, com a árvore só no lado direito. */}
-      <div className="hidden w-64 shrink-0 xl:block" aria-hidden="true" />
+      {/* Flanco esquerdo: caixa "Pergunta aos professores". Mantém a largura
+          w-64 do antigo espelho invisível, por isso o conteúdo continua
+          centrado na página (árvore à direita, caixa à esquerda). Só xl+. */}
+      <AskQuestionCard
+        lessonId={lesson.id}
+        courseTitle={course.title}
+        moduleTitle={lesson.module.title}
+        lessonTitle={lesson.title}
+        authorName={user.displayName}
+        className="hidden w-64 shrink-0 self-start xl:sticky xl:top-20 xl:block"
+      />
       <article className="w-full max-w-3xl min-w-0">
         <LessonViewBeacon lessonId={lesson.id} />
 
@@ -189,6 +198,17 @@ export default async function LessonPage({ params }: PageProps) {
         <div className="mt-8">
           <MarkCompleteButton lessonId={lesson.id} initiallyCompleted={completed.has(lesson.id)} />
         </div>
+
+        {/* Versão mobile/tablet da caixa de perguntas (no flanco esquerdo só
+            aparece em xl+). Mesma funcionalidade, no fluxo do artigo. */}
+        <AskQuestionCard
+          lessonId={lesson.id}
+          courseTitle={course.title}
+          moduleTitle={lesson.module.title}
+          lessonTitle={lesson.title}
+          authorName={user.displayName}
+          className="mt-8 xl:hidden"
+        />
 
         {/* Mensagem de "módulo completo → próximo módulo" quando aplicável. */}
         {isLastInModule && moduleDone && nextModule && (
