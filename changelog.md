@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### feat
+- feat: [13-06-2026] **Canal LOGOS ao vivo: entrada "Live" + leitor embebido** (V3.6, **antecipação de V6** - mesmo padrão da antecipação de Q&A/estatísticas, decisão do líder) - nova rota `/live` com a transmissão em direto do canal LOGOS reproduzida **dentro do portal** (`youtube-nocookie`, sem redirecionar). Entrada de nav **"Live"** com 3 estados: ao vivo (clicável, badge vermelho `#FF0000` com ponto a pulsar), offline (cinzento, `aria-disabled`, fora do tab order) e a carregar. Botão "Subscrever canal" (`sub_confirmation=1`) em qualquer estado. **Sem cache em memória** (não funciona em Vercel serverless): o estado vive no **Next.js Data Cache** (`fetch` com `revalidate`), protegido por **janelas de transmissão** (`YOUTUBE_LIVE_WINDOWS`, Europe/Lisbon) para não rebentar a quota da YouTube Data API (`search.list` = 100 unidades; 10.000/dia). **Fail-safe**: fora de janela, sem chave, erro ou quota → `live:false` (offline). `YOUTUBE_API_KEY` só no servidor (Route Handler `/api/youtube/live-status`), nunca no bundle. Sem migration, sem dependência nova. Env novas em `.env.example`; rota `/live` no sitemap (substitui o placeholder `escola-biblica`). Doc em `feature-docs/live.md`. 524 verdes.
+
 ### update
 - update: [13-06-2026] **Q&A das aulas validado ponta-a-ponta no preview de #61** - aluno submete pergunta → toast de sucesso → pergunta aparece na inbox `/admin/perguntas` → **email de notificação com Reply-To = email do aluno**. Curso de teste "Oficina EB - Apocalipse" (publicado, 2 módulos, 3 aulas) em `logos-dev`. Fecha o "Operacional pendente" da feature para dev/preview - só falta repetir as env vars no scope Production com os valores de `logos-prod` + subir as migrations a `logos-prod` no lançamento.
 
