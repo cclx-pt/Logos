@@ -52,27 +52,97 @@ ligada**:
   identidade: na submissão = sessão (`getCurrentAuthEmail`); na resposta do admin
   = por `profile_id` via service-role (função nova `getAuthEmailByProfileId`, PR3).
 
+## Estado atual (13-06-2026)
+
+**PR1 e PR2 entregues e validados no preview pelo líder.** A pilha vive em
+PRs empilhados (ainda **não mergeados** em `v3-cursos`):
+
+- `v3-cursos` ← **#62** (PR1, schema) ← **#63** (PR2, emails). Mergeiam juntos no
+  fim da fatia (padrão V3.5: validar no preview do topo e fechar a pilha).
+- Migration `20260613120000_lesson_question_threads.sql` aplicada **só a
+  `logos-dev`** (advisors: zero lints novos). Os 3 threads de teste já em dev
+  apanharam `thread_code` válido.
+- Suite a **519** verdes. Zero env vars novas.
+
+**Falta: PR3 (responder no admin) e PR4 (conversa do aluno + docs).**
+
 ## Plano de PRs (empilhados em `v3-cursos`; nada toca `main`/`logos-prod` até 01-07)
 
-- **PR1 - Schema do thread + domínio + RLS** (`v3-6-pr1-conversa-schema`) - ESTE.
+- ✅ **PR1 - Schema do thread + domínio + RLS** (`v3-6-pr1-conversa-schema`, #62).
   - Migration `20260613120000_lesson_question_threads.sql` (`logos-dev` apenas).
   - Domínio em `src/lib/questions/question.ts`: `MessageAuthorRole`,
     `validateMessageBody` (2..5000), `THREAD_CODE_RE`/`isThreadCode`.
   - Testes de domínio. Advisors limpos.
-- **PR2 - Cópia ao aluno + código nos emails (Feature 2).**
-  - `email/send.ts`: suportar headers de thread (Message-ID/References).
-  - `buildQuestionReceiptEmail()` (código + link); notificação à equipa ganha
-    código + link; `submitQuestionAction` relê `thread_code` e envia cópia ao aluno.
-- **PR3 - Conversa no admin: responder (Feature 1).**
-  - `getAuthEmailByProfileId()` (identidade, service-role).
-  - `buildAnswerEmail()` (cita pergunta + resposta; assinatura; Reply-To inbox).
-  - `/admin/perguntas/[id]` (vista de conversa + composer) + `postAdminReplyAction`
-    (guarda admin → insere mensagem admin → email ao aluno; status via trigger).
-- **PR4 - Conversa do aluno + seguimentos + DOCS.**
+- ✅ **PR2 - Cópia ao aluno + código nos emails (Feature 2)** (`v3-6-pr2-copia-aluno-emails`, #63).
+  - `email/send.ts`: aceita `headers` (`References`/`In-Reply-To`).
+  - `email.ts`: `buildQuestionReceiptEmail()` (cópia ao aluno, assinada, com link),
+    `buildQuestionEmail()` com `[CODE]` no assunto + linha de código + link da inbox,
+    `threadHeaders()`.
+  - `submitQuestionAction`: relê `thread_code` (`.insert().select().single()`,
+    possível pela policy SELECT-own do PR1) e envia 2 emails (equipa + aluno).
+
+- ⏳ **PR3 - Conversa no admin: responder (Feature 1)** - PRÓXIMO. Branch sugerida
+  `v3-6-pr3-resposta-admin`, a partir de `v3-6-pr2-copia-aluno-emails`.
+
+  **Ler primeiro:** `src/app/admin/perguntas/page.tsx` (lista atual),
+  `src/app/admin/perguntas/actions.ts` (`setQuestionStatusAction`, padrão de guarda
+  admin + `revalidatePath`), `src/app/admin/perguntas/loading.tsx`,
+  `src/app/admin/layout.tsx` + `save-toast-listener.tsx` (toasts via searchParam,
+  ex.: `pergunta_atualizada`), `src/components/ui/dialog.tsx` + `textarea.tsx`,
+  `src/lib/auth/index.ts` (`getCurrentAuthEmail`) + `src/lib/auth/service-client.ts`
+  (`getServiceRoleClient`) + `src/lib/auth/guards.ts` (`isAdmin`).
+
+  **Trabalho:**
+  1. **`src/lib/auth/` - `getAuthEmailByProfileId(profileId)`** (na fronteira de
+     identidade). Um admin não-super NÃO lê perfis alheios nem `auth.users`, por
+     isso usa **service-role**: `getServiceRoleClient()` →
+     `from('profiles').select('external_auth_id').eq('id', profileId).maybeSingle()`
+     → `client.auth.admin.getUserById(external_auth_id)` → `data.user?.email ?? null`.
+     Teste com mock do service client.
+  2. **`email.ts` - `buildAnswerEmail({ authorName, courseTitle, lessonTitle,
+     questionBody, answerBody, threadCode, conversationUrl })`**: assunto
+     `Re: A tua pergunta · <curso> [CODE]` (o `Re:` + mesma base do receipt agrupa
+     na caixa do aluno); corpo = saudação + "A equipa respondeu:" + resposta + cita
+     a pergunta original + link da conversa + `EMAIL_SIGNATURE`. `headers:
+     threadHeaders(code)`. Envio com `replyTo = LOGOS_QUESTIONS_TO_EMAIL`. Testes.
+  3. **`src/app/admin/perguntas/[id]/page.tsx`** (novo): vista de conversa.
+     Server Component. Busca a pergunta por `id` (RLS admin) + as mensagens
+     (`lesson_question_messages` por `created_at`). Renderiza contexto + estado +
+     `thread_code` + pergunta de abertura + thread (balões aluno/admin) + **composer**
+     (textarea + "Enviar resposta", `<form action={postAdminReplyAction}>`).
+     Composer escondido/desativado se `status='archived'` (arquivado = fechado;
+     reabrir primeiro). `loading.tsx` opcional.
+  4. **`postAdminReplyAction`** (em `[id]/actions.ts` ou no `actions.ts` existente):
+     guarda admin (recusa user/sem sessão, como `setQuestionStatusAction`) → valida
+     `questionId` (UUID) + `body` (`validateMessageBody`) → INSERT em
+     `lesson_question_messages` `{ question_id, author_role:'admin',
+     author_profile_id: caller.id, author_name: caller.displayName, body }` (RLS
+     `lqm_insert_admin`; o **trigger** põe `status='answered'`) → lê a pergunta
+     (`profile_id`, `thread_code`, títulos) → `getAuthEmailByProfileId` → envia
+     `buildAnswerEmail` best-effort → `revalidatePath`. Toast `resposta_enviada`.
+     Testes: recusa não-admin (regra dura), validação, INSERT com role+caller,
+     email best-effort, ok.
+  5. **Lista `page.tsx`**: cada cartão liga a `/admin/perguntas/[id]`. Manter a
+     triagem de estado.
+  6. **Flip do PR2 (pequeno):** agora que o composer existe, mudar o corpo de
+     `buildQuestionEmail` (equipa) de "Responde a este email..." para "Responde
+     dentro da Logos: <adminUrl>" (manter Reply-To = aluno como rede de segurança).
+     Ajustar o teste.
+
+  **Sem migration** (a RLS do PR1 já cobre admin SELECT + INSERT). Sem env nova.
+  **Decisões fechadas:** rota por `id` no admin; conversa multi-turno (sem
+  one-shot); Reply-To da resposta = `logos@cclx.pt`; composer indisponível em
+  `archived`.
+
+- ⏳ **PR4 - Conversa do aluno + seguimentos + DOCS.** Branch `v3-6-pr4-conversa-aluno`.
   - Rota do aluno (lista + detalhe por `thread_code` + composer de seguimento;
-    alvo dos links dos emails) + `postStudentFollowupAction` (só dono, rate-limit,
-    email à equipa; status via trigger). Nav.
-  - SPEC bump 3.4, reescrita `qa-perguntas.md`, changelog, status, runbook.
+    alvo dos links dos emails) + `postStudentFollowupAction` (só dono via RLS,
+    rate-limit, email à equipa; `status` volta a `new` via trigger). Nav (ex.: em
+    `/perfil` ou no menu do utilizador). Validar `thread_code` com `isThreadCode`.
+  - **DOCS desta fatia:** SPEC bump 3.4 (mover "thread + inbox do aluno" V5→V3,
+    `SPEC_1.md` §V5 + bloco Q&A), **reescrita da `qa-perguntas.md`** (modelo de
+    conversa + corrigir "Gmail"→Hostinger), changelog, status, runbook
+    (`qa-perguntas-setup-guide.md`). **Apagar este handoff** no fim.
 
 ## Operacional
 
