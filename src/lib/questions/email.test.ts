@@ -264,4 +264,3 @@ describe('buildFollowupReceiptEmail (recibo do seguimento ao aluno)', () => {
     expect(headers['References']).toBe(threadHeaders(THREAD)['References']);
   });
 });
-

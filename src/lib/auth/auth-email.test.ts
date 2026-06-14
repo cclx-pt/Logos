@@ -33,7 +33,10 @@ describe('getAuthEmailByProfileId (V3.6 PR3)', () => {
 
   it('devolve o email do aluno via external_auth_id', async () => {
     mockMaybeSingle.mockResolvedValue({ data: { external_auth_id: 'ext-1' }, error: null });
-    mockGetUserById.mockResolvedValue({ data: { user: { email: 'aluno@exemplo.pt' } }, error: null });
+    mockGetUserById.mockResolvedValue({
+      data: { user: { email: 'aluno@exemplo.pt' } },
+      error: null,
+    });
 
     await expect(getAuthEmailByProfileId(PROFILE_ID)).resolves.toBe('aluno@exemplo.pt');
     expect(mockGetUserById).toHaveBeenCalledWith('ext-1');

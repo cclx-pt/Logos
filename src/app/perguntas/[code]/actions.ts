@@ -186,4 +186,3 @@ export async function markThreadSeenAction(code: string): Promise<void> {
     // best-effort: marcar como visto nunca quebra a vista.
   }
 }
-

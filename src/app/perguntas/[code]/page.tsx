@@ -109,7 +109,9 @@ export default async function MinhaConversaPage({ params }: { params: Promise<{ 
           </span>
           <span className="text-muted-foreground font-mono text-xs">{question.thread_code}</span>
         </div>
-        <h1 className="font-display text-ink text-3xl font-medium tracking-tight">A tua pergunta</h1>
+        <h1 className="font-display text-ink text-3xl font-medium tracking-tight">
+          A tua pergunta
+        </h1>
         <p className="text-muted-foreground text-sm">
           {question.course_title} › {question.module_title} › {question.lesson_title}
         </p>

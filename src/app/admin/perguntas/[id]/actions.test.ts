@@ -2,11 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import type { Profile } from '@/lib/auth';
 import { postAdminReplyAction } from './actions';
-import {
-  getCurrentUser,
-  getServerClient,
-  getAuthEmailByProfileId,
-} from '@/lib/auth';
+import { getCurrentUser, getServerClient, getAuthEmailByProfileId } from '@/lib/auth';
 import { sendEmail } from '@/lib/email/send';
 
 vi.mock('@/lib/auth', () => ({
@@ -130,9 +126,7 @@ describe('postAdminReplyAction (V3.6 PR3)', () => {
     // sem resposta ao aluno (email desconhecido), mas a cópia interna à equipa segue na mesma
     expect(sendEmail).toHaveBeenCalledTimes(1);
     expect(sendEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'logos@cclx.pt' }));
-    expect(sendEmail).not.toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'joao@exemplo.pt' }),
-    );
+    expect(sendEmail).not.toHaveBeenCalledWith(expect.objectContaining({ to: 'joao@exemplo.pt' }));
   });
 
   it('não bloqueia quando o envio do email falha', async () => {
