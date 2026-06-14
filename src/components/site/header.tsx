@@ -53,7 +53,7 @@ export async function Header() {
 
   return (
     <header className="bg-background/95 border-border supports-[backdrop-filter]:bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         {/* Esquerda: logo + navegação por ordem de leitura (institucionais → Live → funcionais). */}
         <div className="flex min-w-0 items-center gap-3 lg:gap-6">
           <MobileNav
@@ -73,14 +73,14 @@ export async function Header() {
           </nav>
         </div>
         {/* Direita: área pessoal por ordem (conversas → admin → perfil). */}
-        <div className="flex items-center gap-4 lg:gap-6">
+        <div className="flex shrink-0 items-center gap-4 lg:gap-6">
           <ConversasLink
             href={conversasHref}
             hasConversations={conversasHasConversations}
             hasUnread={conversasHasUnread}
-            className="hidden whitespace-nowrap xl:inline-flex"
+            className="hidden shrink-0 whitespace-nowrap xl:inline-flex"
           />
-          {showAdminBadge && <AdminBadgeLink className="hidden xl:inline-flex" />}
+          {showAdminBadge && <AdminBadgeLink className="hidden shrink-0 xl:inline-flex" />}
           {user ? <UserMenu user={user} /> : <SignInButton />}
         </div>
       </div>
