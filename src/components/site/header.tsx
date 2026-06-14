@@ -65,7 +65,7 @@ export async function Header() {
           <Logo size="md" />
           <nav
             aria-label="Navegação principal"
-            className="hidden items-center gap-6 lg:flex xl:gap-8"
+            className="hidden items-center gap-6 whitespace-nowrap xl:flex xl:gap-8"
           >
             <NavLinks orientation="horizontal" items={institutionalNavItems} />
             <LiveNavLink orientation="horizontal" />
@@ -78,9 +78,9 @@ export async function Header() {
             href={conversasHref}
             hasConversations={conversasHasConversations}
             hasUnread={conversasHasUnread}
-            className="hidden lg:inline-flex"
+            className="hidden whitespace-nowrap xl:inline-flex"
           />
-          {showAdminBadge && <AdminBadgeLink className="hidden lg:inline-flex" />}
+          {showAdminBadge && <AdminBadgeLink className="hidden xl:inline-flex" />}
           {user ? <UserMenu user={user} /> : <SignInButton />}
         </div>
       </div>
