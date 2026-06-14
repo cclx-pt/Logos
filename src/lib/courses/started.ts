@@ -104,11 +104,15 @@ export async function getStartedCoursesForUser(): Promise<StartedCourse[]> {
   }));
 
   // Marca os concluídos. Limita o IN ao set actual para evitar varrer
-  // course_completions inteiro do user.
+  // course_completions inteiro do user. Filtra explicitamente por
+  // `user_id = caller.id`: a policy de SELECT é "own OR admin", logo um admin
+  // sem este filtro veria como "Terminado" um curso concluído por *outro*
+  // utilizador (mesma classe de bug de `getCompletedLessonIds`).
   const courseIds = courses.map((c) => c.id);
   const { data: completions, error: completionsError } = await supabase
     .from('course_completions')
     .select('course_id')
+    .eq('user_id', caller.id)
     .in('course_id', courseIds)
     .returns<{ course_id: string }[]>();
 

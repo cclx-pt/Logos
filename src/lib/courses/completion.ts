@@ -17,6 +17,12 @@ import type { CourseDetail, LessonSummary, ModuleWithLessons } from './detail';
  * limitado aos `lessonIds` fornecidos (para evitar carregar conclusões de
  * outros cursos). Retorna `Set` vazio se não houver sessão ou se o array
  * de input vier vazio.
+ *
+ * **Filtra explicitamente por `user_id = caller.id`.** Não basta confiar na
+ * RLS: a policy de SELECT de `lesson_completions` é "own OR admin" (admin lê
+ * tudo para stats/debug). Sem este filtro, um admin/super_admin veria as
+ * conclusões de *outros* utilizadores como se fossem suas - e não as
+ * conseguiria desmarcar, porque o DELETE só atinge as próprias rows.
  */
 export async function getCompletedLessonIds(lessonIds: string[]): Promise<Set<string>> {
   if (lessonIds.length === 0) return new Set();
@@ -27,6 +33,7 @@ export async function getCompletedLessonIds(lessonIds: string[]): Promise<Set<st
   const { data, error } = await supabase
     .from('lesson_completions')
     .select('lesson_id')
+    .eq('user_id', caller.id)
     .in('lesson_id', lessonIds)
     .returns<{ lesson_id: string }[]>();
 
@@ -99,8 +106,12 @@ export function isCourseComplete(course: CourseDetail, completedLessonIds: Set<s
 
 /**
  * Devolve o conjunto de courseIds que o utilizador actual já concluiu.
- * RLS em `course_completions` filtra para `own` — chamar sem sessão
- * devolve set vazio (sem query).
+ * Chamar sem sessão devolve set vazio (sem query).
+ *
+ * **Filtra explicitamente por `user_id = caller.id`** pelo mesmo motivo que
+ * `getCompletedLessonIds`: a policy de SELECT de `course_completions` é
+ * "own OR admin", logo um admin sem este filtro veria os cursos concluídos
+ * por *todos* os utilizadores marcados como seus no catálogo.
  *
  * Usado no catálogo `/conteudos` para greyout + badge "Concluído" em
  * cursos já terminados pelo utilizador, alinhando com a UX da secção
@@ -114,6 +125,7 @@ export async function getCompletedCourseIdsForCurrentUser(): Promise<Set<string>
   const { data, error } = await supabase
     .from('course_completions')
     .select('course_id')
+    .eq('user_id', caller.id)
     .returns<{ course_id: string }[]>();
 
   if (error) {

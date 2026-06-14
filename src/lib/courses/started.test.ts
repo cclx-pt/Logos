@@ -4,9 +4,10 @@ import type { Profile } from '@/lib/auth';
 
 type QResp = { data: unknown; error: unknown };
 
-const { mockGetCurrentUser, mockFrom } = vi.hoisted(() => ({
+const { mockGetCurrentUser, mockFrom, mockEq } = vi.hoisted(() => ({
   mockGetCurrentUser: vi.fn(),
   mockFrom: vi.fn(),
+  mockEq: vi.fn(),
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -20,6 +21,7 @@ type Builder = {
   select: (...args: unknown[]) => Builder;
   order: (...args: unknown[]) => Builder;
   in: (...args: unknown[]) => Builder;
+  eq: (...args: unknown[]) => Builder;
   returns: () => Promise<QResp>;
 };
 
@@ -28,6 +30,10 @@ function makeBuilder(response: QResp): Builder {
     select: () => builder,
     order: () => builder,
     in: () => builder,
+    eq: (...args) => {
+      mockEq(...args);
+      return builder;
+    },
     returns: () => Promise.resolve(response),
   };
   return builder;
@@ -207,6 +213,32 @@ describe('getStartedCoursesForUser', () => {
 
     const result = await getStartedCoursesForUser();
     expect(result[0].completed).toBe(true);
+  });
+
+  // Regressão: a policy de SELECT de course_completions é "own OR admin". Sem
+  // filtro explícito por user_id, um admin veria como "Terminado" um curso
+  // concluído por *outro* utilizador. Tem de filtrar sempre por caller.id.
+  it('filtra course_completions por user_id do caller (não confia na RLS)', async () => {
+    mockGetCurrentUser.mockResolvedValue({ ...profile(), role: 'admin' });
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'course_access_log')
+        return makeBuilder({
+          data: [
+            {
+              course_id: 'course-1',
+              accessed_at: '2026-05-25T10:00:00Z',
+              unenrolled_at: null,
+              courses: courseEmbed,
+            },
+          ],
+          error: null,
+        });
+      if (table === 'course_completions') return makeBuilder({ data: [], error: null });
+      throw new Error(`unexpected table: ${table}`);
+    });
+
+    await getStartedCoursesForUser();
+    expect(mockEq).toHaveBeenCalledWith('user_id', 'profile-1');
   });
 
   it('lança Error quando a query de course_completions falha', async () => {

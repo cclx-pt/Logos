@@ -68,6 +68,7 @@ vi.mock('@/lib/auth', () => ({
 }));
 
 import {
+  getCompletedCourseIdsForCurrentUser,
   getCompletedLessonIds,
   getFirstIncompleteLesson,
   getNextModuleWithLessons,
@@ -173,6 +174,49 @@ describe('getCompletedLessonIds', () => {
     expect(result.has('l2')).toBe(false);
     expect(result.has('l3')).toBe(true);
     expect(result.size).toBe(2);
+  });
+
+  // Regressão: a policy de SELECT é "own OR admin". Sem filtro explícito por
+  // user_id, um admin via as conclusões de outros utilizadores como suas - e não
+  // as conseguia desmarcar (o DELETE só atinge as próprias rows). Tem de filtrar
+  // sempre por user_id = caller.id, mesmo para admin/super_admin.
+  it('filtra sempre por user_id do caller (não confia na RLS para o scoping)', async () => {
+    mockGetCurrentUser.mockResolvedValue({ ...makeProfile(), role: 'super_admin' });
+    setResponse({ data: [], error: null });
+    await getCompletedLessonIds(['l1', 'l2']);
+    expect(mockEq).toHaveBeenCalledWith('user_id', '11111111-1111-4111-8111-111111111111');
+  });
+});
+
+describe('getCompletedCourseIdsForCurrentUser', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setResponse({ data: [], error: null });
+  });
+
+  it('devolve set vazio quando não há sessão', async () => {
+    mockGetCurrentUser.mockResolvedValue(null);
+    const result = await getCompletedCourseIdsForCurrentUser();
+    expect(result.size).toBe(0);
+    expect(mockSelect).not.toHaveBeenCalled();
+  });
+
+  it('mapeia rows para Set de course_id', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile());
+    setResponse({ data: [{ course_id: 'c1' }, { course_id: 'c2' }], error: null });
+    const result = await getCompletedCourseIdsForCurrentUser();
+    expect(result.has('c1')).toBe(true);
+    expect(result.has('c2')).toBe(true);
+    expect(result.size).toBe(2);
+  });
+
+  // Regressão: mesmo motivo de getCompletedLessonIds - sem filtro por user_id,
+  // o admin via no catálogo os cursos concluídos por todos como seus.
+  it('filtra sempre por user_id do caller (não confia na RLS para o scoping)', async () => {
+    mockGetCurrentUser.mockResolvedValue({ ...makeProfile(), role: 'admin' });
+    setResponse({ data: [], error: null });
+    await getCompletedCourseIdsForCurrentUser();
+    expect(mockEq).toHaveBeenCalledWith('user_id', '11111111-1111-4111-8111-111111111111');
   });
 });
 
