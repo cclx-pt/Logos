@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { isAdmin } from '@/lib/auth/guards';
 import { createCourseAction } from '../courses-actions';
-import { CourseForm, type TagOption } from '../course-form';
+import { CourseForm, type CourseOption, type TagOption } from '../course-form';
 import { ConteudosBreadcrumb } from '../conteudos-breadcrumb';
 
 export const metadata = {
@@ -17,14 +17,25 @@ export default async function NovoCursoPage() {
   }
 
   const supabase = await getServerClient();
-  const { data: tagsData, error: tagsError } = await supabase
-    .from('tags')
-    .select('id, label')
-    .order('label', { ascending: true })
-    .returns<TagOption[]>();
+  const [{ data: tagsData, error: tagsError }, { data: courseOptions, error: coursesError }] =
+    await Promise.all([
+      supabase
+        .from('tags')
+        .select('id, label')
+        .order('label', { ascending: true })
+        .returns<TagOption[]>(),
+      supabase
+        .from('courses')
+        .select('id, title')
+        .order('title', { ascending: true })
+        .returns<CourseOption[]>(),
+    ]);
 
   if (tagsError) {
     throw new Error(`Falha a carregar etiquetas: ${tagsError.message}`);
+  }
+  if (coursesError) {
+    throw new Error(`Falha a carregar cursos: ${coursesError.message}`);
   }
 
   return (
@@ -41,6 +52,7 @@ export default async function NovoCursoPage() {
       <CourseForm
         mode="create"
         tags={tagsData ?? []}
+        courseOptions={courseOptions ?? []}
         action={async (formData: FormData) => {
           'use server';
           const result = await createCourseAction(formData);

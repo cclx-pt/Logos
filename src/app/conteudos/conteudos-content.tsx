@@ -184,6 +184,11 @@ export function ConteudosContent({
                 variant="catalog"
                 isAuthenticated={isAuthenticated}
                 isCompleted={completedSet.has(course.id)}
+                lockedByPrerequisite={
+                  course.prerequisite && !completedSet.has(course.prerequisite.id)
+                    ? course.prerequisite.title
+                    : null
+                }
               />
             </li>
           ))}

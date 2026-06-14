@@ -14,8 +14,11 @@ import { getLessonPdfSignedUrlAction } from '@/lib/courses/access-actions';
 import {
   getCompletedLessonIds,
   getNextModuleWithLessons,
+  getOrCreateCourseCompletion,
+  isCourseComplete,
   isModuleComplete,
 } from '@/lib/courses/completion';
+import { getFrontierLesson, getSequentialAccess } from '@/lib/courses/sequencing';
 import { getEnrollmentState } from '@/lib/courses/enrollment';
 import { PdfDownloadButton } from './pdf-download-button';
 import { MarkCompleteButton } from './mark-complete-button';
@@ -77,6 +80,22 @@ export default async function LessonPage({ params }: PageProps) {
   // navegação (✓ por aula) e o cálculo de "módulo completo → próximo módulo".
   const allLessonIds = course.modules.flatMap((m) => m.lessons.map((l) => l.id));
   const completed = await getCompletedLessonIds(allLessonIds);
+
+  // V3.6: regista a conclusão do curso on-read assim que tudo está concluído.
+  // Sem isto, o registo em `course_completions` só nascia ao reabrir a página
+  // do curso - e os pré-requisitos de outros cursos dependem dele.
+  if (isCourseComplete(course, completed)) {
+    await getOrCreateCourseCompletion(course.id);
+  }
+
+  // V3.6: curso sequencial - aula bloqueada (faltam anteriores) redirecciona
+  // para a aula-fronteira (a próxima a fazer). A fronteira existe sempre
+  // quando algo está bloqueado.
+  const { lockedLessonIds } = getSequentialAccess(course, completed);
+  if (lockedLessonIds.has(lesson.id)) {
+    const frontier = getFrontierLesson(course, completed);
+    redirect(frontier ? `/conteudos/${courseId}/${frontier.id}` : `/conteudos/${courseId}`);
+  }
 
   const currentModule = course.modules.find((m) => m.id === lesson.module.id) ?? null;
   const moduleDone = currentModule ? isModuleComplete(currentModule, completed) : false;
@@ -284,6 +303,7 @@ export default async function LessonPage({ params }: PageProps) {
         courseId={course.id}
         modules={course.modules}
         completedLessonIds={completed}
+        lockedLessonIds={lockedLessonIds}
         currentLessonId={lesson.id}
         currentModuleId={lesson.module.id}
       />

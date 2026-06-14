@@ -31,6 +31,12 @@ export type VisibleCourse = {
   bannerUrl: string | null;
   /** `true` se o curso tem pelo menos uma aula. Usado para o badge "Em breve". */
   hasLessons: boolean;
+  /**
+   * V3.6: curso pré-requisito (id + título), `null` se autónomo ou se o
+   * pré-requisito não for visível ao utilizador (RLS). A página decide o
+   * bloqueio cruzando com os cursos já concluídos.
+   */
+  prerequisite: { id: string; title: string } | null;
 };
 
 type CourseRow = {
@@ -39,6 +45,7 @@ type CourseRow = {
   description: string | null;
   icon: string | null;
   banner_storage_path: string | null;
+  prerequisite_course_id: string | null;
   modules: ModuleRow[] | null;
 };
 
@@ -62,7 +69,9 @@ export async function getVisibleCoursesForUser(
 
   let request = supabase
     .from('courses')
-    .select('id, title, description, icon, banner_storage_path, modules ( lessons ( count ) )')
+    .select(
+      'id, title, description, icon, banner_storage_path, prerequisite_course_id, modules ( lessons ( count ) )',
+    )
     .order('title', { ascending: true });
 
   if (trimmedQuery.length > 0) {
@@ -81,6 +90,14 @@ export async function getVisibleCoursesForUser(
     .filter((p): p is string => typeof p === 'string' && p.length > 0);
   const bannerUrls = await getBannerUrlsByPath(bannerPaths);
 
+  // Títulos dos pré-requisitos (V3.6). Lookup em lote sobre os ids distintos
+  // referenciados. RLS filtra cursos invisíveis — esses ficam fora do Map e
+  // o card não mostra bloqueio (não dá para bloquear por algo que o
+  // utilizador não vê).
+  const prerequisiteTitles = await getCourseTitlesByIds(
+    rows.map((r) => r.prerequisite_course_id).filter((id): id is string => typeof id === 'string'),
+  );
+
   return rows.map((row) => ({
     id: row.id,
     title: row.title,
@@ -88,5 +105,33 @@ export async function getVisibleCoursesForUser(
     icon: row.icon,
     bannerUrl: row.banner_storage_path ? (bannerUrls.get(row.banner_storage_path) ?? null) : null,
     hasLessons: (row.modules ?? []).some((m) => (m.lessons?.[0]?.count ?? 0) > 0),
+    prerequisite:
+      row.prerequisite_course_id && prerequisiteTitles.has(row.prerequisite_course_id)
+        ? {
+            id: row.prerequisite_course_id,
+            title: prerequisiteTitles.get(row.prerequisite_course_id)!,
+          }
+        : null,
   }));
+}
+
+/**
+ * Devolve um Map id → título para os cursos dados, em lote. Ids invisíveis ao
+ * utilizador (RLS) simplesmente não aparecem no Map. Set vazio → sem query.
+ */
+async function getCourseTitlesByIds(ids: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) return new Map();
+
+  const supabase = await getServerClient();
+  const { data, error } = await supabase
+    .from('courses')
+    .select('id, title')
+    .in('id', unique)
+    .returns<{ id: string; title: string }[]>();
+
+  if (error) {
+    throw new Error(`Falha a carregar pré-requisitos: ${error.message}`);
+  }
+  return new Map((data ?? []).map((r) => [r.id, r.title]));
 }

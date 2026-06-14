@@ -158,6 +158,15 @@ O sistema deve ser desenhado para permitir adicionar novos modelos no futuro (po
 
 A migração de V3 para V4 é aditiva (acrescenta colunas, não remove nem altera dados existentes).
 
+### Sequência e pré-requisitos (V3.6)
+
+Cada **curso** tem dois controlos opcionais de progressão, geridos pelo admin no formulário do curso:
+
+- **Conteúdo sequencial** (`courses.sequential`, boolean): quando ligado, as aulas têm de ser concluídas pela **ordem linear** (`module.position`, depois `lesson.position`). Como a ordem é linear entre módulos, isto força também a **sequência de módulos** - uma só flag cobre os dois níveis. A aula seguinte por concluir (a "fronteira") e as já concluídas ficam acessíveis; as restantes ficam **bloqueadas**.
+- **Curso pré-requisito** (`courses.prerequisite_course_id`, auto-referência nullable): o curso só fica disponível depois de o curso apontado estar **concluído**. `NULL` = curso autónomo. Encadear cursos (A → B → C) cria uma **sequência de cursos**. Ciclos são impedidos (auto-referência por CHECK na BD; cadeias mais longas pela Server Action).
+
+**Conteúdo bloqueado por sequência aparece com cadeado e dica** ("Conclui a aula anterior primeiro" / "Conclui [Curso A] primeiro"), **não é escondido** - ao contrário da restrição por etiqueta (§5), que é invisível. A diferença é intencional: a sequência é pedagógica (mostra o caminho), a etiqueta é controlo de acesso. A regra é aplicada **server-side** (a página de aula/módulo redirecciona para a fronteira; a inscrição recusa se o pré-requisito faltar), não em RLS - tal como a deteção de "curso concluído" (§8).
+
 ### Outras regras de conteúdo
 
 - Os vídeos estão alojados no YouTube e embebidos via `iframe`. Os utilizadores veem-nos dentro da página da Logos; nunca saem do site.
@@ -270,6 +279,7 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 - UI do admin para anexar etiquetas a módulos e aulas durante a criação/edição
 - Recálculo automático de visibilidade e do estado de "Curso Concluído" quando as etiquetas mudam
 - **Sem mudanças no sistema de conclusão:** continua binário, sem percentagens
+- **Pré-requisitos sequenciais (aula/módulo/curso) puxados para V3.6 (14-06-2026):** a flag `sequential` por curso (aulas/módulos em ordem obrigatória) e o `prerequisite_course_id` (cadeia de cursos opcional) foram **antecipados** para o ciclo V3. Ver §6 (Sequência e pré-requisitos), §19 e `feature-docs/sequencing.md`. Migration `20260614140000` (só `logos-dev`).
 
 ### V5 — Perguntas & Respostas e Estatísticas
 
@@ -548,8 +558,10 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 
 ## 19. Estado do Documento
 
-- **Versão:** 3.5
+- **Versão:** 3.6
 - **Última atualização:** 14 de junho de 2026
+- **Alterações relativamente à v3.5:**
+  - §6, §8, §9 (V3/V4) — **Pré-requisitos sequenciais puxados de V4 para V3.6** (decisão do líder, 14-06-2026; mesmo padrão da antecipação de Live, Q&A e estatísticas). Em `status.md` (V3.2) estes pré-requisitos estavam explicitamente "adiados para V4 (pós-01-07-2026)"; passam a entrar em V3.6. Duas capacidades, ambas opcionais por curso: (1) **conteúdo sequencial** (`courses.sequential`) - as aulas têm de ser concluídas pela ordem linear, o que força também a sequência de módulos; (2) **curso pré-requisito** (`courses.prerequisite_course_id`, auto-referência nullable) - um curso só fica disponível depois de outro estar concluído, encadeável (A → B → C) para uma sequência de cursos, `NULL` = autónomo. Conteúdo bloqueado **aparece com cadeado + dica** (não escondido, ao contrário da restrição por etiqueta - §5). Aplicação **server-side** (Server Components + Server Actions), não em RLS, tal como a conclusão de curso (`architecture.md` §6). Migration `20260614140000_sequential_prerequisites.sql` (**só `logos-dev`**). Sem dependência nova, sem env nova. Detalhe em `feature-docs/sequencing.md`.
 - **Alterações relativamente à v3.4:**
   - §V5, §9 (V3) — **Q&A simplifica para conversa de 2 estados + "não lido" do aluno** (V3.6 PR5; decisão do líder, 14-06-2026). O estado da conversa reduz-se a **`new` (Por responder) / `answered` (Respondida)** - o `archived` é removido (a limpeza de spam passa a ser **DELETE** pelo super_admin). **Qualquer resposta do aluno reabre** a conversa. **Toda a mensagem escrita** (resposta da equipa + seguimento do aluno) **avisa por email ambas as partes** (aluno + caixa da equipa) - o email é o arquivo de tudo. A lista do aluno ganha **destaque de "não lido"** (conversa respondida que o aluno ainda não abriu), suportado por `owner_seen_at` + RPC `mark_thread_seen` (SECURITY DEFINER, com o `now()` da BD para não haver desvio de relógio). DB: migration `20260614120000_question_two_states_and_seen.sql` (migra `archived`→`answered`, CHECK a 2 estados, coluna `owner_seen_at`, RPC), **só `logos-dev`**. Sem dependência nova, sem env nova. Detalhe em `feature-docs/qa-perguntas.md`.
 - **Alterações relativamente à v3.3:**

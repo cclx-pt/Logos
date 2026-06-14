@@ -7,7 +7,7 @@ import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { isAdmin } from '@/lib/auth/guards';
 import { UUID_RE } from '@/lib/validation';
 import { getBannerUrlForPath } from '@/lib/courses/banner';
-import { CourseForm, type TagOption } from '../course-form';
+import { CourseForm, type CourseOption, type TagOption } from '../course-form';
 import { ConteudosBreadcrumb } from '../conteudos-breadcrumb';
 import { CourseStatsContent } from '../course-stats-content';
 import { CourseTree } from '../course-tree';
@@ -23,6 +23,8 @@ type CourseRow = {
   required_tags: string[];
   published_at: string | null;
   banner_storage_path: string | null;
+  sequential: boolean;
+  prerequisite_course_id: string | null;
 };
 
 export const metadata = {
@@ -53,10 +55,13 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
     { data: course, error: courseError },
     { data: tagsData, error: tagsError },
     { data: modulesData, error: modulesError },
+    { data: allCourses, error: allCoursesError },
   ] = await Promise.all([
     supabase
       .from('courses')
-      .select('id, title, description, icon, required_tags, published_at, banner_storage_path')
+      .select(
+        'id, title, description, icon, required_tags, published_at, banner_storage_path, sequential, prerequisite_course_id',
+      )
       .eq('id', courseId)
       .maybeSingle<CourseRow>(),
     supabase
@@ -70,6 +75,11 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
       .eq('course_id', courseId)
       .order('position', { ascending: true })
       .returns<ModuleListItem[]>(),
+    supabase
+      .from('courses')
+      .select('id, title')
+      .order('title', { ascending: true })
+      .returns<CourseOption[]>(),
   ]);
 
   if (courseError) {
@@ -84,6 +94,13 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
   if (modulesError) {
     throw new Error(`Falha a carregar módulos: ${modulesError.message}`);
   }
+  if (allCoursesError) {
+    throw new Error(`Falha a carregar cursos: ${allCoursesError.message}`);
+  }
+
+  // Exclui o próprio curso das opções de pré-requisito (evita auto-referência
+  // na UI; a action também a recusa).
+  const courseOptions = (allCourses ?? []).filter((c) => c.id !== course.id);
 
   const modules = modulesData ?? [];
   const editingModule = editar ? modules.find((m) => m.id === editar) : undefined;
@@ -98,6 +115,8 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
     required_tags: course.required_tags,
     published_at: course.published_at,
     bannerUrl,
+    sequential: course.sequential,
+    prerequisite_course_id: course.prerequisite_course_id,
   };
 
   const editingNode = editingModule ? (
@@ -209,6 +228,7 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
           <CourseForm
             mode="edit"
             tags={tagsData ?? []}
+            courseOptions={courseOptions}
             course={courseFormData}
             action={async (formData: FormData) => {
               'use server';

@@ -85,6 +85,10 @@ export async function getStartedCoursesForUser(): Promise<StartedCourse[]> {
       icon: row.courses.icon,
       bannerStoragePath: row.courses.banner_storage_path,
       hasLessons: (row.courses.modules ?? []).some((m) => (m.lessons?.[0]?.count ?? 0) > 0),
+      // /meus-cursos lista cursos já começados - o bloqueio por pré-requisito
+      // não se aplica aqui (o utilizador já está inscrito). Mantém o campo do
+      // tipo VisibleCourse coerente sem o ir buscar.
+      prerequisite: null,
       completed: false,
       lastAccessedAt: row.accessed_at,
     });

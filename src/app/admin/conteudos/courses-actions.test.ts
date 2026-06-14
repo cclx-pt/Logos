@@ -72,6 +72,7 @@ function makeProfile(role: Profile['role'], id: string): Profile {
 const CALLER_ID = '11111111-1111-4111-8111-111111111111';
 const COURSE_ID = '22222222-2222-4222-8222-222222222222';
 const TAG_ID = '33333333-3333-4333-8333-333333333333';
+const PREREQ_ID = '44444444-4444-4444-8444-444444444444';
 
 function formDataOf(
   entries: Record<string, string>,
@@ -137,6 +138,8 @@ describe('createCourseAction (V3 PR3 + V3.1 sem slug)', () => {
       icon: 'book-open',
       required_tags: [TAG_ID],
       published_at: null,
+      sequential: false,
+      prerequisite_course_id: null,
       created_by: CALLER_ID,
     });
     expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/conteudos');
@@ -165,6 +168,54 @@ describe('createCourseAction (V3 PR3 + V3.1 sem slug)', () => {
 
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/falha a criar/i) });
     expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('grava sequential=true quando o toggle está marcado (V3.6)', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockInsertSingle.mockResolvedValue({ data: { id: COURSE_ID }, error: null });
+
+    await createCourseAction(formDataOf({ title: 'Marcos', sequential: 'on' }));
+
+    const payload = mockInsertPayload.mock.calls[0][0] as { sequential: boolean };
+    expect(payload.sequential).toBe(true);
+  });
+
+  it('grava prerequisite_course_id quando o curso pré-requisito existe (V3.6)', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    // validatePrerequisite: lookup do candidato → existe, cadeia termina.
+    mockMaybeSingle.mockResolvedValueOnce({ data: { prerequisite_course_id: null }, error: null });
+    mockInsertSingle.mockResolvedValue({ data: { id: COURSE_ID }, error: null });
+
+    const result = await createCourseAction(
+      formDataOf({ title: 'Marcos', prerequisite_course_id: PREREQ_ID }),
+    );
+
+    expect(result).toEqual({ ok: true, id: COURSE_ID });
+    const payload = mockInsertPayload.mock.calls[0][0] as { prerequisite_course_id: string | null };
+    expect(payload.prerequisite_course_id).toBe(PREREQ_ID);
+  });
+
+  it('recusa pré-requisito que não existe (V3.6)', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockMaybeSingle.mockResolvedValueOnce({ data: null, error: null }); // candidato não existe
+
+    const result = await createCourseAction(
+      formDataOf({ title: 'Marcos', prerequisite_course_id: PREREQ_ID }),
+    );
+
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/não encontrado/i) });
+    expect(mockInsertPayload).not.toHaveBeenCalled();
+  });
+
+  it('recusa pré-requisito que não é UUID (V3.6)', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+
+    const result = await createCourseAction(
+      formDataOf({ title: 'Marcos', prerequisite_course_id: 'xpto' }),
+    );
+
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/pré-requisito inválido/i) });
+    expect(mockInsertPayload).not.toHaveBeenCalled();
   });
 });
 
@@ -243,6 +294,54 @@ describe('updateCourseAction (V3 PR3 + V3.1 sem slug)', () => {
 
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/não encontrado/i) });
     expect(mockUpdatePayload).not.toHaveBeenCalled();
+  });
+
+  it('recusa o próprio curso como pré-requisito (auto-referência, V3.6)', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+
+    const result = await updateCourseAction(
+      formDataOf({ id: COURSE_ID, title: 'Marcos', prerequisite_course_id: COURSE_ID }),
+    );
+
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/si mesmo/i) });
+    expect(mockUpdatePayload).not.toHaveBeenCalled();
+  });
+
+  it('recusa pré-requisito que cria um ciclo (V3.6)', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    // candidato PREREQ_ID tem como pré-requisito o próprio COURSE_ID → ciclo.
+    mockMaybeSingle.mockResolvedValueOnce({
+      data: { prerequisite_course_id: COURSE_ID },
+      error: null,
+    });
+
+    const result = await updateCourseAction(
+      formDataOf({ id: COURSE_ID, title: 'Marcos', prerequisite_course_id: PREREQ_ID }),
+    );
+
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/ciclo/i) });
+    expect(mockUpdatePayload).not.toHaveBeenCalled();
+  });
+
+  it('aceita pré-requisito válido e grava prerequisite_course_id (V3.6)', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    // 1ª maybeSingle: validatePrerequisite (candidato existe, cadeia termina).
+    // 2ª maybeSingle: lookup do curso a actualizar (published_at/banner).
+    mockMaybeSingle
+      .mockResolvedValueOnce({ data: { prerequisite_course_id: null }, error: null })
+      .mockResolvedValueOnce({
+        data: { published_at: null, banner_storage_path: null },
+        error: null,
+      });
+    mockUpdateEq.mockResolvedValue({ error: null });
+
+    const result = await updateCourseAction(
+      formDataOf({ id: COURSE_ID, title: 'Marcos', prerequisite_course_id: PREREQ_ID }),
+    );
+
+    expect(result).toEqual({ ok: true });
+    const payload = mockUpdatePayload.mock.calls[0][0] as { prerequisite_course_id: string | null };
+    expect(payload.prerequisite_course_id).toBe(PREREQ_ID);
   });
 });
 

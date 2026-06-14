@@ -34,6 +34,17 @@ export type CourseDetail = {
   icon: string | null;
   /** Signed URL do banner (V3.2 PR1). `null` se sem banner ou se signing falhou. */
   bannerUrl: string | null;
+  /**
+   * V3.6: quando `true`, as aulas (e logo os módulos) têm de ser concluídas
+   * pela ordem linear. Consumido por `src/lib/courses/sequencing.ts`.
+   */
+  sequential: boolean;
+  /**
+   * V3.6: curso que tem de estar concluído antes deste. `null` = autónomo.
+   * Só é preenchido se o pré-requisito for visível ao utilizador (RLS); se
+   * for invisível (draft/restrito), vem `null` e não bloqueia.
+   */
+  prerequisite: { id: string; title: string } | null;
   modules: ModuleWithLessons[];
 };
 
@@ -43,6 +54,8 @@ type CourseDetailRow = {
   description: string | null;
   icon: string | null;
   banner_storage_path: string | null;
+  sequential: boolean;
+  prerequisite_course_id: string | null;
   modules: ModuleWithLessons[] | null;
 };
 
@@ -57,7 +70,7 @@ export async function getCourseDetailById(courseId: string): Promise<CourseDetai
   const { data, error } = await supabase
     .from('courses')
     .select(
-      'id, title, description, icon, banner_storage_path, modules ( id, title, description, position, lessons ( id, title, description, template, position ) )',
+      'id, title, description, icon, banner_storage_path, sequential, prerequisite_course_id, modules ( id, title, description, position, lessons ( id, title, description, template, position ) )',
     )
     .eq('id', courseId)
     .maybeSingle<CourseDetailRow>();
@@ -73,6 +86,7 @@ export async function getCourseDetailById(courseId: string): Promise<CourseDetai
     .sort((a, b) => a.position - b.position);
 
   const bannerUrl = await getBannerUrlForPath(data.banner_storage_path);
+  const prerequisite = await getPrerequisiteSummary(data.prerequisite_course_id);
 
   return {
     id: data.id,
@@ -80,8 +94,29 @@ export async function getCourseDetailById(courseId: string): Promise<CourseDetai
     description: data.description,
     icon: data.icon,
     bannerUrl,
+    sequential: data.sequential,
+    prerequisite,
     modules,
   };
+}
+
+/**
+ * Carrega o resumo (id + título) do curso pré-requisito. Devolve `null` se
+ * não houver pré-requisito ou se o curso não for visível ao utilizador
+ * actual (RLS) — nesse caso não há bloqueio. Lookup leve e separado em vez
+ * de embed self-referencial do PostgREST (mais robusto, opção aborrecida).
+ */
+async function getPrerequisiteSummary(
+  prerequisiteCourseId: string | null,
+): Promise<{ id: string; title: string } | null> {
+  if (!prerequisiteCourseId) return null;
+  const supabase = await getServerClient();
+  const { data } = await supabase
+    .from('courses')
+    .select('id, title')
+    .eq('id', prerequisiteCourseId)
+    .maybeSingle<{ id: string; title: string }>();
+  return data ?? null;
 }
 
 export type LessonDetail = {

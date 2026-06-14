@@ -18,6 +18,7 @@ function makeCourse(overrides: Partial<VisibleCourse> = {}): VisibleCourse {
     icon: 'book-open',
     bannerUrl: null,
     hasLessons: true,
+    prerequisite: null,
     ...overrides,
   };
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Check } from 'lucide-react';
+import { Check, Lock } from 'lucide-react';
 
 import { getCurrentUser } from '@/lib/auth';
 import { UUID_RE } from '@/lib/validation';
@@ -10,12 +10,14 @@ import { CourseImage } from '@/lib/courses/course-image';
 import { getCourseDetailById } from '@/lib/courses/detail';
 import { LESSON_TEMPLATE_LABEL } from '@/lib/courses/template-label';
 import {
+  getCompletedCourseIdsForCurrentUser,
   getCompletedLessonIds,
   getFirstIncompleteLesson,
   getOrCreateCourseCompletion,
   isCourseComplete,
   isModuleComplete,
 } from '@/lib/courses/completion';
+import { getSequentialAccess } from '@/lib/courses/sequencing';
 import { getEnrollmentState } from '@/lib/courses/enrollment';
 import { ProviderSignIn } from '@/components/site/provider-sign-in';
 import { EnrollCourseCta } from './enroll-course-cta';
@@ -54,6 +56,18 @@ export default async function CoursePage({ params }: PageProps) {
   const user = await getCurrentUser();
   const enrollmentState = await getEnrollmentState(courseId);
 
+  // V3.6: pré-requisito de curso. Só interessa quando o utilizador ainda não
+  // está inscrito - quem já está inscrito não é bloqueado retroactivamente.
+  // `prerequisite` vem `null` se o pré-requisito não for visível ao
+  // utilizador (RLS), logo não bloqueia.
+  let prerequisiteLock: { id: string; title: string } | null = null;
+  if (course.prerequisite && enrollmentState === 'not-enrolled') {
+    const completedCourseIds = await getCompletedCourseIdsForCurrentUser();
+    if (!completedCourseIds.has(course.prerequisite.id)) {
+      prerequisiteLock = course.prerequisite;
+    }
+  }
+
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
       <CourseImage
@@ -77,7 +91,7 @@ export default async function CoursePage({ params }: PageProps) {
       {enrollmentState === 'anon' ? (
         <AnonCourseView courseId={course.id} />
       ) : enrollmentState === 'not-enrolled' ? (
-        <NotEnrolledCourseView course={course} />
+        <NotEnrolledCourseView course={course} prerequisiteLock={prerequisiteLock} />
       ) : (
         <EnrolledCourseView course={course} userPresent={user !== null} />
       )}
@@ -110,14 +124,37 @@ type CourseForView = Awaited<ReturnType<typeof getCourseDetailById>>;
 /**
  * Vista "logado, não inscrito": mostra estrutura (módulos + aulas) em
  * read-only (não clicáveis) + CTA grande "Adicionar a Meus cursos" para
- * inscrever.
+ * inscrever. Se houver pré-requisito por cumprir, o CTA é substituído por um
+ * aviso com link ao curso pré-requisito (V3.6).
  */
-function NotEnrolledCourseView({ course }: { course: NonNullable<CourseForView> }) {
+function NotEnrolledCourseView({
+  course,
+  prerequisiteLock,
+}: {
+  course: NonNullable<CourseForView>;
+  prerequisiteLock: { id: string; title: string } | null;
+}) {
   const hasAnyLesson = course.modules.some((m) => m.lessons.length > 0);
 
   return (
     <>
-      {hasAnyLesson ? (
+      {prerequisiteLock ? (
+        <div className="border-border bg-muted/30 mt-8 rounded-2xl border p-6 sm:p-8">
+          <p className="text-muted-foreground inline-flex items-center gap-2 text-xs font-semibold tracking-wide uppercase">
+            <Lock aria-hidden="true" className="h-4 w-4" />
+            Curso bloqueado
+          </p>
+          <p className="text-ink mt-2 max-w-prose text-base leading-relaxed">
+            Para começar este curso, conclui primeiro <strong>{prerequisiteLock.title}</strong>.
+          </p>
+          <Link
+            href={`/conteudos/${prerequisiteLock.id}`}
+            className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring mt-5 inline-flex h-10 items-center justify-center rounded-md px-5 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          >
+            Ir para {prerequisiteLock.title} →
+          </Link>
+        </div>
+      ) : hasAnyLesson ? (
         <EnrollCourseCta courseId={course.id} />
       ) : (
         <p className="text-muted-foreground mt-8 inline-flex items-center rounded-md border border-dashed px-4 py-3 text-sm">
@@ -208,6 +245,8 @@ async function EnrolledCourseView({
   const nextLesson = getFirstIncompleteLesson(course, completed);
   const courseDone = isCourseComplete(course, completed);
   const completedAt = courseDone ? await getOrCreateCourseCompletion(course.id) : null;
+  // V3.6: módulos bloqueados por sequência ficam não-clicáveis com dica.
+  const { lockedModuleIds } = getSequentialAccess(course, completed);
 
   return (
     <>
@@ -256,6 +295,35 @@ async function EnrolledCourseView({
               const completedInModule = mod.lessons.filter((l) => completed.has(l.id)).length;
               const total = mod.lessons.length;
               const moduleDone = isModuleComplete(mod, completed);
+              const isLocked = lockedModuleIds.has(mod.id);
+
+              if (isLocked) {
+                return (
+                  <li key={mod.id}>
+                    <div
+                      aria-disabled="true"
+                      title="Conclui o módulo anterior primeiro"
+                      className="border-border bg-muted/20 flex items-center justify-between gap-4 rounded-xl border p-5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-xs tracking-wide uppercase">
+                          Módulo {moduleIndex + 1}
+                        </p>
+                        <h3 className="font-display text-muted-foreground mt-1 text-xl font-medium tracking-tight">
+                          {mod.title}
+                        </h3>
+                        <p className="text-muted-foreground mt-2 text-sm">
+                          Conclui o módulo anterior para desbloquear.
+                        </p>
+                      </div>
+                      <Lock
+                        aria-label="Módulo bloqueado"
+                        className="text-muted-foreground h-5 w-5 shrink-0"
+                      />
+                    </div>
+                  </li>
+                );
+              }
 
               return (
                 <li key={mod.id}>

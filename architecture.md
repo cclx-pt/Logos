@@ -1,7 +1,7 @@
 # architecture.md — Logos
 
 > **Quando atualizar:** após mudanças estruturais (novo serviço, alteração de modelo de dados, nova fronteira de segurança, mudança de stack).
-> **Última atualização:** 20-05-2026 (V3 PR7 — conclusão binária deriva on-read de `lesson_completions`; `course_completions` schema mantido mas não escrita em V3, ver §6)
+> **Última atualização:** 14-06-2026 (V3.6 — pré-requisitos sequenciais: `courses.sequential` + `courses.prerequisite_course_id`, aplicação server-side em `src/lib/courses/sequencing.ts`, ver §2 e §6)
 
 ## 1. Visão de alto nível
 
@@ -41,6 +41,8 @@ courses
  ├─ slug (unique)
  ├─ title, description, icon
  ├─ required_tags[] (V3: aplicado aqui)
+ ├─ sequential (bool, V3.6: aulas/módulos em ordem obrigatória)
+ ├─ prerequisite_course_id (FK → courses, nullable, V3.6: cadeia de cursos)
  ├─ created_at, updated_at, published_at
 modules
  ├─ id (uuid, PK)
@@ -102,6 +104,7 @@ profiles  -- fonte de verdade do Logos para o utilizador
 | Storage RLS por path em `lesson-pdfs` (`lesson_pdfs_select_visible`) | `20260521000000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 | `course_access_log` SELECT `select_own` (V3.1 T4) | `20260526180000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 | Banner opcional em cursos + bucket `course-banners` + storage RLS por path | `20260527000000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
+| Pré-requisitos sequenciais: `courses.sequential` + `courses.prerequisite_course_id` (auto-FK, on delete set null) + CHECK não-auto-referência (V3.6) | `20260614140000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 
 Migrations V3 sobem a `logos-prod` apenas no dia do lançamento (01-07-2026). Ver `feature-docs/branch-strategy.md`.
 
@@ -164,7 +167,9 @@ Se a shell partilhada CCLX vier a oferecer email/password ou mais providers no f
 
 - `lesson_completions` é a fonte primária para conclusão por aula. Toggle binário (`markLessonCompleteAction` / `unmarkLessonCompleteAction`). RLS filtra por `current_profile_id()` — conclusão é acto pessoal (admin não marca por outros).
 - "Curso concluído" é **detectado on-read** via `isCourseComplete(course, completedLessonIds)` (helper em `src/lib/courses/completion.ts`). Quando todas as aulas visíveis estão concluídas E não há row em `course_completions`, a página de curso insere uma — `completed_at` fica preservado para sempre. RLS de PR2 torna a row imutável (sem UPDATE/DELETE policies); desmarcar uma aula depois não apaga a conclusão original do curso.
-- Helper `getOrCreateCourseCompletion(courseId)` faz select-then-insert idempotente, com 23505 trap para race entre dois page renders simultâneos. Falha silenciosa (retorna `null`) para não partir o render do banner.
+- Helper `getOrCreateCourseCompletion(courseId)` faz select-then-insert idempotente, com 23505 trap para race entre dois page renders simultâneos. Falha silenciosa (retorna `null`) para não partir o render do banner. **V3.6:** a página de aula passa a chamar este helper assim que `isCourseComplete` é verdade (antes só a página de curso o fazia) - garante que `course_completions` existe a tempo de os pré-requisitos de outros cursos o lerem.
+
+**Sequência e pré-requisitos (V3.6) — aplicação server-side, não em RLS.** A regra de progressão vive em `src/lib/courses/sequencing.ts` (funções puras: `getSequentialAccess` devolve `lockedLessonIds`/`lockedModuleIds` a partir do `CourseDetail` + set de aulas concluídas; `getFrontierLesson`/`findModuleOfLesson` resolvem o destino do redirect). As páginas de aula e de módulo redireccionam conteúdo bloqueado para a fronteira; a landing e `enrollAction` (gate de pré-requisito via `course_completions`) impedem entrar antes de o pré-requisito estar concluído. **Não está em RLS** pela mesma razão que a conclusão de curso: a regra é dinâmica e por utilizador, e metê-la em policies exigiria juntar `lesson_completions`/`course_completions` em cada SELECT de `lessons`/`modules`/`courses` sem ganho de segurança (o conteúdo continua protegido por etiqueta/role). Bloqueio **mostrado com cadeado**, ao contrário da invisibilidade por etiqueta (`SPEC_1.md` §5/§6). Ciclos de pré-requisito travados na Server Action (`validatePrerequisite` percorre a cadeia); auto-referência também por CHECK na BD.
 
 ## 7. Storage (PDFs e banners)
 
