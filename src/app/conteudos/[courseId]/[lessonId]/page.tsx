@@ -152,7 +152,7 @@ export default async function LessonPage({ params }: PageProps) {
               src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
               title={`Vídeo: ${lesson.title}`}
               loading="lazy"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; fullscreen; gyroscope; picture-in-picture; web-share"
               referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
               className="h-full w-full"
