@@ -53,9 +53,9 @@ export async function Header() {
 
   return (
     <header className="bg-background/95 border-border supports-[backdrop-filter]:bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        {/* Esquerda: logo + navegação por ordem de leitura (institucionais → Live → funcionais). */}
-        <div className="flex min-w-0 items-center gap-3 lg:gap-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 xl:justify-start xl:gap-8">
+        {/* Esquerda: hamburguer (mobile) + logo. */}
+        <div className="flex items-center gap-3">
           <MobileNav
             showAdminLink={showAdminBadge}
             conversasHref={conversasHref}
@@ -63,24 +63,25 @@ export async function Header() {
             conversasHasUnread={conversasHasUnread}
           />
           <Logo size="md" />
-          <nav
-            aria-label="Navegação principal"
-            className="hidden items-center gap-6 whitespace-nowrap xl:flex xl:gap-8"
-          >
-            <NavLinks orientation="horizontal" items={institutionalNavItems} />
-            <LiveNavLink orientation="horizontal" />
-            <NavLinks orientation="horizontal" items={functionalNavItems} />
-          </nav>
         </div>
-        {/* Direita: área pessoal por ordem (conversas → admin → perfil). */}
-        <div className="flex shrink-0 items-center gap-4 lg:gap-6">
+        {/* Centro: navegação por ordem de leitura, todos os itens à mesma distância (gap-8). */}
+        <nav
+          aria-label="Navegação principal"
+          className="hidden items-center gap-8 whitespace-nowrap xl:flex"
+        >
+          <NavLinks orientation="horizontal" items={institutionalNavItems} />
+          <LiveNavLink orientation="horizontal" />
+          <NavLinks orientation="horizontal" items={functionalNavItems} />
           <ConversasLink
             href={conversasHref}
             hasConversations={conversasHasConversations}
             hasUnread={conversasHasUnread}
-            className="hidden shrink-0 whitespace-nowrap xl:inline-flex"
+            className="shrink-0 whitespace-nowrap"
           />
-          {showAdminBadge && <AdminBadgeLink className="hidden shrink-0 xl:inline-flex" />}
+          {showAdminBadge && <AdminBadgeLink className="shrink-0" />}
+        </nav>
+        {/* Direita: conta (perfil), encostada à direita. */}
+        <div className="flex shrink-0 items-center xl:ml-auto">
           {user ? <UserMenu user={user} /> : <SignInButton />}
         </div>
       </div>
