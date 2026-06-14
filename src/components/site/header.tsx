@@ -8,17 +8,20 @@ import { SignInButton } from './sign-in-button';
 import { UserMenu } from './user-menu';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { isConversationUnread } from '@/lib/questions/question';
-import { primaryNavItems, secondaryNavItems } from '@/lib/site-config';
+import { institutionalNavItems, functionalNavItems } from '@/lib/site-config';
 
 export async function Header() {
   const user = await getCurrentUser();
   const showAdminBadge = user !== null && user.role !== 'user';
 
-  // Indicador leve "tens resposta": acende quando há uma conversa do próprio que
-  // a equipa respondeu e o aluno ainda não abriu (answered + updated_at >
-  // owner_seen_at). Filtro explícito por profile_id - a RLS de admin é
-  // permissiva. Falha-aberto (ponto apagado) se a query falhar.
+  // Estado do ponto "As minhas conversas" (duas cores, sem gamificação):
+  //  - laranja (alerta): conversa do próprio que a equipa respondeu e o aluno
+  //    ainda não abriu (answered + updated_at > owner_seen_at).
+  //  - cinza (neutro): há conversas mas nada novo por ler.
+  // Filtro explícito por profile_id - a RLS de admin é permissiva. Falha-aberto
+  // (sem ponto) se a query falhar.
   let conversasHasUnread = false;
+  let conversasHasConversations = false;
   if (user) {
     try {
       const supabase = await getServerClient();
@@ -26,11 +29,12 @@ export async function Header() {
         .from('lesson_questions')
         .select('status, updated_at, owner_seen_at')
         .eq('profile_id', user.id)
-        .eq('status', 'answered')
         .returns<
           { status: 'new' | 'answered'; updated_at: string; owner_seen_at: string | null }[]
         >();
-      conversasHasUnread = (data ?? []).some((r) =>
+      const rows = data ?? [];
+      conversasHasConversations = rows.length > 0;
+      conversasHasUnread = rows.some((r) =>
         isConversationUnread({
           status: r.status,
           updatedAt: r.updated_at,
@@ -39,17 +43,23 @@ export async function Header() {
       );
     } catch {
       conversasHasUnread = false;
+      conversasHasConversations = false;
     }
   }
+
+  // "As minhas conversas" aparece a toda a gente: deslogado, o link força o
+  // login e volta a /perguntas (a própria página também tem este guard).
+  const conversasHref = user ? '/perguntas' : '/entrar?next=/perguntas';
 
   return (
     <header className="bg-background/95 border-border supports-[backdrop-filter]:bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        {/* Esquerda: navegação funcional (catálogo, percurso, live) junto ao logo. */}
+        {/* Esquerda: logo + navegação por ordem de leitura (institucionais → Live → funcionais). */}
         <div className="flex min-w-0 items-center gap-3 lg:gap-6">
           <MobileNav
             showAdminLink={showAdminBadge}
-            showConversasLink={user !== null}
+            conversasHref={conversasHref}
+            conversasHasConversations={conversasHasConversations}
             conversasHasUnread={conversasHasUnread}
           />
           <Logo size="md" />
@@ -57,21 +67,19 @@ export async function Header() {
             aria-label="Navegação principal"
             className="hidden items-center gap-6 lg:flex xl:gap-8"
           >
-            <NavLinks orientation="horizontal" items={primaryNavItems} />
+            <NavLinks orientation="horizontal" items={institutionalNavItems} />
             <LiveNavLink orientation="horizontal" />
+            <NavLinks orientation="horizontal" items={functionalNavItems} />
           </nav>
         </div>
-        {/* Direita: páginas institucionais + área pessoal. */}
+        {/* Direita: área pessoal por ordem (conversas → admin → perfil). */}
         <div className="flex items-center gap-4 lg:gap-6">
-          <nav
-            aria-label="Navegação institucional"
-            className="hidden items-center gap-6 lg:flex xl:gap-8"
-          >
-            <NavLinks orientation="horizontal" items={secondaryNavItems} />
-          </nav>
-          {user && (
-            <ConversasLink hasUnread={conversasHasUnread} className="hidden lg:inline-flex" />
-          )}
+          <ConversasLink
+            href={conversasHref}
+            hasConversations={conversasHasConversations}
+            hasUnread={conversasHasUnread}
+            className="hidden lg:inline-flex"
+          />
           {showAdminBadge && <AdminBadgeLink className="hidden lg:inline-flex" />}
           {user ? <UserMenu user={user} /> : <SignInButton />}
         </div>

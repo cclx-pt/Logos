@@ -7,18 +7,21 @@ import { AdminBadgeLink } from './admin-badge-link';
 import { ConversasLink } from './conversas-link';
 import { NavLinks } from './nav-links';
 import { LiveNavLink } from './live-nav-link';
-import { primaryNavItems, secondaryNavItems } from '@/lib/site-config';
+import { institutionalNavItems, functionalNavItems } from '@/lib/site-config';
 import { cn } from '@/lib/utils';
 
 type MobileNavProps = {
   showAdminLink?: boolean;
-  showConversasLink?: boolean;
+  /** Destino de "As minhas conversas" (login se deslogado). */
+  conversasHref: string;
+  conversasHasConversations?: boolean;
   conversasHasUnread?: boolean;
 };
 
 export function MobileNav({
   showAdminLink = false,
-  showConversasLink = false,
+  conversasHref,
+  conversasHasConversations = false,
   conversasHasUnread = false,
 }: MobileNavProps) {
   const [open, setOpen] = useState(false);
@@ -55,26 +58,30 @@ export function MobileNav({
         'bg-background border-border border-t lg:hidden',
       )}
     >
-      <NavLinks orientation="vertical" items={primaryNavItems} onNavigate={() => setOpen(false)} />
+      <NavLinks
+        orientation="vertical"
+        items={institutionalNavItems}
+        onNavigate={() => setOpen(false)}
+      />
       <div className="mt-1">
         <LiveNavLink orientation="vertical" onNavigate={() => setOpen(false)} />
       </div>
-      <div className="border-border mt-6 border-t pt-6">
+      <div className="mt-1">
         <NavLinks
           orientation="vertical"
-          items={secondaryNavItems}
+          items={functionalNavItems}
           onNavigate={() => setOpen(false)}
         />
       </div>
-      {showConversasLink && (
-        <div className="border-border mt-6 border-t pt-6">
-          <ConversasLink
-            hasUnread={conversasHasUnread}
-            onNavigate={() => setOpen(false)}
-            className="text-base"
-          />
-        </div>
-      )}
+      <div className="border-border mt-6 border-t pt-6">
+        <ConversasLink
+          href={conversasHref}
+          hasConversations={conversasHasConversations}
+          hasUnread={conversasHasUnread}
+          onNavigate={() => setOpen(false)}
+          className="text-base"
+        />
+      </div>
       {showAdminLink && (
         <div className="border-border mt-6 border-t pt-6">
           <AdminBadgeLink onNavigate={() => setOpen(false)} />

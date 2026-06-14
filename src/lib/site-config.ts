@@ -17,20 +17,23 @@ export type NavItem = {
 };
 
 /**
- * Navegação dividida em dois grupos para o cabeçalho desktop respirar:
- *  - `primaryNavItems` (funcionais) ficam à esquerda, junto ao logo.
- *  - `secondaryNavItems` (institucionais: conhece-nos, contacto) ficam à
- *    direita, junto à área de utilizador.
- * O menu mobile junta os dois (`navItems`) na mesma ordem lógica.
+ * Navegação do cabeçalho, por ordem de leitura (esquerda → direita):
+ * institucionais → Live → funcionais. O Live é renderizado à parte
+ * (`LiveNavLink`, dinâmico) entre os dois grupos. O menu mobile segue a mesma
+ * ordem. As páginas pessoais (conversas, admin, perfil) ficam à direita, fora
+ * destes grupos.
  */
-export const primaryNavItems: readonly NavItem[] = [
-  { href: '/conteudos', label: 'Conteúdos' },
-  { href: '/meus-cursos', label: 'Meus cursos' },
-] as const;
-
-export const secondaryNavItems: readonly NavItem[] = [
+export const institutionalNavItems: readonly NavItem[] = [
   { href: '/conhece-nos', label: 'Conhece-nos' },
   { href: '/fala-connosco', label: 'Fala connosco' },
 ] as const;
 
-export const navItems: readonly NavItem[] = [...primaryNavItems, ...secondaryNavItems] as const;
+export const functionalNavItems: readonly NavItem[] = [
+  { href: '/conteudos', label: 'Conteúdos' },
+  { href: '/meus-cursos', label: 'Meus cursos' },
+] as const;
+
+export const navItems: readonly NavItem[] = [
+  ...institutionalNavItems,
+  ...functionalNavItems,
+] as const;
