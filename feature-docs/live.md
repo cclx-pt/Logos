@@ -16,13 +16,17 @@ o estado muda **para todos os visitantes em menos de 1 segundo**, sem recarregar
 a página (Supabase Realtime).
 
 - **Ao vivo:** a entrada de nav fica clicável e mostra um badge **"Ao vivo"**
-  (vermelho `#FF0000`, ponto a pulsar). Em `/live`, o leitor embebido aparece em
-  16:9 com `autoplay`. **Durante a emissão não há texto** na página - só o leitor
-  e o botão "Subscrever canal" (pedido explícito: sem "espetadores" nem descrições
-  por cima do vídeo). O `<h1>` "Live" existe só para leitores de ecrã (`sr-only`).
-- **A ligar:** o admin já ligou o interruptor mas o `videoId` ainda está a ser
-  resolvido (atraso de propagação do YouTube). Mostra um indicador de espera
-  (spinner), **sem texto visível** (`sr-only`: "A ligar à transmissão em direto.").
+  (vermelho `#FF0000`, ponto a pulsar). Em `/live`, o leitor embebe o
+  **`live_stream` do CANAL** (não um `videoId` específico) em 16:9 com `autoplay`:
+  a YouTube serve a emissão em curso e, quando ela acaba, um ecrã offline -
+  **nunca a gravação (VOD)**. **Durante a emissão não há texto** na página - só o
+  leitor e o botão "Subscrever canal" (pedido explícito: sem "espetadores" nem
+  descrições por cima do vídeo). O `<h1>` "Live" existe só para leitores de ecrã
+  (`sr-only`).
+- **A ligar (interruptor ligado, stream ainda por começar):** o leitor mostra o
+  embed do canal, que apresenta o ecrã de espera/offline do próprio YouTube até o
+  stream arrancar. O `videoId` continua a ser resolvido no servidor, mas só
+  alimenta a deteção de fim - já não troca o que o leitor mostra.
 - **Offline / terminada:** a entrada de nav aparece a cinzento legível
   (`text-muted-foreground`), badge **"Offline"**, **não clicável**
   (`aria-disabled`, fora do tab order). A página `/live` mostra **"Obrigado por
@@ -115,7 +119,7 @@ confirmação):
 | Situação | Resultado |
 |---|---|
 | Interruptor ligado, `videos.list` confirma a decorrer | `live:true` (com `videoId`) |
-| Interruptor ligado, `videoId` por resolver (dentro de `armed_until`) | `live:true`, `videoId:null` → "a ligar" |
+| Interruptor ligado, `videoId` por resolver (dentro de `armed_until`) | `live:true`, `videoId:null` (leitor mostra o embed do canal: ecrã de espera do YouTube) |
 | Interruptor ligado mas sem `YOUTUBE_API_KEY` | confia no admin: `live:true` + `stale:true` |
 | Interruptor ligado, `armed_until` expirou sem stream | `live:false` |
 | Interruptor desligado | cai para as janelas (abaixo) |
@@ -143,7 +147,7 @@ confirmação):
 | `src/app/live/page.tsx` | Página `/live` (render inicial no servidor; `<h1>` `sr-only`) |
 | `src/app/admin/live/page.tsx` | Painel admin: estado + botões "Estamos no ar"/"Terminámos" |
 | `src/app/admin/live/actions.ts` | Server actions `goLiveAction`/`endLiveAction` (guarda `isAdmin`, escreve `live_override`) |
-| `src/components/site/live-player.tsx` | Leitor 16:9 (3 estados: ao vivo / a ligar / terminada) + botão "Subscrever canal" |
+| `src/components/site/live-player.tsx` | Leitor 16:9 que embebe o `live_stream` do CANAL (a YouTube serve a emissão em curso ou um ecrã offline, **nunca o VOD**) + botão "Subscrever canal" |
 | `src/components/site/live-badge.tsx` | Badge "Ao vivo"/"Offline" |
 | `src/components/site/live-nav-link.tsx` | Entrada de nav com os 3 estados |
 | `supabase/migrations/20260613140000_live_override.sql` | Tabela singleton `live_override` + RLS + publicação Realtime (**só logos-dev**) |

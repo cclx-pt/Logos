@@ -1,6 +1,6 @@
 'use client';
 
-import { YOUTUBE_SUBSCRIBE_URL } from '@/lib/youtube/channel';
+import { YOUTUBE_LIVE_EMBED_URL, YOUTUBE_SUBSCRIBE_URL } from '@/lib/youtube/channel';
 import { useLiveStatus } from '@/lib/youtube/use-live-status';
 import type { LiveStatus } from '@/lib/youtube/live-status';
 
@@ -28,41 +28,35 @@ function YoutubeGlyph() {
 
 /**
  * Leitor da transmissão dentro do portal (spec §6.3).
- *  - Ao vivo (videoId resolvido): embed responsivo 16:9 via `youtube-nocookie`.
- *  - A ligar (no ar, videoId ainda por resolver): indicador de espera, sem texto.
+ *  - Ao vivo: embed do `live_stream` do CANAL (não de um vídeo específico), 16:9
+ *    via `youtube-nocookie`. A YouTube serve a emissão em curso e, quando ela
+ *    termina, um ecrã offline - NUNCA a gravação (VOD). É isto que impede uma
+ *    live já terminada de aparecer como se ainda estivesse a decorrer.
  *  - Fora do ar / terminada: mensagem "a Live terminou".
- * O botão "Subscrever canal" aparece em todos os estados (spec §6.4).
+ * O botão "Subscrever canal" aparece nos dois estados (spec §6.4).
  *
  * O estado muda em <1s quando o admin liga/desliga o interruptor (Supabase
- * Realtime, ver useLiveStatus), com polling de 60s como backstop.
+ * Realtime, ver useLiveStatus), com polling de 60s como backstop. O leitor só
+ * decide entre "ao vivo" e "terminou" a partir do booleano `live`; o `videoId`
+ * deixou de alimentar o leitor (continua a servir a deteção de fim no servidor).
  */
 export function LivePlayer({ initialStatus }: LivePlayerProps) {
   const { status } = useLiveStatus(initialStatus);
   const live = status?.live === true;
-  const videoId = status?.videoId ?? null;
-  const connecting = live && videoId === null;
 
   return (
     <div className="space-y-4">
       <div className="border-border overflow-hidden rounded-2xl border bg-black">
-        {live && videoId ? (
+        {live ? (
           <div className="aspect-video w-full">
             <iframe
-              src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&autoplay=1`}
+              src={YOUTUBE_LIVE_EMBED_URL}
               title={PRESENTATION_TITLE}
               allow="autoplay; encrypted-media; picture-in-picture"
               allowFullScreen
               referrerPolicy="strict-origin-when-cross-origin"
               className="h-full w-full"
             />
-          </div>
-        ) : connecting ? (
-          <div className="bg-cream-card flex aspect-video w-full items-center justify-center px-6 text-center">
-            <span
-              className="border-border border-t-orange h-10 w-10 animate-spin rounded-full border-4"
-              aria-hidden="true"
-            />
-            <span className="sr-only">A ligar à transmissão em direto.</span>
           </div>
         ) : (
           <div className="bg-cream-card flex aspect-video w-full flex-col items-center justify-center gap-3 px-6 text-center">
