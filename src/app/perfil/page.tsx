@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getCurrentUser, getServerClient, ROLE_LABEL, type SupabaseUser } from '@/lib/auth';
 import { formatDate } from '@/lib/format';
+import { DeleteAccountSection } from './delete-account-section';
 
 export const metadata: Metadata = {
   title: 'Perfil',
@@ -93,6 +94,8 @@ export default async function PerfilPage() {
         Edição de perfil em breve. Por agora, alterações ao nome ou foto são geridas na tua conta
         Google.
       </p>
+
+      <DeleteAccountSection />
     </section>
   );
 }

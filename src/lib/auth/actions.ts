@@ -18,7 +18,8 @@
  */
 
 import { redirect } from 'next/navigation';
-import { getServerClient } from './index';
+import { getCurrentUser, getServerClient } from './index';
+import { getServiceRoleClient } from './service-client';
 import { safeNextPath } from './redirect';
 
 export async function signOutAction(): Promise<void> {
@@ -117,4 +118,70 @@ export async function verifyEmailOtpAction(
 
   const next = safeNextPath(formData.get('next'));
   redirect(next ?? '/');
+}
+
+// ---------------------------------------------------------------------------
+// Apagar conta (RGPD art. 17 — direito ao apagamento). O utilizador apaga a
+// própria conta e todos os dados associados. Sempre a sessão actual: nunca
+// recebe um id de alvo do cliente (sem IDOR).
+//
+// Ordem obrigatória pela BD: `profiles.external_auth_id → auth.users` tem
+// `ON DELETE RESTRICT` (migration 20260514002002), por isso apaga-se primeiro o
+// `profiles` (que faz CASCADE para inscrições, conclusões de aula/curso,
+// perguntas + mensagens de conversa, etiquetas do utilizador e logs de acesso)
+// e só depois o registo de identidade em `auth.users`. As FK de auditoria
+// (`created_by` / `assigned_by`, todas `ON DELETE RESTRICT`) só existem para
+// admins/super_admins — para um utilizador normal a cascata é limpa.
+// ---------------------------------------------------------------------------
+
+export type DeleteAccountState = { status: 'idle' } | { status: 'error'; message: string };
+
+const SUPPORT_EMAIL = 'logos@cclx.pt';
+
+export async function deleteAccountAction(
+  _prev: DeleteAccountState,
+  formData: FormData,
+): Promise<DeleteAccountState> {
+  // Confirmação textual: defesa contra cliques acidentais, não é segurança.
+  const confirm = formData.get('confirm');
+  if (typeof confirm !== 'string' || confirm.trim().toUpperCase() !== 'APAGAR') {
+    return { status: 'error', message: 'Escreve APAGAR para confirmar.' };
+  }
+
+  const profile = await getCurrentUser();
+  if (!profile) {
+    return { status: 'error', message: 'Sessão expirada. Inicia sessão e tenta novamente.' };
+  }
+
+  const svc = getServiceRoleClient();
+
+  // 1. Apagar o profile (cascata para todos os dados do domínio Logos).
+  const { error: profileError } = await svc.from('profiles').delete().eq('id', profile.id);
+  if (profileError) {
+    // Bloqueado por uma FK de auditoria (utilizador é admin com conteúdos
+    // criados / etiquetas atribuídas). Eliminação manual via suporte.
+    return {
+      status: 'error',
+      message: `Não foi possível apagar a conta automaticamente. Contacta ${SUPPORT_EMAIL} para concluir o pedido.`,
+    };
+  }
+
+  // 2. Apagar a identidade em auth.users (já sem profile a referenciá-la).
+  const { error: authError } = await svc.auth.admin.deleteUser(profile.externalAuthId);
+  if (authError) {
+    return {
+      status: 'error',
+      message: `A conta foi parcialmente removida. Contacta ${SUPPORT_EMAIL} para concluir.`,
+    };
+  }
+
+  // 3. Limpar os cookies da sessão (a identidade já não existe).
+  try {
+    const supabase = await getServerClient();
+    await supabase.auth.signOut();
+  } catch {
+    // Sessão já inválida — ignorar.
+  }
+
+  redirect('/?conta-apagada=1');
 }
