@@ -64,11 +64,11 @@ export default async function CoursePage({ params }: PageProps) {
         className="mb-6"
       />
       <header>
-        <h1 className="font-display text-ink text-3xl font-medium tracking-tight sm:text-4xl">
+        <h1 className="font-display text-ink text-3xl font-medium tracking-tight break-words sm:text-4xl">
           {course.title}
         </h1>
         {course.description ? (
-          <p className="text-muted-foreground mt-3 font-sans text-base leading-relaxed">
+          <p className="text-muted-foreground mt-3 max-w-prose font-sans text-base leading-relaxed break-words">
             {course.description}
           </p>
         ) : null}
@@ -142,11 +142,11 @@ function NotEnrolledCourseView({ course }: { course: NonNullable<CourseForView> 
                   <p className="text-muted-foreground text-xs tracking-wide uppercase">
                     Módulo {moduleIndex + 1}
                   </p>
-                  <h3 className="font-display text-ink mt-1 text-xl font-medium tracking-tight">
+                  <h3 className="font-display text-ink mt-1 text-xl font-medium tracking-tight break-words">
                     {mod.title}
                   </h3>
                   {mod.description ? (
-                    <p className="text-muted-foreground mt-2 max-w-prose text-sm leading-relaxed">
+                    <p className="text-muted-foreground mt-2 max-w-prose text-sm leading-relaxed break-words">
                       {mod.description}
                     </p>
                   ) : null}
@@ -267,11 +267,11 @@ async function EnrolledCourseView({
                       <p className="text-muted-foreground text-xs tracking-wide uppercase">
                         Módulo {moduleIndex + 1}
                       </p>
-                      <h3 className="font-display text-ink mt-1 text-xl font-medium tracking-tight">
+                      <h3 className="font-display text-ink mt-1 text-xl font-medium tracking-tight break-words">
                         {mod.title}
                       </h3>
                       {mod.description ? (
-                        <p className="text-muted-foreground mt-2 line-clamp-2 max-w-prose text-sm leading-relaxed">
+                        <p className="text-muted-foreground mt-2 line-clamp-2 max-w-prose text-sm leading-relaxed break-words">
                           {mod.description}
                         </p>
                       ) : null}

@@ -90,7 +90,7 @@ export function CourseCard({
       />
       <div className="flex flex-1 flex-col p-6">
         <div className="flex flex-wrap items-start gap-2">
-          <h2 className="font-display text-ink text-2xl leading-tight font-medium tracking-tight">
+          <h2 className="font-display text-ink text-2xl leading-tight font-medium tracking-tight break-words">
             {course.title}
           </h2>
           {showComingSoonBadge && (
@@ -111,7 +111,7 @@ export function CourseCard({
           )}
         </div>
         {!isCatalog && course.description ? (
-          <p className="text-muted-foreground mt-2 line-clamp-4 text-sm leading-relaxed">
+          <p className="text-muted-foreground mt-2 line-clamp-4 text-sm leading-relaxed break-words">
             {course.description}
           </p>
         ) : null}

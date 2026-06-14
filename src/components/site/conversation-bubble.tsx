@@ -38,7 +38,7 @@ export function ConversationBubble({
           ) : null}
           <span className="text-muted-foreground text-xs">{formatDateTime(at)}</span>
         </div>
-        <p className="text-ink text-sm leading-relaxed whitespace-pre-wrap">{body}</p>
+        <p className="text-ink text-sm leading-relaxed break-words whitespace-pre-wrap">{body}</p>
       </div>
     </article>
   );

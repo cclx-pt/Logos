@@ -136,11 +136,11 @@ export default async function LessonPage({ params }: PageProps) {
           <p className="text-muted-foreground text-xs tracking-wide uppercase">
             {lesson.module.title}
           </p>
-          <h1 className="font-display text-ink mt-2 text-3xl font-medium tracking-tight sm:text-4xl">
+          <h1 className="font-display text-ink mt-2 text-3xl font-medium tracking-tight break-words sm:text-4xl">
             {lesson.title}
           </h1>
           {lesson.description ? (
-            <p className="text-muted-foreground mt-4 font-sans text-base leading-relaxed">
+            <p className="text-muted-foreground mt-4 max-w-prose font-sans text-base leading-relaxed break-words">
               {lesson.description}
             </p>
           ) : null}
