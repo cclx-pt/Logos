@@ -23,7 +23,8 @@ type CourseRow = {
   required_tags: string[];
   published_at: string | null;
   banner_storage_path: string | null;
-  sequential: boolean;
+  sequential_lessons: boolean;
+  sequential_modules: boolean;
   prerequisite_course_id: string | null;
 };
 
@@ -60,7 +61,7 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
     supabase
       .from('courses')
       .select(
-        'id, title, description, icon, required_tags, published_at, banner_storage_path, sequential, prerequisite_course_id',
+        'id, title, description, icon, required_tags, published_at, banner_storage_path, sequential_lessons, sequential_modules, prerequisite_course_id',
       )
       .eq('id', courseId)
       .maybeSingle<CourseRow>(),
@@ -115,7 +116,8 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
     required_tags: course.required_tags,
     published_at: course.published_at,
     bannerUrl,
-    sequential: course.sequential,
+    sequential_lessons: course.sequential_lessons,
+    sequential_modules: course.sequential_modules,
     prerequisite_course_id: course.prerequisite_course_id,
   };
 

@@ -138,7 +138,8 @@ describe('createCourseAction (V3 PR3 + V3.1 sem slug)', () => {
       icon: 'book-open',
       required_tags: [TAG_ID],
       published_at: null,
-      sequential: false,
+      sequential_lessons: false,
+      sequential_modules: false,
       prerequisite_course_id: null,
       created_by: CALLER_ID,
     });
@@ -170,14 +171,19 @@ describe('createCourseAction (V3 PR3 + V3.1 sem slug)', () => {
     expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 
-  it('grava sequential=true quando o toggle está marcado (V3.6)', async () => {
+  it('grava os dois toggles de sequência de forma independente (V3.6)', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     mockInsertSingle.mockResolvedValue({ data: { id: COURSE_ID }, error: null });
 
-    await createCourseAction(formDataOf({ title: 'Marcos', sequential: 'on' }));
+    // Só módulos sequenciais, aulas livres.
+    await createCourseAction(formDataOf({ title: 'Marcos', sequential_modules: 'on' }));
 
-    const payload = mockInsertPayload.mock.calls[0][0] as { sequential: boolean };
-    expect(payload.sequential).toBe(true);
+    const payload = mockInsertPayload.mock.calls[0][0] as {
+      sequential_lessons: boolean;
+      sequential_modules: boolean;
+    };
+    expect(payload.sequential_lessons).toBe(false);
+    expect(payload.sequential_modules).toBe(true);
   });
 
   it('grava prerequisite_course_id quando o curso pré-requisito existe (V3.6)', async () => {

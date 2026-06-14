@@ -112,7 +112,7 @@ describe('getCourseDetailById', () => {
     expect(mockEq).toHaveBeenCalledWith('id', COURSE_ID);
   });
 
-  it('propaga sequential e prerequisite=null quando não há pré-requisito (V3.6)', async () => {
+  it('propaga sequentialLessons/Modules e prerequisite=null quando não há pré-requisito (V3.6)', async () => {
     setResponse({
       data: {
         id: COURSE_ID,
@@ -120,14 +120,16 @@ describe('getCourseDetailById', () => {
         description: null,
         icon: null,
         banner_storage_path: null,
-        sequential: true,
+        sequential_lessons: true,
+        sequential_modules: false,
         prerequisite_course_id: null,
         modules: [],
       },
       error: null,
     });
     const result = await getCourseDetailById(COURSE_ID);
-    expect(result!.sequential).toBe(true);
+    expect(result!.sequentialLessons).toBe(true);
+    expect(result!.sequentialModules).toBe(false);
     expect(result!.prerequisite).toBeNull();
   });
 });
@@ -208,7 +210,8 @@ function fakeCourse(): CourseDetail {
     description: null,
     icon: null,
     bannerUrl: null,
-    sequential: false,
+    sequentialLessons: false,
+    sequentialModules: false,
     prerequisite: null,
     modules: [
       {

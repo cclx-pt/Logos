@@ -1,7 +1,7 @@
 # architecture.md — Logos
 
 > **Quando atualizar:** após mudanças estruturais (novo serviço, alteração de modelo de dados, nova fronteira de segurança, mudança de stack).
-> **Última atualização:** 14-06-2026 (V3.6 — pré-requisitos sequenciais: `courses.sequential` + `courses.prerequisite_course_id`, aplicação server-side em `src/lib/courses/sequencing.ts`, ver §2 e §6)
+> **Última atualização:** 14-06-2026 (V3.6 — pré-requisitos sequenciais: `courses.sequential_lessons` + `courses.sequential_modules` (independentes) + `courses.prerequisite_course_id`, aplicação server-side em `src/lib/courses/sequencing.ts`, ver §2 e §6)
 
 ## 1. Visão de alto nível
 
@@ -41,7 +41,8 @@ courses
  ├─ slug (unique)
  ├─ title, description, icon
  ├─ required_tags[] (V3: aplicado aqui)
- ├─ sequential (bool, V3.6: aulas/módulos em ordem obrigatória)
+ ├─ sequential_lessons (bool, V3.6: aulas em ordem dentro do módulo)
+ ├─ sequential_modules (bool, V3.6: módulos em ordem; independente do anterior)
  ├─ prerequisite_course_id (FK → courses, nullable, V3.6: cadeia de cursos)
  ├─ created_at, updated_at, published_at
 modules
@@ -104,7 +105,7 @@ profiles  -- fonte de verdade do Logos para o utilizador
 | Storage RLS por path em `lesson-pdfs` (`lesson_pdfs_select_visible`) | `20260521000000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 | `course_access_log` SELECT `select_own` (V3.1 T4) | `20260526180000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 | Banner opcional em cursos + bucket `course-banners` + storage RLS por path | `20260527000000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
-| Pré-requisitos sequenciais: `courses.sequential` + `courses.prerequisite_course_id` (auto-FK, on delete set null) + CHECK não-auto-referência (V3.6) | `20260614140000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
+| Pré-requisitos sequenciais: `courses.sequential_lessons` + `courses.sequential_modules` + `courses.prerequisite_course_id` (auto-FK, on delete set null) + CHECK não-auto-referência (V3.6) | `20260614140000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 
 Migrations V3 sobem a `logos-prod` apenas no dia do lançamento (01-07-2026). Ver `feature-docs/branch-strategy.md`.
 

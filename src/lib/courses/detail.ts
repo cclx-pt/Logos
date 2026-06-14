@@ -35,10 +35,15 @@ export type CourseDetail = {
   /** Signed URL do banner (V3.2 PR1). `null` se sem banner ou se signing falhou. */
   bannerUrl: string | null;
   /**
-   * V3.6: quando `true`, as aulas (e logo os módulos) têm de ser concluídas
-   * pela ordem linear. Consumido por `src/lib/courses/sequencing.ts`.
+   * V3.6: quando `true`, as aulas têm de ser concluídas pela ordem dentro de
+   * cada módulo. Consumido por `src/lib/courses/sequencing.ts`.
    */
-  sequential: boolean;
+  sequentialLessons: boolean;
+  /**
+   * V3.6: quando `true`, um módulo só abre depois de o anterior estar
+   * totalmente concluído. Independente de `sequentialLessons`.
+   */
+  sequentialModules: boolean;
   /**
    * V3.6: curso que tem de estar concluído antes deste. `null` = autónomo.
    * Só é preenchido se o pré-requisito for visível ao utilizador (RLS); se
@@ -54,7 +59,8 @@ type CourseDetailRow = {
   description: string | null;
   icon: string | null;
   banner_storage_path: string | null;
-  sequential: boolean;
+  sequential_lessons: boolean;
+  sequential_modules: boolean;
   prerequisite_course_id: string | null;
   modules: ModuleWithLessons[] | null;
 };
@@ -70,7 +76,7 @@ export async function getCourseDetailById(courseId: string): Promise<CourseDetai
   const { data, error } = await supabase
     .from('courses')
     .select(
-      'id, title, description, icon, banner_storage_path, sequential, prerequisite_course_id, modules ( id, title, description, position, lessons ( id, title, description, template, position ) )',
+      'id, title, description, icon, banner_storage_path, sequential_lessons, sequential_modules, prerequisite_course_id, modules ( id, title, description, position, lessons ( id, title, description, template, position ) )',
     )
     .eq('id', courseId)
     .maybeSingle<CourseDetailRow>();
@@ -94,7 +100,8 @@ export async function getCourseDetailById(courseId: string): Promise<CourseDetai
     description: data.description,
     icon: data.icon,
     bannerUrl,
-    sequential: data.sequential,
+    sequentialLessons: data.sequential_lessons,
+    sequentialModules: data.sequential_modules,
     prerequisite,
     modules,
   };

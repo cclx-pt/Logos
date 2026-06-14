@@ -181,7 +181,8 @@ export async function createCourseAction(formData: FormData): Promise<CreateCour
   if (!requiredTags.ok) return requiredTags;
 
   const published = formData.get('published') === 'on';
-  const sequential = formData.get('sequential') === 'on';
+  const sequentialLessons = formData.get('sequential_lessons') === 'on';
+  const sequentialModules = formData.get('sequential_modules') === 'on';
 
   const prerequisite = await validatePrerequisite(formData.get('prerequisite_course_id'), null);
   if (!prerequisite.ok) return prerequisite;
@@ -212,7 +213,8 @@ export async function createCourseAction(formData: FormData): Promise<CreateCour
       icon: icon.value,
       required_tags: requiredTags.value,
       published_at: published ? new Date().toISOString() : null,
-      sequential,
+      sequential_lessons: sequentialLessons,
+      sequential_modules: sequentialModules,
       prerequisite_course_id: prerequisite.value,
       created_by: caller.id,
     })
@@ -272,7 +274,8 @@ export async function updateCourseAction(formData: FormData): Promise<CourseActi
   if (!requiredTags.ok) return requiredTags;
 
   const published = formData.get('published') === 'on';
-  const sequential = formData.get('sequential') === 'on';
+  const sequentialLessons = formData.get('sequential_lessons') === 'on';
+  const sequentialModules = formData.get('sequential_modules') === 'on';
   const removeBanner = formData.get('remove_banner') === 'on';
   const bannerFile = formData.get('banner');
   const hasNewBanner = bannerFile instanceof File && bannerFile.size > 0;
@@ -325,7 +328,8 @@ export async function updateCourseAction(formData: FormData): Promise<CourseActi
       icon: icon.value,
       required_tags: requiredTags.value,
       published_at: publishedAt,
-      sequential,
+      sequential_lessons: sequentialLessons,
+      sequential_modules: sequentialModules,
       prerequisite_course_id: prerequisite.value,
       banner_storage_path: bannerStoragePath,
     })

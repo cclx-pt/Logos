@@ -17,8 +17,10 @@ export type CourseFormInitialData = {
   published_at: string | null;
   /** Signed URL do banner actual (V3.2 PR1), se existir. Para preview no form. */
   bannerUrl: string | null;
-  /** V3.6: aulas em ordem obrigatória. */
-  sequential: boolean;
+  /** V3.6: aulas em ordem obrigatória dentro de cada módulo. */
+  sequential_lessons: boolean;
+  /** V3.6: módulos em ordem obrigatória (concluir um abre o próximo). */
+  sequential_modules: boolean;
   /** V3.6: id do curso pré-requisito, ou `null` se autónomo. */
   prerequisite_course_id: string | null;
 };
@@ -40,7 +42,8 @@ export function CourseForm({ mode, tags, courseOptions, course, action }: Course
   const pendingLabel = mode === 'create' ? 'A criar curso…' : 'A guardar…';
   const isPublished = Boolean(course?.published_at);
   const assignedTagIds = new Set(course?.required_tags ?? []);
-  const isSequential = Boolean(course?.sequential);
+  const isSequentialLessons = Boolean(course?.sequential_lessons);
+  const isSequentialModules = Boolean(course?.sequential_modules);
   const prerequisiteId = course?.prerequisite_course_id ?? '';
 
   return (
@@ -165,15 +168,30 @@ export function CourseForm({ mode, tags, courseOptions, course, action }: Course
         <label className="flex items-start gap-3">
           <input
             type="checkbox"
-            name="sequential"
-            defaultChecked={isSequential}
+            name="sequential_lessons"
+            defaultChecked={isSequentialLessons}
             className="text-orange-primary focus-visible:ring-ring mt-0.5 rounded focus-visible:ring-2 focus-visible:outline-none"
           />
           <span className="text-ink text-sm font-medium">
-            Conteúdo sequencial{' '}
+            Aulas em sequência{' '}
             <span className="text-muted-foreground block text-xs font-normal">
-              As aulas (e por consequência os módulos) têm de ser concluídas pela ordem definida -
-              fazer a aula 2 exige concluir a aula 1.
+              Dentro de cada módulo, as aulas têm de ser concluídas pela ordem definida - fazer a
+              aula 2 exige concluir a aula 1.
+            </span>
+          </span>
+        </label>
+
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            name="sequential_modules"
+            defaultChecked={isSequentialModules}
+            className="text-orange-primary focus-visible:ring-ring mt-0.5 rounded focus-visible:ring-2 focus-visible:outline-none"
+          />
+          <span className="text-ink text-sm font-medium">
+            Módulos em sequência{' '}
+            <span className="text-muted-foreground block text-xs font-normal">
+              Um módulo só fica disponível depois de o módulo anterior estar totalmente concluído.
             </span>
           </span>
         </label>

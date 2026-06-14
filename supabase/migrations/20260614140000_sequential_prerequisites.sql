@@ -11,10 +11,13 @@
 --   aplicada APENAS a `logos-dev` até ao lançamento (CLAUDE.md §🚫).
 --
 -- Decisões fechadas:
---   - `sequential` é uma flag por curso. Quando true, as aulas têm de ser
---     concluídas pela ordem linear (module.position, lesson.position); como
---     a ordem é linear entre módulos, isto também força a sequência de
---     módulos. Uma só flag cobre "aulas sequenciais" e "módulos sequenciais".
+--   - DUAS flags independentes por curso (decisão do líder, 14-06-2026):
+--       * `sequential_lessons` - as aulas têm de ser concluídas pela ordem
+--         DENTRO de cada módulo (a aula 2 exige a aula 1 do mesmo módulo).
+--       * `sequential_modules` - um módulo só abre depois de o anterior
+--         (com aulas) estar totalmente concluído.
+--     São ortogonais: dá para exigir ordem só das aulas, só dos módulos,
+--     ambas, ou nenhuma.
 --   - `prerequisite_course_id` é uma auto-referência nullable. NULL = curso
 --     autónomo (standalone). Não-NULL = só acessível depois de o curso
 --     apontado estar concluído. A cadeia A <- B <- C cria a "sequência de
@@ -38,14 +41,20 @@
 --     a linha inteira).
 
 -- =============================================================================
--- 1. courses.sequential
+-- 1. courses.sequential_lessons + courses.sequential_modules
 -- =============================================================================
 
 alter table courses
-  add column sequential boolean not null default false;
+  add column sequential_lessons boolean not null default false;
 
-comment on column courses.sequential is
-  'Quando true, as aulas do curso têm de ser concluídas pela ordem linear (module.position, lesson.position). Força também a sequência de módulos. Aplicado server-side (src/lib/courses/sequencing.ts), não em RLS.';
+comment on column courses.sequential_lessons is
+  'Quando true, as aulas têm de ser concluídas pela ordem DENTRO de cada módulo (lesson.position). Independente de sequential_modules. Aplicado server-side (src/lib/courses/sequencing.ts), não em RLS.';
+
+alter table courses
+  add column sequential_modules boolean not null default false;
+
+comment on column courses.sequential_modules is
+  'Quando true, um módulo só fica acessível depois de o módulo anterior (com aulas) estar totalmente concluído (module.position). Independente de sequential_lessons. Aplicado server-side, não em RLS.';
 
 -- =============================================================================
 -- 2. courses.prerequisite_course_id

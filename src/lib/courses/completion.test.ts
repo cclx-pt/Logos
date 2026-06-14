@@ -111,7 +111,8 @@ function makeCourse(modules: ModuleWithLessons[]): CourseDetail {
     description: null,
     icon: null,
     bannerUrl: null,
-    sequential: false,
+    sequentialLessons: false,
+    sequentialModules: false,
     prerequisite: null,
     modules: modules.map((m, i) => ({ ...m, position: i })),
   };

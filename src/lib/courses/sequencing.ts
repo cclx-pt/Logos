@@ -5,10 +5,13 @@
  * de aulas concluídas. Vivem aqui (não em `completion.ts`) para isolar a
  * regra de ordenação e facilitar o teste.
  *
- * **Regra:** num curso com `sequential = true`, as aulas têm de ser
- * concluídas pela ordem linear (module.position, lesson.position; o
- * `CourseDetail` já vem ordenado). Como a ordem é linear entre módulos,
- * isto força também a sequência de módulos.
+ * **Dois controlos independentes por curso:**
+ *   - `sequentialLessons` - as aulas têm de ser concluídas pela ordem
+ *     **dentro de cada módulo** (a aula 2 exige a aula 1 do mesmo módulo).
+ *   - `sequentialModules` - um módulo só abre depois de o módulo anterior
+ *     (com aulas) estar **totalmente concluído**.
+ *   São ortogonais: pode-se exigir ordem só das aulas, só dos módulos, ambas
+ *   ou nenhuma.
  *
  * **Bloqueio (decisão de UX 14-06-2026): mostrar bloqueado com dica**, não
  * esconder. Estas funções dizem *o que* está bloqueado; a UI mostra a dica
@@ -22,9 +25,9 @@
 import type { CourseDetail, LessonSummary, ModuleWithLessons } from './detail';
 
 export type SequentialAccess = {
-  /** Ids de aulas bloqueadas (inacessíveis até concluir as anteriores). */
+  /** Ids de aulas bloqueadas (inacessíveis até concluir o conteúdo anterior). */
   lockedLessonIds: Set<string>;
-  /** Ids de módulos bloqueados (todas as aulas bloqueadas). */
+  /** Ids de módulos bloqueados por `sequentialModules` (não-abríveis ainda). */
   lockedModuleIds: Set<string>;
 };
 
@@ -39,37 +42,49 @@ export function flattenLessons(course: CourseDetail): LessonSummary[] {
 }
 
 /**
- * Calcula o estado de bloqueio sequencial do curso.
+ * Calcula o estado de bloqueio sequencial do curso a partir das duas flags.
  *
- * - Curso não-sequencial → nada bloqueado.
- * - Uma aula está bloqueada se **não está concluída** e existe **alguma aula
- *   anterior por concluir**. A primeira aula por concluir (a "fronteira") fica
- *   sempre acessível, e aulas já concluídas nunca bloqueiam (permite rever,
- *   mesmo que tenham sido concluídas fora de ordem antes de o curso passar a
- *   sequencial).
- * - Um módulo está bloqueado quando **todas** as suas aulas estão bloqueadas
- *   (módulos vazios nunca bloqueiam — não há nada a concluir).
+ * - **Módulos** (`sequentialModules`): um módulo com aulas fica bloqueado se
+ *   algum módulo **anterior com aulas** não estiver totalmente concluído.
+ *   Módulos vazios não contam (não bloqueiam nem são bloqueados).
+ * - **Aulas** (`sequentialLessons`): dentro de um módulo, uma aula está
+ *   bloqueada se existir **alguma aula anterior do mesmo módulo** por
+ *   concluir. A primeira por concluir do módulo (a "fronteira" do módulo)
+ *   fica acessível.
+ * - Um módulo bloqueado (por `sequentialModules`) tranca **todas** as suas
+ *   aulas. Aulas já concluídas nunca bloqueiam (permite rever, mesmo que
+ *   tenham sido concluídas fora de ordem antes de o curso passar a sequencial).
  */
 export function getSequentialAccess(
   course: CourseDetail,
   completed: Set<string>,
 ): SequentialAccess {
-  if (!course.sequential) return EMPTY_ACCESS;
+  const { sequentialLessons, sequentialModules } = course;
+  if (!sequentialLessons && !sequentialModules) return EMPTY_ACCESS;
 
-  const lockedLessonIds = new Set<string>();
-  let sawIncomplete = false;
-  for (const lesson of flattenLessons(course)) {
-    const done = completed.has(lesson.id);
-    if (!done && sawIncomplete) {
-      lockedLessonIds.add(lesson.id);
+  // 1) Módulos bloqueados por sequência de módulos.
+  const lockedModuleIds = new Set<string>();
+  if (sequentialModules) {
+    let priorIncomplete = false;
+    for (const m of course.modules) {
+      if (m.lessons.length === 0) continue; // módulos vazios não participam
+      if (priorIncomplete) lockedModuleIds.add(m.id);
+      const moduleComplete = m.lessons.every((l) => completed.has(l.id));
+      if (!moduleComplete) priorIncomplete = true;
     }
-    if (!done) sawIncomplete = true;
   }
 
-  const lockedModuleIds = new Set<string>();
+  // 2) Aulas bloqueadas: módulo bloqueado tranca todas; senão, ordem
+  //    dentro do módulo (se sequentialLessons).
+  const lockedLessonIds = new Set<string>();
   for (const m of course.modules) {
-    if (m.lessons.length > 0 && m.lessons.every((l) => lockedLessonIds.has(l.id))) {
-      lockedModuleIds.add(m.id);
+    const moduleGated = lockedModuleIds.has(m.id);
+    let priorLessonIncomplete = false;
+    for (const lesson of m.lessons) {
+      const done = completed.has(lesson.id);
+      const locked = moduleGated || (sequentialLessons && priorLessonIncomplete);
+      if (locked && !done) lockedLessonIds.add(lesson.id);
+      if (!done) priorLessonIncomplete = true;
     }
   }
 
@@ -79,8 +94,10 @@ export function getSequentialAccess(
 /**
  * Devolve a aula-fronteira (a próxima a fazer) para onde redireccionar quem
  * tenta abrir uma aula/módulo bloqueado. É a primeira aula por concluir na
- * ordem linear, ou `null` se o curso não tiver aulas / estiver tudo
- * concluído (nesse caso nada está bloqueado).
+ * ordem linear - que é **sempre acessível**: todas as aulas anteriores estão
+ * concluídas, logo o seu módulo não está bloqueado e não há aula anterior do
+ * mesmo módulo por concluir. `null` se o curso não tiver aulas / estiver tudo
+ * concluído.
  */
 export function getFrontierLesson(
   course: CourseDetail,
