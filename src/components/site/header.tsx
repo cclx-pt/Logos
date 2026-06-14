@@ -8,6 +8,7 @@ import { SignInButton } from './sign-in-button';
 import { UserMenu } from './user-menu';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { isConversationUnread } from '@/lib/questions/question';
+import { primaryNavItems, secondaryNavItems } from '@/lib/site-config';
 
 export async function Header() {
   const user = await getCurrentUser();
@@ -44,26 +45,34 @@ export async function Header() {
   return (
     <header className="bg-background/95 border-border supports-[backdrop-filter]:bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3">
+        {/* Esquerda: navegação funcional (catálogo, percurso, live) junto ao logo. */}
+        <div className="flex min-w-0 items-center gap-3 lg:gap-6">
           <MobileNav
             showAdminLink={showAdminBadge}
             showConversasLink={user !== null}
             conversasHasUnread={conversasHasUnread}
           />
           <Logo size="md" />
-        </div>
-        <div className="flex items-center gap-4 sm:gap-6">
           <nav
             aria-label="Navegação principal"
-            className="hidden items-center gap-6 md:flex lg:gap-8"
+            className="hidden items-center gap-6 lg:flex xl:gap-8"
           >
-            <NavLinks orientation="horizontal" />
+            <NavLinks orientation="horizontal" items={primaryNavItems} />
             <LiveNavLink orientation="horizontal" />
           </nav>
+        </div>
+        {/* Direita: páginas institucionais + área pessoal. */}
+        <div className="flex items-center gap-4 lg:gap-6">
+          <nav
+            aria-label="Navegação institucional"
+            className="hidden items-center gap-6 lg:flex xl:gap-8"
+          >
+            <NavLinks orientation="horizontal" items={secondaryNavItems} />
+          </nav>
           {user && (
-            <ConversasLink hasUnread={conversasHasUnread} className="hidden md:inline-flex" />
+            <ConversasLink hasUnread={conversasHasUnread} className="hidden lg:inline-flex" />
           )}
-          {showAdminBadge && <AdminBadgeLink className="hidden md:inline-flex" />}
+          {showAdminBadge && <AdminBadgeLink className="hidden lg:inline-flex" />}
           {user ? <UserMenu user={user} /> : <SignInButton />}
         </div>
       </div>

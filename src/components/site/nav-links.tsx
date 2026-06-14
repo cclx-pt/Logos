@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, LayoutGroup } from 'motion/react';
 import { useId } from 'react';
-import { navItems } from '@/lib/site-config';
+import { navItems, type NavItem } from '@/lib/site-config';
 import { cn } from '@/lib/utils';
 
 type NavLinksProps = {
@@ -12,10 +12,17 @@ type NavLinksProps = {
   orientation?: 'horizontal' | 'vertical';
   /** Callback opcional disparado ao clicar — útil para fechar o menu mobile. */
   onNavigate?: () => void;
+  /** Subconjunto de itens a renderizar. Default: todos (`navItems`). */
+  items?: readonly NavItem[];
   className?: string;
 };
 
-export function NavLinks({ orientation = 'horizontal', onNavigate, className }: NavLinksProps) {
+export function NavLinks({
+  orientation = 'horizontal',
+  onNavigate,
+  items = navItems,
+  className,
+}: NavLinksProps) {
   const pathname = usePathname();
   const layoutId = useId();
 
@@ -30,7 +37,7 @@ export function NavLinks({ orientation = 'horizontal', onNavigate, className }: 
           className,
         )}
       >
-        {navItems.map((item) => {
+        {items.map((item) => {
           const isActive =
             pathname === item.href || (item.href !== '/' && pathname.startsWith(`${item.href}/`));
           return (
