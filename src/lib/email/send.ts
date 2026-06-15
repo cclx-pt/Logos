@@ -17,8 +17,13 @@ export type SendEmailParams = {
   subject: string;
   /** Corpo em texto simples (sem HTML). */
   text: string;
-  /** Reply-To opcional (ex.: o email do aluno, para a equipa responder direto). */
+  /** Reply-To opcional (ex.: a inbox da equipa, para o aluno responder lá). */
   replyTo?: string;
+  /**
+   * Headers extra. Usado para `References`/`In-Reply-To` (âncora da conversa),
+   * que fazem os clientes de email agrupar os emails do mesmo thread.
+   */
+  headers?: Record<string, string>;
 };
 
 export type SendEmailResult = { ok: true } | { ok: false; error: string };
@@ -28,6 +33,7 @@ export async function sendEmail({
   subject,
   text,
   replyTo,
+  headers,
 }: SendEmailParams): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL;
@@ -51,6 +57,7 @@ export async function sendEmail({
         subject,
         text,
         ...(replyTo ? { reply_to: replyTo } : {}),
+        ...(headers ? { headers } : {}),
       }),
     });
 

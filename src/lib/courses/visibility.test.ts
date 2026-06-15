@@ -2,22 +2,31 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 type QResp = { data: unknown; error: unknown };
 
-const { mockSelect, mockOrder, mockIlike, mockReturns } = vi.hoisted(() => ({
+const { mockSelect, mockOrder, mockIlike, mockIn, mockReturns } = vi.hoisted(() => ({
   mockSelect: vi.fn(),
   mockOrder: vi.fn(),
   mockIlike: vi.fn(),
+  mockIn: vi.fn(),
   mockReturns: vi.fn(),
 }));
 
+// Resposta única (default) + fila opcional. A fila serve testes com mais de
+// uma query (ex.: cursos + lookup em lote dos títulos dos pré-requisitos):
+// cada `.returns()` consome o próximo item; esgotada a fila, cai no default.
 let response: QResp = { data: [], error: null };
+let responseQueue: QResp[] = [];
 function setResponse(r: QResp): void {
   response = r;
+}
+function setResponses(rs: QResp[]): void {
+  responseQueue = [...rs];
 }
 
 type Builder = {
   select: (...args: unknown[]) => Builder;
   order: (...args: unknown[]) => Builder;
   ilike: (...args: unknown[]) => Builder;
+  in: (...args: unknown[]) => Builder;
   returns: () => Promise<QResp>;
 };
 
@@ -35,9 +44,14 @@ function makeBuilder(): Builder {
       mockIlike(...args);
       return builder;
     },
+    in: (...args) => {
+      mockIn(...args);
+      return builder;
+    },
     returns: () => {
       mockReturns();
-      return Promise.resolve(response);
+      const next = responseQueue.shift();
+      return Promise.resolve(next ?? response);
     },
   };
   return builder;
@@ -57,12 +71,14 @@ const baseRow = {
   description: 'Curso introdutório',
   icon: 'cross',
   banner_storage_path: null,
+  prerequisite_course_id: null,
 };
 
 describe('getVisibleCoursesForUser', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setResponse({ data: [], error: null });
+    setResponses([]);
   });
 
   it('devolve array vazia quando data é null', async () => {
@@ -95,6 +111,7 @@ describe('getVisibleCoursesForUser', () => {
         icon: 'cross',
         bannerUrl: null,
         hasLessons: true,
+        prerequisite: null,
       },
     ]);
   });
@@ -176,7 +193,32 @@ describe('getVisibleCoursesForUser', () => {
   it('seleciona campos + embed modules/lessons(count) num único query', async () => {
     await getVisibleCoursesForUser();
     expect(mockSelect).toHaveBeenCalledWith(
-      'id, title, description, icon, banner_storage_path, modules ( lessons ( count ) )',
+      'id, title, description, icon, banner_storage_path, prerequisite_course_id, modules ( lessons ( count ) )',
     );
+  });
+
+  it('resolve o título do pré-requisito em lote (V3.6)', async () => {
+    setResponses([
+      {
+        data: [{ ...baseRow, prerequisite_course_id: 'prereq-1', modules: [] }],
+        error: null,
+      },
+      { data: [{ id: 'prereq-1', title: 'Fundamentos' }], error: null },
+    ]);
+    const [course] = await getVisibleCoursesForUser();
+    expect(course.prerequisite).toEqual({ id: 'prereq-1', title: 'Fundamentos' });
+    expect(mockIn).toHaveBeenCalledWith('id', ['prereq-1']);
+  });
+
+  it('prerequisite=null quando o pré-requisito não é visível (fora do Map)', async () => {
+    setResponses([
+      {
+        data: [{ ...baseRow, prerequisite_course_id: 'invisivel', modules: [] }],
+        error: null,
+      },
+      { data: [], error: null }, // RLS escondeu o curso pré-requisito
+    ]);
+    const [course] = await getVisibleCoursesForUser();
+    expect(course.prerequisite).toBeNull();
   });
 });

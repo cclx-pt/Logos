@@ -56,6 +56,72 @@ function validateRequiredTags(raws: FormDataEntryValue[]): Ok<string[]> | Err {
   return { ok: true, value: out };
 }
 
+/** Profundidade máxima percorrida ao detectar ciclos na cadeia de pré-requisitos. */
+const PREREQUISITE_MAX_DEPTH = 50;
+
+/**
+ * Valida o pré-requisito (V3.6). `''`/ausente → `null` (curso autónomo).
+ * Caso contrário: tem de ser UUID, existir, não ser o próprio curso, e não
+ * criar um ciclo na cadeia de pré-requisitos.
+ *
+ * `selfId` é `null` em create (o curso ainda não existe, logo não pode ser
+ * pré-requisito de ninguém → impossível haver ciclo; só validamos
+ * existência). Em update percorre a cadeia a partir do candidato: se voltar
+ * a `selfId`, é ciclo.
+ */
+async function validatePrerequisite(
+  raw: FormDataEntryValue | null,
+  selfId: string | null,
+): Promise<Ok<string | null> | Err> {
+  if (raw === null || raw === '' || raw === undefined) {
+    return { ok: true, value: null };
+  }
+  if (typeof raw !== 'string' || !UUID_RE.test(raw)) {
+    return { ok: false, error: 'Curso pré-requisito inválido.' };
+  }
+  if (selfId && raw === selfId) {
+    return { ok: false, error: 'Um curso não pode ser pré-requisito de si mesmo.' };
+  }
+
+  const supabase = await getServerClient();
+  // Percorre a cadeia candidato → pré-requisito do candidato → ... À cabeça,
+  // confirma que o candidato existe. Se a cadeia chegar a `selfId`, é ciclo.
+  // `current` é um snapshot const do cursor (a condição do loop garante que é
+  // string), para o input da query não depender do `let` reatribuído a partir
+  // de `data` - caso contrário o TS vê inferência circular.
+  let cursor: string | null = raw;
+  const seen = new Set<string>();
+  for (let depth = 0; cursor && depth < PREREQUISITE_MAX_DEPTH; depth++) {
+    const current: string = cursor;
+    if (selfId && current === selfId) {
+      return { ok: false, error: 'Esse curso criaria um ciclo de pré-requisitos.' };
+    }
+    if (seen.has(current)) break; // ciclo pré-existente noutra parte da cadeia; pára.
+    seen.add(current);
+
+    const { data, error } = await supabase
+      .from('courses')
+      .select('prerequisite_course_id')
+      .eq('id', current)
+      .maybeSingle<{ prerequisite_course_id: string | null }>();
+
+    if (error) {
+      return { ok: false, error: `Falha a validar pré-requisito: ${error.message}` };
+    }
+    if (!data) {
+      // Só o primeiro cursor (o candidato) tem de existir; um elo partido
+      // mais abaixo (FK set null) não invalida a escolha.
+      if (depth === 0) {
+        return { ok: false, error: 'Curso pré-requisito não encontrado.' };
+      }
+      break;
+    }
+    cursor = data.prerequisite_course_id;
+  }
+
+  return { ok: true, value: raw };
+}
+
 function bannerPath(courseId: string): string {
   return `${courseId}/banner`;
 }
@@ -115,6 +181,11 @@ export async function createCourseAction(formData: FormData): Promise<CreateCour
   if (!requiredTags.ok) return requiredTags;
 
   const published = formData.get('published') === 'on';
+  const sequentialLessons = formData.get('sequential_lessons') === 'on';
+  const sequentialModules = formData.get('sequential_modules') === 'on';
+
+  const prerequisite = await validatePrerequisite(formData.get('prerequisite_course_id'), null);
+  if (!prerequisite.ok) return prerequisite;
 
   const bannerFile = formData.get('banner');
   const hasBanner = bannerFile instanceof File && bannerFile.size > 0;
@@ -142,6 +213,9 @@ export async function createCourseAction(formData: FormData): Promise<CreateCour
       icon: icon.value,
       required_tags: requiredTags.value,
       published_at: published ? new Date().toISOString() : null,
+      sequential_lessons: sequentialLessons,
+      sequential_modules: sequentialModules,
+      prerequisite_course_id: prerequisite.value,
       created_by: caller.id,
     })
     .select('id')
@@ -200,9 +274,14 @@ export async function updateCourseAction(formData: FormData): Promise<CourseActi
   if (!requiredTags.ok) return requiredTags;
 
   const published = formData.get('published') === 'on';
+  const sequentialLessons = formData.get('sequential_lessons') === 'on';
+  const sequentialModules = formData.get('sequential_modules') === 'on';
   const removeBanner = formData.get('remove_banner') === 'on';
   const bannerFile = formData.get('banner');
   const hasNewBanner = bannerFile instanceof File && bannerFile.size > 0;
+
+  const prerequisite = await validatePrerequisite(formData.get('prerequisite_course_id'), idRaw);
+  if (!prerequisite.ok) return prerequisite;
 
   const supabase = await getServerClient();
 
@@ -249,6 +328,9 @@ export async function updateCourseAction(formData: FormData): Promise<CourseActi
       icon: icon.value,
       required_tags: requiredTags.value,
       published_at: publishedAt,
+      sequential_lessons: sequentialLessons,
+      sequential_modules: sequentialModules,
+      prerequisite_course_id: prerequisite.value,
       banner_storage_path: bannerStoragePath,
     })
     .eq('id', idRaw);

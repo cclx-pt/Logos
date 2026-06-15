@@ -16,6 +16,7 @@ function makeCourse(overrides: Partial<StartedCourse> = {}): StartedCourse {
     icon: 'cross',
     bannerUrl: null,
     hasLessons: true,
+    prerequisite: null,
     completed: false,
     lastAccessedAt: '2026-05-25T10:00:00Z',
     ...overrides,

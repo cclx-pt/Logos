@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { Check } from 'lucide-react';
+import { Check, Lock } from 'lucide-react';
 
 import { UUID_RE } from '@/lib/validation';
 import { getCourseDetailById } from '@/lib/courses/detail';
@@ -10,6 +10,11 @@ import {
   getNextModuleWithLessons,
   isModuleComplete,
 } from '@/lib/courses/completion';
+import {
+  findModuleOfLesson,
+  getFrontierLesson,
+  getSequentialAccess,
+} from '@/lib/courses/sequencing';
 import { getEnrollmentState } from '@/lib/courses/enrollment';
 import { LESSON_TEMPLATE_LABEL } from '@/lib/courses/template-label';
 
@@ -59,6 +64,19 @@ export default async function CourseModulePage({ params }: PageProps) {
   const allLessonIds = course.modules.flatMap((m) => m.lessons.map((l) => l.id));
   const completed = await getCompletedLessonIds(allLessonIds);
 
+  // V3.6: curso sequencial - módulo bloqueado (todas as aulas por desbloquear)
+  // redirecciona para o módulo da aula-fronteira.
+  const { lockedLessonIds, lockedModuleIds } = getSequentialAccess(course, completed);
+  if (lockedModuleIds.has(mod.id)) {
+    const frontier = getFrontierLesson(course, completed);
+    const frontierModule = frontier ? findModuleOfLesson(course, frontier.id) : null;
+    redirect(
+      frontierModule
+        ? `/conteudos/${course.id}/modulos/${frontierModule.id}`
+        : `/conteudos/${course.id}`,
+    );
+  }
+
   const moduleDone = isModuleComplete(mod, completed);
   const completedInModule = mod.lessons.filter((l) => completed.has(l.id)).length;
   const total = mod.lessons.length;
@@ -80,11 +98,11 @@ export default async function CourseModulePage({ params }: PageProps) {
       </div>
 
       <header>
-        <h1 className="font-display text-ink text-3xl font-medium tracking-tight sm:text-4xl">
+        <h1 className="font-display text-ink text-3xl font-medium tracking-tight break-words sm:text-4xl">
           {mod.title}
         </h1>
         {mod.description ? (
-          <p className="text-muted-foreground mt-4 font-sans text-base leading-relaxed">
+          <p className="text-muted-foreground mt-4 max-w-prose font-sans text-base leading-relaxed break-words">
             {mod.description}
           </p>
         ) : null}
@@ -123,6 +141,33 @@ export default async function CourseModulePage({ params }: PageProps) {
           <ol className="border-border divide-border mt-4 divide-y overflow-hidden rounded-lg border">
             {mod.lessons.map((lesson, lessonIndex) => {
               const isDone = completed.has(lesson.id);
+              const isLocked = lockedLessonIds.has(lesson.id);
+
+              if (isLocked) {
+                return (
+                  <li key={lesson.id}>
+                    <div
+                      aria-disabled="true"
+                      className="text-muted-foreground/70 flex items-center gap-3 p-4"
+                      title="Conclui a aula anterior primeiro"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="border-border text-muted-foreground/70 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs"
+                      >
+                        <Lock className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="line-clamp-1 flex-1 text-sm font-medium">
+                        {lesson.title}
+                      </span>
+                      <span className="text-[10px] tracking-wide uppercase">
+                        Conclui a anterior
+                      </span>
+                    </div>
+                  </li>
+                );
+              }
+
               return (
                 <li key={lesson.id}>
                   <Link

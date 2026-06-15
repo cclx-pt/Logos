@@ -21,6 +21,7 @@ import { getEnrollmentState, enrollAction, unenrollAction } from './enrollment';
 
 const VALID_COURSE_ID = '11111111-1111-1111-1111-111111111111';
 const INVALID_COURSE_ID = 'not-a-uuid';
+const PREREQ_ID = '22222222-2222-2222-2222-222222222222';
 
 function profile(): Profile {
   return {
@@ -132,9 +133,14 @@ describe('enrollAction', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('insere row em course_access_log e revalida paths', async () => {
+  it('insere row em course_access_log e revalida paths (curso sem pré-requisito)', async () => {
     mockGetCurrentUser.mockResolvedValue(profile());
-    mockFrom.mockReturnValue(makeInsertBuilder({ error: null }));
+    // 1º from: lookup do curso (sem pré-requisito). 2º from: INSERT.
+    mockFrom
+      .mockReturnValueOnce(
+        makeSelectBuilder({ data: { prerequisite_course_id: null }, error: null }),
+      )
+      .mockReturnValueOnce(makeInsertBuilder({ error: null }));
     const result = await enrollAction(VALID_COURSE_ID);
     expect(result.ok).toBe(true);
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/conteudos/${VALID_COURSE_ID}`);
@@ -143,9 +149,42 @@ describe('enrollAction', () => {
 
   it('falha quando o INSERT falha', async () => {
     mockGetCurrentUser.mockResolvedValue(profile());
-    mockFrom.mockReturnValue(makeInsertBuilder({ error: { message: 'rls' } }));
+    mockFrom
+      .mockReturnValueOnce(
+        makeSelectBuilder({ data: { prerequisite_course_id: null }, error: null }),
+      )
+      .mockReturnValueOnce(makeInsertBuilder({ error: { message: 'rls' } }));
     const result = await enrollAction(VALID_COURSE_ID);
     expect(result.ok).toBe(false);
+  });
+
+  it('recusa inscrição quando o pré-requisito não está concluído (V3.6)', async () => {
+    mockGetCurrentUser.mockResolvedValue(profile());
+    // 1º from: curso tem pré-requisito. 2º from: course_completions → não há.
+    // 3º from: lookup do título do pré-requisito.
+    mockFrom
+      .mockReturnValueOnce(
+        makeSelectBuilder({ data: { prerequisite_course_id: PREREQ_ID }, error: null }),
+      )
+      .mockReturnValueOnce(makeSelectBuilder({ data: null, error: null }))
+      .mockReturnValueOnce(makeSelectBuilder({ data: { title: 'Fundamentos' }, error: null }));
+    const result = await enrollAction(VALID_COURSE_ID);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/concluir/i);
+  });
+
+  it('permite inscrição quando o pré-requisito está concluído (V3.6)', async () => {
+    mockGetCurrentUser.mockResolvedValue(profile());
+    // 1º from: curso tem pré-requisito. 2º from: course_completions → concluído.
+    // 3º from: INSERT em course_access_log.
+    mockFrom
+      .mockReturnValueOnce(
+        makeSelectBuilder({ data: { prerequisite_course_id: PREREQ_ID }, error: null }),
+      )
+      .mockReturnValueOnce(makeSelectBuilder({ data: { course_id: PREREQ_ID }, error: null }))
+      .mockReturnValueOnce(makeInsertBuilder({ error: null }));
+    const result = await enrollAction(VALID_COURSE_ID);
+    expect(result.ok).toBe(true);
   });
 });
 

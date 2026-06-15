@@ -4,7 +4,15 @@ import type { VisibleCourse } from './visibility';
 import { defaultSortKey, isSortKey, sortCourses, type SortKey } from './sort';
 
 function course(id: string, title: string): VisibleCourse {
-  return { id, title, description: null, icon: null, bannerUrl: null, hasLessons: true };
+  return {
+    id,
+    title,
+    description: null,
+    icon: null,
+    bannerUrl: null,
+    hasLessons: true,
+    prerequisite: null,
+  };
 }
 
 const ALL = [

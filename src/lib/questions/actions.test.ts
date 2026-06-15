@@ -20,6 +20,8 @@ vi.mock('@/lib/email/send', () => ({ sendEmail: vi.fn() }));
 const LESSON_ID = '11111111-1111-1111-1111-111111111111';
 const PROFILE_ID = '22222222-2222-2222-2222-222222222222';
 const COURSE_ID = '33333333-3333-3333-3333-333333333333';
+const QUESTION_ID = '44444444-4444-4444-4444-444444444444';
+const THREAD_CODE = 'LOGOS-7F3AKM';
 
 const lessonDetail = {
   id: LESSON_ID,
@@ -34,6 +36,7 @@ const lessonDetail = {
 };
 
 let insertMock: ReturnType<typeof vi.fn>;
+let singleMock: ReturnType<typeof vi.fn>;
 
 function formData(fields: Record<string, string>): FormData {
   const fd = new FormData();
@@ -60,7 +63,11 @@ beforeEach(() => {
   vi.mocked(getEnrollmentState).mockResolvedValue('enrolled' as never);
   vi.mocked(sendEmail).mockResolvedValue({ ok: true });
 
-  insertMock = vi.fn().mockResolvedValue({ error: null });
+  // insert(...).select(...).single() -> { data: { id, thread_code }, error }
+  singleMock = vi
+    .fn()
+    .mockResolvedValue({ data: { id: QUESTION_ID, thread_code: THREAD_CODE }, error: null });
+  insertMock = vi.fn(() => ({ select: vi.fn(() => ({ single: singleMock })) }));
   vi.mocked(getServerClient).mockResolvedValue({
     from: vi.fn(() => ({ insert: insertMock })),
   } as never);
@@ -111,7 +118,7 @@ describe('submitQuestionAction', () => {
     expect(insertMock).not.toHaveBeenCalled();
   });
 
-  it('insere com os snapshots de contexto e envia o email', async () => {
+  it('insere com os snapshots de contexto e envia equipa + cópia ao aluno', async () => {
     const r = await submitQuestionAction(idle, formData({ lessonId: LESSON_ID, body: validBody }));
     expect(r.status).toBe('success');
     expect(insertMock).toHaveBeenCalledWith({
@@ -123,10 +130,29 @@ describe('submitQuestionAction', () => {
       lesson_title: 'Justificação pela fé',
       body: validBody,
     });
+
+    // 2 envios: notificação à equipa + cópia ao aluno.
+    expect(sendEmail).toHaveBeenCalledTimes(2);
+
+    // 2a) Equipa: para a inbox, Reply-To = email do aluno.
+    const team = vi.mocked(sendEmail).mock.calls[0][0];
+    expect(team.to).toBe('logos@cclx.pt');
+    expect(team.replyTo).toBe('joao@exemplo.pt');
+    expect(team.subject).toContain(`[${THREAD_CODE}]`);
+
+    // 2b) Aluno: cópia para o próprio, Reply-To = inbox da equipa.
+    const student = vi.mocked(sendEmail).mock.calls[1][0];
+    expect(student.to).toBe('joao@exemplo.pt');
+    expect(student.replyTo).toBe('logos@cclx.pt');
+    expect(student.subject).toContain(`[${THREAD_CODE}]`);
+  });
+
+  it('envia só à equipa quando não há email do aluno', async () => {
+    vi.mocked(getCurrentAuthEmail).mockResolvedValue(null);
+    const r = await submitQuestionAction(idle, formData({ lessonId: LESSON_ID, body: validBody }));
+    expect(r.status).toBe('success');
     expect(sendEmail).toHaveBeenCalledOnce();
-    const arg = vi.mocked(sendEmail).mock.calls[0][0];
-    expect(arg.to).toBe('logos@cclx.pt');
-    expect(arg.replyTo).toBe('joao@exemplo.pt');
+    expect(vi.mocked(sendEmail).mock.calls[0][0].to).toBe('logos@cclx.pt');
   });
 
   it('devolve sucesso mesmo que o email falhe (insert é a fonte de verdade)', async () => {
@@ -137,7 +163,7 @@ describe('submitQuestionAction', () => {
   });
 
   it('devolve erro quando o INSERT falha', async () => {
-    insertMock.mockResolvedValue({ error: { message: 'rls' } });
+    singleMock.mockResolvedValue({ data: null, error: { message: 'rls' } });
     const r = await submitQuestionAction(idle, formData({ lessonId: LESSON_ID, body: validBody }));
     expect(r.status).toBe('error');
     expect(sendEmail).not.toHaveBeenCalled();

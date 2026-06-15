@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Check, ChevronRight } from 'lucide-react';
+import { Check, ChevronRight, Lock } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import type { ModuleWithLessons } from '@/lib/courses/detail';
@@ -9,6 +9,11 @@ type Props = {
   modules: ModuleWithLessons[];
   /** Ids das aulas concluídas pelo utilizador (curso inteiro). */
   completedLessonIds: Set<string>;
+  /**
+   * V3.6: ids de aulas bloqueadas por sequência (curso sequencial). Aparecem
+   * na árvore mas não-clicáveis, com cadeado. Vazio em cursos não-sequenciais.
+   */
+  lockedLessonIds?: Set<string>;
   currentLessonId: string;
   currentModuleId: string;
 };
@@ -31,9 +36,11 @@ export function LessonTree({
   courseId,
   modules,
   completedLessonIds,
+  lockedLessonIds,
   currentLessonId,
   currentModuleId,
 }: Props) {
+  const locked = lockedLessonIds ?? new Set<string>();
   return (
     <aside aria-label="Aulas do curso" className="hidden w-64 shrink-0 xl:block">
       {/* `top-20` desce abaixo do cabeçalho sticky (h-16); `max-h`+overflow
@@ -70,6 +77,23 @@ export function LessonTree({
                       module.lessons.map((lesson, lessonIndex) => {
                         const isCurrent = lesson.id === currentLessonId;
                         const isDone = completedLessonIds.has(lesson.id);
+                        const isLocked = locked.has(lesson.id);
+
+                        if (isLocked) {
+                          return (
+                            <li key={lesson.id}>
+                              <span
+                                aria-disabled="true"
+                                title="Conclui a aula anterior primeiro"
+                                className="text-muted-foreground/70 flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs"
+                              >
+                                <Lock aria-label="Bloqueada" className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{lesson.title}</span>
+                              </span>
+                            </li>
+                          );
+                        }
+
                         return (
                           <li key={lesson.id}>
                             <Link

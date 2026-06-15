@@ -16,9 +16,24 @@ export type NavItem = {
   label: string;
 };
 
-export const navItems: readonly NavItem[] = [
+/**
+ * Navegação do cabeçalho, por ordem de leitura (esquerda → direita):
+ * institucionais → Live → funcionais. O Live é renderizado à parte
+ * (`LiveNavLink`, dinâmico) entre os dois grupos. O menu mobile segue a mesma
+ * ordem. As páginas pessoais (conversas, admin, perfil) ficam à direita, fora
+ * destes grupos.
+ */
+export const institutionalNavItems: readonly NavItem[] = [
   { href: '/conhece-nos', label: 'Conhece-nos' },
+  { href: '/fala-connosco', label: 'Fala connosco' },
+] as const;
+
+export const functionalNavItems: readonly NavItem[] = [
   { href: '/conteudos', label: 'Conteúdos' },
   { href: '/meus-cursos', label: 'Meus cursos' },
-  { href: '/fala-connosco', label: 'Fala Connosco' },
+] as const;
+
+export const navItems: readonly NavItem[] = [
+  ...institutionalNavItems,
+  ...functionalNavItems,
 ] as const;

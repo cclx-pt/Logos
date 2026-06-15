@@ -5,6 +5,9 @@ import { IconPicker } from './icon-picker';
 
 export type TagOption = { id: string; label: string };
 
+/** Opção do select de curso pré-requisito (V3.6). */
+export type CourseOption = { id: string; title: string };
+
 export type CourseFormInitialData = {
   id: string;
   title: string;
@@ -14,20 +17,34 @@ export type CourseFormInitialData = {
   published_at: string | null;
   /** Signed URL do banner actual (V3.2 PR1), se existir. Para preview no form. */
   bannerUrl: string | null;
+  /** V3.6: aulas em ordem obrigatória dentro de cada módulo. */
+  sequential_lessons: boolean;
+  /** V3.6: módulos em ordem obrigatória (concluir um abre o próximo). */
+  sequential_modules: boolean;
+  /** V3.6: id do curso pré-requisito, ou `null` se autónomo. */
+  prerequisite_course_id: string | null;
 };
 
 type CourseFormProps = {
   mode: 'create' | 'edit';
   tags: TagOption[];
+  /**
+   * V3.6: outros cursos elegíveis como pré-requisito. No modo `edit` já vem
+   * sem o próprio curso (evita auto-referência na UI).
+   */
+  courseOptions: CourseOption[];
   course?: CourseFormInitialData;
   action: (formData: FormData) => void | Promise<void>;
 };
 
-export function CourseForm({ mode, tags, course, action }: CourseFormProps) {
+export function CourseForm({ mode, tags, courseOptions, course, action }: CourseFormProps) {
   const submitLabel = mode === 'create' ? 'Criar curso' : 'Guardar alterações';
   const pendingLabel = mode === 'create' ? 'A criar curso…' : 'A guardar…';
   const isPublished = Boolean(course?.published_at);
   const assignedTagIds = new Set(course?.required_tags ?? []);
+  const isSequentialLessons = Boolean(course?.sequential_lessons);
+  const isSequentialModules = Boolean(course?.sequential_modules);
+  const prerequisiteId = course?.prerequisite_course_id ?? '';
 
   return (
     <form action={action} encType="multipart/form-data" className="space-y-6">
@@ -141,6 +158,63 @@ export function CourseForm({ mode, tags, course, action }: CourseFormProps) {
             </div>
           </>
         )}
+      </fieldset>
+
+      <fieldset className="border-border space-y-4 rounded-md border p-4">
+        <legend className="text-muted-foreground px-1 text-xs font-medium">
+          Sequência e pré-requisitos
+        </legend>
+
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            name="sequential_lessons"
+            defaultChecked={isSequentialLessons}
+            className="text-orange-primary focus-visible:ring-ring mt-0.5 rounded focus-visible:ring-2 focus-visible:outline-none"
+          />
+          <span className="text-ink text-sm font-medium">
+            Aulas em sequência{' '}
+            <span className="text-muted-foreground block text-xs font-normal">
+              Dentro de cada módulo, as aulas têm de ser concluídas pela ordem definida - fazer a
+              aula 2 exige concluir a aula 1.
+            </span>
+          </span>
+        </label>
+
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            name="sequential_modules"
+            defaultChecked={isSequentialModules}
+            className="text-orange-primary focus-visible:ring-ring mt-0.5 rounded focus-visible:ring-2 focus-visible:outline-none"
+          />
+          <span className="text-ink text-sm font-medium">
+            Módulos em sequência{' '}
+            <span className="text-muted-foreground block text-xs font-normal">
+              Um módulo só fica disponível depois de o módulo anterior estar totalmente concluído.
+            </span>
+          </span>
+        </label>
+
+        <label className="block">
+          <span className="text-muted-foreground text-xs font-medium">Curso pré-requisito</span>
+          <select
+            name="prerequisite_course_id"
+            defaultValue={prerequisiteId}
+            className="border-border bg-background text-ink focus-visible:ring-ring mt-1 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
+          >
+            <option value="">Nenhum (curso autónomo)</option>
+            {courseOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.title}
+              </option>
+            ))}
+          </select>
+          <span className="text-muted-foreground mt-1 block text-xs">
+            Se escolheres um curso, este só fica disponível depois de o aluno o concluir. Encadeia
+            cursos (A → B → C) para criar uma sequência; deixa em branco para um curso autónomo.
+          </span>
+        </label>
       </fieldset>
 
       <label className="border-border bg-card flex items-center gap-3 rounded-md border p-4">

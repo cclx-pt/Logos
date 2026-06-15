@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { Check, Lock } from 'lucide-react';
 
 import { CourseImage } from '@/lib/courses/course-image';
 import { cn } from '@/lib/utils';
@@ -50,6 +50,13 @@ type CourseCardProps = {
    * de `/meus-cursos` "Terminados"). Ignorado pelos outros variants.
    */
   isCompleted?: boolean;
+  /**
+   * V3.6: para variant `catalog`, título do curso pré-requisito ainda por
+   * concluir. Quando presente (e o utilizador logado não concluiu este
+   * curso), o card fica bloqueado: cinzento, não-clicável, com a dica
+   * "Conclui [título] primeiro". `null`/ausente = sem bloqueio.
+   */
+  lockedByPrerequisite?: string | null;
 };
 
 export function CourseCard({
@@ -57,14 +64,21 @@ export function CourseCard({
   variant,
   isAuthenticated = true,
   isCompleted = false,
+  lockedByPrerequisite = null,
 }: CourseCardProps) {
   const isCatalog = variant === 'catalog';
   const showCompletedUx = variant === 'completed' || (isCatalog && isCompleted);
+  // V3.6: bloqueio por pré-requisito (só catálogo, só autenticado, curso não
+  // concluído — quem já concluiu pode rever).
+  const prerequisiteTitle =
+    isCatalog && isAuthenticated && !isCompleted ? lockedByPrerequisite : null;
+  const isPrerequisiteLocked = prerequisiteTitle !== null;
   // "Em breve" + disabled só faz sentido para utilizadores autenticados —
   // anon nunca poderia entrar mesmo num curso com aulas (cai no CTA de login).
   // Cursos concluídos no catálogo nunca ficam disabled — utilizador pode rever.
-  const isCatalogDisabled = isCatalog && isAuthenticated && !isCompleted && !course.hasLessons;
-  const showComingSoonBadge = isCatalogDisabled;
+  const showComingSoonBadge =
+    isCatalog && isAuthenticated && !isCompleted && !course.hasLessons && !isPrerequisiteLocked;
+  const isCatalogDisabled = showComingSoonBadge || isPrerequisiteLocked;
 
   const baseClasses =
     'border-border bg-card focus-visible:ring-ring group flex h-full flex-col overflow-hidden rounded-2xl border focus-visible:ring-2 focus-visible:outline-none';
@@ -90,12 +104,18 @@ export function CourseCard({
       />
       <div className="flex flex-1 flex-col p-6">
         <div className="flex flex-wrap items-start gap-2">
-          <h2 className="font-display text-ink text-2xl leading-tight font-medium tracking-tight">
+          <h2 className="font-display text-ink text-2xl leading-tight font-medium tracking-tight break-words">
             {course.title}
           </h2>
           {showComingSoonBadge && (
             <span className="border-orange-primary/30 bg-orange-primary/10 text-orange-primary inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
               Em breve
+            </span>
+          )}
+          {isPrerequisiteLocked && (
+            <span className="border-border bg-muted/40 text-muted-foreground inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
+              <Lock className="h-3 w-3" aria-hidden="true" />
+              Bloqueado
             </span>
           )}
           {variant === 'in-progress' && (
@@ -111,11 +131,16 @@ export function CourseCard({
           )}
         </div>
         {!isCatalog && course.description ? (
-          <p className="text-muted-foreground mt-2 line-clamp-4 text-sm leading-relaxed">
+          <p className="text-muted-foreground mt-2 line-clamp-4 text-sm leading-relaxed break-words">
             {course.description}
           </p>
         ) : null}
-        {showCompletedUx ? (
+        {isPrerequisiteLocked ? (
+          <span className="text-muted-foreground mt-auto inline-flex items-center gap-1 pt-5 text-xs font-medium tracking-wide uppercase">
+            <Lock className="h-3 w-3" aria-hidden="true" />
+            Conclui {prerequisiteTitle} primeiro
+          </span>
+        ) : showCompletedUx ? (
           <span className="text-orange-primary mt-auto pt-5 text-xs font-medium tracking-wide uppercase">
             Rever curso →
           </span>

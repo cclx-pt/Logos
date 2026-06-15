@@ -96,6 +96,37 @@ export async function enrollAction(courseId: string): Promise<EnrollResult> {
   if (!UUID_RE.test(courseId)) return { ok: false, error: 'Curso inválido.' };
 
   const supabase = await getServerClient();
+
+  // V3.6: gate de pré-requisito (defesa em profundidade - a landing já esconde
+  // o CTA). Se o curso tiver pré-requisito e o utilizador não o tiver
+  // concluído (course_completions), recusa a inscrição.
+  const { data: courseRow } = await supabase
+    .from('courses')
+    .select('prerequisite_course_id')
+    .eq('id', courseId)
+    .maybeSingle<{ prerequisite_course_id: string | null }>();
+
+  if (courseRow?.prerequisite_course_id) {
+    const { data: prereqDone } = await supabase
+      .from('course_completions')
+      .select('course_id')
+      .eq('user_id', user.id)
+      .eq('course_id', courseRow.prerequisite_course_id)
+      .maybeSingle<{ course_id: string }>();
+
+    if (!prereqDone) {
+      const { data: prereq } = await supabase
+        .from('courses')
+        .select('title')
+        .eq('id', courseRow.prerequisite_course_id)
+        .maybeSingle<{ title: string }>();
+      return {
+        ok: false,
+        error: `Tens de concluir o curso "${prereq?.title ?? 'pré-requisito'}" primeiro.`,
+      };
+    }
+  }
+
   const { error } = await supabase
     .from('course_access_log')
     .insert({ user_id: user.id, course_id: courseId });
