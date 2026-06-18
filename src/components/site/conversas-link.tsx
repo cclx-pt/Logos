@@ -14,7 +14,7 @@ type ConversasLinkProps = {
 };
 
 /**
- * Link de cabeçalho "As minhas conversas" - vista do aluno das perguntas às
+ * Link de cabeçalho "Conversas" - vista do aluno das perguntas às
  * aulas. É um item de conta: o cabeçalho só o renderiza depois do login (a href
  * default `/perguntas` reflecte isso). O ponto ao lado tem dois estados, sem
  * percentagens nem gamificação:
@@ -39,7 +39,7 @@ export function ConversasLink({
         className,
       )}
     >
-      As minhas conversas
+      Conversas
       {hasUnread ? (
         <>
           <span

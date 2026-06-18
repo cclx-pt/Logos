@@ -11,7 +11,7 @@ import {
 } from '@/lib/questions/question';
 
 export const metadata: Metadata = {
-  title: 'As minhas conversas',
+  title: 'Conversas',
   description: 'As perguntas que fizeste às aulas e as respostas da equipa.',
 };
 
@@ -61,9 +61,7 @@ export default async function MinhasConversasPage() {
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
       <header className="space-y-2">
-        <h1 className="font-display text-ink text-3xl font-medium tracking-tight">
-          As minhas conversas
-        </h1>
+        <h1 className="font-display text-ink text-3xl font-medium tracking-tight">Conversas</h1>
         <p className="text-muted-foreground text-sm">
           As perguntas que fizeste às aulas e as respostas da equipa.
         </p>

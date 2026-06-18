@@ -83,9 +83,7 @@ export function CourseCard({
   // V3.6: bloqueio por pré-requisito (só catálogo, só autenticado, curso não
   // concluído e não começado - quem já concluiu/começou pode entrar).
   const prerequisiteTitle =
-    isCatalog && isAuthenticated && !isCompleted && !showInProgressUx
-      ? lockedByPrerequisite
-      : null;
+    isCatalog && isAuthenticated && !isCompleted && !showInProgressUx ? lockedByPrerequisite : null;
   const isPrerequisiteLocked = prerequisiteTitle !== null;
   // "Em breve" + disabled só faz sentido para utilizadores autenticados —
   // anon nunca poderia entrar mesmo num curso com aulas (cai no CTA de login).

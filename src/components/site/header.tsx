@@ -14,7 +14,7 @@ export async function Header() {
   const user = await getCurrentUser();
   const showAdminBadge = user !== null && user.role !== 'user';
 
-  // Estado do ponto "As minhas conversas" (duas cores, sem gamificação):
+  // Estado do ponto "Conversas" (duas cores, sem gamificação):
   //  - laranja (alerta): conversa do próprio que a equipa respondeu e o aluno
   //    ainda não abriu (answered + updated_at > owner_seen_at).
   //  - cinza (neutro): há conversas mas nada novo por ler.
@@ -49,10 +49,10 @@ export async function Header() {
 
   return (
     <header className="bg-background/95 border-border supports-[backdrop-filter]:bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        {/* Mobile: hamburguer + logo juntos à esquerda. Em xl o wrapper vira
-            `display:contents` e o Logo passa a primeiro item equidistante da barra. */}
-        <div className="flex items-center gap-3 xl:contents">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+        {/* Logo à esquerda. `mr-auto` empurra toda a navegação + perfil para a
+            direita (em mobile fica logo + hamburguer à esquerda, perfil à direita). */}
+        <div className="mr-auto flex items-center gap-3">
           <MobileNav
             showAdminLink={showAdminBadge}
             isAuthenticated={user !== null}
@@ -61,12 +61,12 @@ export async function Header() {
           />
           <Logo size="md" />
         </div>
-        {/* Navegação (só xl). O <nav> está em `display:contents`: logo, links,
-            conversas e admin tornam-se irmãos diretos da barra, por isso o
-            justify-between distribui tudo à mesma distância - e o espaço encolhe
-            uniformemente quando o "Área admin" aparece. Ordem: Live →
-            institucionais → Conteúdos → (conta, só logado). */}
-        <nav aria-label="Navegação principal" className="hidden whitespace-nowrap xl:contents">
+        {/* Navegação (só xl), agrupada à direita (a seguir ao logo com `mr-auto`).
+            Ordem: Live → institucionais → Conteúdos → (conta, só logado). */}
+        <nav
+          aria-label="Navegação principal"
+          className="hidden items-center gap-6 whitespace-nowrap xl:flex"
+        >
           <LiveNavLink orientation="horizontal" />
           <NavLinks orientation="horizontal" items={institutionalNavItems} flatten />
           <NavLinks orientation="horizontal" items={publicContentNavItems} flatten />
@@ -83,7 +83,7 @@ export async function Header() {
           )}
           {showAdminBadge && <AdminBadgeLink />}
         </nav>
-        {/* Conta/perfil - último item; o justify-between encosta-o à direita. */}
+        {/* Conta/perfil - último item, encostado à direita (logo tem `mr-auto`). */}
         {user ? <UserMenu user={user} /> : <SignInButton />}
       </div>
     </header>

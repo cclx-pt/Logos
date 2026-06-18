@@ -22,8 +22,8 @@ export type NavItem = {
  * à parte (`LiveNavLink`, dinâmico) e fica em primeiro. O menu mobile segue a
  * mesma ordem.
  *
- * Os itens de conta (`accountNavItems` + "As minhas conversas", esta última
- * renderizada à parte pelo `ConversasLink`) **só aparecem depois do login**.
+ * Os itens de conta (`accountNavItems` + "Conversas", esta última renderizada
+ * à parte pelo `ConversasLink`) **só aparecem depois do login**.
  * "Conteúdos" é público - o catálogo é visível mesmo deslogado.
  */
 export const institutionalNavItems: readonly NavItem[] = [

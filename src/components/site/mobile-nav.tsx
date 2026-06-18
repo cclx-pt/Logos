@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 
 type MobileNavProps = {
   showAdminLink?: boolean;
-  /** Se há sessão. "Meus cursos" e "As minhas conversas" só aparecem se `true`. */
+  /** Se há sessão. "Meus cursos" e "Conversas" só aparecem se `true`. */
   isAuthenticated?: boolean;
   conversasHasConversations?: boolean;
   conversasHasUnread?: boolean;
