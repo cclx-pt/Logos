@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### infra
+- infra: [18-06-2026] **V3.6 consolidada em `v3-cursos` + limpeza de ramos/PRs** - confirmado que toda a V3.6 (Live + Q&A conversa + pré-requisitos sequenciais) já estava fundida em `v3-cursos` pelo merge `253abef` (pais `c3852d6` + `19d0c70`); os 9 ramos `v3-6-*` estavam todos contidos em `v3-cursos`. Fechadas as 3 PRs abertas já superadas (#66 sequência, #64 PR5 - apontava erradamente para `main`, #63 PR2) e apagados todos os ramos de feature V3.6 (local + remoto). Repo de volta ao estado de 2 ramos (`main` + `v3-cursos`). `v3-cursos` no estado consolidado verificado verde: typecheck + lint limpos, 654 testes a passar. Sem mudança de código (só git/GitHub + docs).
+
 ### fix
 - fix: [14-06-2026] **conclusões de aula/curso deixam de "fugir" entre contas admin** - um admin/super_admin não conseguia **desmarcar** uma aula como concluída: o toast dizia "Marcação removida" mas ao recarregar voltava a aparecer "Concluída". Causa: `getCompletedLessonIds`, `getCompletedCourseIdsForCurrentUser` e `getStartedCoursesForUser` liam as conclusões **sem filtrar por `user_id`**, confiando na RLS para o scoping - mas a policy de SELECT é "own **OR** admin", logo um admin via as conclusões de **todos** os utilizadores como suas. Como o DELETE (correctamente) só atinge as próprias rows, a "desmarcação" de uma aula concluída por outro utilizador não removia nada (0 rows, sem erro → toast de sucesso enganador) e reaparecia no refresh. As três leituras passam a filtrar **explicitamente por `user_id = caller.id`** (no-op para utilizadores comuns, correcção real para admins). Afectava também o catálogo (cursos concluídos por outros apareciam a cinzento/"Concluído") e a secção "Terminados" de `/meus-cursos`. Testes de regressão a garantir o filtro nas três leituras. Sem migration (a RLS está correcta; o bug era na app confiar nela para algo que ela não faz). 618 verdes.
 
