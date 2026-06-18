@@ -18,22 +18,31 @@ export type NavItem = {
 
 /**
  * Navegação do cabeçalho, por ordem de leitura (esquerda → direita):
- * institucionais → Live → funcionais. O Live é renderizado à parte
- * (`LiveNavLink`, dinâmico) entre os dois grupos. O menu mobile segue a mesma
- * ordem. As páginas pessoais (conversas, admin, perfil) ficam à direita, fora
- * destes grupos.
+ * Live → institucionais → Conteúdos → páginas de conta. O Live é renderizado
+ * à parte (`LiveNavLink`, dinâmico) e fica em primeiro. O menu mobile segue a
+ * mesma ordem.
+ *
+ * Os itens de conta (`accountNavItems` + "As minhas conversas", esta última
+ * renderizada à parte pelo `ConversasLink`) **só aparecem depois do login**.
+ * "Conteúdos" é público - o catálogo é visível mesmo deslogado.
  */
 export const institutionalNavItems: readonly NavItem[] = [
   { href: '/conhece-nos', label: 'Conhece-nos' },
   { href: '/fala-connosco', label: 'Fala connosco' },
 ] as const;
 
-export const functionalNavItems: readonly NavItem[] = [
+/** Conteúdos é público (catálogo visível a deslogados). */
+export const publicContentNavItems: readonly NavItem[] = [
   { href: '/conteudos', label: 'Conteúdos' },
+] as const;
+
+/** Páginas de conta - só aparecem depois do login. */
+export const accountNavItems: readonly NavItem[] = [
   { href: '/meus-cursos', label: 'Meus cursos' },
 ] as const;
 
 export const navItems: readonly NavItem[] = [
   ...institutionalNavItems,
-  ...functionalNavItems,
+  ...publicContentNavItems,
+  ...accountNavItems,
 ] as const;

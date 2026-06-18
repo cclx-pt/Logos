@@ -15,8 +15,9 @@ type ConversasLinkProps = {
 
 /**
  * Link de cabeçalho "As minhas conversas" - vista do aluno das perguntas às
- * aulas. Aparece para toda a gente: deslogado, aponta para o login (que volta
- * aqui). O ponto ao lado tem dois estados, sem percentagens nem gamificação:
+ * aulas. É um item de conta: o cabeçalho só o renderiza depois do login (a href
+ * default `/perguntas` reflecte isso). O ponto ao lado tem dois estados, sem
+ * percentagens nem gamificação:
  *  - laranja (alerta): a equipa respondeu e o aluno ainda não abriu (answered +
  *    updated_at > owner_seen_at). Apaga quando o aluno abre a conversa.
  *  - neutro (cinza): há conversas mas nada novo por ler ("tudo respondido").

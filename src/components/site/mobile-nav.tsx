@@ -7,20 +7,20 @@ import { AdminBadgeLink } from './admin-badge-link';
 import { ConversasLink } from './conversas-link';
 import { NavLinks } from './nav-links';
 import { LiveNavLink } from './live-nav-link';
-import { institutionalNavItems, functionalNavItems } from '@/lib/site-config';
+import { institutionalNavItems, publicContentNavItems, accountNavItems } from '@/lib/site-config';
 import { cn } from '@/lib/utils';
 
 type MobileNavProps = {
   showAdminLink?: boolean;
-  /** Destino de "As minhas conversas" (login se deslogado). */
-  conversasHref: string;
+  /** Se há sessão. "Meus cursos" e "As minhas conversas" só aparecem se `true`. */
+  isAuthenticated?: boolean;
   conversasHasConversations?: boolean;
   conversasHasUnread?: boolean;
 };
 
 export function MobileNav({
   showAdminLink = false,
-  conversasHref,
+  isAuthenticated = false,
   conversasHasConversations = false,
   conversasHasUnread = false,
 }: MobileNavProps) {
@@ -58,30 +58,37 @@ export function MobileNav({
         'bg-background border-border border-t xl:hidden',
       )}
     >
-      <NavLinks
-        orientation="vertical"
-        items={institutionalNavItems}
-        onNavigate={() => setOpen(false)}
-      />
+      <LiveNavLink orientation="vertical" onNavigate={() => setOpen(false)} />
       <div className="mt-1">
-        <LiveNavLink orientation="vertical" onNavigate={() => setOpen(false)} />
+        <NavLinks
+          orientation="vertical"
+          items={institutionalNavItems}
+          onNavigate={() => setOpen(false)}
+        />
       </div>
       <div className="mt-1">
         <NavLinks
           orientation="vertical"
-          items={functionalNavItems}
+          items={publicContentNavItems}
           onNavigate={() => setOpen(false)}
         />
       </div>
-      <div className="border-border mt-6 border-t pt-6">
-        <ConversasLink
-          href={conversasHref}
-          hasConversations={conversasHasConversations}
-          hasUnread={conversasHasUnread}
-          onNavigate={() => setOpen(false)}
-          className="text-base"
-        />
-      </div>
+      {isAuthenticated && (
+        <div className="border-border mt-6 border-t pt-6">
+          <NavLinks
+            orientation="vertical"
+            items={accountNavItems}
+            onNavigate={() => setOpen(false)}
+          />
+          <ConversasLink
+            href="/perguntas"
+            hasConversations={conversasHasConversations}
+            hasUnread={conversasHasUnread}
+            onNavigate={() => setOpen(false)}
+            className="px-2 py-3 text-lg"
+          />
+        </div>
+      )}
       {showAdminLink && (
         <div className="border-border mt-6 border-t pt-6">
           <AdminBadgeLink onNavigate={() => setOpen(false)} />

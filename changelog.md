@@ -8,6 +8,9 @@
 
 ## [Unreleased]
 
+### feat
+- feat: [18-06-2026] **nav reordenada (Live primeiro) + itens de conta só com sessão + estado "Em curso" no catálogo** (afinação pré-lançamento). (1) **Ordem da nav** passa a `Live → Conhece-nos → Fala connosco → Conteúdos → (conta)`, tanto no cabeçalho desktop como no menu mobile. (2) **Itens de conta gated por login**: "Meus cursos" e "As minhas conversas" deixam de aparecer a deslogados (antes eram sempre visíveis; "As minhas conversas" forçava o login) e só surgem depois da sessão iniciada. "Conteúdos" mantém-se público (catálogo visível a anónimos). `site-config` separa `functionalNavItems` em `publicContentNavItems` (Conteúdos) e `accountNavItems` (Meus cursos); `MobileNav` ganha `isAuthenticated` (substitui `conversasHref`). (3) **Terceiro estado no catálogo `/conteudos`**: além de "Concluído" (já existia), os cursos **começados** (inscritos e ainda não concluídos) mostram badge **"Em curso"** + CTA **"Continuar →"**; os por começar mantêm "Ver curso →" - diferencia visualmente por começar / em curso / concluído. Sem migration, sem query nova (reusa `enrolledCourseIds \ completedCourseIds` já carregados na página). 5 testes novos (654 → 659); typecheck + lint limpos.
+
 ### infra
 - infra: [18-06-2026] **V3.6 consolidada em `v3-cursos` + limpeza de ramos/PRs** - confirmado que toda a V3.6 (Live + Q&A conversa + pré-requisitos sequenciais) já estava fundida em `v3-cursos` pelo merge `253abef` (pais `c3852d6` + `19d0c70`); os 9 ramos `v3-6-*` estavam todos contidos em `v3-cursos`. Fechadas as 3 PRs abertas já superadas (#66 sequência, #64 PR5 - apontava erradamente para `main`, #63 PR2) e apagados todos os ramos de feature V3.6 (local + remoto). Repo de volta ao estado de 2 ramos (`main` + `v3-cursos`). `v3-cursos` no estado consolidado verificado verde: typecheck + lint limpos, 654 testes a passar. Sem mudança de código (só git/GitHub + docs).
 

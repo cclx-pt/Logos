@@ -362,3 +362,88 @@ describe('ConteudosContent — cursos concluídos no catálogo (V3.3 PR8)', () =
     expect(screen.getByText(/^ver curso →$/i)).toBeInTheDocument();
   });
 });
+
+describe('ConteudosContent — cursos em curso no catálogo', () => {
+  it('mostra badge "Em curso" e CTA "Continuar →" para cursos em inProgressCourseIds', () => {
+    render(
+      <ConteudosContent
+        courses={[makeCourse({ id: 'c1', title: 'Marcos' })]}
+        query=""
+        isAuthenticated={true}
+        completedCourseIds={[]}
+        inProgressCourseIds={['c1']}
+        sortKey="a-z"
+      />,
+    );
+    expect(screen.getByText(/^em curso$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^continuar →$/i)).toBeInTheDocument();
+    // "Em curso" substitui o CTA neutro "Ver curso →".
+    expect(screen.queryByText(/^ver curso →$/i)).not.toBeInTheDocument();
+  });
+
+  it('cursos em curso continuam clicáveis (não disabled)', () => {
+    render(
+      <ConteudosContent
+        courses={[makeCourse({ id: 'c1' })]}
+        query=""
+        isAuthenticated={true}
+        completedCourseIds={[]}
+        inProgressCourseIds={['c1']}
+        sortKey="a-z"
+      />,
+    );
+    const card = screen.getByRole('link', { name: /marcos/i });
+    expect(card).not.toHaveAttribute('aria-disabled');
+    expect(card).toHaveAttribute('href', '/conteudos/c1');
+  });
+
+  it('diferencia os três estados: por começar / em curso / concluído', () => {
+    render(
+      <ConteudosContent
+        courses={[
+          makeCourse({ id: 'novo', title: 'Génesis' }),
+          makeCourse({ id: 'andamento', title: 'Marcos' }),
+          makeCourse({ id: 'feito', title: 'Romanos' }),
+        ]}
+        query=""
+        isAuthenticated={true}
+        completedCourseIds={['feito']}
+        inProgressCourseIds={['andamento']}
+        sortKey="a-z"
+      />,
+    );
+    // Por começar → "Ver curso →"; em curso → badge "Em curso"; concluído → "Concluído".
+    expect(screen.getByText(/^ver curso →$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^em curso$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^concluído$/i)).toBeInTheDocument();
+  });
+
+  it('concluído tem precedência sobre em curso (badge "Concluído", não "Em curso")', () => {
+    render(
+      <ConteudosContent
+        courses={[makeCourse({ id: 'c1', title: 'Marcos' })]}
+        query=""
+        isAuthenticated={true}
+        completedCourseIds={['c1']}
+        inProgressCourseIds={['c1']}
+        sortKey="a-z"
+      />,
+    );
+    expect(screen.getByText(/^concluído$/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^em curso$/i)).not.toBeInTheDocument();
+  });
+
+  it('não mostra "Em curso" para anónimo mesmo que o id apareça em inProgressCourseIds', () => {
+    render(
+      <ConteudosContent
+        courses={[makeCourse({ id: 'c1', title: 'Marcos' })]}
+        query=""
+        isAuthenticated={false}
+        completedCourseIds={[]}
+        inProgressCourseIds={['c1']}
+        sortKey="a-z"
+      />,
+    );
+    expect(screen.queryByText(/^em curso$/i)).not.toBeInTheDocument();
+  });
+});

@@ -35,6 +35,12 @@ type Props = {
    */
   completedCourseIds: string[];
   /**
+   * IDs de cursos que o utilizador começou (inscreveu-se) mas ainda não
+   * concluiu. Cards correspondentes ganham badge "Em curso" + CTA "Continuar →".
+   * Vazio para anon ou sem cursos começados. Default `[]`.
+   */
+  inProgressCourseIds?: string[];
+  /**
    * Chave de ordenação activa (já aplicada no server). Controla o estado
    * inicial do dropdown.
    */
@@ -67,11 +73,13 @@ export function ConteudosContent({
   query,
   isAuthenticated,
   completedCourseIds,
+  inProgressCourseIds = [],
   sortKey,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const completedSet = new Set(completedCourseIds);
+  const inProgressSet = new Set(inProgressCourseIds);
   const isFiltering = query.length > 0;
   const hasResults = courses.length > 0;
 
@@ -184,6 +192,7 @@ export function ConteudosContent({
                 variant="catalog"
                 isAuthenticated={isAuthenticated}
                 isCompleted={completedSet.has(course.id)}
+                isInProgress={inProgressSet.has(course.id)}
                 lockedByPrerequisite={
                   course.prerequisite && !completedSet.has(course.prerequisite.id)
                     ? course.prerequisite.title

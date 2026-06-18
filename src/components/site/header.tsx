@@ -8,7 +8,7 @@ import { SignInButton } from './sign-in-button';
 import { UserMenu } from './user-menu';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { isConversationUnread } from '@/lib/questions/question';
-import { institutionalNavItems, functionalNavItems } from '@/lib/site-config';
+import { institutionalNavItems, publicContentNavItems, accountNavItems } from '@/lib/site-config';
 
 export async function Header() {
   const user = await getCurrentUser();
@@ -47,10 +47,6 @@ export async function Header() {
     }
   }
 
-  // "As minhas conversas" aparece a toda a gente: deslogado, o link força o
-  // login e volta a /perguntas (a própria página também tem este guard).
-  const conversasHref = user ? '/perguntas' : '/entrar?next=/perguntas';
-
   return (
     <header className="bg-background/95 border-border supports-[backdrop-filter]:bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
@@ -59,7 +55,7 @@ export async function Header() {
         <div className="flex items-center gap-3 xl:contents">
           <MobileNav
             showAdminLink={showAdminBadge}
-            conversasHref={conversasHref}
+            isAuthenticated={user !== null}
             conversasHasConversations={conversasHasConversations}
             conversasHasUnread={conversasHasUnread}
           />
@@ -68,17 +64,23 @@ export async function Header() {
         {/* Navegação (só xl). O <nav> está em `display:contents`: logo, links,
             conversas e admin tornam-se irmãos diretos da barra, por isso o
             justify-between distribui tudo à mesma distância - e o espaço encolhe
-            uniformemente quando o "Área admin" aparece. */}
+            uniformemente quando o "Área admin" aparece. Ordem: Live →
+            institucionais → Conteúdos → (conta, só logado). */}
         <nav aria-label="Navegação principal" className="hidden whitespace-nowrap xl:contents">
-          <NavLinks orientation="horizontal" items={institutionalNavItems} flatten />
           <LiveNavLink orientation="horizontal" />
-          <NavLinks orientation="horizontal" items={functionalNavItems} flatten />
-          <ConversasLink
-            href={conversasHref}
-            hasConversations={conversasHasConversations}
-            hasUnread={conversasHasUnread}
-            className="whitespace-nowrap"
-          />
+          <NavLinks orientation="horizontal" items={institutionalNavItems} flatten />
+          <NavLinks orientation="horizontal" items={publicContentNavItems} flatten />
+          {user && (
+            <>
+              <NavLinks orientation="horizontal" items={accountNavItems} flatten />
+              <ConversasLink
+                href="/perguntas"
+                hasConversations={conversasHasConversations}
+                hasUnread={conversasHasUnread}
+                className="whitespace-nowrap"
+              />
+            </>
+          )}
           {showAdminBadge && <AdminBadgeLink />}
         </nav>
         {/* Conta/perfil - último item; o justify-between encosta-o à direita. */}
