@@ -51,6 +51,13 @@ type CourseCardProps = {
    */
   isCompleted?: boolean;
   /**
+   * Para variant `catalog`: utilizador logado já começou (inscreveu-se) mas
+   * ainda não concluiu este curso → badge "Em curso" + CTA "Continuar →".
+   * Permite diferenciar no catálogo os três estados: por começar / em curso /
+   * concluído. `isCompleted` tem precedência. Ignorado pelos outros variants.
+   */
+  isInProgress?: boolean;
+  /**
    * V3.6: para variant `catalog`, título do curso pré-requisito ainda por
    * concluir. Quando presente (e o utilizador logado não concluiu este
    * curso), o card fica bloqueado: cinzento, não-clicável, com a dica
@@ -64,20 +71,30 @@ export function CourseCard({
   variant,
   isAuthenticated = true,
   isCompleted = false,
+  isInProgress = false,
   lockedByPrerequisite = null,
 }: CourseCardProps) {
   const isCatalog = variant === 'catalog';
   const showCompletedUx = variant === 'completed' || (isCatalog && isCompleted);
+  // Catálogo: curso já começado (inscrito) e ainda não concluído. Quem já
+  // começou passou o pré-requisito e o curso tem aulas, por isso este estado
+  // tem precedência sobre "Em breve"/"Bloqueado" (e fica sempre clicável).
+  const showInProgressUx = isCatalog && isAuthenticated && isInProgress && !isCompleted;
   // V3.6: bloqueio por pré-requisito (só catálogo, só autenticado, curso não
-  // concluído — quem já concluiu pode rever).
+  // concluído e não começado - quem já concluiu/começou pode entrar).
   const prerequisiteTitle =
-    isCatalog && isAuthenticated && !isCompleted ? lockedByPrerequisite : null;
+    isCatalog && isAuthenticated && !isCompleted && !showInProgressUx ? lockedByPrerequisite : null;
   const isPrerequisiteLocked = prerequisiteTitle !== null;
   // "Em breve" + disabled só faz sentido para utilizadores autenticados —
   // anon nunca poderia entrar mesmo num curso com aulas (cai no CTA de login).
-  // Cursos concluídos no catálogo nunca ficam disabled — utilizador pode rever.
+  // Cursos concluídos/começados no catálogo nunca ficam disabled.
   const showComingSoonBadge =
-    isCatalog && isAuthenticated && !isCompleted && !course.hasLessons && !isPrerequisiteLocked;
+    isCatalog &&
+    isAuthenticated &&
+    !isCompleted &&
+    !showInProgressUx &&
+    !course.hasLessons &&
+    !isPrerequisiteLocked;
   const isCatalogDisabled = showComingSoonBadge || isPrerequisiteLocked;
 
   const baseClasses =
@@ -118,7 +135,7 @@ export function CourseCard({
               Bloqueado
             </span>
           )}
-          {variant === 'in-progress' && (
+          {(variant === 'in-progress' || showInProgressUx) && (
             <span className="border-orange-primary/30 bg-orange-primary/10 text-orange-primary inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
               Em curso
             </span>
@@ -143,6 +160,10 @@ export function CourseCard({
         ) : showCompletedUx ? (
           <span className="text-orange-primary mt-auto pt-5 text-xs font-medium tracking-wide uppercase">
             Rever curso →
+          </span>
+        ) : showInProgressUx ? (
+          <span className="text-orange-primary mt-auto pt-5 text-xs font-medium tracking-wide uppercase">
+            Continuar →
           </span>
         ) : isCatalog && !isCatalogDisabled ? (
           <span className="text-orange-primary mt-auto pt-5 text-xs font-medium tracking-wide uppercase">

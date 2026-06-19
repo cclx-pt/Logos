@@ -8,13 +8,13 @@ import { SignInButton } from './sign-in-button';
 import { UserMenu } from './user-menu';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { isConversationUnread } from '@/lib/questions/question';
-import { institutionalNavItems, functionalNavItems } from '@/lib/site-config';
+import { institutionalNavItems, publicContentNavItems, accountNavItems } from '@/lib/site-config';
 
 export async function Header() {
   const user = await getCurrentUser();
   const showAdminBadge = user !== null && user.role !== 'user';
 
-  // Estado do ponto "As minhas conversas" (duas cores, sem gamificação):
+  // Estado do ponto "Conversas" (duas cores, sem gamificação):
   //  - laranja (alerta): conversa do próprio que a equipa respondeu e o aluno
   //    ainda não abriu (answered + updated_at > owner_seen_at).
   //  - cinza (neutro): há conversas mas nada novo por ler.
@@ -47,41 +47,43 @@ export async function Header() {
     }
   }
 
-  // "As minhas conversas" aparece a toda a gente: deslogado, o link força o
-  // login e volta a /perguntas (a própria página também tem este guard).
-  const conversasHref = user ? '/perguntas' : '/entrar?next=/perguntas';
-
   return (
     <header className="bg-background/95 border-border supports-[backdrop-filter]:bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        {/* Mobile: hamburguer + logo juntos à esquerda. Em xl o wrapper vira
-            `display:contents` e o Logo passa a primeiro item equidistante da barra. */}
-        <div className="flex items-center gap-3 xl:contents">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+        {/* Logo à esquerda. `mr-auto` empurra toda a navegação + perfil para a
+            direita (em mobile fica logo + hamburguer à esquerda, perfil à direita). */}
+        <div className="mr-auto flex items-center gap-3">
           <MobileNav
             showAdminLink={showAdminBadge}
-            conversasHref={conversasHref}
+            isAuthenticated={user !== null}
             conversasHasConversations={conversasHasConversations}
             conversasHasUnread={conversasHasUnread}
           />
           <Logo size="md" />
         </div>
-        {/* Navegação (só xl). O <nav> está em `display:contents`: logo, links,
-            conversas e admin tornam-se irmãos diretos da barra, por isso o
-            justify-between distribui tudo à mesma distância - e o espaço encolhe
-            uniformemente quando o "Área admin" aparece. */}
-        <nav aria-label="Navegação principal" className="hidden whitespace-nowrap xl:contents">
-          <NavLinks orientation="horizontal" items={institutionalNavItems} flatten />
+        {/* Navegação (só xl), agrupada à direita (a seguir ao logo com `mr-auto`).
+            Ordem: Live → institucionais → Conteúdos → (conta, só logado). */}
+        <nav
+          aria-label="Navegação principal"
+          className="hidden items-center gap-6 whitespace-nowrap xl:flex"
+        >
           <LiveNavLink orientation="horizontal" />
-          <NavLinks orientation="horizontal" items={functionalNavItems} flatten />
-          <ConversasLink
-            href={conversasHref}
-            hasConversations={conversasHasConversations}
-            hasUnread={conversasHasUnread}
-            className="whitespace-nowrap"
-          />
+          <NavLinks orientation="horizontal" items={institutionalNavItems} flatten />
+          <NavLinks orientation="horizontal" items={publicContentNavItems} flatten />
+          {user && (
+            <>
+              <NavLinks orientation="horizontal" items={accountNavItems} flatten />
+              <ConversasLink
+                href="/perguntas"
+                hasConversations={conversasHasConversations}
+                hasUnread={conversasHasUnread}
+                className="whitespace-nowrap"
+              />
+            </>
+          )}
           {showAdminBadge && <AdminBadgeLink />}
         </nav>
-        {/* Conta/perfil - último item; o justify-between encosta-o à direita. */}
+        {/* Conta/perfil - último item, encostado à direita (logo tem `mr-auto`). */}
         {user ? <UserMenu user={user} /> : <SignInButton />}
       </div>
     </header>

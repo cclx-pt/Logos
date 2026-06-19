@@ -40,12 +40,19 @@ export default async function ConteudosPage({ searchParams }: PageProps) {
     completedCourseIds,
   );
 
+  // "Em curso" = inscrito e ainda não concluído. Diferencia no catálogo os três
+  // estados pessoais: por começar / em curso / concluído.
+  const inProgressCourseIds = Array.from(enrolledCourseIds).filter(
+    (id) => !completedCourseIds.has(id),
+  );
+
   return (
     <ConteudosContent
       courses={sortedCourses}
       query={trimmedQuery}
       isAuthenticated={isAuthenticated}
       completedCourseIds={Array.from(completedCourseIds)}
+      inProgressCourseIds={inProgressCourseIds}
       sortKey={sortKey}
     />
   );

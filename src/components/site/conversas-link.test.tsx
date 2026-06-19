@@ -6,13 +6,13 @@ import { ConversasLink } from './conversas-link';
 describe('ConversasLink (V3.6 PR4)', () => {
   it('aponta para /perguntas com o rótulo PT-PT', () => {
     render(<ConversasLink />);
-    const link = screen.getByRole('link', { name: /as minhas conversas/i });
+    const link = screen.getByRole('link', { name: /conversas/i });
     expect(link).toHaveAttribute('href', '/perguntas');
   });
 
   it('aceita href personalizado (deslogado vai para o login)', () => {
     render(<ConversasLink href="/entrar?next=/perguntas" />);
-    const link = screen.getByRole('link', { name: /as minhas conversas/i });
+    const link = screen.getByRole('link', { name: /conversas/i });
     expect(link).toHaveAttribute('href', '/entrar?next=/perguntas');
   });
 

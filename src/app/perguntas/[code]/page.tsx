@@ -96,7 +96,7 @@ export default async function MinhaConversaPage({ params }: { params: Promise<{ 
           href="/perguntas"
           className="text-muted-foreground hover:text-ink text-sm transition-colors"
         >
-          ← As minhas conversas
+          ← Conversas
         </Link>
       </div>
 
