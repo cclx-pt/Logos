@@ -2,6 +2,8 @@
 
 > **Fonte:** decisão tomada com o user em 19-05-2026 quando V2.5 entrou em hold à espera de testemunhos finais do ministério.
 > **Estado:** activa até 01-07-2026 (lançamento V3). Reavaliar depois.
+>
+> **⚠️ Atualização 19-06-2026 - estratégia de base de dados mudou.** O lançamento deixa de "aplicar migrations + recriar conteúdo no `logos-prod`": passa a **promover o `logos-dev` (ref `dknrnqyqlojvnhspwjrd`) a produção** via troca de env na Vercel. Os passos 2 e 3 da "Promoção única" abaixo (aplicar migrations a `logos-prod`, confirmar bucket) ficam **obsoletos**. O lado dos branches (`v3-cursos` -> `main` numa só PR) mantém-se. Sequência atual e mapa de projetos em [`launch-runbook.md`](launch-runbook.md).
 
 ## 1. Modelo de 3 camadas
 
