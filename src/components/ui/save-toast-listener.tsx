@@ -28,6 +28,7 @@ const SAVED_MESSAGES: Record<string, string> = {
   etiqueta_criada: 'Etiqueta criada.',
   etiqueta_atualizada: 'Etiqueta guardada.',
   etiqueta_apagada: 'Etiqueta apagada.',
+  etiquetas_atribuidas: 'Etiqueta atribuída aos utilizadores selecionados.',
   // Roles / permissões
   papel_atualizado: 'Papel actualizado.',
   // Perguntas (inbox de admin)
@@ -42,6 +43,7 @@ const SAVED_MESSAGES: Record<string, string> = {
 
 const ERROR_MESSAGES: Record<string, string> = {
   generico: 'Algo correu mal. Tenta de novo.',
+  selecao_vazia: 'Seleciona pelo menos um utilizador.',
 };
 
 /**

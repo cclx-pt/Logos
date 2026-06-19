@@ -123,6 +123,51 @@ export async function assignTagAction(formData: FormData): Promise<AssignTagResu
   return { ok: true };
 }
 
+/**
+ * Atribuição de uma etiqueta a vários utilizadores de uma vez (afinação
+ * pré-lançamento). Mesmo modelo de defesa do `assignTagAction`: caller
+ * admin/super_admin, RLS em `user_tags`, upsert idempotente (PK composta).
+ * Recebe `tagId` + N campos `userId` (uma checkbox marcada por utilizador na
+ * tabela). userIds são deduplicados e validados; tem de haver pelo menos um.
+ */
+export type AssignTagToUsersResult = { ok: true; count: number } | { ok: false; error: string };
+
+export async function assignTagToUsersAction(formData: FormData): Promise<AssignTagToUsersResult> {
+  const caller = await getCurrentUser();
+  if (!caller || !isAdmin(caller.role)) {
+    return { ok: false, error: 'Apenas admin ou super_admin pode atribuir etiquetas.' };
+  }
+
+  const tagId = formData.get('tagId');
+  if (typeof tagId !== 'string' || !UUID_RE.test(tagId)) {
+    return { ok: false, error: 'tagId inválido.' };
+  }
+
+  const userIds = Array.from(
+    new Set(
+      formData
+        .getAll('userId')
+        .filter((v): v is string => typeof v === 'string' && UUID_RE.test(v)),
+    ),
+  );
+  if (userIds.length === 0) {
+    return { ok: false, error: 'Seleciona pelo menos um utilizador.' };
+  }
+
+  const supabase = await getServerClient();
+  const { error } = await supabase.from('user_tags').upsert(
+    userIds.map((userId) => ({ user_id: userId, tag_id: tagId, assigned_by: caller.id })),
+    { onConflict: 'user_id,tag_id', ignoreDuplicates: true },
+  );
+
+  if (error) {
+    return { ok: false, error: `Falha a atribuir etiqueta: ${error.message}` };
+  }
+
+  revalidatePath('/admin/utilizadores');
+  return { ok: true, count: userIds.length };
+}
+
 export async function unassignTagAction(formData: FormData): Promise<AssignTagResult> {
   const caller = await getCurrentUser();
   if (!caller || !isAdmin(caller.role)) {

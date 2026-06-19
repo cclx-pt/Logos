@@ -188,3 +188,57 @@ export async function getAuthEmailByProfileId(profileId: string): Promise<string
   if (authError) return null;
   return data.user?.email ?? null;
 }
+
+/**
+ * Emails de vários utilizadores a partir dos seus `profiles.id`, lidos da camada
+ * de identidade (`auth.users`). Devolve um `Map<profileId, email>`; perfis sem
+ * email (ou sem correspondência em `auth.users`) ficam de fora. Versão em lote
+ * do `getAuthEmailByProfileId`, para listas (ex.: a tabela de admin de
+ * utilizadores), evitando N chamadas `getUserById`.
+ *
+ * Usa o **cliente service-role** (mesma fronteira de identidade): um `admin`
+ * não-super não pode ler `auth.users` nem perfis alheios via RLS. Lê os
+ * `external_auth_id` dos perfis pedidos e cruza-os com a lista de utilizadores
+ * de identidade (`auth.admin.listUsers`, paginada). O email nunca é persistido
+ * em tabelas Logos (regra dura).
+ */
+export async function getAuthEmailsByProfileIds(
+  profileIds: string[],
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  if (profileIds.length === 0) return result;
+
+  const svc = getServiceRoleClient();
+
+  const { data: profiles, error } = await svc
+    .from('profiles')
+    .select('id, external_auth_id')
+    .in('id', profileIds)
+    .returns<{ id: string; external_auth_id: string }[]>();
+  if (error || !profiles || profiles.length === 0) return result;
+
+  // external_auth_id → email via Admin API paginada. Escala de igreja: na
+  // prática 1 página; o `while` protege contra crescimento futuro.
+  const emailByAuthId = new Map<string, string>();
+  const perPage = 1000;
+  let page = 1;
+  let done = false;
+  while (!done) {
+    const { data, error: listError } = await svc.auth.admin.listUsers({ page, perPage });
+    if (listError || !data) break;
+    for (const u of data.users) {
+      if (u.email) emailByAuthId.set(u.id, u.email);
+    }
+    if (data.users.length < perPage) {
+      done = true;
+    } else {
+      page += 1;
+    }
+  }
+
+  for (const p of profiles) {
+    const email = emailByAuthId.get(p.external_auth_id);
+    if (email) result.set(p.id, email);
+  }
+  return result;
+}
