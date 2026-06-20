@@ -3,7 +3,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { Toaster } from 'sonner';
 import { Header } from '@/components/site/header';
 import { Footer } from '@/components/site/footer';
-import { FirstVisitTutorial } from '@/components/site/first-visit-tutorial';
+import { FirstVisitTutorialGate } from '@/components/site/first-visit-tutorial-gate';
 import { SkipLink } from '@/components/site/skip-link';
 import { siteConfig } from '@/lib/site-config';
 import { cormorant, inter } from './fonts';
@@ -31,7 +31,7 @@ export default function RootLayout({
           {children}
         </main>
         <Footer />
-        <FirstVisitTutorial />
+        <FirstVisitTutorialGate />
         <Toaster
           position="top-right"
           richColors
