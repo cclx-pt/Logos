@@ -25,13 +25,6 @@ export const tutorialSteps: readonly TutorialStep[] = [
     youtubeUrl: null,
   },
   {
-    slug: 'ver-aula',
-    title: 'Ver uma aula',
-    description:
-      'Cada aula tem o vídeo e, quando existe, a apostila em PDF para descarregares. Navegas pelas aulas do curso pela árvore lateral ou pelos botões de avançar e recuar.',
-    youtubeUrl: null,
-  },
-  {
     slug: 'marcar-concluida',
     title: 'Marcar como concluída',
     description:
@@ -39,10 +32,17 @@ export const tutorialSteps: readonly TutorialStep[] = [
     youtubeUrl: null,
   },
   {
-    slug: 'perguntas-live',
-    title: 'Perguntas e transmissões Live',
+    slug: 'perguntas',
+    title: 'Perguntas e conversas',
     description:
-      'Tens uma dúvida numa aula? Usa o campo de perguntas e a equipa responde-te - acompanhas tudo em "Conversas". Quando houver uma transmissão em direto, o botão Live abre-a aqui no portal.',
+      'Tens uma dúvida numa aula? Usa o campo de perguntas e a equipa responde-te. Acompanhas tudo em "Conversas" e ficas a saber quando há resposta nova.',
+    youtubeUrl: null,
+  },
+  {
+    slug: 'live',
+    title: 'Transmissões Live',
+    description:
+      'Quando houver uma transmissão em direto, o botão Live fica ativo e abre a emissão aqui mesmo no portal, sem teres de sair para o YouTube.',
     youtubeUrl: null,
   },
 ];

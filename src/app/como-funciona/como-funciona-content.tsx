@@ -1,90 +1,115 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { PlayCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, PlayCircle } from 'lucide-react';
 
-import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 import { tutorialSteps } from '@/lib/tutorial';
 import { extractYoutubeId } from '@/lib/courses/youtube';
+import { cn } from '@/lib/utils';
 
+/**
+ * Tutorial "Como funciona" em formato wizard: um passo (um vídeo) de cada vez,
+ * com Anterior/Seguinte. O último passo encaminha para os conteúdos.
+ */
 export function ComoFuncionaContent() {
+  const total = tutorialSteps.length;
+  const [index, setIndex] = useState(0);
+  const step = tutorialSteps[index];
+  const youtubeId = extractYoutubeId(step.youtubeUrl);
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+
   return (
-    <motion.section
-      variants={staggerContainer}
-      initial="hidden"
-      animate="show"
-      className="mx-auto w-full max-w-4xl px-4 py-16 sm:px-6 sm:py-20 lg:py-24"
-    >
-      <motion.h1
-        variants={staggerItem}
-        className="font-display text-ink text-4xl font-medium sm:text-5xl"
-      >
-        Como funciona
-      </motion.h1>
-      <motion.p
-        variants={staggerItem}
-        className="text-muted-foreground mt-6 max-w-2xl font-sans text-lg leading-relaxed"
-      >
-        Um passeio rápido pelo LOGOS. Em poucos minutos ficas a saber como encontrar cursos, ver as
-        aulas, marcar o teu progresso e falar com a equipa.
-      </motion.p>
+    <section className="mx-auto w-full max-w-3xl px-4 py-16 sm:px-6 sm:py-20">
+      <h1 className="font-display text-ink text-4xl font-medium sm:text-5xl">Como funciona</h1>
+      <p className="text-muted-foreground mt-4 max-w-2xl font-sans leading-relaxed">
+        Um passeio rápido pelas principais funcionalidades. Avança com o botão Seguinte.
+      </p>
 
-      <ol className="mt-12 space-y-14">
-        {tutorialSteps.map((step, index) => {
-          const youtubeId = extractYoutubeId(step.youtubeUrl);
-          return (
-            <motion.li
-              key={step.slug}
-              id={step.slug}
-              variants={staggerItem}
-              className="scroll-mt-24"
-            >
-              <div className="flex items-center gap-3">
-                <span
-                  aria-hidden="true"
-                  className="bg-orange-primary/10 text-orange-primary flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-sans text-sm font-semibold"
-                >
-                  {index + 1}
-                </span>
-                <h2 className="font-display text-ink text-2xl font-medium tracking-tight">
-                  {step.title}
-                </h2>
-              </div>
-              <p className="text-muted-foreground mt-3 max-w-2xl font-sans leading-relaxed">
-                {step.description}
-              </p>
+      {/* Progresso: pontos + texto acessível. */}
+      <div className="mt-8 flex items-center gap-1.5" aria-hidden="true">
+        {tutorialSteps.map((s, i) => (
+          <span
+            key={s.slug}
+            className={cn(
+              'h-1.5 rounded-full transition-all',
+              i === index ? 'bg-orange-primary w-8' : 'bg-border w-4',
+            )}
+          />
+        ))}
+      </div>
+      <p className="text-muted-foreground mt-2 font-sans text-sm">
+        Passo {index + 1} de {total}
+      </p>
 
-              <div className="border-border bg-card mt-5 aspect-video overflow-hidden rounded-2xl border">
-                {youtubeId ? (
-                  <iframe
-                    src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
-                    title={`Vídeo: ${step.title}`}
-                    loading="lazy"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    className="h-full w-full"
-                  />
-                ) : (
-                  <div className="text-muted-foreground flex h-full w-full flex-col items-center justify-center gap-2">
-                    <PlayCircle aria-hidden="true" className="h-10 w-10" />
-                    <span className="font-sans text-sm">Vídeo em breve</span>
-                  </div>
-                )}
-              </div>
-            </motion.li>
-          );
-        })}
-      </ol>
-
-      <motion.div variants={staggerItem} className="mt-16">
-        <Link
-          href="/conteudos"
-          className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-11 items-center justify-center rounded-md px-6 font-sans text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      {/* Passo atual. aria-live anuncia a mudança a leitores de ecrã. */}
+      <div aria-live="polite">
+        <motion.div
+          key={step.slug}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-4"
         >
-          Explorar os conteúdos →
-        </Link>
-      </motion.div>
-    </motion.section>
+          <h2 className="font-display text-ink text-2xl font-medium tracking-tight">
+            {step.title}
+          </h2>
+
+          <div className="border-border bg-card mt-4 aspect-video overflow-hidden rounded-2xl border">
+            {youtubeId ? (
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
+                title={`Vídeo: ${step.title}`}
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                className="h-full w-full"
+              />
+            ) : (
+              <div className="text-muted-foreground flex h-full w-full flex-col items-center justify-center gap-2">
+                <PlayCircle aria-hidden="true" className="h-10 w-10" />
+                <span className="font-sans text-sm">Vídeo em breve</span>
+              </div>
+            )}
+          </div>
+
+          <p className="text-muted-foreground mt-4 font-sans leading-relaxed">{step.description}</p>
+        </motion.div>
+      </div>
+
+      {/* Navegação. */}
+      <div className="mt-8 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setIndex((i) => Math.max(0, i - 1))}
+          disabled={isFirst}
+          className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-11 items-center gap-2 rounded-md border px-4 font-sans text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40"
+        >
+          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+          Anterior
+        </button>
+
+        {isLast ? (
+          <Link
+            href="/conteudos"
+            className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-11 items-center gap-2 rounded-md px-5 font-sans text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          >
+            Concluir
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIndex((i) => Math.min(total - 1, i + 1))}
+            className="bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-11 items-center gap-2 rounded-md px-5 font-sans text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          >
+            Seguinte
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
