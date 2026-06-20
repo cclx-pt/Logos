@@ -18,24 +18,24 @@ export type TutorialStep = {
 
 export const tutorialSteps: readonly TutorialStep[] = [
   {
-    slug: 'encontrar-cursos',
-    title: 'Encontrar e inscrever em cursos',
+    slug: 'comecar-curso',
+    title: 'Encontrar e começar um curso',
     description:
-      'No separador Conteúdos vês todos os cursos disponíveis. Abre um curso para conheceres os módulos e as aulas e inscreve-te para o guardares em "Os meus cursos".',
+      'Vai a Conteúdos e abre um curso que te interesse. Adiciona-o aos teus cursos e, em "Os meus cursos", inicia-o para começares a aprender.',
     youtubeUrl: null,
   },
   {
-    slug: 'marcar-concluida',
-    title: 'Marcar como concluída',
+    slug: 'avancar-aulas',
+    title: 'Avançar e concluir aulas',
     description:
-      'Quando terminas uma aula, marca-a como concluída. O curso mostra o que já fizeste e, quando concluis tudo, aparece o ecrã de curso concluído - simples, sem percentagens.',
+      'Vês cada aula, marca-la como concluída e avanças para a seguinte. Quando terminas as aulas de um módulo, passas ao módulo seguinte.',
     youtubeUrl: null,
   },
   {
-    slug: 'perguntas',
-    title: 'Perguntas e conversas',
+    slug: 'conversas',
+    title: 'Conversas',
     description:
-      'Tens uma dúvida numa aula? Usa o campo de perguntas e a equipa responde-te. Acompanhas tudo em "Conversas" e ficas a saber quando há resposta nova.',
+      'Tens uma dúvida numa aula? Deixa a tua pergunta e a equipa responde-te. Acompanhas tudo em "Conversas" e ficas a saber quando há resposta nova.',
     youtubeUrl: null,
   },
   {
