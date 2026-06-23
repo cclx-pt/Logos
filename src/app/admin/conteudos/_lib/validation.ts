@@ -48,6 +48,27 @@ export function validatePdfStoragePath(raw: unknown, courseId: string): Ok<strin
   return { ok: true, value: raw };
 }
 
+/**
+ * Limite e MIME do banner. Alinhados com o bucket `course-banners`
+ * (file_size_limit 5 MB, allowed_mime_types) - quem os faz cumprir no upload
+ * directo é a Storage; estes valores servem para feedback imediato no browser.
+ */
+export const MAX_BANNER_BYTES = 5 * 1024 * 1024; // 5 MB
+export const ALLOWED_BANNER_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+/**
+ * Caminho de Storage do banner: tem de ser exactamente `<courseId>/banner`
+ * (path determinístico; o bucket faz upsert no mesmo sítio). Igual ao
+ * `validatePdfStoragePath`, é importante por coerência com a policy RLS
+ * `course_banners_select_visible`, que extrai o courseId do path.
+ */
+export function validateBannerStoragePath(raw: unknown, courseId: string): Ok<string> | Err {
+  if (typeof raw !== 'string' || raw !== `${courseId}/banner`) {
+    return { ok: false, error: 'Caminho do banner inválido.' };
+  }
+  return { ok: true, value: raw };
+}
+
 export function validateUuid(raw: unknown, fieldName: string): Ok<string> | Err {
   if (typeof raw !== 'string' || !UUID_RE.test(raw)) {
     return { ok: false, error: `${fieldName} inválido.` };

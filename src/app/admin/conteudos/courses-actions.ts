@@ -17,11 +17,15 @@
  * ao re-publicar usa de novo `now()`. Manter a UX simples — sem campo de data
  * separado em V3.
  *
- * Banner (V3.2 PR1): opcional. Ficheiro de imagem (JPEG/PNG/WebP, ≤ 5 MB)
- * vai para o bucket `course-banners` no path `<courseId>/banner` (sem
- * extensão; MIME via Content-Type). Falha do upload não bloqueia
- * create/update — o curso fica sem banner e cai no fallback de icon.
- * Update pode remover banner via checkbox `remove_banner`.
+ * Banner (V3.2 PR1; upload directo em V3.7): opcional. Tal como as apostilas
+ * PDF, o ficheiro NÃO passa por esta Server Action - o browser envia-o
+ * directamente para o bucket `course-banners` via signed upload URL
+ * (`createCourseBannerUploadUrlAction`), contornando o limite de ~4.5 MB do
+ * corpo de Functions na Vercel. O path é determinístico `<courseId>/banner`
+ * (upsert no mesmo sítio). Create/update só recebem o `banner_storage_path`
+ * (string) já validado; tamanho e MIME são impostos pelo bucket. No create, o
+ * id do curso é gerado no cliente (e validado aqui) para o path do banner poder
+ * existir antes do insert. Update remove banner via checkbox `remove_banner`.
  */
 
 import { revalidatePath } from 'next/cache';
@@ -32,6 +36,7 @@ import { UUID_RE } from '@/lib/validation';
 
 import {
   DESCRIPTION_MAX,
+  validateBannerStoragePath,
   validateOptionalText,
   validateTitle,
   type Err,
@@ -40,10 +45,12 @@ import {
 
 export type CreateCourseResult = { ok: true; id: string } | { ok: false; error: string };
 export type CourseActionResult = { ok: true } | { ok: false; error: string };
+export type UploadUrlResult =
+  | { ok: true; path: string; token: string }
+  | { ok: false; error: string };
 
 const ICON_MAX = 64;
-const MAX_BANNER_BYTES = 5 * 1024 * 1024; // 5 MB — alinhado com storage.buckets.
-const ALLOWED_BANNER_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const BANNER_BUCKET = 'course-banners';
 
 function validateRequiredTags(raws: FormDataEntryValue[]): Ok<string[]> | Err {
   const out: string[] = [];
@@ -127,38 +134,37 @@ function bannerPath(courseId: string): string {
 }
 
 /**
- * Valida e faz upload de um banner para o bucket `course-banners`. Devolve
- * o path relativo em caso de sucesso. Isolada por simetria com
- * `uploadLessonPdf` em `lessons-actions.ts` — testes podem mockar.
+ * Gera uma signed upload URL para o browser enviar o banner DIRECTAMENTE para o
+ * bucket `course-banners`, sem o fazer passar por uma Server Action (contorna o
+ * limite de ~4.5 MB do corpo de Functions na Vercel). Path determinístico
+ * `<courseId>/banner` com `upsert` (substitui o banner actual no mesmo sítio).
+ * Admin-check explícito; tamanho/MIME impostos pelo bucket.
  */
-async function uploadCourseBanner(file: File, courseId: string): Promise<Ok<string> | Err> {
-  if (!ALLOWED_BANNER_TYPES.has(file.type)) {
-    return { ok: false, error: 'Banner tem de ser JPEG, PNG ou WebP.' };
+export async function createCourseBannerUploadUrlAction(
+  rawCourseId: unknown,
+): Promise<UploadUrlResult> {
+  const caller = await getCurrentUser();
+  if (!caller || !isAdmin(caller.role)) {
+    return { ok: false, error: 'Apenas admin ou super_admin pode enviar banners.' };
   }
-  if (file.size === 0) {
-    return { ok: false, error: 'Ficheiro de banner está vazio.' };
-  }
-  if (file.size > MAX_BANNER_BYTES) {
-    const mb = (file.size / 1024 / 1024).toFixed(1);
-    return { ok: false, error: `Banner excede 5 MB (tem ${mb} MB).` };
+  if (typeof rawCourseId !== 'string' || !UUID_RE.test(rawCourseId)) {
+    return { ok: false, error: 'Curso inválido.' };
   }
 
   const supabase = await getServerClient();
-  const path = bannerPath(courseId);
-  const { error } = await supabase.storage.from('course-banners').upload(path, file, {
-    upsert: true,
-    contentType: file.type,
-  });
-  if (error) {
-    return { ok: false, error: `Falha a fazer upload do banner: ${error.message}` };
+  const { data, error } = await supabase.storage
+    .from(BANNER_BUCKET)
+    .createSignedUploadUrl(bannerPath(rawCourseId), { upsert: true });
+  if (error || !data) {
+    return { ok: false, error: `Falha a preparar upload: ${error?.message ?? 'desconhecido'}` };
   }
-  return { ok: true, value: path };
+  return { ok: true, path: data.path, token: data.token };
 }
 
 async function deleteCourseBanner(courseId: string): Promise<void> {
   const supabase = await getServerClient();
   // Best-effort — se o ficheiro não existir, Supabase devolve sucesso sem erro.
-  await supabase.storage.from('course-banners').remove([bannerPath(courseId)]);
+  await supabase.storage.from(BANNER_BUCKET).remove([bannerPath(courseId)]);
 }
 
 export async function createCourseAction(formData: FormData): Promise<CreateCourseResult> {
@@ -184,30 +190,37 @@ export async function createCourseAction(formData: FormData): Promise<CreateCour
   const sequentialLessons = formData.get('sequential_lessons') === 'on';
   const sequentialModules = formData.get('sequential_modules') === 'on';
 
-  const prerequisite = await validatePrerequisite(formData.get('prerequisite_course_id'), null);
+  // id gerado no cliente para o path do banner (`<id>/banner`) poder existir
+  // antes do insert. Opcional: chamadas sem id deixam a BD gerar.
+  let explicitId: string | undefined;
+  const idRaw = formData.get('id');
+  if (typeof idRaw === 'string' && idRaw.length > 0) {
+    if (!UUID_RE.test(idRaw)) return { ok: false, error: 'id inválido.' };
+    explicitId = idRaw;
+  }
+
+  const prerequisite = await validatePrerequisite(
+    formData.get('prerequisite_course_id'),
+    explicitId ?? null,
+  );
   if (!prerequisite.ok) return prerequisite;
 
-  const bannerFile = formData.get('banner');
-  const hasBanner = bannerFile instanceof File && bannerFile.size > 0;
-
-  // Validação prévia do banner (antes de inserir o curso) — evita ter de
-  // rollback do row se for inválido. Limites de tipo/tamanho são checks
-  // baratos sem tocar em Storage.
-  if (hasBanner) {
-    const file = bannerFile as File;
-    if (!ALLOWED_BANNER_TYPES.has(file.type)) {
-      return { ok: false, error: 'Banner tem de ser JPEG, PNG ou WebP.' };
-    }
-    if (file.size > MAX_BANNER_BYTES) {
-      const mb = (file.size / 1024 / 1024).toFixed(1);
-      return { ok: false, error: `Banner excede 5 MB (tem ${mb} MB).` };
-    }
+  // Banner: o ficheiro já foi enviado pelo browser (upload directo); aqui só
+  // chega o path, que tem de ser `<id>/banner`.
+  let bannerStoragePath: string | null = null;
+  const bannerPathRaw = formData.get('banner_storage_path');
+  if (typeof bannerPathRaw === 'string' && bannerPathRaw.length > 0) {
+    if (!explicitId) return { ok: false, error: 'Caminho do banner inválido.' };
+    const validated = validateBannerStoragePath(bannerPathRaw, explicitId);
+    if (!validated.ok) return validated;
+    bannerStoragePath = validated.value;
   }
 
   const supabase = await getServerClient();
   const { data: inserted, error: insertError } = await supabase
     .from('courses')
     .insert({
+      ...(explicitId ? { id: explicitId } : {}),
       title: title.value,
       description: description.value,
       icon: icon.value,
@@ -216,32 +229,18 @@ export async function createCourseAction(formData: FormData): Promise<CreateCour
       sequential_lessons: sequentialLessons,
       sequential_modules: sequentialModules,
       prerequisite_course_id: prerequisite.value,
+      banner_storage_path: bannerStoragePath,
       created_by: caller.id,
     })
     .select('id')
     .single<{ id: string }>();
 
   if (insertError) {
+    // O banner já está no bucket; se o curso não nasceu, remove-o (best-effort).
+    if (bannerStoragePath) {
+      await supabase.storage.from(BANNER_BUCKET).remove([bannerStoragePath]);
+    }
     return { ok: false, error: `Falha a criar curso: ${insertError.message}` };
-  }
-
-  if (hasBanner) {
-    const upload = await uploadCourseBanner(bannerFile as File, inserted.id);
-    if (!upload.ok) {
-      // Banner é opcional — falha do upload não derruba o curso. Apenas
-      // sinaliza ao admin para tentar de novo em edit.
-      return { ok: false, error: `Curso criado, mas o banner falhou: ${upload.error}` };
-    }
-    const { error: pathError } = await supabase
-      .from('courses')
-      .update({ banner_storage_path: upload.value })
-      .eq('id', inserted.id);
-    if (pathError) {
-      return {
-        ok: false,
-        error: `Curso criado, mas registo do banner falhou: ${pathError.message}`,
-      };
-    }
   }
 
   revalidatePath('/admin/conteudos');
@@ -277,8 +276,8 @@ export async function updateCourseAction(formData: FormData): Promise<CourseActi
   const sequentialLessons = formData.get('sequential_lessons') === 'on';
   const sequentialModules = formData.get('sequential_modules') === 'on';
   const removeBanner = formData.get('remove_banner') === 'on';
-  const bannerFile = formData.get('banner');
-  const hasNewBanner = bannerFile instanceof File && bannerFile.size > 0;
+  const bannerPathRaw = formData.get('banner_storage_path');
+  const hasNewBanner = typeof bannerPathRaw === 'string' && bannerPathRaw.length > 0;
 
   const prerequisite = await validatePrerequisite(formData.get('prerequisite_course_id'), idRaw);
   if (!prerequisite.ok) return prerequisite;
@@ -307,14 +306,14 @@ export async function updateCourseAction(formData: FormData): Promise<CourseActi
     publishedAt = new Date().toISOString();
   }
 
-  // Resolução de banner_storage_path: nova upload tem prioridade sobre
-  // remove_banner (admin pode trocar em vez de remover). Se nenhum dos dois
-  // for activado, preserva o path actual.
+  // Resolução de banner_storage_path: novo banner (já enviado pelo browser para
+  // `<id>/banner`) tem prioridade sobre remove_banner. Se nenhum dos dois for
+  // activado, preserva o path actual.
   let bannerStoragePath: string | null = current.banner_storage_path;
   if (hasNewBanner) {
-    const upload = await uploadCourseBanner(bannerFile as File, idRaw);
-    if (!upload.ok) return upload;
-    bannerStoragePath = upload.value;
+    const validated = validateBannerStoragePath(bannerPathRaw, idRaw);
+    if (!validated.ok) return validated;
+    bannerStoragePath = validated.value;
   } else if (removeBanner) {
     await deleteCourseBanner(idRaw);
     bannerStoragePath = null;

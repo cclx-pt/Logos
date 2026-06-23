@@ -9,8 +9,8 @@ const {
   mockUpdateEq,
   mockDeleteEq,
   mockRevalidatePath,
-  mockStorageUpload,
   mockStorageRemove,
+  mockStorageCreateSignedUploadUrl,
 } = vi.hoisted(() => ({
   mockGetCurrentUser: vi.fn(),
   mockInsertSingle: vi.fn(),
@@ -18,8 +18,8 @@ const {
   mockUpdateEq: vi.fn(),
   mockDeleteEq: vi.fn(),
   mockRevalidatePath: vi.fn(),
-  mockStorageUpload: vi.fn(),
   mockStorageRemove: vi.fn(),
+  mockStorageCreateSignedUploadUrl: vi.fn(),
 }));
 
 const mockInsertPayload = vi.fn();
@@ -46,8 +46,8 @@ vi.mock('@/lib/auth', () => ({
     })),
     storage: {
       from: vi.fn(() => ({
-        upload: mockStorageUpload,
         remove: mockStorageRemove,
+        createSignedUploadUrl: mockStorageCreateSignedUploadUrl,
       })),
     },
   })),
@@ -57,7 +57,12 @@ vi.mock('next/cache', () => ({
   revalidatePath: mockRevalidatePath,
 }));
 
-import { createCourseAction, updateCourseAction, deleteCourseAction } from './courses-actions';
+import {
+  createCourseAction,
+  createCourseBannerUploadUrlAction,
+  updateCourseAction,
+  deleteCourseAction,
+} from './courses-actions';
 
 function makeProfile(role: Profile['role'], id: string): Profile {
   return {
@@ -141,6 +146,7 @@ describe('createCourseAction (V3 PR3 + V3.1 sem slug)', () => {
       sequential_lessons: false,
       sequential_modules: false,
       prerequisite_course_id: null,
+      banner_storage_path: null,
       created_by: CALLER_ID,
     });
     expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/conteudos');
@@ -378,74 +384,142 @@ describe('deleteCourseAction (V3 PR3)', () => {
   });
 });
 
-describe('banner uploads (V3.2 PR1)', () => {
+describe('createCourseBannerUploadUrlAction (V3.7 upload directo)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  function bannerFile(bytes: number, type = 'image/jpeg'): File {
-    return new File([new Uint8Array(bytes)], 'banner.jpg', { type });
-  }
+  it('recusa quando caller é user', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('user', CALLER_ID));
+    const result = await createCourseBannerUploadUrlAction(COURSE_ID);
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/admin/i) });
+    expect(mockStorageCreateSignedUploadUrl).not.toHaveBeenCalled();
+  });
 
-  function fdWith(entries: Record<string, string>, banner: File): FormData {
-    const fd = formDataOf(entries);
-    fd.set('banner', banner);
-    return fd;
-  }
+  it('recusa courseId inválido', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    const result = await createCourseBannerUploadUrlAction('nao-e-uuid');
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/curso inválido/i) });
+    expect(mockStorageCreateSignedUploadUrl).not.toHaveBeenCalled();
+  });
 
-  it('create: banner ausente → curso criado sem path de banner', async () => {
+  it('assina upload para <courseId>/banner (upsert) e devolve path + token', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockStorageCreateSignedUploadUrl.mockResolvedValue({
+      data: { path: `${COURSE_ID}/banner`, token: 'tok-9', signedUrl: 'https://x/up' },
+      error: null,
+    });
+
+    const result = await createCourseBannerUploadUrlAction(COURSE_ID);
+
+    expect(result).toEqual({ ok: true, path: `${COURSE_ID}/banner`, token: 'tok-9' });
+    expect(mockStorageCreateSignedUploadUrl).toHaveBeenCalledWith(
+      `${COURSE_ID}/banner`,
+      expect.objectContaining({ upsert: true }),
+    );
+  });
+});
+
+describe('banner uploads (V3.2 PR1; upload directo V3.7)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const BANNER_PATH = `${COURSE_ID}/banner`;
+  const FOREIGN_BANNER_PATH = '99999999-9999-4999-8999-999999999999/banner';
+
+  it('create: sem banner_storage_path → insert com banner_storage_path null', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     mockInsertSingle.mockResolvedValue({ data: { id: COURSE_ID }, error: null });
 
     const result = await createCourseAction(formDataOf({ title: 'Marcos' }));
 
     expect(result).toEqual({ ok: true, id: COURSE_ID });
-    expect(mockStorageUpload).not.toHaveBeenCalled();
-    expect(mockUpdatePayload).not.toHaveBeenCalled();
+    const payload = mockInsertPayload.mock.calls[0][0] as { banner_storage_path: string | null };
+    expect(payload.banner_storage_path).toBeNull();
+    expect(mockStorageCreateSignedUploadUrl).not.toHaveBeenCalled();
   });
 
-  it('create: banner JPEG válido → upload + update banner_storage_path', async () => {
+  it('create: id + banner_storage_path válido → insert inclui id + path', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     mockInsertSingle.mockResolvedValue({ data: { id: COURSE_ID }, error: null });
-    mockStorageUpload.mockResolvedValue({ error: null });
-    mockUpdateEq.mockResolvedValue({ error: null });
 
     const result = await createCourseAction(
-      fdWith({ title: 'Marcos' }, bannerFile(1024, 'image/jpeg')),
+      formDataOf({ id: COURSE_ID, title: 'Marcos', banner_storage_path: BANNER_PATH }),
     );
 
     expect(result).toEqual({ ok: true, id: COURSE_ID });
-    expect(mockStorageUpload).toHaveBeenCalledWith(
-      `${COURSE_ID}/banner`,
-      expect.any(File),
-      expect.objectContaining({ upsert: true, contentType: 'image/jpeg' }),
+    expect(mockInsertPayload).toHaveBeenCalledWith(
+      expect.objectContaining({ id: COURSE_ID, banner_storage_path: BANNER_PATH }),
     );
-    expect(mockUpdatePayload).toHaveBeenCalledWith({
-      banner_storage_path: `${COURSE_ID}/banner`,
-    });
   });
 
-  it('create: banner com MIME não permitido → recusa antes de criar curso', async () => {
+  it('create: banner_storage_path com prefixo de outro curso → recusa antes do insert', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
 
     const result = await createCourseAction(
-      fdWith({ title: 'Marcos' }, bannerFile(1024, 'application/pdf')),
+      formDataOf({ id: COURSE_ID, title: 'Marcos', banner_storage_path: FOREIGN_BANNER_PATH }),
     );
 
-    expect(result).toEqual({ ok: false, error: expect.stringMatching(/jpeg.*png.*webp/i) });
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/banner inválido/i) });
     expect(mockInsertPayload).not.toHaveBeenCalled();
-    expect(mockStorageUpload).not.toHaveBeenCalled();
   });
 
-  it('create: banner > 5 MB → recusa antes de criar curso', async () => {
+  it('create: banner_storage_path sem id → recusa', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
 
-    const oversized = bannerFile(5 * 1024 * 1024 + 1, 'image/jpeg');
-    const result = await createCourseAction(fdWith({ title: 'Marcos' }, oversized));
+    const result = await createCourseAction(
+      formDataOf({ title: 'Marcos', banner_storage_path: BANNER_PATH }),
+    );
 
-    expect(result).toEqual({ ok: false, error: expect.stringMatching(/5 MB/i) });
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/banner inválido/i) });
     expect(mockInsertPayload).not.toHaveBeenCalled();
-    expect(mockStorageUpload).not.toHaveBeenCalled();
+  });
+
+  it('create: remove o ficheiro já enviado se o insert falhar', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockInsertSingle.mockResolvedValue({ data: null, error: { message: 'insert boom' } });
+    mockStorageRemove.mockResolvedValue({ error: null });
+
+    const result = await createCourseAction(
+      formDataOf({ id: COURSE_ID, title: 'Marcos', banner_storage_path: BANNER_PATH }),
+    );
+
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/insert boom/i) });
+    expect(mockStorageRemove).toHaveBeenCalledWith([BANNER_PATH]);
+  });
+
+  it('update: banner_storage_path novo → grava-o, sem remove', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockMaybeSingle.mockResolvedValue({
+      data: { published_at: null, banner_storage_path: null },
+      error: null,
+    });
+    mockUpdateEq.mockResolvedValue({ error: null });
+
+    const result = await updateCourseAction(
+      formDataOf({ id: COURSE_ID, title: 'Marcos', banner_storage_path: BANNER_PATH }),
+    );
+
+    expect(result).toEqual({ ok: true });
+    const payload = mockUpdatePayload.mock.calls[0][0] as { banner_storage_path: string | null };
+    expect(payload.banner_storage_path).toBe(BANNER_PATH);
+    expect(mockStorageRemove).not.toHaveBeenCalled();
+  });
+
+  it('update: banner_storage_path com prefixo de outro curso → recusa', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockMaybeSingle.mockResolvedValue({
+      data: { published_at: null, banner_storage_path: null },
+      error: null,
+    });
+
+    const result = await updateCourseAction(
+      formDataOf({ id: COURSE_ID, title: 'Marcos', banner_storage_path: FOREIGN_BANNER_PATH }),
+    );
+
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/banner inválido/i) });
+    expect(mockUpdatePayload).not.toHaveBeenCalled();
   });
 
   it('update: remove_banner=on → banner_storage_path vira null + storage remove chamado', async () => {
@@ -473,17 +547,20 @@ describe('banner uploads (V3.2 PR1)', () => {
       data: { published_at: null, banner_storage_path: `${COURSE_ID}/banner` },
       error: null,
     });
-    mockStorageUpload.mockResolvedValue({ error: null });
     mockUpdateEq.mockResolvedValue({ error: null });
 
-    const fd = formDataOf({ id: COURSE_ID, title: 'Marcos', remove_banner: 'on' });
-    fd.set('banner', bannerFile(2048, 'image/webp'));
-    const result = await updateCourseAction(fd);
+    const result = await updateCourseAction(
+      formDataOf({
+        id: COURSE_ID,
+        title: 'Marcos',
+        remove_banner: 'on',
+        banner_storage_path: BANNER_PATH,
+      }),
+    );
 
     expect(result).toEqual({ ok: true });
-    expect(mockStorageUpload).toHaveBeenCalled();
     expect(mockStorageRemove).not.toHaveBeenCalled();
     const payload = mockUpdatePayload.mock.calls[0][0] as { banner_storage_path: string | null };
-    expect(payload.banner_storage_path).toBe(`${COURSE_ID}/banner`);
+    expect(payload.banner_storage_path).toBe(BANNER_PATH);
   });
 });

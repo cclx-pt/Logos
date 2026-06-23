@@ -232,15 +232,7 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
             tags={tagsData ?? []}
             courseOptions={courseOptions}
             course={courseFormData}
-            action={async (formData: FormData) => {
-              'use server';
-              const result = await updateCourseAction(formData);
-              redirect(
-                result.ok
-                  ? `/admin/conteudos/${course.id}?guardado=curso_atualizado`
-                  : `/admin/conteudos/${course.id}?erro=generico`,
-              );
-            }}
+            submitAction={updateCourseAction}
           />
         </CollapsibleSection>
 

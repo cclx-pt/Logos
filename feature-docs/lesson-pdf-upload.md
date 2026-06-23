@@ -46,3 +46,14 @@ Era `<courseId>/<lessonId>.pdf`; passou a **`<courseId>/<uuid>.pdf`** (nome alea
 - `src/components/ui/submit-button.tsx` - prop `pending`.
 
 Sem migration, sem env nova (reusa `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`).
+
+## Banners de curso (mesmo mecanismo)
+
+O bucket `course-banners` tinha o mesmo bug latente (cap de 5 MB na Server Action, batido pelos ~4.5 MB da Vercel). Foi corrigido da mesma forma:
+
+- `createCourseBannerUploadUrlAction(courseId)` assina o upload para `<courseId>/banner` (com `upsert`, porque o path é determinístico - sempre o mesmo por curso).
+- `uploadToSignedUrl` (o mesmo wrapper genérico) envia o ficheiro directamente; o `CourseForm` (agora client component, `onSubmit` + `useTransition`) orquestra.
+- `createCourseAction`/`updateCourseAction` recebem só `banner_storage_path` (validado por `validateBannerStoragePath`); tamanho/MIME impostos pelo bucket.
+
+**Diferença vs. PDF - o `courseId` está no *prefixo* do path.** No create o curso ainda não existe, por isso o **id é gerado no cliente** (`crypto.randomUUID`) e enviado como `id` no FormData; `createCourseAction` insere o curso com esse id explícito (param `id` opcional). Assim o path `<id>/banner` existe antes do insert e a policy RLS (que extrai o courseId do prefixo) fica coerente. Se o insert falhar, o banner já enviado é removido best-effort.
+

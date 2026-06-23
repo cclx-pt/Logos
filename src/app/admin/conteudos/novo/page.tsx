@@ -1,4 +1,4 @@
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { isAdmin } from '@/lib/auth/guards';
@@ -53,13 +53,7 @@ export default async function NovoCursoPage() {
         mode="create"
         tags={tagsData ?? []}
         courseOptions={courseOptions ?? []}
-        action={async (formData: FormData) => {
-          'use server';
-          const result = await createCourseAction(formData);
-          if (result.ok) {
-            redirect(`/admin/conteudos/${result.id}?guardado=curso_criado`);
-          }
-        }}
+        submitAction={createCourseAction}
       />
     </div>
   );

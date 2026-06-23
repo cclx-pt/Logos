@@ -1,12 +1,24 @@
+'use client';
+
+import { useState, useTransition, type FormEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { SubmitButton } from '@/components/ui/submit-button';
+import { uploadToSignedUrl } from '@/lib/auth/browser-client';
 import { IconPicker } from './icon-picker';
+import { ALLOWED_BANNER_TYPES, MAX_BANNER_BYTES } from './_lib/validation';
+import { createCourseBannerUploadUrlAction } from './courses-actions';
 
 export type TagOption = { id: string; label: string };
 
 /** Opção do select de curso pré-requisito (V3.6). */
 export type CourseOption = { id: string; title: string };
+
+/** Resultado das Server Actions de submeter (create/update); a forma comum que o form consome. */
+type SubmitResult = { ok: true; id?: string } | { ok: false; error: string };
+
+const BANNER_BUCKET = 'course-banners';
 
 export type CourseFormInitialData = {
   id: string;
@@ -34,20 +46,102 @@ type CourseFormProps = {
    */
   courseOptions: CourseOption[];
   course?: CourseFormInitialData;
-  action: (formData: FormData) => void | Promise<void>;
+  /** Server Action que recebe os METADADOS (FormData sem o ficheiro, com `banner_storage_path`). */
+  submitAction: (formData: FormData) => Promise<SubmitResult>;
 };
 
-export function CourseForm({ mode, tags, courseOptions, course, action }: CourseFormProps) {
-  const submitLabel = mode === 'create' ? 'Criar curso' : 'Guardar alterações';
-  const pendingLabel = mode === 'create' ? 'A criar curso…' : 'A guardar…';
+/**
+ * CourseForm — Client Component partilhado por criar e editar cursos.
+ *
+ * Upload directo do banner (V3.7): igual ao LessonForm, o submit é orquestrado
+ * no cliente via `onSubmit` + `useTransition`. Se há um banner novo, pede uma
+ * signed upload URL e envia o ficheiro DIRECTAMENTE para o bucket
+ * `course-banners` (browser -> Storage), contornando o limite de ~4.5 MB do
+ * corpo de Server Actions na Vercel. Só depois chama a `submitAction` com os
+ * metadados + `banner_storage_path` (sem o ficheiro).
+ *
+ * O path do banner é `<courseId>/banner`. No create, o id é gerado no cliente
+ * (`crypto.randomUUID`) e vai como `id` no FormData - assim o path existe antes
+ * do insert, e a Server Action insere o curso com esse id.
+ */
+export function CourseForm({ mode, tags, courseOptions, course, submitAction }: CourseFormProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  // id estável para o create (path do banner + PK do curso). No edit usa-se o existente.
+  const [createId] = useState(() => crypto.randomUUID());
+
+  const isCreate = mode === 'create';
+  const courseId = isCreate ? createId : (course?.id ?? createId);
+  const submitLabel = isCreate ? 'Criar curso' : 'Guardar alterações';
+  const pendingLabel = isCreate ? 'A criar curso…' : 'A guardar…';
   const isPublished = Boolean(course?.published_at);
   const assignedTagIds = new Set(course?.required_tags ?? []);
   const isSequentialLessons = Boolean(course?.sequential_lessons);
   const isSequentialModules = Boolean(course?.sequential_modules);
   const prerequisiteId = course?.prerequisite_course_id ?? '';
 
+  async function runSubmit(formData: FormData): Promise<void> {
+    setError(null);
+
+    // 1. Banner novo escolhido → upload directo para `<courseId>/banner`.
+    let bannerStoragePath: string | null = null;
+    const file = formData.get('banner');
+    if (file instanceof File && file.size > 0) {
+      if (!ALLOWED_BANNER_TYPES.has(file.type)) {
+        setError('O banner tem de ser JPEG, PNG ou WebP.');
+        return;
+      }
+      if (file.size > MAX_BANNER_BYTES) {
+        const mb = (file.size / 1024 / 1024).toFixed(1);
+        setError(`O banner excede 5 MB (tem ${mb} MB).`);
+        return;
+      }
+      const signed = await createCourseBannerUploadUrlAction(courseId);
+      if (!signed.ok) {
+        setError(signed.error);
+        return;
+      }
+      const uploaded = await uploadToSignedUrl(
+        BANNER_BUCKET,
+        signed.path,
+        signed.token,
+        file,
+        file.type,
+      );
+      if (!uploaded.ok) {
+        setError(`Falha a enviar o banner: ${uploaded.error}`);
+        return;
+      }
+      bannerStoragePath = signed.path;
+    }
+
+    // 2. Server Action só com metadados (o ficheiro nunca vai no corpo).
+    formData.delete('banner');
+    if (isCreate) formData.set('id', courseId);
+    if (bannerStoragePath) formData.set('banner_storage_path', bannerStoragePath);
+
+    const result = await submitAction(formData);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    router.push(
+      isCreate
+        ? `/admin/conteudos/${courseId}?guardado=curso_criado`
+        : `/admin/conteudos/${courseId}?guardado=curso_atualizado`,
+    );
+    router.refresh();
+  }
+
+  function onSubmit(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => runSubmit(formData));
+  }
+
   return (
-    <form action={action} encType="multipart/form-data" className="space-y-6">
+    <form onSubmit={onSubmit} className="space-y-6">
       {mode === 'edit' && course && <input type="hidden" name="id" value={course.id} />}
 
       <label className="block">
@@ -101,7 +195,7 @@ export function CourseForm({ mode, tags, courseOptions, course, action }: Course
           </div>
         ) : (
           <p className="text-muted-foreground text-xs">
-            Sem banner — o catálogo mostra o ícone abaixo. Carrega um ficheiro para substituir.
+            Sem banner - o catálogo mostra o ícone abaixo. Carrega um ficheiro para substituir.
           </p>
         )}
         <label className="block">
@@ -116,7 +210,7 @@ export function CourseForm({ mode, tags, courseOptions, course, action }: Course
           />
         </label>
         <p className="text-muted-foreground text-xs">
-          JPEG, PNG ou WebP — máx 5 MB. Recomendação: proporção 16:9, ≤ 500 KB já comprimido.
+          JPEG, PNG ou WebP - máx 5 MB. Recomendação: proporção 16:9, ≤ 500 KB já comprimido.
         </p>
       </fieldset>
 
@@ -232,8 +326,19 @@ export function CourseForm({ mode, tags, courseOptions, course, action }: Course
         </span>
       </label>
 
+      {error ? (
+        <p
+          role="alert"
+          className="border-l-destructive bg-destructive/10 text-ink border-l-4 px-3 py-2 text-sm"
+        >
+          {error}
+        </p>
+      ) : null}
+
       <div className="flex flex-wrap items-start gap-3">
-        <SubmitButton pendingLabel={pendingLabel}>{submitLabel}</SubmitButton>
+        <SubmitButton pending={isPending} pendingLabel={pendingLabel}>
+          {submitLabel}
+        </SubmitButton>
         <Link
           href="/admin/conteudos"
           className="border-border text-ink hover:bg-muted/40 focus-visible:ring-ring inline-flex h-10 items-center justify-center rounded-md border px-4 text-sm font-medium focus-visible:ring-2 focus-visible:outline-none"
