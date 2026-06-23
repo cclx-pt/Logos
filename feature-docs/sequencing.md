@@ -46,7 +46,7 @@ Testes: `src/lib/courses/sequencing.test.ts`.
 
 | Superfície | Comportamento |
 |---|---|
-| Página de aula (`/conteudos/[courseId]/[lessonId]`) | aula bloqueada → `redirect` para a aula-fronteira; grava `course_completions` on-read se o curso ficou completo |
+| Página de aula (`/conteudos/[courseId]/[lessonId]`) | aula bloqueada → `redirect` para a aula-fronteira; grava `course_completions` on-read se o curso ficou completo. **A navegação inferior "Próxima aula" respeita o cadeado** (fix 22-06-2026): quando a próxima está bloqueada mostra um cartão com cadeado + "Marca esta aula como concluída para a desbloquear" em vez de um link que saltava silenciosamente de volta para a fronteira |
 | Página de módulo (`/conteudos/[courseId]/modulos/[moduleId]`) | módulo bloqueado → `redirect` para o módulo da fronteira; aulas bloqueadas na lista ficam não-clicáveis + cadeado |
 | Landing do curso (`/conteudos/[courseId]`) | módulos bloqueados não-clicáveis + dica; se o pré-requisito faltar, o CTA de inscrição dá lugar a aviso com link ao pré-requisito |
 | `LessonTree` (árvore da vista de aula) | aulas bloqueadas não-clicáveis + cadeado |

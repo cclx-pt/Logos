@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
+import { Lock } from 'lucide-react';
 
 import { getCurrentUser } from '@/lib/auth';
 import { UUID_RE } from '@/lib/validation';
@@ -283,15 +284,33 @@ export default async function LessonPage({ params }: PageProps) {
               <span className="flex-1 sm:max-w-[48%]" aria-hidden="true" />
             )}
             {nav.next ? (
-              <Link
-                href={`/conteudos/${course.id}/${nav.next.id}`}
-                className="border-orange-primary/30 bg-orange-primary/5 text-ink hover:bg-orange-primary/10 focus-visible:ring-ring inline-flex max-w-full flex-1 flex-col items-end gap-1 rounded-md border px-4 py-3 text-right transition-colors focus-visible:ring-2 focus-visible:outline-none sm:max-w-[48%]"
-              >
-                <span className="text-orange-primary text-[10px] tracking-wide uppercase">
-                  Próxima aula →
+              lockedLessonIds.has(nav.next.id) ? (
+                // Curso sequencial: a próxima aula está bloqueada até concluir
+                // esta. Em vez de um link que ia silenciosamente saltar de volta
+                // para a fronteira, mostramos a razão aqui mesmo.
+                <span
+                  aria-disabled="true"
+                  className="border-border bg-muted/30 text-muted-foreground inline-flex max-w-full flex-1 flex-col items-end gap-1 rounded-md border border-dashed px-4 py-3 text-right sm:max-w-[48%]"
+                >
+                  <span className="inline-flex items-center gap-1 text-[10px] tracking-wide uppercase">
+                    <Lock aria-hidden="true" className="h-3 w-3" /> Próxima aula
+                  </span>
+                  <span className="line-clamp-2 text-sm font-medium">{nav.next.title}</span>
+                  <span className="text-[11px]">
+                    Marca esta aula como concluída para a desbloquear.
+                  </span>
                 </span>
-                <span className="line-clamp-2 text-sm font-medium">{nav.next.title}</span>
-              </Link>
+              ) : (
+                <Link
+                  href={`/conteudos/${course.id}/${nav.next.id}`}
+                  className="border-orange-primary/30 bg-orange-primary/5 text-ink hover:bg-orange-primary/10 focus-visible:ring-ring inline-flex max-w-full flex-1 flex-col items-end gap-1 rounded-md border px-4 py-3 text-right transition-colors focus-visible:ring-2 focus-visible:outline-none sm:max-w-[48%]"
+                >
+                  <span className="text-orange-primary text-[10px] tracking-wide uppercase">
+                    Próxima aula →
+                  </span>
+                  <span className="line-clamp-2 text-sm font-medium">{nav.next.title}</span>
+                </Link>
+              )
             ) : (
               <span className="flex-1 sm:max-w-[48%]" aria-hidden="true" />
             )}
