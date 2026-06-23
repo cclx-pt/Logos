@@ -99,11 +99,8 @@ export default async function ModuloDetalhePage({ params, searchParams }: PagePr
   const lessonEditingNode = editingLesson ? (
     <LessonForm
       mode="edit"
-      action={async (formData: FormData) => {
-        'use server';
-        const result = await updateLessonAction(formData);
-        redirect(result.ok ? `${backHref}?guardado=aula_atualizada` : `${backHref}?erro=generico`);
-      }}
+      submitAction={updateLessonAction}
+      successRedirect={`${backHref}?guardado=aula_atualizada`}
       courseId={course.id}
       moduleId={module.id}
       lessonId={editingLesson.id}
@@ -254,15 +251,8 @@ export default async function ModuloDetalhePage({ params, searchParams }: PagePr
                   <div className="mt-4">
                     <LessonForm
                       mode="create"
-                      action={async (formData: FormData) => {
-                        'use server';
-                        const result = await createLessonAction(formData);
-                        redirect(
-                          result.ok
-                            ? `${backHref}?guardado=aula_criada`
-                            : `${backHref}?erro=generico`,
-                        );
-                      }}
+                      submitAction={createLessonAction}
+                      successRedirect={`${backHref}?guardado=aula_criada`}
                       courseId={course.id}
                       moduleId={module.id}
                       backHref={backHref}

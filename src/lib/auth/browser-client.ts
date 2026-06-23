@@ -39,6 +39,33 @@ export function getBrowserClient(): SupabaseClient {
  * hook de estado live) não importa `@supabase/*`. Requer que a tabela esteja na
  * publicação `supabase_realtime` e com policy de SELECT que deixe o cliente ler.
  */
+/**
+ * Faz upload de um ficheiro DIRECTAMENTE do browser para o Supabase Storage,
+ * usando uma signed upload URL (path + token) gerada no servidor por uma Server
+ * Action admin-only. Contorna o limite de ~4.5 MB do corpo de Server Actions na
+ * Vercel (o `bodySizeLimit` do Next não o sobrepõe): o ficheiro nunca passa pela
+ * Function - vai directo browser -> Storage. O tamanho (<=20 MB) e o MIME são
+ * impostos pelo próprio bucket.
+ *
+ * Vive aqui porque é a única camada autorizada a importar `@supabase/*` (regra
+ * dura em CLAUDE.md). Genérica no bucket para não acoplar a identidade a
+ * conceitos de domínio.
+ */
+export async function uploadToSignedUrl(
+  bucket: string,
+  path: string,
+  token: string,
+  file: File,
+  contentType?: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = getBrowserClient();
+  const { error } = await supabase.storage
+    .from(bucket)
+    .uploadToSignedUrl(path, token, file, contentType ? { contentType } : undefined);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 export function subscribeToTable(table: string, onChange: () => void): () => void {
   const supabase = getBrowserClient();
   const channel = supabase

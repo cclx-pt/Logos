@@ -1,17 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition, type FormEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { SubmitButton } from '@/components/ui/submit-button';
+import { uploadToSignedUrl } from '@/lib/auth/browser-client';
+import { MAX_PDF_BYTES } from './_lib/validation';
+import { createLessonPdfUploadUrlAction } from './lessons-actions';
 
 export type LessonTemplate = 'pdf' | 'video' | 'video_pdf';
+
+/** Resultado das Server Actions de submeter (create/update); a forma comum que o form consome. */
+type SubmitResult = { ok: true; id?: string } | { ok: false; error: string };
+
+const PDF_BUCKET = 'lesson-pdfs';
 
 type Props = {
   /** `create` mostra "Adicionar aula" e exige PDF (quando o template o usa); `edit` mostra "Guardar" + Cancelar e nunca exige PDF (mantém o actual). */
   mode: 'create' | 'edit';
-  /** Server Action que recebe o FormData. Definida na página (Server Component) e passada por referência. */
-  action: (formData: FormData) => void | Promise<void>;
+  /** Server Action que recebe os METADADOS (FormData sem o ficheiro, com `pdf_storage_path`). Passada por referência pela página. */
+  submitAction: (formData: FormData) => Promise<SubmitResult>;
+  /** Para onde navegar após sucesso (ex.: `${backHref}?guardado=aula_criada`). */
+  successRedirect: string;
   courseId: string;
   moduleId: string;
   /** Só em `edit`: id da aula a editar (vai como hidden). */
@@ -48,23 +59,98 @@ const TEMPLATES: { value: LessonTemplate; label: string }[] = [
  * Título e descrição ficam sempre montados (uncontrolled via defaultValue),
  * logo o texto preserva-se ao trocar de template; só os campos de vídeo/PDF
  * é que perdem o valor ao desmontar — comportamento desejado.
+ *
+ * Upload directo (V3.7): o submit é orquestrado no cliente via `onSubmit` +
+ * `useTransition` (não `<form action>`, que em React 19 faz reset dos campos
+ * uncontrolled ao concluir - perderia o título/descrição se o upload falhasse).
+ * Se há um PDF novo, pede uma signed upload URL ao servidor e envia o ficheiro
+ * DIRECTAMENTE para o bucket (browser -> Storage), contornando o limite de
+ * ~4.5 MB do corpo de Server Actions na Vercel. Só depois chama a `submitAction`
+ * com os metadados + `pdf_storage_path` (sem o ficheiro). O `SubmitButton`
+ * recebe o pending da transição explicitamente.
  */
 export function LessonForm({
   mode,
-  action,
+  submitAction,
+  successRedirect,
   courseId,
   moduleId,
   lessonId,
   defaults,
   backHref,
 }: Props) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [template, setTemplate] = useState<LessonTemplate>(defaults?.template ?? 'pdf');
+  const [error, setError] = useState<string | null>(null);
   const hasVideo = template !== 'pdf';
   const hasPdf = template !== 'video';
   const isEdit = mode === 'edit';
 
+  async function runSubmit(formData: FormData): Promise<void> {
+    setError(null);
+
+    // 1. Se há apostila e um ficheiro novo foi escolhido, faz upload directo.
+    let pdfStoragePath: string | null = null;
+    if (hasPdf) {
+      const file = formData.get('pdf');
+      const hasFile = file instanceof File && file.size > 0;
+      if (hasFile) {
+        const f = file as File;
+        if (f.type !== 'application/pdf') {
+          setError('O ficheiro tem de ser um PDF.');
+          return;
+        }
+        if (f.size > MAX_PDF_BYTES) {
+          const mb = (f.size / 1024 / 1024).toFixed(1);
+          setError(`O PDF excede 20 MB (tem ${mb} MB).`);
+          return;
+        }
+        const signed = await createLessonPdfUploadUrlAction(courseId);
+        if (!signed.ok) {
+          setError(signed.error);
+          return;
+        }
+        const uploaded = await uploadToSignedUrl(
+          PDF_BUCKET,
+          signed.path,
+          signed.token,
+          f,
+          'application/pdf',
+        );
+        if (!uploaded.ok) {
+          setError(`Falha a enviar o PDF: ${uploaded.error}`);
+          return;
+        }
+        pdfStoragePath = signed.path;
+      } else if (!isEdit) {
+        setError('É obrigatório anexar um PDF.');
+        return;
+      }
+    }
+
+    // 2. Chama a Server Action só com metadados - o ficheiro nunca vai no corpo
+    //    (senão voltava a bater no limite da Vercel). Por isso removemos `pdf`.
+    formData.delete('pdf');
+    if (pdfStoragePath) formData.set('pdf_storage_path', pdfStoragePath);
+
+    const result = await submitAction(formData);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    router.push(successRedirect);
+    router.refresh();
+  }
+
+  function onSubmit(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => runSubmit(formData));
+  }
+
   return (
-    <form action={action} encType="multipart/form-data" className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4">
       {isEdit && lessonId ? <input type="hidden" name="id" value={lessonId} /> : null}
       <input type="hidden" name="course_id" value={courseId} />
       <input type="hidden" name="module_id" value={moduleId} />
@@ -151,8 +237,18 @@ export function LessonForm({
         </label>
       ) : null}
 
+      {error ? (
+        <p
+          role="alert"
+          className="border-l-destructive bg-destructive/10 text-ink border-l-4 px-3 py-2 text-sm"
+        >
+          {error}
+        </p>
+      ) : null}
+
       <div className={isEdit ? 'flex flex-wrap items-start gap-2' : 'flex justify-end'}>
         <SubmitButton
+          pending={isPending}
           pendingLabel={hasPdf ? 'A enviar…' : 'A guardar…'}
           showProgressBar={hasPdf}
           className={isEdit ? 'h-9 px-3 text-xs' : undefined}

@@ -19,8 +19,8 @@ const {
   mockLimit,
   mockSingle,
   mockMaybeSingle,
-  mockStorageUpload,
   mockStorageRemove,
+  mockStorageCreateSignedUploadUrl,
 } = vi.hoisted(() => ({
   mockGetCurrentUser: vi.fn(),
   mockRevalidatePath: vi.fn(),
@@ -36,8 +36,8 @@ const {
   mockLimit: vi.fn(),
   mockSingle: vi.fn(),
   mockMaybeSingle: vi.fn(),
-  mockStorageUpload: vi.fn(),
   mockStorageRemove: vi.fn(),
+  mockStorageCreateSignedUploadUrl: vi.fn(),
 }));
 
 const responseQueue: QResp[] = [];
@@ -124,8 +124,8 @@ vi.mock('@/lib/auth', () => ({
     },
     storage: {
       from: () => ({
-        upload: mockStorageUpload,
         remove: mockStorageRemove,
+        createSignedUploadUrl: mockStorageCreateSignedUploadUrl,
       }),
     },
   })),
@@ -137,6 +137,7 @@ vi.mock('next/cache', () => ({
 
 import {
   createLessonAction,
+  createLessonPdfUploadUrlAction,
   updateLessonAction,
   deleteLessonAction,
   moveLessonUpAction,
@@ -159,14 +160,17 @@ const LESSON_ID = '44444444-4444-4444-8444-444444444444';
 const NEIGHBOR_ID = '55555555-5555-4555-8555-555555555555';
 const OTHER_MODULE_ID = '66666666-6666-4666-8666-666666666666';
 
+// Caminhos de Storage válidos: `<courseId>/<uuid>.pdf`. O nome é aleatório
+// (gerado ao assinar o upload), por isso usamos uuids fixos nos testes.
+const PDF_PATH = `${COURSE_ID}/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.pdf`;
+const NEW_PDF_PATH = `${COURSE_ID}/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb.pdf`;
+const FOREIGN_PDF_PATH =
+  '99999999-9999-4999-8999-999999999999/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa.pdf';
+
 function formDataOf(entries: Record<string, string | File>): FormData {
   const fd = new FormData();
   for (const [k, v] of Object.entries(entries)) fd.set(k, v);
   return fd;
-}
-
-function pdfFile(name = 'aula.pdf'): File {
-  return new File(['%PDF-1.4 mock'], name, { type: 'application/pdf' });
 }
 
 const BASE_FIELDS = {
@@ -176,7 +180,7 @@ const BASE_FIELDS = {
   template: 'pdf',
 };
 
-describe('createLessonAction (V3 PR4b)', () => {
+describe('createLessonPdfUploadUrlAction (V3.7 upload directo)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setQueue();
@@ -184,7 +188,55 @@ describe('createLessonAction (V3 PR4b)', () => {
 
   it('recusa quando caller é user', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('user', CALLER_ID));
-    const result = await createLessonAction(formDataOf({ ...BASE_FIELDS, pdf: pdfFile() }));
+    const result = await createLessonPdfUploadUrlAction(COURSE_ID);
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/admin/i) });
+    expect(mockStorageCreateSignedUploadUrl).not.toHaveBeenCalled();
+  });
+
+  it('recusa courseId inválido', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    const result = await createLessonPdfUploadUrlAction('nao-e-uuid');
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/course_id/i) });
+    expect(mockStorageCreateSignedUploadUrl).not.toHaveBeenCalled();
+  });
+
+  it('assina upload para um path <courseId>/<uuid>.pdf e devolve path + token', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockStorageCreateSignedUploadUrl.mockResolvedValue({
+      data: { path: PDF_PATH, token: 'tok-123', signedUrl: 'https://x/upload' },
+      error: null,
+    });
+
+    const result = await createLessonPdfUploadUrlAction(COURSE_ID);
+
+    expect(result).toEqual({ ok: true, path: PDF_PATH, token: 'tok-123' });
+    expect(mockStorageCreateSignedUploadUrl).toHaveBeenCalledWith(
+      expect.stringMatching(new RegExp(`^${COURSE_ID}/[0-9a-f-]{36}\\.pdf$`)),
+    );
+  });
+
+  it('propaga erro do Storage ao assinar', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockStorageCreateSignedUploadUrl.mockResolvedValue({
+      data: null,
+      error: { message: 'bucket down' },
+    });
+    const result = await createLessonPdfUploadUrlAction(COURSE_ID);
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/bucket down/i) });
+  });
+});
+
+describe('createLessonAction (V3.7 upload directo)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setQueue();
+  });
+
+  it('recusa quando caller é user', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('user', CALLER_ID));
+    const result = await createLessonAction(
+      formDataOf({ ...BASE_FIELDS, pdf_storage_path: PDF_PATH }),
+    );
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/admin/i) });
     expect(mockInsert).not.toHaveBeenCalled();
   });
@@ -192,7 +244,7 @@ describe('createLessonAction (V3 PR4b)', () => {
   it('recusa template inválido', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     const result = await createLessonAction(
-      formDataOf({ ...BASE_FIELDS, template: 'quiz', pdf: pdfFile() }),
+      formDataOf({ ...BASE_FIELDS, template: 'quiz', pdf_storage_path: PDF_PATH }),
     );
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/template/i) });
   });
@@ -200,7 +252,7 @@ describe('createLessonAction (V3 PR4b)', () => {
   it('recusa video_pdf sem youtube_url', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     const result = await createLessonAction(
-      formDataOf({ ...BASE_FIELDS, template: 'video_pdf', pdf: pdfFile() }),
+      formDataOf({ ...BASE_FIELDS, template: 'video_pdf', pdf_storage_path: PDF_PATH }),
     );
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/youtube/i) });
   });
@@ -212,54 +264,38 @@ describe('createLessonAction (V3 PR4b)', () => {
         ...BASE_FIELDS,
         template: 'video_pdf',
         youtube_url: 'https://vimeo.com/12345',
-        pdf: pdfFile(),
+        pdf_storage_path: PDF_PATH,
       }),
     );
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/youtube/i) });
   });
 
-  it('recusa quando PDF não é anexado', async () => {
+  it('recusa quando o path do PDF está em falta', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     const result = await createLessonAction(formDataOf(BASE_FIELDS));
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/pdf/i) });
+    expect(mockInsert).not.toHaveBeenCalled();
   });
 
-  it('recusa ficheiro com MIME diferente de application/pdf', async () => {
+  it('recusa path do PDF com prefixo de outro curso', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
-    setQueue(
-      { data: null, error: null }, // max query: empty
-      { data: { id: LESSON_ID }, error: null }, // insert returns id
+    const result = await createLessonAction(
+      formDataOf({ ...BASE_FIELDS, pdf_storage_path: FOREIGN_PDF_PATH }),
     );
-    const wrongMime = new File(['plain text'], 'aula.txt', { type: 'text/plain' });
-    const result = await createLessonAction(formDataOf({ ...BASE_FIELDS, pdf: wrongMime }));
-    expect(result).toEqual({ ok: false, error: expect.stringMatching(/pdf/i) });
-    // Rollback deve apagar o row criado.
-    expect(mockDelete).toHaveBeenCalled();
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/inválido/i) });
+    expect(mockInsert).not.toHaveBeenCalled();
   });
 
-  it('recusa PDF > 20 MB', async () => {
-    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
-    setQueue({ data: null, error: null }, { data: { id: LESSON_ID }, error: null });
-    const big = pdfFile();
-    Object.defineProperty(big, 'size', { value: 21 * 1024 * 1024, configurable: true });
-    const result = await createLessonAction(formDataOf({ ...BASE_FIELDS, pdf: big }));
-    expect(result).toEqual({ ok: false, error: expect.stringMatching(/20 MB/) });
-    expect(mockDelete).toHaveBeenCalled();
-  });
-
-  it('happy path: insert + upload + update path + revalida', async () => {
+  it('happy path: insert com o path real + revalida (sem upload na action)', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     setQueue(
       { data: null, error: null }, // max query empty → position 0
       { data: { id: LESSON_ID }, error: null }, // insert
-      { data: null, error: null }, // update path
     );
-    mockStorageUpload.mockResolvedValue({
-      data: { path: `${COURSE_ID}/${LESSON_ID}.pdf` },
-      error: null,
-    });
 
-    const result = await createLessonAction(formDataOf({ ...BASE_FIELDS, pdf: pdfFile() }));
+    const result = await createLessonAction(
+      formDataOf({ ...BASE_FIELDS, pdf_storage_path: PDF_PATH }),
+    );
 
     expect(result).toEqual({ ok: true, id: LESSON_ID });
     expect(mockInsert).toHaveBeenCalledWith(
@@ -268,30 +304,27 @@ describe('createLessonAction (V3 PR4b)', () => {
         title: 'O Reino de Deus',
         template: 'pdf',
         youtube_url: null,
+        pdf_storage_path: PDF_PATH,
         position: 0,
       }),
     );
-    expect(mockStorageUpload).toHaveBeenCalledWith(
-      `${COURSE_ID}/${LESSON_ID}.pdf`,
-      expect.any(File),
-      expect.objectContaining({ upsert: true, contentType: 'application/pdf' }),
-    );
-    expect(mockUpdate).toHaveBeenCalledWith({ pdf_storage_path: `${COURSE_ID}/${LESSON_ID}.pdf` });
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/conteudos/${COURSE_ID}/${MODULE_ID}`);
   });
 
-  it('faz rollback (delete) se o upload falhar após o insert', async () => {
+  it('remove o ficheiro já enviado se o insert falhar', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     setQueue(
       { data: null, error: null }, // max
-      { data: { id: LESSON_ID }, error: null }, // insert
+      { data: null, error: { message: 'insert boom' } }, // insert falha
     );
-    mockStorageUpload.mockResolvedValue({ data: null, error: { message: 'storage full' } });
+    mockStorageRemove.mockResolvedValue({ data: [], error: null });
 
-    const result = await createLessonAction(formDataOf({ ...BASE_FIELDS, pdf: pdfFile() }));
+    const result = await createLessonAction(
+      formDataOf({ ...BASE_FIELDS, pdf_storage_path: PDF_PATH }),
+    );
 
-    expect(result).toEqual({ ok: false, error: expect.stringMatching(/storage full/i) });
-    expect(mockDelete).toHaveBeenCalled();
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/insert boom/i) });
+    expect(mockStorageRemove).toHaveBeenCalledWith([PDF_PATH]);
     expect(mockRevalidatePath).not.toHaveBeenCalled();
   });
 
@@ -302,7 +335,7 @@ describe('createLessonAction (V3 PR4b)', () => {
     expect(mockInsert).not.toHaveBeenCalled();
   });
 
-  it('aula só-vídeo (video): insert directo com pdf null, sem upload nem PDF', async () => {
+  it('aula só-vídeo (video): insert directo com pdf null, sem path nem remove', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     setQueue(
       { data: null, error: null }, // max query empty → position 0
@@ -322,14 +355,12 @@ describe('createLessonAction (V3 PR4b)', () => {
         position: 0,
       }),
     );
-    // Sem apostila: nem upload nem o update do path acontecem.
-    expect(mockStorageUpload).not.toHaveBeenCalled();
-    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockStorageRemove).not.toHaveBeenCalled();
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/conteudos/${COURSE_ID}/${MODULE_ID}`);
   });
 });
 
-describe('updateLessonAction (V3 PR4b)', () => {
+describe('updateLessonAction (V3.7 upload directo)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setQueue();
@@ -353,8 +384,8 @@ describe('updateLessonAction (V3 PR4b)', () => {
   it('coerência: video_pdf → pdf limpa youtube_url (mantém PDF actual)', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     setQueue(
-      // 1ª: lookup do pdf_storage_path actual (sem novo PDF anexado)
-      { data: { pdf_storage_path: `${COURSE_ID}/${LESSON_ID}.pdf` }, error: null },
+      // 1ª: lookup do pdf_storage_path actual
+      { data: { pdf_storage_path: PDF_PATH }, error: null },
       // 2ª: update final
       { data: null, error: null },
     );
@@ -368,36 +399,50 @@ describe('updateLessonAction (V3 PR4b)', () => {
       expect.objectContaining({
         template: 'pdf',
         youtube_url: null,
-        pdf_storage_path: `${COURSE_ID}/${LESSON_ID}.pdf`,
+        pdf_storage_path: PDF_PATH,
       }),
     );
-    expect(mockStorageUpload).not.toHaveBeenCalled();
+    expect(mockStorageRemove).not.toHaveBeenCalled();
   });
 
-  it('com novo PDF anexado em edit, faz upload e usa o novo path', async () => {
+  it('com novo PDF anexado: usa o novo path e remove o antigo', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
-    mockStorageUpload.mockResolvedValue({ data: { path: 'whatever' }, error: null });
-    setQueue({ data: null, error: null }); // update final
+    mockStorageRemove.mockResolvedValue({ data: [], error: null });
+    setQueue(
+      { data: { pdf_storage_path: PDF_PATH }, error: null }, // lookup actual
+      { data: null, error: null }, // update final
+    );
 
     const result = await updateLessonAction(
-      formDataOf({ ...BASE_FIELDS, id: LESSON_ID, pdf: pdfFile('novo.pdf') }),
+      formDataOf({ ...BASE_FIELDS, id: LESSON_ID, pdf_storage_path: NEW_PDF_PATH }),
     );
 
     expect(result).toEqual({ ok: true });
-    expect(mockStorageUpload).toHaveBeenCalledWith(
-      `${COURSE_ID}/${LESSON_ID}.pdf`,
-      expect.any(File),
-      expect.objectContaining({ upsert: true }),
-    );
     expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ pdf_storage_path: `${COURSE_ID}/${LESSON_ID}.pdf` }),
+      expect.objectContaining({ pdf_storage_path: NEW_PDF_PATH }),
     );
+    expect(mockStorageRemove).toHaveBeenCalledWith([PDF_PATH]);
+  });
+
+  it('recusa novo path com prefixo de outro curso', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    setQueue({ data: { pdf_storage_path: PDF_PATH }, error: null }); // lookup actual
+
+    const result = await updateLessonAction(
+      formDataOf({ ...BASE_FIELDS, id: LESSON_ID, pdf_storage_path: FOREIGN_PDF_PATH }),
+    );
+
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/inválido/i) });
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
   it('coerência: muda para video limpa pdf_storage_path e remove o ficheiro', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
     mockStorageRemove.mockResolvedValue({ data: [], error: null });
-    setQueue({ data: null, error: null }); // update final (sem lookup de PDF)
+    setQueue(
+      { data: { pdf_storage_path: PDF_PATH }, error: null }, // lookup actual
+      { data: null, error: null }, // update final
+    );
 
     const result = await updateLessonAction(
       formDataOf({
@@ -416,20 +461,22 @@ describe('updateLessonAction (V3 PR4b)', () => {
         pdf_storage_path: null,
       }),
     );
-    expect(mockStorageUpload).not.toHaveBeenCalled();
-    expect(mockStorageRemove).toHaveBeenCalledWith([`${COURSE_ID}/${LESSON_ID}.pdf`]);
+    expect(mockStorageRemove).toHaveBeenCalledWith([PDF_PATH]);
   });
 });
 
-describe('deleteLessonAction (V3 PR4b)', () => {
+describe('deleteLessonAction (V3.7 upload directo)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setQueue();
   });
 
-  it('apaga DB + remove ficheiro do bucket + revalida', async () => {
+  it('apaga DB + remove o ficheiro guardado no path + revalida', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
-    setQueue({ data: null, error: null }); // delete eq
+    setQueue(
+      { data: { pdf_storage_path: PDF_PATH }, error: null }, // lookup do path
+      { data: null, error: null }, // delete
+    );
     mockStorageRemove.mockResolvedValue({ data: [], error: null });
 
     const result = await deleteLessonAction(
@@ -438,8 +485,24 @@ describe('deleteLessonAction (V3 PR4b)', () => {
 
     expect(result).toEqual({ ok: true });
     expect(mockDelete).toHaveBeenCalled();
-    expect(mockStorageRemove).toHaveBeenCalledWith([`${COURSE_ID}/${LESSON_ID}.pdf`]);
+    expect(mockStorageRemove).toHaveBeenCalledWith([PDF_PATH]);
     expect(mockRevalidatePath).toHaveBeenCalledWith(`/admin/conteudos/${COURSE_ID}/${MODULE_ID}`);
+  });
+
+  it('aula só-vídeo (sem path): apaga DB sem chamar remove', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    setQueue(
+      { data: { pdf_storage_path: null }, error: null }, // lookup do path
+      { data: null, error: null }, // delete
+    );
+
+    const result = await deleteLessonAction(
+      formDataOf({ id: LESSON_ID, course_id: COURSE_ID, module_id: MODULE_ID }),
+    );
+
+    expect(result).toEqual({ ok: true });
+    expect(mockDelete).toHaveBeenCalled();
+    expect(mockStorageRemove).not.toHaveBeenCalled();
   });
 });
 

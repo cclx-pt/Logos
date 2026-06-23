@@ -19,10 +19,16 @@
  *     não tem apostila e guarda `pdf_storage_path = null` (ficheiro removido
  *     best-effort ao migrar de/para esse template).
  *
- * Upload PDF: bucket `lesson-pdfs/<courseId>/<lessonId>.pdf`, MIME
- * application/pdf, tamanho ≤ 20 MB (alinhado com `storage.buckets`
- * file_size_limit em PR2). Se o upload falhar após o insert, faz-se
- * rollback do row para não ficar a apontar para path inexistente.
+ * Upload PDF (upload directo, V3.7): o ficheiro NUNCA passa por esta Server
+ * Action - o browser envia-o directamente para o bucket via signed upload URL
+ * (`createLessonPdfUploadUrlAction`). Isto contorna o limite de ~4.5 MB do corpo
+ * de Functions na Vercel, que o `bodySizeLimit` do Next não sobrepõe e que
+ * rejeitava PDFs legítimos (5-20 MB) antes de o código os ver. O path é
+ * `lesson-pdfs/<courseId>/<uuid>.pdf` (prefixo do curso = fronteira da policy
+ * RLS; nome aleatório, desligado do id da aula). Create/update só recebem o
+ * `pdf_storage_path` (string) já validado; o tamanho e o MIME são impostos pelo
+ * bucket no upload. A limpeza (delete, troca para vídeo, substituição de PDF) lê
+ * o path guardado na row - já não o reconstrói a partir do id.
  *
  * Reordenar (↑↓): mesmo padrão do moveModule — swap de `position` com o
  * vizinho imediato dentro do mesmo `module_id`. Sem UNIQUE em
@@ -37,6 +43,7 @@ import { isAdmin } from '@/lib/auth/guards';
 import {
   DESCRIPTION_MAX,
   validateOptionalText,
+  validatePdfStoragePath,
   validateTitle,
   validateUuid,
   type Err,
@@ -45,12 +52,15 @@ import {
 
 export type CreateLessonResult = { ok: true; id: string } | { ok: false; error: string };
 export type LessonActionResult = { ok: true } | { ok: false; error: string };
+export type UploadUrlResult =
+  | { ok: true; path: string; token: string }
+  | { ok: false; error: string };
 
 const YOUTUBE_RE =
   /^https?:\/\/(?:www\.)?(?:youtu\.be\/[A-Za-z0-9_-]{6,}|youtube\.com\/watch\?v=[A-Za-z0-9_-]{6,})\S*$/i;
 const TEMPLATES = ['pdf', 'video', 'video_pdf'] as const;
 type Template = (typeof TEMPLATES)[number];
-const MAX_PDF_BYTES = 20 * 1024 * 1024; // 20 MB — alinhado com storage.buckets em PR2.
+const PDF_BUCKET = 'lesson-pdfs';
 
 // Coerência template ↔ campos (V3.4): vídeo exige YouTube; só 'video'
 // dispensa apostila. Espelha os CHECK em `lessons` (migration de 12-06-2026).
@@ -88,36 +98,34 @@ function revalidateLessonPages(courseId: string, moduleId: string): void {
 }
 
 /**
- * Valida e faz upload de um PDF para o bucket `lesson-pdfs`. Devolve o
- * caminho relativo ao bucket em caso de sucesso. Isolada em função para
- * separar lógica de Storage da lógica de DB (permite mockar nos testes).
+ * Gera uma signed upload URL para o browser enviar o PDF DIRECTAMENTE para o
+ * bucket `lesson-pdfs`, sem o fazer passar por uma Server Action. É o que
+ * contorna o limite de ~4.5 MB do corpo de Functions na Vercel.
+ *
+ * O path é decidido aqui (`<courseId>/<uuid>.pdf`): determinístico no prefixo
+ * (a policy RLS `lesson_pdfs_select_visible` extrai o courseId daí) e aleatório
+ * no nome (evita colisões e desliga o path do id da aula, que no create ainda
+ * não existe). Admin-check explícito; a INSERT RLS de `storage.objects`
+ * (admin-only) é validada ao assinar com a sessão do admin. O token autoriza
+ * escrever só nesse path; tamanho (<=20 MB) e MIME são impostos pelo bucket.
  */
-async function uploadLessonPdf(
-  file: File,
-  courseId: string,
-  lessonId: string,
-): Promise<Ok<string> | Err> {
-  if (file.type !== 'application/pdf') {
-    return { ok: false, error: 'Ficheiro tem de ser PDF (application/pdf).' };
+export async function createLessonPdfUploadUrlAction(
+  rawCourseId: unknown,
+): Promise<UploadUrlResult> {
+  const caller = await getCurrentUser();
+  if (!caller || !isAdmin(caller.role)) {
+    return { ok: false, error: 'Apenas admin ou super_admin pode enviar apostilas.' };
   }
-  if (file.size === 0) {
-    return { ok: false, error: 'Ficheiro PDF está vazio.' };
-  }
-  if (file.size > MAX_PDF_BYTES) {
-    const mb = (file.size / 1024 / 1024).toFixed(1);
-    return { ok: false, error: `PDF excede 20 MB (tem ${mb} MB).` };
-  }
+  const courseId = validateUuid(rawCourseId, 'course_id');
+  if (!courseId.ok) return courseId;
 
   const supabase = await getServerClient();
-  const path = `${courseId}/${lessonId}.pdf`;
-  const { error } = await supabase.storage.from('lesson-pdfs').upload(path, file, {
-    upsert: true,
-    contentType: 'application/pdf',
-  });
-  if (error) {
-    return { ok: false, error: `Falha a fazer upload do PDF: ${error.message}` };
+  const path = `${courseId.value}/${crypto.randomUUID()}.pdf`;
+  const { data, error } = await supabase.storage.from(PDF_BUCKET).createSignedUploadUrl(path);
+  if (error || !data) {
+    return { ok: false, error: `Falha a preparar upload: ${error?.message ?? 'desconhecido'}` };
   }
-  return { ok: true, value: path };
+  return { ok: true, path: data.path, token: data.token };
 }
 
 export async function createLessonAction(formData: FormData): Promise<CreateLessonResult> {
@@ -148,10 +156,13 @@ export async function createLessonAction(formData: FormData): Promise<CreateLess
     youtubeUrl = ytResult.value;
   }
 
-  const pdfFile = formData.get('pdf');
-  const hasPdfFile = pdfFile instanceof File && pdfFile.size > 0;
-  if (templateHasPdf(template.value) && !hasPdfFile) {
-    return { ok: false, error: 'É obrigatório anexar um PDF.' };
+  // O PDF já foi enviado pelo browser (upload directo); aqui só chega o path.
+  // Templates com apostila exigem-no; só-vídeo guarda null.
+  let pdfStoragePath: string | null = null;
+  if (templateHasPdf(template.value)) {
+    const validated = validatePdfStoragePath(formData.get('pdf_storage_path'), courseId.value);
+    if (!validated.ok) return validated;
+    pdfStoragePath = validated.value;
   }
 
   const supabase = await getServerClient();
@@ -169,35 +180,8 @@ export async function createLessonAction(formData: FormData): Promise<CreateLess
   }
   const nextPosition = maxRow ? maxRow.position + 1 : 0;
 
-  // Só vídeo: sem apostila. Insert directo com pdf_storage_path null - não há
-  // upload nem placeholder a reconciliar.
-  if (!templateHasPdf(template.value)) {
-    const { data: inserted, error: insertError } = await supabase
-      .from('lessons')
-      .insert({
-        module_id: moduleId.value,
-        title: title.value,
-        description: description.value,
-        template: template.value,
-        youtube_url: youtubeUrl,
-        pdf_storage_path: null,
-        position: nextPosition,
-      })
-      .select('id')
-      .single<{ id: string }>();
-
-    if (insertError || !inserted) {
-      return { ok: false, error: `Falha a criar aula: ${insertError?.message ?? 'sem dados'}` };
-    }
-
-    revalidateLessonPages(courseId.value, moduleId.value);
-    return { ok: true, id: inserted.id };
-  }
-
-  // pdf | video_pdf: insert com placeholder no `pdf_storage_path` (NOT NULL na DB).
-  // Substitui-se pelo path real após upload bem-sucedido. Se o upload falhar,
-  // faz-se rollback do row.
-  const placeholderPath = `pending-${Date.now()}`;
+  // Insert único: o path real (ou null) já é conhecido - sem placeholder nem
+  // reconciliação posterior.
   const { data: inserted, error: insertError } = await supabase
     .from('lessons')
     .insert({
@@ -206,30 +190,19 @@ export async function createLessonAction(formData: FormData): Promise<CreateLess
       description: description.value,
       template: template.value,
       youtube_url: youtubeUrl,
-      pdf_storage_path: placeholderPath,
+      pdf_storage_path: pdfStoragePath,
       position: nextPosition,
     })
     .select('id')
     .single<{ id: string }>();
 
   if (insertError || !inserted) {
+    // O ficheiro já está no bucket; se a aula não nasceu, remove-o (best-effort)
+    // para não deixar órfão.
+    if (pdfStoragePath) {
+      await supabase.storage.from(PDF_BUCKET).remove([pdfStoragePath]);
+    }
     return { ok: false, error: `Falha a criar aula: ${insertError?.message ?? 'sem dados'}` };
-  }
-
-  // `hasPdfFile` garantiu acima que isto é um File não vazio.
-  const upload = await uploadLessonPdf(pdfFile as File, courseId.value, inserted.id);
-  if (!upload.ok) {
-    // Rollback — apaga a aula inserida com placeholder para não ficar órfã.
-    await supabase.from('lessons').delete().eq('id', inserted.id);
-    return upload;
-  }
-
-  const { error: pathError } = await supabase
-    .from('lessons')
-    .update({ pdf_storage_path: upload.value })
-    .eq('id', inserted.id);
-  if (pathError) {
-    return { ok: false, error: `Falha a registar caminho do PDF: ${pathError.message}` };
   }
 
   revalidateLessonPages(courseId.value, moduleId.value);
@@ -273,37 +246,45 @@ export async function updateLessonAction(formData: FormData): Promise<LessonActi
 
   const supabase = await getServerClient();
 
+  // Lê sempre o path actual primeiro: serve para o manter (sem novo PDF) e para
+  // limpar o ficheiro antigo (troca para vídeo, ou novo PDF que cria um path
+  // diferente - o nome é aleatório, já não reconstruível a partir do id).
+  const { data: current, error: lookupError } = await supabase
+    .from('lessons')
+    .select('pdf_storage_path')
+    .eq('id', id.value)
+    .maybeSingle<{ pdf_storage_path: string | null }>();
+  if (lookupError) {
+    return { ok: false, error: `Falha a carregar aula: ${lookupError.message}` };
+  }
+  if (!current) {
+    return { ok: false, error: 'Aula não encontrada.' };
+  }
+  const currentPath = current.pdf_storage_path;
+
   // Coerência de apostila por template:
-  //   - video        → sem apostila: pdf_storage_path = null (ficheiro órfão
+  //   - video        → sem apostila: pdf_storage_path = null (ficheiro antigo
   //     removido best-effort após o update).
-  //   - pdf|video_pdf → novo File anexado faz upload (upsert); senão mantém o
-  //     path actual. Se a aula vinha de 'video' (sem apostila), exige upload.
-  const pdfFile = formData.get('pdf');
-  const hasNewPdf = pdfFile instanceof File && pdfFile.size > 0;
+  //   - pdf|video_pdf → novo path enviado (upload directo) substitui o actual;
+  //     senão mantém-no. Se a aula vinha de 'video' (sem apostila), exige PDF.
+  const newPathRaw = formData.get('pdf_storage_path');
+  const hasNewPdf = typeof newPathRaw === 'string' && newPathRaw.length > 0;
 
   let pdfStoragePath: string | null;
+  let orphanToRemove: string | null = null;
   if (!templateHasPdf(template.value)) {
     pdfStoragePath = null;
+    orphanToRemove = currentPath;
   } else if (hasNewPdf) {
-    const upload = await uploadLessonPdf(pdfFile as File, courseId.value, id.value);
-    if (!upload.ok) return upload;
-    pdfStoragePath = upload.value;
+    const validated = validatePdfStoragePath(newPathRaw, courseId.value);
+    if (!validated.ok) return validated;
+    pdfStoragePath = validated.value;
+    if (currentPath && currentPath !== pdfStoragePath) orphanToRemove = currentPath;
   } else {
-    const { data: current, error: lookupError } = await supabase
-      .from('lessons')
-      .select('pdf_storage_path')
-      .eq('id', id.value)
-      .maybeSingle<{ pdf_storage_path: string | null }>();
-    if (lookupError) {
-      return { ok: false, error: `Falha a carregar aula: ${lookupError.message}` };
-    }
-    if (!current) {
-      return { ok: false, error: 'Aula não encontrada.' };
-    }
-    if (!current.pdf_storage_path) {
+    if (!currentPath) {
       return { ok: false, error: 'Esta aula passou a ter apostila - anexa um PDF.' };
     }
-    pdfStoragePath = current.pdf_storage_path;
+    pdfStoragePath = currentPath;
   }
 
   const { error: updateError } = await supabase
@@ -321,10 +302,10 @@ export async function updateLessonAction(formData: FormData): Promise<LessonActi
     return { ok: false, error: `Falha a atualizar aula: ${updateError.message}` };
   }
 
-  // Só vídeo: a apostila deixou de fazer parte da aula - remove o ficheiro do
-  // bucket (best-effort, pós-update; se falhar fica órfão até limpeza manual).
-  if (!templateHasPdf(template.value)) {
-    await supabase.storage.from('lesson-pdfs').remove([`${courseId.value}/${id.value}.pdf`]);
+  // Remove o ficheiro antigo que deixou de ser referenciado (best-effort,
+  // pós-update; se falhar fica órfão até limpeza manual).
+  if (orphanToRemove) {
+    await supabase.storage.from(PDF_BUCKET).remove([orphanToRemove]);
   }
 
   revalidateLessonPages(courseId.value, moduleId.value);
@@ -345,6 +326,15 @@ export async function deleteLessonAction(formData: FormData): Promise<LessonActi
   if (!moduleId.ok) return moduleId;
 
   const supabase = await getServerClient();
+
+  // Lê o path antes de apagar — o nome do ficheiro é aleatório, já não é
+  // reconstruível a partir do id.
+  const { data: row } = await supabase
+    .from('lessons')
+    .select('pdf_storage_path')
+    .eq('id', id.value)
+    .maybeSingle<{ pdf_storage_path: string | null }>();
+
   const { error } = await supabase.from('lessons').delete().eq('id', id.value);
 
   if (error) {
@@ -354,7 +344,9 @@ export async function deleteLessonAction(formData: FormData): Promise<LessonActi
   // Apaga também o PDF do bucket (best-effort — se falhar, o registo já
   // desapareceu, e o ficheiro fica órfão até limpeza manual). Decisão V3:
   // não bloquear em erro de storage.
-  await supabase.storage.from('lesson-pdfs').remove([`${courseId.value}/${id.value}.pdf`]);
+  if (row?.pdf_storage_path) {
+    await supabase.storage.from(PDF_BUCKET).remove([row.pdf_storage_path]);
+  }
 
   revalidateLessonPages(courseId.value, moduleId.value);
   return { ok: true };

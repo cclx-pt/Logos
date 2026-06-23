@@ -13,6 +13,12 @@ type SubmitButtonProps = {
   pendingLabel?: string;
   /** Mostra `<ProgressBar />` abaixo do botão enquanto pending. Útil para uploads. */
   showProgressBar?: boolean;
+  /**
+   * Força o estado pending, ignorando o `useFormStatus`. Necessário quando o
+   * form usa `onSubmit` + `useTransition` (ex.: upload directo no LessonForm)
+   * em vez de `<form action>` — aí o `useFormStatus` não reflecte o pending.
+   */
+  pending?: boolean;
   className?: string;
 };
 
@@ -31,9 +37,11 @@ export function SubmitButton({
   children,
   pendingLabel = 'A guardar…',
   showProgressBar = false,
+  pending: pendingProp,
   className,
 }: SubmitButtonProps) {
-  const { pending } = useFormStatus();
+  const status = useFormStatus();
+  const pending = pendingProp ?? status.pending;
 
   return (
     <div className="flex flex-col gap-2">
