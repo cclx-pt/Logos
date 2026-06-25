@@ -66,6 +66,14 @@ respeitando o isolamento de identidade (só `src/lib/auth/**` importa o SDK do
 Supabase). A escrita do interruptor é protegida por RLS
 (`current_profile_role() in ('admin','super_admin')`).
 
+> **Gotcha (corrigido 25-06-2026):** `subscribeToTable` usa um nome de canal
+> **único** por subscrição (`realtime:<tabela>:<uuid>`). Em páginas com dois
+> subscritores da mesma tabela - `/live` tem o botão "Live" da nav **e** o leitor,
+> ambos via `useLiveStatus` - um topic partilhado fazia o Phoenix/Realtime recusar
+> o segundo join no mesmo socket ("already joined") e essa subscrição ficava muda:
+> o botão "Live" só mudava no polling de 60s ou com refresh manual. O sufixo
+> aleatório dá a cada subscrição o seu canal (o servidor faz fan-out a todos).
+
 ## 2. Porque não é a arquitetura "Node backend + cache em memória" do spec
 
 O spec original pressupõe um backend de longa duração com uma **cache em memória

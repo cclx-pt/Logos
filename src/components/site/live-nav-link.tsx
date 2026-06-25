@@ -22,8 +22,10 @@ const LABEL = 'Live';
  *    fora do tab order).
  *  - A carregar: cinzento, sem badge, não clicável.
  *
- * O estado vem do polling a `/api/youtube/live-status` (60s). Render à parte
- * de `NavLinks` por ser dinâmico (estado live) e ter um item desativável.
+ * O estado vem do `useLiveStatus`: Supabase Realtime na `live_override` (muda em
+ * <1s quando o admin liga/desliga o interruptor, sem refresh) + polling a
+ * `/api/youtube/live-status` (60s) como backstop. Render à parte de `NavLinks`
+ * por ser dinâmico (estado live) e ter um item desativável.
  */
 export function LiveNavLink({
   orientation = 'horizontal',

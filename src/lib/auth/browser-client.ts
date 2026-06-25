@@ -68,8 +68,15 @@ export async function uploadToSignedUrl(
 
 export function subscribeToTable(table: string, onChange: () => void): () => void {
   const supabase = getBrowserClient();
+  // Nome de canal ÚNICO por subscrição. Dois componentes na mesma página podem
+  // subscrever a mesma tabela (ex.: o botão "Live" da nav E o leitor em /live,
+  // ambos via useLiveStatus). Com um topic partilhado (`realtime:live_override`)
+  // o Phoenix/Realtime recusa o segundo join no mesmo socket ("already joined")
+  // e essa subscrição fica MUDA - o sintoma "o botão Live só muda se eu fizer
+  // refresh". Um sufixo aleatório dá a cada subscrição o seu próprio canal; o
+  // servidor faz fan-out das mudanças para todos.
   const channel = supabase
-    .channel(`realtime:${table}`)
+    .channel(`realtime:${table}:${crypto.randomUUID()}`)
     .on('postgres_changes', { event: '*', schema: 'public', table }, () => onChange())
     .subscribe();
 
