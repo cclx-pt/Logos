@@ -53,7 +53,10 @@ describe('ComoFuncionaContent (wizard)', () => {
 
   it('passa o vídeo do passo ao player e troca-o ao avançar', () => {
     render(<ComoFuncionaContent />);
-    expect(screen.getByTestId('tutorial-video')).toHaveAttribute('data-id', videoId(first.youtubeUrl));
+    expect(screen.getByTestId('tutorial-video')).toHaveAttribute(
+      'data-id',
+      videoId(first.youtubeUrl),
+    );
     fireEvent.click(screen.getByRole('button', { name: /seguinte/i }));
     expect(screen.getByTestId('tutorial-video')).toHaveAttribute(
       'data-id',
