@@ -22,27 +22,27 @@ export const tutorialSteps: readonly TutorialStep[] = [
     title: 'Encontrar e começar um curso',
     description:
       'Vai a Conteúdos e abre um curso que te interesse. Adiciona-o aos teus cursos e, em "Os meus cursos", inicia-o para começares a aprender.',
-    youtubeUrl: null,
+    youtubeUrl: 'https://youtu.be/k6OACr38MaM',
   },
   {
     slug: 'avancar-aulas',
     title: 'Avançar e concluir aulas',
     description:
       'Vês cada aula, marca-la como concluída e avanças para a seguinte. Quando terminas as aulas de um módulo, passas ao módulo seguinte.',
-    youtubeUrl: null,
+    youtubeUrl: 'https://youtu.be/hvHMUKTsuTg',
   },
   {
     slug: 'conversas',
     title: 'Conversas',
     description:
       'Tens uma dúvida numa aula? Deixa a tua pergunta e a equipa responde-te. Acompanhas tudo em "Conversas" e ficas a saber quando há resposta nova.',
-    youtubeUrl: null,
+    youtubeUrl: 'https://youtu.be/_ib3tdMv4NA',
   },
   {
     slug: 'live',
     title: 'Transmissões Live',
     description:
       'Quando houver uma transmissão em direto, o botão Live fica ativo e abre a emissão aqui mesmo no portal, sem teres de sair para o YouTube.',
-    youtubeUrl: null,
+    youtubeUrl: 'https://youtu.be/-OHIzXECPLw',
   },
 ];
