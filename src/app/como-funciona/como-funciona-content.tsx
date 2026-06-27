@@ -18,14 +18,20 @@ export function ComoFuncionaContent() {
   const [index, setIndex] = useState(0);
   const step = tutorialSteps[index];
   const youtubeId = extractYoutubeId(step.youtubeUrl);
-  // `autoplay=1` + `mute=1`: arranca sozinho em qualquer browser (o autoplay só
-  // é permitido sem som) ao mudar de passo - o iframe é remontado pela `key` do
-  // passo, por isso dispara em cada navegação. `loop=1` + `playlist=<id>`
-  // repete o vídeo no fim (o loop do YouTube exige o `playlist` com o mesmo id
-  // para um vídeo único). `rel=0` + `modestbranding=1` limpam o "chrome"
-  // (relacionados/logótipo); `playsinline=1` evita o fullscreen forçado no iOS.
+  // Parâmetros do embed:
+  // - autoplay=1 + mute=1: arranca sozinho em qualquer browser (o autoplay só é
+  //   permitido sem som) a cada mudança de passo (o iframe é remontado pela `key`).
+  // - loop=1 + playlist=<id>: repete no fim (o loop de um vídeo único exige o
+  //   `playlist` com o mesmo id).
+  // - controls=0 + rel=0 + modestbranding=1 + iv_load_policy=3 + fs=0 +
+  //   disablekb=1: tiram controlos, relacionados, logótipo, anotações e teclado.
+  // O título do YouTube no topo não tem parâmetro para esconder. Esconde-se por
+  // CSS (ver iframe): o iframe é mais alto que o contentor (h-160%) e centrado,
+  // com o contentor em `overflow-hidden`; o YouTube letterboxa o vídeo (ajusta à
+  // largura) e o título/controlos caem nas barras pretas que ficam cortadas -
+  // sem perder imagem. O vídeo (16:9) preenche o contentor (16:9) ao milímetro.
   const embedSrc = youtubeId
-    ? `https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&rel=0&modestbranding=1&playsinline=1`
+    ? `https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&controls=0&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3&fs=0&disablekb=1`
     : null;
   const isFirst = index === 0;
   const isLast = index === total - 1;
@@ -66,15 +72,16 @@ export function ComoFuncionaContent() {
             {step.title}
           </h2>
 
-          <div className="border-border bg-card mt-4 aspect-video overflow-hidden rounded-2xl border">
+          <div className="border-border bg-card relative mt-4 aspect-video overflow-hidden rounded-2xl border">
             {embedSrc ? (
               <iframe
                 src={embedSrc}
                 title={`Vídeo: ${step.title}`}
                 loading="lazy"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                className="h-full w-full"
+                /* Letterbox-crop: iframe mais alto que o contentor + centrado;
+                   as barras pretas (com título/controlos) ficam cortadas. */
+                className="pointer-events-none absolute top-1/2 left-0 h-[160%] w-full -translate-y-1/2"
               />
             ) : (
               <div className="text-muted-foreground flex h-full w-full flex-col items-center justify-center gap-2">

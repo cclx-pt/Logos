@@ -50,8 +50,16 @@ describe('ComoFuncionaContent (wizard)', () => {
     expect(src).toContain('mute=1');
     expect(src).toContain('loop=1');
     expect(src).toContain(`playlist=${id}`);
+    expect(src).toContain('controls=0');
     expect(src).toContain('rel=0');
     expect(src).toContain('modestbranding=1');
+  });
+
+  it('aplica o letterbox-crop (iframe ampliado em altura) para esconder o título', () => {
+    render(<ComoFuncionaContent />);
+    const iframe = screen.getByTitle(`Vídeo: ${first.title}`);
+    expect(iframe.className).toContain('h-[160%]');
+    expect(iframe.className).toContain('absolute');
   });
 
   it('mostra o placeholder de vídeo enquanto o passo não tem vídeo', () => {
