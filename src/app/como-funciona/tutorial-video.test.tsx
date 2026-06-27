@@ -38,7 +38,7 @@ beforeEach(() => {
     mute = mute;
     destroy = vi.fn();
     getIframe = () => iframeEl;
-    constructor(_el: string, options: FakeOptions) {
+    constructor(_el: HTMLElement | string, options: FakeOptions) {
       captured = options;
     }
   }

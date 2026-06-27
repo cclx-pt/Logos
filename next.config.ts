@@ -29,7 +29,11 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   // va.vercel-scripts.com: telemetria Vercel. challenges.cloudflare.com: script
   // do Turnstile (api.js) carregado pelo TurnstileWidget quando ha site key.
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://va.vercel-scripts.com https://challenges.cloudflare.com`,
+  // www.youtube.com: script da IFrame Player API (iframe_api + www-widgetapi.js)
+  // que o tutorial (/como-funciona) carrega para a pagina para controlar o
+  // player (autoplay fiavel do 1.o video + loop sem corte). O <iframe> de embed
+  // continua coberto por frame-src; isto e so para o *script* da API.
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://va.vercel-scripts.com https://challenges.cloudflare.com https://www.youtube.com`,
   // Supabase (auth/db/storage) + telemetria Vercel + validacao do desafio
   // Turnstile (o fetch que resolve o captcha bate aqui - sem isto o widget
   // carrega e renderiza mas nunca resolve: "nao foi possivel conectar ao site").

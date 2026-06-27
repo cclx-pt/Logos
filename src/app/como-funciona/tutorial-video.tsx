@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Player de vídeo do tutorial via IFrame Player API do YouTube.
@@ -89,17 +89,25 @@ function loadYouTubeApi(): Promise<YouTubeNamespace> {
 }
 
 export function TutorialVideo({ youtubeId, title }: { youtubeId: string; title: string }) {
-  // `useId` é estável entre servidor e cliente (sem mismatch de hidratação); os
-  // `:` são removidos por serem inválidos em ids/getElementById.
-  const hostId = `yt-${useId().replace(/:/g, '')}`;
+  const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
     let cancelled = false;
 
+    // Nó interno que a API do YouTube vai SUBSTITUIR por um iframe. É criado
+    // fora do React (`createElement`), por isso o React nunca o gere nem tenta
+    // removê-lo - evita o crash "removeChild: not a child" quando o YouTube
+    // troca o nó. No unmount, o React só remove o `containerRef` (que possui) e
+    // o browser leva o iframe junto.
+    const host = document.createElement('div');
+    container.appendChild(host);
+
     void loadYouTubeApi().then((YT) => {
-      if (cancelled || !document.getElementById(hostId)) return;
-      playerRef.current = new YT.Player(hostId, {
+      if (cancelled) return;
+      playerRef.current = new YT.Player(host, {
         videoId: youtubeId,
         width: '100%',
         height: '100%',
@@ -142,10 +150,9 @@ export function TutorialVideo({ youtubeId, title }: { youtubeId: string; title: 
       }
       playerRef.current = null;
     };
-  }, [youtubeId, hostId, title]);
+  }, [youtubeId, title]);
 
-  // A API substitui este `div` pelo iframe gerado (mantendo o mesmo id).
-  return <div id={hostId} />;
+  return <div ref={containerRef} className="relative h-full w-full" />;
 }
 
 export { CROP_CLASSES };

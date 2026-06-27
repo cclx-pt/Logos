@@ -45,6 +45,15 @@ describe('CSP (next.config.ts)', () => {
     expect(imgSrc).toContain('https://*.supabase.co');
   });
 
+  it('script-src permite a IFrame Player API do YouTube (tutorial)', async () => {
+    const csp = await getCspDirectives();
+    const scriptSrc = csp.get('script-src') ?? '';
+    expect(scriptSrc).toContain("'self'");
+    // O player do tutorial (/como-funciona) carrega iframe_api + www-widgetapi.js
+    // de www.youtube.com para a página; sem isto o player nunca arranca.
+    expect(scriptSrc).toContain('https://www.youtube.com');
+  });
+
   it('frame-src permite YouTube, Turnstile e apostilas PDF do Supabase Storage', async () => {
     const csp = await getCspDirectives();
     const frameSrc = csp.get('frame-src') ?? '';
