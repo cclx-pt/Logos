@@ -40,12 +40,16 @@ describe('ComoFuncionaContent (wizard)', () => {
     expect(screen.getByRole('link', { name: /concluir/i })).toHaveAttribute('href', '/conteudos');
   });
 
-  it('embebe o vídeo do passo com autoplay e sem chrome do YouTube', () => {
+  it('embebe o vídeo do passo em autoplay mudo, em loop e sem chrome do YouTube', () => {
     render(<ComoFuncionaContent />);
     const iframe = screen.getByTitle(`Vídeo: ${first.title}`);
     const src = iframe.getAttribute('src') ?? '';
+    const id = first.youtubeUrl?.split('/').pop() ?? '';
     expect(src).toContain('youtube-nocookie.com/embed/');
     expect(src).toContain('autoplay=1');
+    expect(src).toContain('mute=1');
+    expect(src).toContain('loop=1');
+    expect(src).toContain(`playlist=${id}`);
     expect(src).toContain('rel=0');
     expect(src).toContain('modestbranding=1');
   });

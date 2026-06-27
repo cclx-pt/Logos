@@ -18,15 +18,14 @@ export function ComoFuncionaContent() {
   const [index, setIndex] = useState(0);
   const step = tutorialSteps[index];
   const youtubeId = extractYoutubeId(step.youtubeUrl);
-  // `autoplay` arranca o vídeo ao mudar de passo (o iframe é remontado pela
-  // `key` do passo, por isso dispara em cada navegação). `rel=0` +
-  // `modestbranding=1` limpam o "chrome" do YouTube (relacionados/logótipo);
-  // `playsinline=1` evita o fullscreen forçado no iOS. Nota: os browsers só
-  // deixam o autoplay com som depois de uma interação - o 1.º vídeo ao abrir a
-  // página pode precisar de um clique; os seguintes (após "Seguinte") arrancam
-  // sozinhos.
+  // `autoplay=1` + `mute=1`: arranca sozinho em qualquer browser (o autoplay só
+  // é permitido sem som) ao mudar de passo - o iframe é remontado pela `key` do
+  // passo, por isso dispara em cada navegação. `loop=1` + `playlist=<id>`
+  // repete o vídeo no fim (o loop do YouTube exige o `playlist` com o mesmo id
+  // para um vídeo único). `rel=0` + `modestbranding=1` limpam o "chrome"
+  // (relacionados/logótipo); `playsinline=1` evita o fullscreen forçado no iOS.
   const embedSrc = youtubeId
-    ? `https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`
+    ? `https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&rel=0&modestbranding=1&playsinline=1`
     : null;
   const isFirst = index === 0;
   const isLast = index === total - 1;
