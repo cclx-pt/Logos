@@ -4,6 +4,8 @@
 > **Estado:** activa até 01-07-2026 (lançamento V3). Reavaliar depois.
 >
 > **⚠️ Atualização 19-06-2026 - estratégia de base de dados mudou.** O lançamento deixa de "aplicar migrations + recriar conteúdo no `logos-prod`": passa a **promover o `logos-dev` (ref `dknrnqyqlojvnhspwjrd`) a produção** via troca de env na Vercel. Os passos 2 e 3 da "Promoção única" abaixo (aplicar migrations a `logos-prod`, confirmar bucket) ficam **obsoletos**. O lado dos branches (`v3-cursos` -> `main` numa só PR) mantém-se. Sequência atual e mapa de projetos em [`launch-runbook.md`](launch-runbook.md).
+>
+> **⚠️ Correção 28-06-2026 (dia do lançamento) - a doc estava errada sobre a V2.5.** Este documento afirmava que a V2.5 fora "absorvida em `v3-cursos`" e nunca mergeava em `main` separadamente. **A realidade do git contradizia-o:** a V2.5 final foi mergeada em `main` (PR #44/#45/#46, com conformidade RGPD: página `/privacidade`, apagar conta, `rate_limit`, hardening) e `v3-cursos` **nunca apanhou esses 3 commits**. Os ramos divergiram. No arranque do lançamento integrou-se `main` em `v3-cursos` (merge `7e3f552`) para a PR única poder ser limpa (branch protection exige histórico linear): trouxe-se o genuinamente novo de `main` (`/privacidade`, docs legais, migration `delete_own_account`) e prevaleceu `v3-cursos` no resto (reimplementou a V2.5 com nomes assinados nos testemunhos, CSP superset, apagar conta na fronteira de identidade). Detalhe no `changelog.md` [28-06-2026].
 
 ## 1. Modelo de 3 camadas
 

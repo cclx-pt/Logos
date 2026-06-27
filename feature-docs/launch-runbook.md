@@ -34,7 +34,8 @@ cascade;
 ## Sequência do dia
 
 ### 1. Código -> Production
-- [ ] Merge `v3-cursos` -> `main` (PR; nunca push direto). Dispara o deploy de Production.
+- [x] **(28-06-2026) Reconciliação `main` ↔ `v3-cursos` feita** - `main` tinha divergido (V2.5/RGPD PR #44/#45/#46 nunca apanhada por `v3-cursos`). Integrado `main` em `v3-cursos` (merge `7e3f552`); 699 testes verdes. Ver `changelog.md` [28-06-2026].
+- [ ] **PR única `v3-cursos` -> `main` aberta - aguarda merge do líder** (nunca push direto). O merge dispara o deploy de Production. (`main` já é ancestral de `v3-cursos`, por isso a PR é limpa - usar squash para manter histórico linear.)
 
 ### 2. Trocar o env da Vercel (a "troca")
 - [ ] **Production scope** -> apontar para o `logos-dev` (`dknrnqyqlojvnhspwjrd`): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`. Confirmar app-level no mesmo scope: `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `LOGOS_QUESTIONS_TO_EMAIL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `YOUTUBE_API_KEY` (se Live), `NEXT_PUBLIC_SITE_URL=https://logos.cclx.pt`.
