@@ -1,20 +1,30 @@
 'use client';
 
-import { useSyncExternalStore } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 
 /**
- * Convite de 1.ª visita para o tutorial. Aparece uma vez por browser (flag em
- * localStorage) e liga à página `/como-funciona`. Dispensável.
+ * Convite de 1.ª visita para o tutorial. Aparece uma vez **por utilizador**
+ * (flag em localStorage com o id na chave) e liga à página `/como-funciona`.
+ * Dispensável.
+ *
+ * A chave leva o `userId` para o convite aparecer no 1.º login de cada conta,
+ * mesmo num browser onde outra conta já o dispensou (antes era uma flag única
+ * por browser, pelo que nunca reaparecia depois da 1.ª vez).
  *
  * Lê o localStorage via `useSyncExternalStore` para ser SSR-safe: o servidor
  * usa o snapshot "já visto" (renderiza `null`, sem banner), e o cliente lê o
  * valor real sem mismatch de hidratação. O `dismiss` grava a flag e dispara um
  * evento para o store re-ler e esconder.
  */
-const SEEN_KEY = 'logos.tutorial.seen';
+const SEEN_KEY_PREFIX = 'logos.tutorial.seen';
 const SEEN_EVENT = 'logos:tutorial-seen';
+
+/** Chave de localStorage do convite, isolada por utilizador. */
+export function tutorialSeenKey(userId: string): string {
+  return `${SEEN_KEY_PREFIX}.${userId}`;
+}
 
 function subscribe(callback: () => void): () => void {
   window.addEventListener(SEEN_EVENT, callback);
@@ -25,22 +35,24 @@ function subscribe(callback: () => void): () => void {
   };
 }
 
-function getSnapshot(): boolean {
-  try {
-    return localStorage.getItem(SEEN_KEY) !== null;
-  } catch {
-    // localStorage indisponível (modo privado severo): tratar como "já visto".
-    return true;
-  }
-}
+export function FirstVisitTutorial({ userId }: { userId: string }) {
+  const key = tutorialSeenKey(userId);
 
-export function FirstVisitTutorial() {
+  const getSnapshot = useCallback((): boolean => {
+    try {
+      return localStorage.getItem(key) !== null;
+    } catch {
+      // localStorage indisponível (modo privado severo): tratar como "já visto".
+      return true;
+    }
+  }, [key]);
+
   // Snapshot do servidor = true (já visto) -> nada renderizado no SSR.
   const seen = useSyncExternalStore(subscribe, getSnapshot, () => true);
 
   function dismiss() {
     try {
-      localStorage.setItem(SEEN_KEY, '1');
+      localStorage.setItem(key, '1');
     } catch {
       // ignora
     }

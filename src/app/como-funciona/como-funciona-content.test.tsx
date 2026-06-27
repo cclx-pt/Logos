@@ -40,6 +40,16 @@ describe('ComoFuncionaContent (wizard)', () => {
     expect(screen.getByRole('link', { name: /concluir/i })).toHaveAttribute('href', '/conteudos');
   });
 
+  it('embebe o vídeo do passo com autoplay e sem chrome do YouTube', () => {
+    render(<ComoFuncionaContent />);
+    const iframe = screen.getByTitle(`Vídeo: ${first.title}`);
+    const src = iframe.getAttribute('src') ?? '';
+    expect(src).toContain('youtube-nocookie.com/embed/');
+    expect(src).toContain('autoplay=1');
+    expect(src).toContain('rel=0');
+    expect(src).toContain('modestbranding=1');
+  });
+
   it('mostra o placeholder de vídeo enquanto o passo não tem vídeo', () => {
     render(<ComoFuncionaContent />);
     if (first.youtubeUrl === null) {

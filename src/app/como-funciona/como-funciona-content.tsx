@@ -18,6 +18,16 @@ export function ComoFuncionaContent() {
   const [index, setIndex] = useState(0);
   const step = tutorialSteps[index];
   const youtubeId = extractYoutubeId(step.youtubeUrl);
+  // `autoplay` arranca o vídeo ao mudar de passo (o iframe é remontado pela
+  // `key` do passo, por isso dispara em cada navegação). `rel=0` +
+  // `modestbranding=1` limpam o "chrome" do YouTube (relacionados/logótipo);
+  // `playsinline=1` evita o fullscreen forçado no iOS. Nota: os browsers só
+  // deixam o autoplay com som depois de uma interação - o 1.º vídeo ao abrir a
+  // página pode precisar de um clique; os seguintes (após "Seguinte") arrancam
+  // sozinhos.
+  const embedSrc = youtubeId
+    ? `https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`
+    : null;
   const isFirst = index === 0;
   const isLast = index === total - 1;
 
@@ -58,9 +68,9 @@ export function ComoFuncionaContent() {
           </h2>
 
           <div className="border-border bg-card mt-4 aspect-video overflow-hidden rounded-2xl border">
-            {youtubeId ? (
+            {embedSrc ? (
               <iframe
-                src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
+                src={embedSrc}
                 title={`Vídeo: ${step.title}`}
                 loading="lazy"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

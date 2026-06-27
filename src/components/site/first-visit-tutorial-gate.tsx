@@ -10,5 +10,5 @@ import { FirstVisitTutorial } from './first-visit-tutorial';
 export async function FirstVisitTutorialGate() {
   const user = await getCurrentUser();
   if (!user) return null;
-  return <FirstVisitTutorial />;
+  return <FirstVisitTutorial userId={user.id} />;
 }
