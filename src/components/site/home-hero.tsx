@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
 import { Logo } from './logo';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { signInWithGoogleAction } from '@/lib/auth/actions';
+import { buttonVariants } from '@/components/ui/button';
+import { SignInCta } from './sign-in-cta';
 import { staggerContainer, staggerItem } from '@/lib/motion-variants';
 
 type HomeHeroProps = {
@@ -41,29 +41,14 @@ export function HomeHero({ isAuthenticated, ctaHref }: HomeHeroProps) {
         Cursos, Apostilas e o teu ritmo - Sempre gratuitos.
       </motion.p>
 
-      <motion.div variants={staggerItem} className="mt-10 flex w-full flex-col items-center gap-3">
+      <motion.div variants={staggerItem} className="mt-10 flex w-full justify-center">
         {isAuthenticated ? (
           <Link href={ctaHref} className={buttonVariants({ size: 'lg' })}>
             Meus cursos
             <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
           </Link>
         ) : (
-          <>
-            <form action={signInWithGoogleAction}>
-              <input type="hidden" name="next" value={ctaHref} />
-              <Button type="submit" size="lg">
-                Meus cursos
-                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
-              </Button>
-            </form>
-            <p className="text-muted-foreground max-w-xs text-center font-sans text-xs leading-relaxed">
-              Entras com a tua conta Google. Ao continuar, aceitas a{' '}
-              <Link href="/privacidade" className="hover:text-orange-hover underline">
-                Política de Privacidade
-              </Link>
-              .
-            </p>
-          </>
+          <SignInCta next={ctaHref} size="lg" label="Entrar" />
         )}
       </motion.div>
     </motion.section>

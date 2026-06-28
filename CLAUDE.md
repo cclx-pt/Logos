@@ -1,6 +1,8 @@
 # CLAUDE.md — Logos
 
 > **Lê primeiro `SPEC_1.md`.** É a fonte de verdade do projeto. Se a realidade divergir, atualiza a spec — não o silêncio.
+>
+> **Antes de cada sessão, verifica se existe algum `feature-docs/*-handoff.md`.** Esses ficheiros documentam trabalho em curso entre sessões — o estado WIP, decisões fechadas, e o que falta. Se existir um, lê-o antes de tocar em qualquer ficheiro. Quando o trabalho fechar, apaga o handoff (ou substitui-o pela entrada definitiva em `feature-docs/`).
 
 ## 🎯 Objetivo
 Plataforma online de estudo bíblico da **CCLX** (igreja em Portugal). Cursos → Módulos → Aulas (vídeo YouTube embebido + PDF descarregável). Utilizadores autenticados marcam aulas como concluídas.
@@ -12,7 +14,7 @@ Plataforma online de estudo bíblico da **CCLX** (igreja em Portugal). Cursos �
 
 ## 🏗️ Arquitetura
 - **Framework:** Next.js 16 + TypeScript (App Router)
-- **DB / Auth / Storage:** Supabase (Postgres, Supabase Auth com **Google OAuth apenas** — email/password fora de âmbito, ver `SPEC_1.md` §17/§18, Supabase Storage para PDFs)
+- **DB / Auth / Storage:** Supabase (Postgres, Supabase Auth com **OAuth social: Google** + **email OTP** (código de uso único, passwordless) - **login com palavra-passe** continua fora de âmbito; Microsoft removido (10-06-2026, decisão do líder: só Google + email); Apple adiado por exigir conta paga; ver `SPEC_1.md` §17/§18, Supabase Storage para PDFs)
 - **Estilização:** Tailwind CSS + shadcn/ui
 - **Forms:** react-hook-form + Zod
 - **Email transacional:** Resend
@@ -30,9 +32,12 @@ Modelo de dados (3 níveis): `Curso → Módulo → Aula`. Aulas têm `template`
 
 ## 🚫 Regras (não negociáveis)
 - **Nunca fazer push direto para `main`.** Sempre via Pull Request.
+- **V3 nunca mergea em `main` em parciais.** Entre 19-05-2026 e 01-07-2026 (lançamento), o repo vive em 3 camadas: `main` (V2 live), `v2.5-copy-ux` (V2.5 stored), `v3-cursos` (V3 em dev). PRs de V3 (PR1-PR9) ficam só em `v3-cursos`. Detalhes e workflow de teste cross-device em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
+- **Lançamento promove o `logos-dev` (ref `dknrnqyqlojvnhspwjrd`) a produção - não se recria nada.** Decisão 19-06-2026: em vez de aplicar migrations + recriar conteúdo no antigo `logos-prod`, no dia troca-se o env da Vercel (Production -> `logos-dev`; Preview -> antigo `logos-prod`). O `logos-dev` já tem schema V3 + Resend/OTP/Turnstile/callback Google validados. **A partir do lançamento, o ref de produção (live) é `dknrnqyqlojvnhspwjrd`; `tirzriuabfwzqxtjsmfb` passa a dev/staging.** Qualquer operação destrutiva confirma o ref primeiro. Runbook: [`feature-docs/launch-runbook.md`](feature-docs/launch-runbook.md).
 - **Sempre escrever testes** para: visibilidade por etiquetas, lógica de conclusão de curso, controlo de acesso por papel.
 - **Verificar a versão (V1–V9) antes de implementar.** Nada de scope creep entre versões.
 - **PT-PT em toda a UI e copy.** Sem PT-BR. Sem inglês na UI.
+- **Sem em dashes (`—`) em copy/UI. Usar sempre hyphen (`-`).** Vale para texto visível ao utilizador (JSX, hints, mensagens, emails). Para separar dentro de uma frase, usar hyphen, vírgula ou dois pontos, nunca `—`. Erro recorrente: corrigir à nascença.
 - **Não alojar vídeo no sistema.** Sempre YouTube embed via iframe.
 - **Conteúdo restrito por etiqueta é invisível**, nunca aparece com cadeado ou "acesso negado".
 - **IDs internos estáveis.** Renomear/reordenar nunca invalida conclusões existentes.

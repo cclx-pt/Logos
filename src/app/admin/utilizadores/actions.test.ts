@@ -2,14 +2,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import type { Profile } from '@/lib/auth';
 
-const { mockGetCurrentUser, mockMaybeSingle, mockUpdateEq, mockRevalidatePath } = vi.hoisted(
-  () => ({
-    mockGetCurrentUser: vi.fn(),
-    mockMaybeSingle: vi.fn(),
-    mockUpdateEq: vi.fn(),
-    mockRevalidatePath: vi.fn(),
-  }),
-);
+const {
+  mockGetCurrentUser,
+  mockMaybeSingle,
+  mockUpdateEq,
+  mockUpsert,
+  mockDeleteEqEq,
+  mockRevalidatePath,
+} = vi.hoisted(() => ({
+  mockGetCurrentUser: vi.fn(),
+  mockMaybeSingle: vi.fn(),
+  mockUpdateEq: vi.fn(),
+  mockUpsert: vi.fn(),
+  mockDeleteEqEq: vi.fn(),
+  mockRevalidatePath: vi.fn(),
+}));
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: mockGetCurrentUser,
@@ -23,6 +30,12 @@ vi.mock('@/lib/auth', () => ({
       update: vi.fn(() => ({
         eq: mockUpdateEq,
       })),
+      upsert: mockUpsert,
+      delete: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          eq: mockDeleteEqEq,
+        })),
+      })),
     })),
   })),
 }));
@@ -31,7 +44,12 @@ vi.mock('next/cache', () => ({
   revalidatePath: mockRevalidatePath,
 }));
 
-import { setUserRoleAction } from './actions';
+import {
+  assignTagAction,
+  assignTagToUsersAction,
+  setUserRoleAction,
+  unassignTagAction,
+} from './actions';
 
 function makeProfile(role: Profile['role'], id: string): Profile {
   return {
@@ -78,11 +96,9 @@ describe('setUserRoleAction (V2 PR3)', () => {
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/targetId/i) });
   });
 
-  it('recusa newRole fora de {user, admin}', async () => {
+  it('recusa newRole fora de {user, admin, super_admin}', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', CALLER_ID));
-    const result = await setUserRoleAction(
-      formDataOf({ targetId: TARGET_ID, newRole: 'super_admin' }),
-    );
+    const result = await setUserRoleAction(formDataOf({ targetId: TARGET_ID, newRole: 'root' }));
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/newRole/i) });
   });
 
@@ -130,6 +146,23 @@ describe('setUserRoleAction (V2 PR3)', () => {
     expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/utilizadores');
   });
 
+  it('promove admin → super_admin quando caller é super_admin', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', CALLER_ID));
+    mockMaybeSingle.mockResolvedValue({
+      data: { id: TARGET_ID, role: 'admin' },
+      error: null,
+    });
+    mockUpdateEq.mockResolvedValue({ error: null });
+
+    const result = await setUserRoleAction(
+      formDataOf({ targetId: TARGET_ID, newRole: 'super_admin' }),
+    );
+
+    expect(result).toEqual({ ok: true });
+    expect(mockUpdateEq).toHaveBeenCalledWith('id', TARGET_ID);
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/utilizadores');
+  });
+
   it('propaga erro de DB ao update', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', CALLER_ID));
     mockMaybeSingle.mockResolvedValue({
@@ -145,5 +178,156 @@ describe('setUserRoleAction (V2 PR3)', () => {
       error: expect.stringMatching(/permission denied/i),
     });
     expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+const TAG_ID = '33333333-3333-4333-8333-333333333333';
+
+describe('assignTagAction (V3 PR1)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('recusa quando não há sessão', async () => {
+    mockGetCurrentUser.mockResolvedValue(null);
+    const result = await assignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/admin/i) });
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it('recusa quando caller é user (não admin nem super_admin)', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('user', CALLER_ID));
+    const result = await assignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/admin/i) });
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it('recusa userId inválido', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    const result = await assignTagAction(formDataOf({ userId: 'not-uuid', tagId: TAG_ID }));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/userId/i) });
+  });
+
+  it('recusa tagId inválido', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    const result = await assignTagAction(formDataOf({ userId: TARGET_ID, tagId: 'not-uuid' }));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/tagId/i) });
+  });
+
+  it('upserta idempotentemente quando caller é admin', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockUpsert.mockResolvedValue({ error: null });
+
+    const result = await assignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+
+    expect(result).toEqual({ ok: true });
+    expect(mockUpsert).toHaveBeenCalledWith(
+      { user_id: TARGET_ID, tag_id: TAG_ID, assigned_by: CALLER_ID },
+      { onConflict: 'user_id,tag_id', ignoreDuplicates: true },
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/utilizadores');
+  });
+
+  it('aceita super_admin como caller', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('super_admin', CALLER_ID));
+    mockUpsert.mockResolvedValue({ error: null });
+    const result = await assignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+    expect(result).toEqual({ ok: true });
+  });
+});
+
+describe('assignTagToUsersAction (lote)', () => {
+  const OTHER_ID = '44444444-4444-4444-8444-444444444444';
+
+  function bulkFd(tagId: string | null, userIds: string[]): FormData {
+    const fd = new FormData();
+    if (tagId !== null) fd.set('tagId', tagId);
+    for (const id of userIds) fd.append('userId', id);
+    return fd;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('recusa quando caller é user', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('user', CALLER_ID));
+    const result = await assignTagToUsersAction(bulkFd(TAG_ID, [TARGET_ID]));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/admin/i) });
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it('recusa tagId inválido', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    const result = await assignTagToUsersAction(bulkFd('not-uuid', [TARGET_ID]));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/tagId/i) });
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it('recusa quando não há userIds válidos', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    const result = await assignTagToUsersAction(bulkFd(TAG_ID, ['lixo']));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/utilizador/i) });
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
+  it('upserta em lote (dedupe + ignora inválidos) e devolve a contagem', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockUpsert.mockResolvedValue({ error: null });
+
+    const result = await assignTagToUsersAction(
+      bulkFd(TAG_ID, [TARGET_ID, TARGET_ID, OTHER_ID, 'lixo']),
+    );
+
+    expect(result).toEqual({ ok: true, count: 2 });
+    expect(mockUpsert).toHaveBeenCalledWith(
+      [
+        { user_id: TARGET_ID, tag_id: TAG_ID, assigned_by: CALLER_ID },
+        { user_id: OTHER_ID, tag_id: TAG_ID, assigned_by: CALLER_ID },
+      ],
+      { onConflict: 'user_id,tag_id', ignoreDuplicates: true },
+    );
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/utilizadores');
+  });
+
+  it('propaga erro de DB', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockUpsert.mockResolvedValue({ error: { message: 'permission denied' } });
+    const result = await assignTagToUsersAction(bulkFd(TAG_ID, [TARGET_ID]));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/permission denied/i) });
+    expect(mockRevalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+describe('unassignTagAction (V3 PR1)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('recusa quando caller é user', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('user', CALLER_ID));
+    const result = await unassignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/admin/i) });
+    expect(mockDeleteEqEq).not.toHaveBeenCalled();
+  });
+
+  it('apaga a atribuição quando válida', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockDeleteEqEq.mockResolvedValue({ error: null });
+
+    const result = await unassignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+
+    expect(result).toEqual({ ok: true });
+    expect(mockDeleteEqEq).toHaveBeenCalledWith('tag_id', TAG_ID);
+    expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/utilizadores');
+  });
+
+  it('idempotente: não falha se a atribuição não existir (PK composta + RLS)', async () => {
+    mockGetCurrentUser.mockResolvedValue(makeProfile('admin', CALLER_ID));
+    mockDeleteEqEq.mockResolvedValue({ error: null });
+
+    const result = await unassignTagAction(formDataOf({ userId: TARGET_ID, tagId: TAG_ID }));
+
+    expect(result).toEqual({ ok: true });
   });
 });

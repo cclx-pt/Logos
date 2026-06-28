@@ -14,6 +14,9 @@ export function Footer() {
           </p>
         </div>
         <div className="text-muted-foreground flex flex-col items-start gap-2 font-sans text-sm md:items-end">
+          <Link href="/como-funciona" className="hover:text-orange-hover transition-colors">
+            Como funciona
+          </Link>
           <Link
             href={siteConfig.organization.website}
             className="hover:text-orange-hover transition-colors"

@@ -9,7 +9,7 @@ export default async function Home() {
 
   return (
     <>
-      <HomeHero isAuthenticated={user !== null} ctaHref="/conteudos" />
+      <HomeHero isAuthenticated={user !== null} ctaHref="/meus-cursos" />
       <HomeMotto />
       <HomePresentationVideo />
       <HomeTestimonials />

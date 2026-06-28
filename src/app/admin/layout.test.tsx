@@ -16,6 +16,13 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('next/navigation', () => ({
   notFound: mockNotFound,
+  useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+  usePathname: () => '/admin',
+}));
+
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
 }));
 
 import AdminLayout from './layout';
@@ -50,7 +57,7 @@ describe('AdminLayout (V2 PR3)', () => {
     expect(mockNotFound).toHaveBeenCalled();
   });
 
-  it('renderiza filhos quando role=admin (sem link Utilizadores)', async () => {
+  it('renderiza filhos + links Conteúdos/Estatísticas quando role=admin (sem Utilizadores/Etiquetas)', async () => {
     mockGetCurrentUser.mockResolvedValue(makeUser('admin'));
     const ui = await AdminLayout({
       children: <div data-testid="children">Conteúdo</div>,
@@ -58,16 +65,22 @@ describe('AdminLayout (V2 PR3)', () => {
     render(ui);
     expect(screen.getByTestId('children')).toHaveTextContent('Conteúdo');
     expect(screen.getByRole('link', { name: /painel/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /conteúdos/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /estatísticas/i })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /utilizadores/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /etiquetas/i })).not.toBeInTheDocument();
   });
 
-  it('renderiza filhos + link Utilizadores quando role=super_admin', async () => {
+  it('renderiza filhos + links Conteúdos/Utilizadores/Etiquetas quando role=super_admin', async () => {
     mockGetCurrentUser.mockResolvedValue(makeUser('super_admin'));
     const ui = await AdminLayout({
       children: <div data-testid="children">Conteúdo</div>,
     });
     render(ui);
     expect(screen.getByTestId('children')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /conteúdos/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /estatísticas/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /utilizadores/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /etiquetas/i })).toBeInTheDocument();
   });
 });

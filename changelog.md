@@ -8,10 +8,136 @@
 
 ## [Unreleased]
 
+### infra
+- infra: [28-06-2026] **lançamento V3 - reconciliação `main` (V2.5/RGPD) ↔ `v3-cursos`** - descoberto no arranque do lançamento que, ao contrário do que as docs diziam ("V2.5 absorvida em `v3-cursos`"), os ramos tinham **divergido**: `main` levava 3 commits (PR #44/#45/#46 - Lançamento V2.5) que `v3-cursos` nunca apanhou. Integrado `main` em `v3-cursos` (merge `7e3f552`) para a PR única de lançamento poder ser limpa (branch protection exige histórico linear - `main` tinha de ser ancestral). Reconciliação: trazidos de `main` a página **`/privacidade`** (RGPD) + `feature-docs/legal-*.md` + a migration `delete_own_account` (já aplicada em `logos-dev` como `20260602133608`; ledger a alinhar pós-lançamento). Prevaleceu `v3-cursos` (canónico e à frente) em tudo o resto: CSP superset (`next.config.ts`), nav reestruturada (`site-config.ts`), service-role helpers (`auth/index.ts`), apagar conta via `deleteAccountAction(prevState, formData)` na fronteira de identidade, e testemunhos com **nomes assinados** (decisão do líder 10-06, supersede os anónimos de #46). Removidos os ficheiros mortos de `main`: `delete-account-button.tsx` e `actions.test.ts` (testava a assinatura antiga). Quality gates verdes: typecheck + lint (max-warnings 0) + format + **699 testes**. Sem `db push` no lançamento (estratégia = promover `logos-dev` a produção por troca de env na Vercel).
+
+### feat
+- feat: [27-06-2026] **tutorial "Como funciona": os 4 vídeos publicados** - preenchidas as URLs YouTube dos 4 passos do wizard em `src/lib/tutorial.ts` (eram `null`/placeholder "Vídeo em breve"): começar um curso (`k6OACr38MaM`), avançar/concluir aulas (`hvHMUKTsuTg`), conversas (`_ib3tdMv4NA`), Live (`-OHIzXECPLw`). A página passa a embeber cada vídeo (`youtube-nocookie`) em vez do placeholder - sem mais nenhuma mudança de código (`extractYoutubeId` reconhece o formato `youtu.be/<id>` e o embed liga-se sozinho). Sem migration, sem env nova. Em `v3-cursos`.
+- feat: [20-06-2026] **tutorial "Como funciona" (wizard) + convite de 1.ª visita** (afinação pré-lançamento). Nova página pública `/como-funciona` em **formato wizard** - um passo/vídeo de cada vez, com Anterior/Seguinte e indicador de progresso; o último passo encaminha para os conteúdos. **4 passos**: (1) encontrar e começar um curso (Conteúdos -> adicionar -> Meus cursos -> iniciar); (2) avançar e concluir aulas (incluindo módulos); (3) conversas; (4) transmissões Live. Cada passo tem vídeo demonstrativo (embed YouTube `youtube-nocookie`) + descrição; os vídeos são **placeholders** ("Vídeo em breve") até existirem - preenche-se a URL YouTube em `src/lib/tutorial.ts` e o embed aparece sozinho (regra dura: não alojamos vídeo). Banner **dispensável de 1.ª visita** (`FirstVisitTutorial`, no root layout) **só para utilizadores com sessão iniciada** (gate server-side `FirstVisitTutorialGate`), que aparece uma vez por browser (flag em `localStorage` lida via `useSyncExternalStore`, SSR-safe, sem migration) e liga à página; re-acessível pelo link "Como funciona" no rodapé + rota no sitemap. 13 testes novos; typecheck + lint + format limpos (681 verdes). Sem migration, sem env nova.
+- feat: [19-06-2026] **admin/utilizadores: email de registo na tabela + pesquisa por email + atribuição de etiqueta em lote** (afinação pré-lançamento). (1) Nova coluna **Email** com o endereço de registo (Google ou OTP), lido da camada de identidade (`auth.users`) via novo helper em lote `getAuthEmailsByProfileIds` (service-role, igual ao `getAuthEmailByProfileId` mas para a lista toda - cruza `external_auth_id` com `auth.admin.listUsers` paginado, sem N chamadas; email nunca duplicado em tabelas Logos). A pesquisa da tabela passa a filtrar também por email. (2) **Atribuição de etiqueta a vários utilizadores de uma vez**: cada linha ganha uma checkbox (associada ao form de lote pelo atributo `form=`, sem aninhar nos forms de papel de cada linha) e uma barra escolhe a etiqueta + "Atribuir aos selecionados" → novo `assignTagToUsersAction` (caller admin/super_admin, dedupe + validação de UUID dos `userId`, upsert idempotente em lote, RLS de `user_tags`). Toast de sucesso `etiquetas_atribuidas`; erro `selecao_vazia` quando nada selecionado. Sem migration, sem env nova. 9 testes novos (659 → 668); typecheck + lint + format limpos.
+- feat: [18-06-2026] **nav reordenada (Live primeiro) + itens de conta só com sessão + estado "Em curso" no catálogo** (afinação pré-lançamento). (1) **Ordem da nav** passa a `Live → Conhece-nos → Fala connosco → Conteúdos → (conta)`, tanto no cabeçalho desktop como no menu mobile. (2) **Itens de conta gated por login**: "Meus cursos" e "As minhas conversas" deixam de aparecer a deslogados (antes eram sempre visíveis; "As minhas conversas" forçava o login) e só surgem depois da sessão iniciada. "Conteúdos" mantém-se público (catálogo visível a anónimos). `site-config` separa `functionalNavItems` em `publicContentNavItems` (Conteúdos) e `accountNavItems` (Meus cursos); `MobileNav` ganha `isAuthenticated` (substitui `conversasHref`). (3) **Terceiro estado no catálogo `/conteudos`**: além de "Concluído" (já existia), os cursos **começados** (inscritos e ainda não concluídos) mostram badge **"Em curso"** + CTA **"Continuar →"**; os por começar mantêm "Ver curso →" - diferencia visualmente por começar / em curso / concluído. Sem migration, sem query nova (reusa `enrolledCourseIds \ completedCourseIds` já carregados na página). (4) **Alinhamento do cabeçalho**: logo à esquerda e toda a navegação + perfil agrupados à direita (deixa de ser equidistante de ponta a ponta - `mr-auto` no logo + `xl:flex` na nav, em vez de `justify-between` + `xl:contents`). (5) A entrada **"As minhas conversas" passa a chamar-se só "Conversas"** (nav desktop + mobile, heading e título de `/perguntas`, link de retorno da conversa). 5 testes novos (654 → 659); typecheck + lint limpos.
+
 ### update
-- update: [02-06-2026] testemunhos do carrossel da home passam a anónimos - removidos os nomes dos autores (`figcaption`) e o campo `author` de `home-testimonials.tsx`. As citações mantêm-se inalteradas. (`fix/testemunhos-anonimos`)
+- update: [27-06-2026] **vídeos do tutorial: autoplay mudo + loop + sem chrome do YouTube (título incluído) + vídeo a preencher a janela** - o embed de `/como-funciona` passa a incluir `autoplay=1` + `mute=1` (arranca sozinho em qualquer browser - o autoplay só é permitido sem som - logo no 1.º vídeo e a cada mudança de passo, já que o iframe é remontado pela `key` do passo; decisão do líder: os vídeos não precisam de som), `loop=1` + `playlist=<id>` (repete no fim; o loop de um vídeo único exige o `playlist` com o mesmo id), `controls=0` + `rel=0` + `modestbranding=1` + `iv_load_policy=3` + `fs=0` + `disablekb=1` (sem controlos, relacionados, logótipo, anotações nem teclado) e `playsinline=1` (sem fullscreen forçado no iOS). O **título no topo** (que não tem parâmetro - o antigo `showinfo` foi removido) e a barra de controlos são escondidos por **CSS letterbox-crop**: o iframe é mais alto que o contentor (`h-[160%]`) e centrado, com o contentor em `overflow-hidden`, por isso o YouTube ajusta o vídeo à largura e o título/controlos caem nas barras pretas que ficam cortadas - **sem perder imagem**; de caminho o vídeo (16:9) passa a **preencher a janela** (16:9) ao milímetro. Sem migration, sem env nova. **Nota:** o mecanismo de autoplay/loop (que aqui usava `loop=1&playlist`) foi movido a 28-06 para a IFrame Player API - ver fix do "1.º vídeo não arrancava"; o letterbox-crop mantém-se.
+
+### fix
+- fix: [28-06-2026] **1.º vídeo do tutorial não arrancava → passa a IFrame Player API (+ fix de CSP que tinha deixado todos os vídeos em branco)** - na página `/como-funciona`, o 1.º vídeo (que arranca no carregamento, sem clique) ficava parado, enquanto os 2.º-4.º (que arrancam após "Seguinte") tocavam. Causa: o loop por `loop=1&playlist=<id>` transformava o embed numa **lista**, e os browsers não deixam uma lista arrancar sem interação - nem mudada; só o 1.º vídeo, carregado sem gesto, ficava preso (e o `pointer-events-none` do crop impedia até o clique no play). O player passa a usar a **IFrame Player API** do YouTube num novo componente cliente `TutorialVideo` (`src/app/como-funciona/tutorial-video.tsx`): arranca via `playVideo()` no `onReady` (mudo, fiável, sem precisar do `playlist`) e faz **loop sem corte** com `seekTo(0)` no `ENDED` (em vez de recarregar, deixa de piscar). Mantém o autoplay mudo, o `controls=0`/`modestbranding`/etc. e o **letterbox-crop** (iframe `h-[160%]` centrado + contentor `overflow-hidden`) que esconde o título e faz o vídeo preencher a janela. **Duas armadilhas resolvidas:** (1) a IFrame API carrega um *script* de `www.youtube.com` para a página, que a **CSP** bloqueava (o `script-src` só tinha Vercel + Turnstile) - sem isto o player nunca era criado e **todos** os vídeos ficavam em branco; adicionado `https://www.youtube.com` ao `script-src` (o `<iframe>` continua coberto por `frame-src`; o script é a única novidade). (2) a API substitui o nó do DOM por um iframe - se fosse um nó gerido pelo React, o unmount rebentava ("removeChild: not a child"); o player é montado num nó interno criado fora do React (`createElement`), com o React a possuir só o `containerRef`. 3 testes novos do `TutorialVideo` (API simulada) + 1 teste de CSP (`script-src` com YouTube) + o teste do wizard passa a verificar o vídeo passado a cada passo. Sem migration, sem env nova.
+- fix: [27-06-2026] **convite de 1.ª visita aparece no 1.º login de cada conta (era só uma vez por browser)** - o banner "Bem-vindo ao LOGOS" guardava uma flag única no `localStorage` (`logos.tutorial.seen`), por isso depois de alguém o dispensar nesse browser **nunca mais aparecia** - nem para outra conta a fazer o primeiro login no mesmo dispositivo (o caso reportado). A flag passa a ser **por utilizador** (`logos.tutorial.seen.<userId>`, via novo `tutorialSeenKey`); o `FirstVisitTutorialGate` (server-side) injeta o `userId`. Cada conta vê o convite uma vez por browser. Sem migration, sem env nova. 2 testes novos (incl. "aparece a outra conta mesmo que outra já o tenha dispensado").
 
 ### infra
+- infra: [18-06-2026] **V3.6 consolidada em `v3-cursos` + limpeza de ramos/PRs** - confirmado que toda a V3.6 (Live + Q&A conversa + pré-requisitos sequenciais) já estava fundida em `v3-cursos` pelo merge `253abef` (pais `c3852d6` + `19d0c70`); os 9 ramos `v3-6-*` estavam todos contidos em `v3-cursos`. Fechadas as 3 PRs abertas já superadas (#66 sequência, #64 PR5 - apontava erradamente para `main`, #63 PR2) e apagados todos os ramos de feature V3.6 (local + remoto). Repo de volta ao estado de 2 ramos (`main` + `v3-cursos`). `v3-cursos` no estado consolidado verificado verde: typecheck + lint limpos, 654 testes a passar. Sem mudança de código (só git/GitHub + docs).
+
+### fix
+- fix: [25-06-2026] **botão "Live" volta a actualizar sozinho (canal Realtime único por subscrição)** - o estado da transmissão já era empurrado por Supabase Realtime (`live_override` na publicação `supabase_realtime`, RLS de SELECT pública - confirmado em `logos-dev`), mas o botão "Live" da nav só mudava no polling de 60s ou com refresh manual em páginas com **dois** subscritores da mesma tabela: `/live` monta o botão da nav **e** o leitor, ambos via `useLiveStatus`. Como `subscribeToTable` usava sempre o mesmo nome de canal (`realtime:live_override`), o Phoenix/Realtime recusava o segundo join no mesmo socket ("already joined") e essa subscrição ficava muda. O nome de canal passa a **único por subscrição** (`realtime:<tabela>:<uuid>` via `crypto.randomUUID()`); o servidor faz fan-out das mudanças a todos os canais. Resultado: ao carregar em "Estamos no ar"/"Terminámos", o botão fica verde/cinza para toda a gente em <1s, sem recarregar. Sem migration (BD já estava correcta), sem env nova. Docs: `feature-docs/live.md` §1.1. Tests da área Live verdes; lint + typecheck limpos.
+- fix: [25-06-2026] **área admin navegável em mobile (a barra lateral estava escondida abaixo de md)** - num telemóvel, um admin/super_admin conseguia chegar a `/admin` (link no menu hamburguer e no menu do utilizador) mas ficava num beco sem saída: a única navegação para as subsecções (Conteúdos, Estatísticas, Perguntas, Live, Utilizadores, Etiquetas) vivia no `<aside>` da `admin/layout.tsx`, marcado `hidden md:block`, e o painel `/admin` não tinha links próprios - abaixo de 768px não havia forma de navegar a área. A nav passa a ter **fonte única** (lista filtrada por papel, renderizada uma vez) e adapta-se ao ecrã: em mobile uma **fila de chips** (`bg-sage-card`) que quebra de linha, em md+ a **barra lateral vertical** de sempre (o layout passa a `flex-col` em mobile, `md:flex-row`). Sem migration, sem env nova. 4 testes do layout continuam verdes; lint + typecheck limpos.
+- fix: [22-06-2026] **banner de curso até 5 MB via upload directo (mesmo fix das apostilas PDF)** - o bucket `course-banners` tinha o mesmo bug latente: cap de 5 MB validado na Server Action, mas batido pelo limite de ~4.5 MB do corpo de Functions na Vercel (banners 4.5-5 MB falhavam). Corrigido da mesma forma: o `CourseForm` (agora client component, `onSubmit` + `useTransition`) pede uma signed upload URL (`createCourseBannerUploadUrlAction`, com `upsert`) e envia o ficheiro **directamente browser → bucket** (`uploadToSignedUrl`); `createCourseAction`/`updateCourseAction` passam a receber só o `banner_storage_path` validado (`validateBannerStoragePath`). Tamanho/MIME passam a ser impostos pelo bucket; o cliente faz check prévio (`MAX_BANNER_BYTES`/`ALLOWED_BANNER_TYPES`) só para feedback. Como o path leva o `courseId` no prefixo e no create o curso ainda não existe, o **id é gerado no cliente** (`crypto.randomUUID`) e o curso é inserido com esse id explícito (`createCourseAction` aceita `id` opcional). Sem migration, sem env nova. Docs: `architecture.md` §7.2 + `feature-docs/lesson-pdf-upload.md`. 694 verdes; lint + typecheck + format limpos.
+- fix: [22-06-2026] **curso sequencial: "Próxima aula" deixa de saltar em silêncio quando a aula não está concluída** - num curso com aulas em sequência, o botão inferior "Próxima aula →" continuava clicável mesmo com a aula actual por concluir; ao clicar, a página da próxima aula detectava o bloqueio e **redireccionava de volta** à aula-fronteira **sem qualquer mensagem** (parecia que não fazia nada). Agora esse botão **respeita o cadeado**: quando a próxima aula está bloqueada, em vez do link mostra um cartão com cadeado + "Marca esta aula como concluída para a desbloquear." (mesma afordância que a árvore lateral, que já tratava aulas bloqueadas). O redirect server-side mantém-se como rede de segurança para acesso por URL directo. Sem migration, sem env nova. Docs: `feature-docs/sequencing.md`. 688 verdes; lint + typecheck + format limpos.
+- fix: [22-06-2026] **apostilas PDF até 20 MB voltam a funcionar (upload directo browser → Storage)** - um PDF de ~5 MB falhava no upload apesar de a UI prometer 20 MB. Causa: na Vercel as Server Actions correm como Functions, que têm um limite **rígido de ~4.5 MB ao corpo do pedido** que o `bodySizeLimit` do Next **não** sobrepõe; o ficheiro era rejeitado na borda antes de o nosso código (e a validação dos 20 MB) o ver. Localmente (`pnpm dev`) não dava - daí passar despercebido. **Solução:** o PDF deixa de passar pela Server Action. O `LessonForm` pede uma **signed upload URL** (`createLessonPdfUploadUrlAction`, admin-only) e envia o ficheiro **directamente do browser para o bucket** (`uploadToSignedUrl` em `src/lib/auth/browser-client.ts`); `createLessonAction`/`updateLessonAction` passam a receber só o `pdf_storage_path` (string) já validado (`validatePdfStoragePath`). O tamanho (≤20 MB) e o MIME passam a ser impostos pelo **bucket** no upload; o cliente faz um check prévio (`MAX_PDF_BYTES`) só para feedback. **Convenção de path muda** de `<courseId>/<lessonId>.pdf` para `<courseId>/<uuid>.pdf` (nome aleatório decidido ao assinar, desligado do id da aula que no create ainda não existe) - a limpeza (delete, troca para vídeo, substituição) passa a ler o path guardado na row. O `LessonForm` orquestra no cliente via `onSubmit` + `useTransition` (não `<form action>`, que em React 19 faz reset dos campos uncontrolled ao concluir e perderia o título/descrição num erro); o `SubmitButton` ganha prop `pending`. Sem migration (bucket e RLS de PR2 já cobrem), sem env nova. Docs: `architecture.md` §7.1 + `feature-docs/lesson-pdf-upload.md`. 688 verdes; lint + typecheck + format limpos.
+- fix: [14-06-2026] **conclusões de aula/curso deixam de "fugir" entre contas admin** - um admin/super_admin não conseguia **desmarcar** uma aula como concluída: o toast dizia "Marcação removida" mas ao recarregar voltava a aparecer "Concluída". Causa: `getCompletedLessonIds`, `getCompletedCourseIdsForCurrentUser` e `getStartedCoursesForUser` liam as conclusões **sem filtrar por `user_id`**, confiando na RLS para o scoping - mas a policy de SELECT é "own **OR** admin", logo um admin via as conclusões de **todos** os utilizadores como suas. Como o DELETE (correctamente) só atinge as próprias rows, a "desmarcação" de uma aula concluída por outro utilizador não removia nada (0 rows, sem erro → toast de sucesso enganador) e reaparecia no refresh. As três leituras passam a filtrar **explicitamente por `user_id = caller.id`** (no-op para utilizadores comuns, correcção real para admins). Afectava também o catálogo (cursos concluídos por outros apareciam a cinzento/"Concluído") e a secção "Terminados" de `/meus-cursos`. Testes de regressão a garantir o filtro nas três leituras. Sem migration (a RLS está correcta; o bug era na app confiar nela para algo que ela não faz). 618 verdes.
+
+### feat
+- feat: [14-06-2026] **Pré-requisitos sequenciais: aulas/módulos em ordem + cadeia de cursos** (V3.6, antecipação de V4 - estava adiado para pós-lançamento; puxado pela mesma lógica de Live/Q&A/estatísticas, decisão do líder). Por curso, três controlos opcionais. Duas flags de sequência **independentes** (decisão do líder): **aulas em sequência** (`courses.sequential_lessons`: ordem obrigatória das aulas dentro de cada módulo) e **módulos em sequência** (`courses.sequential_modules`: um módulo só abre depois de o anterior estar totalmente concluído) - dá para exigir ordem só das aulas, só dos módulos, ambas ou nenhuma. Mais o **curso pré-requisito** (`courses.prerequisite_course_id`, auto-FK nullable: só disponível depois de outro curso estar concluído; cadeia A → B → C; card/landing bloqueados com link ao pré-requisito; `enrollAction` recusa antes de concluído; ciclos travados na Server Action). Conteúdo bloqueado mostra cadeado + dica e a página redirecciona para a fronteira. Aplicação **server-side** (`src/lib/courses/sequencing.ts`), não em RLS; a página de aula passa a gravar `course_completions` on-read para os pré-requisitos a lerem. Migration `20260614140000_sequential_prerequisites.sql` (3 colunas + CHECK não-auto-referência + índice) - **só `logos-dev`**. Sem dependência nova, sem env nova, sem mudança de RLS. Docs: SPEC 3.6 + `architecture.md` + `feature-docs/sequencing.md`. 654 verdes; lint + typecheck limpos.
+- feat: [14-06-2026] **Integração V3.6: Live + Q&A conversa reconciliados** - os ramos paralelos `v3-6-live` e `v3-6-pr1..pr5` (desenvolvidos em paralelo a partir do mesmo ponto, `c3852d6`, sem se conhecerem) foram fundidos num só (`v3-6-integracao-live-perguntas`). Resolvida a **colisão de timestamp de migration** (`live_override` e `lesson_question_threads` partilhavam `20260613120000`): a do Live passa a `20260613140000_live_override.sql`. Reconciliados à mão os 3 ficheiros que ambos tocavam - `header.tsx` e `mobile-nav.tsx` passam a mostrar **ambas** as entradas ("Live" + "As minhas conversas") e `save-toast-listener.tsx` os 4 toasts (`resposta_enviada`/`seguimento_enviado` + `live_ligada`/`live_terminada`). Migrations `20260613140000_live_override` + `20260614120000_question_two_states_and_seen` aplicadas a **`logos-dev`**. 613 verdes; lint + typecheck limpos.
+- feat: [14-06-2026] **Q&A simplifica para conversa de 2 estados + "não lido" do aluno** (V3.6 PR5, empilhado sobre PR4) - a conversa deixa de ter 3 estados e passa a **2**: `new` (**Por responder**) / `answered` (**Respondida**). O `archived` é **removido** (a limpeza de spam passa a ser **DELETE** pelo super_admin, não um estado); **qualquer resposta do aluno reabre** a conversa (o trigger `sync_question_status_from_message` perde a guarda do `archived`). **Toda a mensagem escrita avisa ambas as partes por email** (o email é o arquivo de tudo): a resposta da equipa envia ao aluno (`buildAnswerEmail`) **e** cópia interna à caixa da equipa (`buildAnswerTeamCopyEmail`); o seguimento do aluno avisa a equipa (`buildFollowupEmail`) **e** dá recibo ao aluno (`buildFollowupReceiptEmail`) - quando falta um destinatário, o outro email segue na mesma. A lista do aluno (`/perguntas`) ganha **destaque de "não lido"** (conversa `answered` que o aluno ainda não abriu) e o cartão passa a "**Aula - data**" + curso por baixo + excerto de 1 linha, ordenado por actividade recente; o ponto laranja do cabeçalho fica **ciente do "não lido"** (`isConversationUnread`, partilhado). Suporte: coluna `owner_seen_at` + RPC `mark_thread_seen` (SECURITY DEFINER, self-scoped por `current_profile_id()`, com o `now()` da BD - igual ao `updated_at` do trigger, sem desvio de relógio) chamada ao abrir a conversa (`<MarkThreadSeen>`). Inbox de admin passa a 3 tabs (Todas / Por responder / Respondidas); as transições manuais "Marcar como respondida"/"Reabrir" mantêm-se **silenciosas** (sem email). Migration `20260614120000_question_two_states_and_seen.sql` (migra `archived`→`answered`, CHECK a 2 estados, `owner_seen_at`, RPC) - **só `logos-dev`**. Sem dependência nova, sem env nova. 569 verdes.
+- feat: [13-06-2026] **Q&A vira conversa ligada: conversa do aluno + seguimentos** (V3.6 PR4, empilhado sobre PR3) - fecha a fatia: o aluno passa a ter a **sua conversa dentro da app**. Nova rota pública `/perguntas` (lista das conversas do aluno, ordenada por actividade, com estado/código/contexto) e `/perguntas/[code]` (a conversa: pergunta de abertura + balões aluno/equipa + composer de seguimento) - **alvo dos links "ver conversa" dos emails** (que até aqui não tinham destino). `postStudentFollowupAction`: exige login, valida `thread_code` (`isThreadCode`) + corpo (`validateMessageBody`), **resolve a conversa do PRÓPRIO** (filtro explícito `profile_id` - a RLS de admin é permissiva, um admin veria tudo sem o filtro - reforçado pela policy SELECT-own do PR1), rate-limit por utilizador (chave `followup:`, fail-open), **INSERT em `lesson_question_messages`** (`author_role:'student'`, o trigger do PR1 põe `status='new'`, excepto `archived`) e avisa a equipa por email best-effort (`buildFollowupEmail`, Reply-To = aluno). Seguimento permitido mesmo em conversas `archived` (grava + avisa; não reabre - reabrir é acção de admin). Nova entrada de cabeçalho **"As minhas conversas"** (só com sessão, desktop + mobile), com **ponto laranja** quando há conversa em `answered` (a equipa respondeu). Balão extraído para `conversation-bubble.tsx` (partilhado com o admin); etiquetas viradas ao aluno (`QUESTION_STATUS_LABEL_OWNER`: "Em espera"/"Respondida"/"Arquivada"); a vista do aluno nunca revela qual admin respondeu ("Equipa LOGOS"). Docs: SPEC 3.4 + reescrita de `qa-perguntas.md` (modelo de conversa, "Gmail"→Hostinger), handoff `qa-conversa-handoff.md` apagado (consolidado). Sem migration, sem env nova. 558 verdes.
+- feat: [13-06-2026] **Q&A vira conversa ligada: responder no admin** (V3.6 PR3, empilhado sobre #63) - a equipa passa a **responder dentro da Logos** (fim do "responde por email fora da app"). Nova vista de conversa em `/admin/perguntas/[id]`: contexto + estado + `thread_code`, pergunta de abertura e thread em balões (aluno/equipa), e um **composer** ("Enviar resposta") - escondido em `archived` (arquivado = fechado; reabrir primeiro). `postAdminReplyAction` recusa não-admin (regra dura), valida o corpo (`validateMessageBody`), **INSERT em `lesson_question_messages`** (`author_role:'admin'`, o trigger do PR1 põe `status='answered'`) e envia a resposta por email ao aluno best-effort (`buildAnswerEmail`: assunto `Re: A tua pergunta · <curso> [CODE]`, cita a pergunta, assina "Ministério LOGOS - CCLX", âncora de thread; Reply-To = `logos@cclx.pt`). Email do aluno lido on-demand por `profile_id` via service-role (`getAuthEmailByProfileId`, nunca persistido). Cada cartão da inbox ganha "Ver conversa →". Flip do PR2: o email à equipa passa de "Responde a este email" para "Responde dentro da Logos: <link da conversa>" (Reply-To = aluno mantém-se como rede de segurança). Sem migration (a RLS do PR1 já cobre admin SELECT+INSERT), sem env nova. 539 verdes.
+- feat: [13-06-2026] **Q&A vira conversa ligada: cópia ao aluno + código nos emails** (V3.6 PR2, #63, empilhado sobre #62) - ao perguntar, o aluno passa a receber **cópia da própria pergunta** por email (`buildQuestionReceiptEmail`, assinada "Ministério LOGOS - CCLX", com link para a conversa). Todos os emails do mesmo thread levam o **código `[LOGOS-XXXXXX]`** no assunto + `References`/`In-Reply-To` (âncora por conversa) para os clientes de email **agruparem**. `email/send.ts` aceita agora `headers`. `submitQuestionAction` relê o `thread_code` gerado na BD (`.insert().select().single()`, possível pela policy SELECT-own do PR1) e envia 2 emails best-effort (equipa com Reply-To = aluno + cópia ao aluno com Reply-To = `logos@cclx.pt`). Sem migration. Validado no preview. 519 verdes.
+- feat: [13-06-2026] **Q&A vira conversa ligada: schema do thread + RLS** (V3.6 PR1, #62) - mais uma fatia de V5 puxada (decisão do líder): a equipa passa a **responder dentro da app** (resposta vai por email ao aluno) e o aluno pode dar **seguimento**, tudo ligado por um código. Migration `20260613120000_lesson_question_threads.sql` (**só `logos-dev`**): `thread_code` (`LOGOS-XXXXXX`, gerado na BD por `gen_thread_code`) em `lesson_questions`; tabela `lesson_question_messages` (respostas da equipa + seguimentos do aluno, imutáveis); RLS nova - **aluno lê o seu thread e insere seguimentos só no seu**, admin em qualquer, super_admin apaga; trigger `sync_question_status_from_message` conduz o `status` (admin→`answered`, aluno→`new`, `archived` não ressuscita). Domínio: `validateMessageBody`, `MessageAuthorRole`, `THREAD_CODE_RE`. Advisors sem lints novos. Decisões e plano em `feature-docs/qa-conversa-handoff.md`. 512 verdes.
+- feat: [13-06-2026] **Live instantâneo: interruptor admin "Estamos no ar"/"Terminámos" + Supabase Realtime** (V3.6) - a equipa passa a **ligar a transmissão a qualquer hora** a partir de `/admin/live`, sem editar variáveis de ambiente nem janelas de horário. Ao carregar em "Estamos no ar", o servidor faz **um** `search.list` para resolver o `videoId` e grava a linha singleton `live_override` (`{is_live, video_id, armed_until=agora+45min}`); "Terminámos" desliga. **Supabase Realtime** na publicação `supabase_realtime`: quando o interruptor muda, todos os clientes recebem o `postgres_changes` e fazem refetch imediato - o **botão "Live" da nav e o leitor mudam sozinhos em < 1s, sem recarregar** (pedido do utilizador). A subscrição vive em `src/lib/auth/browser-client.ts` (`subscribeToTable`), respeitando o isolamento de identidade (só `src/lib/auth/**` importa o SDK Supabase); **sem env nova** (reutiliza `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`). `useLiveStatus` passa a Realtime + polling 60s de backstop (apanha o fim por `videos.list` e falhas de entrega do Realtime). **Durante a emissão a página `/live` não tem texto** - só o leitor e o botão "Subscrever canal" (pedido do utilizador); o `<h1>` "Live" fica `sr-only` e a mensagem "Obrigado por assistires, a Live terminou." só aparece depois do fim. Novo estado **"a ligar"** no leitor (spinner sem texto) enquanto o `videoId` ainda não resolve. As janelas `YOUTUBE_LIVE_WINDOWS` passam a **fallback opcional** (só contam com o interruptor desligado); `getLiveStatus` mantém-se uma leitura pura (nunca escreve). Migration `20260613120000_live_override.sql` (tabela singleton + RLS de escrita `current_profile_role() in ('admin','super_admin')` + `alter publication supabase_realtime`) - **só `logos-dev`**. Entrada "Live" na nav de admin + toasts `live_ligada`/`live_terminada`. Sem dependência nova. Docs em `feature-docs/live.md` + `.env.example`. 547 verdes.
+- feat: [13-06-2026] **Canal LOGOS ao vivo: entrada "Live" + leitor embebido** (V3.6, **antecipação de V6** - mesmo padrão da antecipação de Q&A/estatísticas, decisão do líder) - nova rota `/live` com a transmissão em direto do canal LOGOS reproduzida **dentro do portal** (`youtube-nocookie`, sem redirecionar). Entrada de nav **"Live"** com 3 estados: ao vivo (clicável, badge vermelho `#FF0000` com ponto a pulsar), offline (cinzento, `aria-disabled`, fora do tab order) e a carregar. Botão "Subscrever canal" (`sub_confirmation=1`) em qualquer estado. **Sem cache em memória** (não funciona em Vercel serverless): o estado vive no **Next.js Data Cache** (`fetch` com `revalidate`), protegido por **janelas de transmissão** (`YOUTUBE_LIVE_WINDOWS`, Europe/Lisbon) para não rebentar a quota da YouTube Data API (`search.list` = 100 unidades; 10.000/dia). **Fail-safe**: fora de janela, sem chave, erro ou quota → `live:false` (offline). `YOUTUBE_API_KEY` só no servidor (Route Handler `/api/youtube/live-status`), nunca no bundle. **Fim de emissão detetado** via `videos.list` (1 unidade, cache 60s): o `search.list?eventType=live` continua a listar uma emissão durante minutos depois de ela terminar, pelo que sem esta confirmação o leitor passava a reproduzir a gravação (VOD) como se ainda fosse live; agora cai para offline assim que a emissão acaba (`liveStreamingDetails.actualEndTime`). Mensagem offline passa a **"Obrigado por assistires, a Live terminou."** e o botão/badge offline ganham contraste legível (`text-muted-foreground` em vez do cinzento-creme quase invisível sobre o header). Sem migration, sem dependência nova. Env novas em `.env.example`; rota `/live` no sitemap (substitui o placeholder `escola-biblica`). Doc em `feature-docs/live.md`. 531 verdes.
+
+### fix
+- fix: [14-06-2026] **Live: leitor embebe o `live_stream` do CANAL, a gravação (VOD) nunca aparece** - o leitor `/live` deixa de embeber um `videoId` específico (`/embed/<videoId>`) e passa a embeber a transmissão do canal (`youtube-nocookie.com/embed/live_stream?channel=<ID>`). A YouTube serve sempre a emissão em curso e, quando ela termina, mostra um ecrã offline - **nunca a gravação**, eliminando a janela (até ~60s entre o fim real e o "Terminámos"/`videos.list`) em que o embed do `videoId` virava VOD e mostrava "uma live que já aconteceu". Mantém-se tudo o resto: interruptor admin `/admin/live`, Supabase Realtime (mudança em <1s), fim forçado por "Terminámos" e o backstop de 60s. O leitor passa de 3 para 2 estados (ao vivo / terminada): o `videoId` continua a ser resolvido no servidor mas só alimenta a deteção de fim, já não o que o leitor mostra. Novo `YOUTUBE_LIVE_EMBED_URL` em `channel.ts`. Sem migration, sem env nova. 613 verdes.
+
+### update
+- update: [13-06-2026] **Q&A das aulas validado ponta-a-ponta no preview de #61** - aluno submete pergunta → toast de sucesso → pergunta aparece na inbox `/admin/perguntas` → **email de notificação com Reply-To = email do aluno**. Curso de teste "Oficina EB - Apocalipse" (publicado, 2 módulos, 3 aulas) em `logos-dev`. Fecha o "Operacional pendente" da feature para dev/preview - só falta repetir as env vars no scope Production com os valores de `logos-prod` + subir as migrations a `logos-prod` no lançamento.
+
+### infra
+- infra: [13-06-2026] **config operacional do Q&A para dev/preview** - env vars `LOGOS_QUESTIONS_TO_EMAIL`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL` e `SUPABASE_SERVICE_ROLE_KEY` definidas no scope **Preview** da Vercel (lêem de `logos-dev`) e no `.env.local`. `SUPABASE_SERVICE_ROLE_KEY` (chave `sb_secret_...` nova de `logos-dev`) validada contra `logos-dev` (RPC `check_rate_limit` respondeu `true`). Domínio Resend `logos.cclx.pt` já Verified (reutilizado do login OTP), logo sem trabalho de DNS.
+- infra: [13-06-2026] **commit vazio para disparar redeploy do preview de #61** (apanha as env vars do scope Preview; sem mudança de código).
+
+### docs
+- docs: [13-06-2026] **guia de ativação operacional do Q&A** em `feature-docs/qa-perguntas-setup-guide.md` - runbook dos passos fora do código: merge dos 3 PRs, domínio Resend, env vars, migrations só no lançamento, smoke test e troubleshooting. A feature degrada com elegância: sem config, a pergunta grava na inbox; a config só acrescenta a notificação por email.
+
+### feat
+- feat: [13-06-2026] **Q&A das aulas: inbox de admin** (V3.5 PR3) - nova área `/admin/perguntas` (nível admin): lista de perguntas em cartões com **filtro por estado** (Todas/Novas/Respondidas/Arquivadas + contagens), pesquisa por aluno/curso/aula/texto, e **triagem** (marcar como respondida, arquivar, reabrir) via `setQuestionStatusAction` (recusa não-admin; RLS + column-scoping a `status` garantem o resto). Entrada "Perguntas" na nav do admin. Migration `20260612230000` acrescenta o snapshot `author_name` a `lesson_questions` (a inbox mostra "quem perguntou" sem depender da RLS de `profiles`, que só deixa super_admin ler perfis de outros) - **só `logos-dev`**. 503 verdes.
+- feat: [13-06-2026] **Q&A das aulas: submissão do aluno + email** (V3.5 PR2) - caixa "Pergunta aos professores" no leitor de aula (flanco esquerdo em `xl+`, no fluxo do artigo em mobile) → Dialog (Base UI) estilo email. `submitQuestionAction`: o cliente envia só `{lessonId, body}`; identidade e contexto (curso/módulo/aula) são re-derivados no servidor; ordem validação → inscrição → rate-limit (5/h, via `check_rate_limit` + cliente service-role) → **INSERT (fonte de verdade)** → **email best-effort** (se o Resend falhar, a pergunta já está guardada). Email via `fetch` à API REST do Resend (**sem dependência nova**), Reply-To = email do aluno. `getCurrentAuthEmail()` lê o email de `auth.users` on-demand (nunca persistido). Env nova `LOGOS_QUESTIONS_TO_EMAIL`. 496 verdes.
+- feat: [13-06-2026] **Q&A das aulas: schema** (V3.5 PR1) - funcionalidade de **V5 antecipada para V3** (decisão do líder). Tabela `lesson_questions` (migration `20260612220000`, **só `logos-dev`**): snapshots de título curso/módulo/aula (inbox legível pós-rename/delete), FK a `profiles.id` (nunca `auth.users`), email do autor **nunca guardado** (vive em `auth.users`). RLS: SELECT só admin; INSERT self + aula-visível (`course_is_visible`); **UPDATE column-scoped a `status`** (`grant update(status)` - body/identidade imutáveis mesmo para admin); DELETE super_admin. Advisors de segurança sem lints novos. Domínio partilhado `src/lib/questions/` (estados + `validateQuestionBody`). 477 verdes.
+
+### update
+- update: [12-06-2026] **leitor: breadcrumbs removidas + descrições na coluna central + botão "Sair do curso"** (V3.4 PR5, pedido do líder). Removida a breadcrumb ("Conteúdos › Curso › Módulo") das páginas de **curso** e **módulo** - a navegação faz-se pela árvore (na aula), pela lista de aulas e pela saída para o curso. A página de módulo (que não tem árvore) ganha um "← Voltar ao curso" no topo, igual à vista de aula. As descrições do **curso** e do **módulo** passam a preencher a coluna central (saíram `max-w-prose`/`max-w-3xl` estreito + `text-justify` + `hyphens-auto`): deixam de ficar encostadas/justificadas e ficam alinhadas com a vista de aula já aprovada. O **"Sair do curso"** (unenroll) deixa de ser um link minúsculo e passa a **botão maior, neutro, com contorno vermelho** (`h-11`, `border-destructive`), mais visível como opção.
+
+### fix
+- fix: [12-06-2026] **leitor de aula: conteúdo principal centrado + sticky da árvore corrigido** (V3.4 PR4, ajuste do líder ao PR2). (1) O vídeo/apostila/descrição ficavam puxados à esquerda porque a árvore deslocava o grupo; agora o artigo fica **centrado na página** via um espelho invisível da árvore à esquerda (`max-w-[84rem]` + flanco `w-64` de cada lado), com a árvore só no lado direito. (2) A árvore sticky enfiava-se por baixo do cabeçalho fixo (h-16), aparecendo cortada a meio: passa de `top-6` para `top-20` (abaixo do cabeçalho) + `max-h-[calc(100vh-7rem)] overflow-y-auto` - o quadrado fica todo visível com margem e faz scroll interno se for mais alto que o ecrã.
+
+### feat
+- feat: [12-06-2026] **cabeçalho do módulo mais limpo** (V3.4 PR3, item 7) - na página de módulo (`/conteudos/[courseId]/modulos/[moduleId]`): removido o eyebrow "Módulo N de M" (a contagem) e o indicador de conclusão solto do cabeçalho; o header fica só **título + descrição** (descrição também passa a alinhada à esquerda, sem `text-justify`). A informação "{x}/{total} concluídas" + "✓ concluído" muda-se para **ao lado do título "Aulas"** da secção. Breadcrumb mostra o título do módulo em vez de "Módulo N". Sem mudança de lógica (apresentacional). 461 verdes.
+- feat: [12-06-2026] **leitor de aula: árvore de navegação + layout** (V3.4 PR2, itens 3-6). (3) Nova **árvore de navegação à direita** (`lesson-tree.tsx`, só `xl+`, sticky) com módulos colapsáveis, aula atual destacada e ✓ nas aulas concluídas - espelho público da `CourseTree` do admin; carrega o estado de conclusão de todo o curso. (4) Descrição da aula passa a **alinhada à esquerda** numa coluna legível (`max-w-3xl`, sem `text-justify`/`hyphens-auto` - o justify em coluna estreita criava o efeito "atira para a direita"). (5) Navegação inferior passa a **módulo-scoped** (`getModuleLessonNavigation` em `detail.ts`): a última aula do módulo deixa de mostrar "Próxima aula" (a passagem entre módulos fica para o banner de conclusão + a árvore); a nav inferior só renderiza se houver anterior ou próxima. (6) **Breadcrumb do topo removido** e substituído por um botão claro "← Voltar ao curso". Testes novos: `getModuleLessonNavigation` (5) + `lesson-tree` (3). 469 verdes.
+- feat: [12-06-2026] **modelo de aula só-vídeo (`video`)** (V3.4 PR1) - uma aula passa a poder ser `pdf` (só apostila), `video` (só vídeo do YouTube) ou `video_pdf` (ambos). DB: migration `20260612120000_lessons_video_only_template.sql` relaxa os CHECK de `lessons` (apostila deixa de ser sempre obrigatória; vídeo passa a exigir `youtube_url`; só-vídeo guarda `pdf_storage_path = null`) - **só `logos-dev`**. Server Actions (`createLessonAction`/`updateLessonAction`) validam YouTube quando o template tem vídeo e PDF quando tem apostila; trocar para `video` limpa o path e remove o ficheiro do bucket best-effort. **Form de aula condicional** (item 2): novo Client Component `lesson-form.tsx` mostra só os campos do template escolhido (só PDF → ficheiro; só vídeo → URL; ambos → os dois). Leitor de aula renderiza vídeo/apostila conforme o template; etiquetas dos 3 modelos no admin (`só pdf`/`só vídeo`/`vídeo + pdf`) e no leitor (`pdf`/`vídeo`/`vídeo + pdf`, via `template-label.ts`). SPEC bump 3.2; tipos `LessonTemplate` + `pdf_storage_path` nullable em `detail.ts`. 461 verdes.
+
+### add
+- add: [11-06-2026] **login por email OTP validado ponta-a-ponta** em `logos-dev` - o caminho que estava inerte desde a PR #49 ficou operacional. SMTP custom do **Resend** ligado no Supabase (domínio `logos.cclx.pt` Verified, região `eu-west-1`; DKIM/SPF/MX confirmados no DNS - registos guardados em `email-otp-setup-guide.md` Parte B), rate limit de email subido de 2/h para 30/h (só possível com SMTP custom), templates Magic Link + Confirm signup com `{{ .Token }}`, e **Turnstile** ativo. Fluxo `/entrar` → email → código de 6 dígitos → entrar a funcionar; primeiro login com email novo cria linha em `profiles`. Pendentes #1 e #2 do handoff fechados.
+
+### fix
+- fix: [11-06-2026] **Turnstile carregava mas nunca resolvia ("não foi possível conectar ao site")** - a CSP permitia o script (`script-src`) e a frame (`frame-src`) do `challenges.cloudflare.com` mas faltava no **`connect-src`**, por isso o fetch que valida o desafio era bloqueado: desafio emitido, nunca resolvido, e o envio de OTP falhava por `captcha_token` em falta/inválido. `next.config.ts` ganha `https://challenges.cloudflare.com` no `connect-src`; teste de `connect-src` em `security-headers.test.ts` passa a exigir o domínio. (O sintoma somava-se a um segundo problema do utilizador: testar no URL único do deployment, fora dos hostnames do widget - resolve-se usando o alias da branch.)
+
+### update
+- update: [11-06-2026] **CTAs de login dos estados anónimos vão para `/entrar` (login geral), não direto ao Google**. Em "não autenticado", a home, a página de curso e "Os meus cursos" mostravam botões "Continuar com Google" que iniciavam o OAuth do Google diretamente - escondiam o login por email. Passam a um CTA único para `/entrar?next=...` (a página que junta Google + email OTP), com nome geral: "Entrar" (home + meus cursos) e "Entrar para começar" (página de curso). Novo componente `SignInCta` (link `<Link>` para `/entrar`, com prefetch seguro - ao contrário do `ProviderSignIn`, que vai direto a um provider e fica só na `/entrar`). Copy de "Os meus cursos" perde "com a tua conta Google". 3 testes adaptados (home, meus-cursos, start-course-cta) - href passa de `/auth/login/google?next=` para `/entrar?next=`.
+
+### feat
+- feat: [11-06-2026] **cabeçalho mostra só a parte antes do `@` para utilizadores de email** - quem entra por email OTP tem o email como `display_name`, e o cabeçalho mostrava "Olá, joao@gmail.com" / "Sessão de joao@gmail.com". `user-menu.tsx` ganha um helper `localPart` que tira o domínio na camada de apresentação (no-op para utilizadores de Google, que têm nome real). Teste novo para o caso do email.
+
+### docs
+- docs: [11-06-2026] **handoff de pendentes pré-lançamento** em `feature-docs/pre-lancamento-handoff.md` (OTP, Resend SMTP, lançamento). Registos DNS Resend confirmados salvados para `email-otp-setup-guide.md` (Parte B) a partir do draft #52, que foi fechado por ter base antiga e enquadramento errado para V3 (dava Resend como adiado para V5 / login Google puro).
+
+### sec
+- sec: [11-06-2026] **revisão de segurança V3 pré-lançamento** (`pnpm audit` + Supabase advisors + column-scoping das policies UPDATE + código de auth novo). Achados corrigidos: (1) 4 vulns moderate em `hono` (transitiva do CLI `shadcn`, tooling) - pnpm override `>=4.12.21` + `shadcn` movido para devDependencies, audit a zero; (2) `count_registered_users()` deixa de estar executável por `anon` via RPC (gate interno já existia; REVOKE reduz superfície); (3) **column-scoping em `course_access_log`** - a policy UPDATE own limitava a linha mas não as colunas (dava para falsificar `course_id`/`accessed_at` via REST); GRANT passa a cobrir só `unenrolled_at`, a única coluna que a app escreve; (4) `search_path` fixo em `set_updated_at()`. Migration `20260611120000_security_review_hardening.sql`. Falsos-positivos dos advisors documentados (helpers RLS para anon/authenticated, `delete_own_account`, `rate_limit` deny-all, leaked-password N/A sem palavras-passe). Relatório completo em `feature-docs/revisao-seguranca-v3.md`. 457 verdes.
+
+### update
+- update: [11-06-2026] copy de `/entrar` sem "É sempre gratuito." (edição manual do líder do projeto).
+
+### fix
+- fix: [10-06-2026] **login Google rebentava com "This page couldn't load" (500)** - o botão "Entrar" do cabeçalho dava erro de página em vez de ir para o Google (bug desde a PR #49; o botão da home funcionava porque era um `<form action>`, que o React sabe seguir, ao passo que o dropdown chamava a action *programaticamente* via `startTransition`). Causa raiz: iniciar o OAuth dentro de uma **Server Action** termina num `redirect()` para um URL **externo** (o do provider); quando a action é invocada pelo cliente, o Next 16 rebenta com `Error: Connection closed.` (500). Reproduzido no preview: caminho no-JS dava 303 (ok), invocação programática 500. **Fix definitivo:** o início do OAuth passa a ser um **route handler** `src/app/auth/login/[provider]/route.ts` que devolve um **307 HTTP real** para o provider (route handlers redirecionam para externo sem problema, ao contrário de Server Actions); os botões de login passam a **simples `<a>`** para `/auth/login/google?next=...`. Funciona com ou sem JS, sem hidratação nem o dropdown que se desmonta. `signInWithGoogleAction` removida de `actions.ts`; `getOrigin`/host-allowlist extraídos para `src/lib/auth/origin.ts` (partilhados); `providers.ts` deixa de referenciar a action (registry `{slug,label}` + `isSignInProvider` + `providerLoginHref`); `ProviderSignIn` e `SignInButton` viram links. Testes: novos `route.test.ts` (307 para o provider, provider inválido, next externo descartado, erro Supabase) + `origin.test.ts` (allowlist, fallback de headers, host-injection); 4 adaptados (button → link + href). 448 → 457 verdes. **Adenda:** o botão "Entrar" do cabeçalho deixou de ser dropdown (Base UI) e passou a um **`<Link>` directo para `/entrar`** - mais simples e sem qualquer dependência de navegação de item-de-dropdown; a página `/entrar` já junta Google + email OTP.
+- fix: [10-06-2026] **CSP bloqueava o Supabase Storage - banners e apostilas PDF "desapareciam"**. Regressão silenciosa do port de hardening (#47): a paridade foi verificada contra `main`, mas `main` (V2) não tem banners de cursos nem visualizador inline de apostilas. `img-src` não permitia as signed URLs dos banners (`course-banners`, renderizados por `<CourseImage>` com `unoptimized` no catálogo, `/meus-cursos`, landing do curso e preview do admin) e `frame-src` só permitia YouTube + Turnstile, bloqueando o iframe da apostila (`lesson-pdfs`) na página de aula. `next.config.ts` ganha `https://*.supabase.co` nas duas directivas (wildcard cobre `logos-dev` e `logos-prod` sem acoplar a CSP a env vars - mesmo racional do `connect-src`). Teste de regressão novo `src/test/security-headers.test.ts` pina as origens externas de cada directiva + o conjunto completo de headers. 440 → 445 verdes.
+
+### update
+- update: [10-06-2026] **nomes dos autores repostos nos testemunhos da home** - ordem do líder (a anonimização de 04-06-2026 tinha ficado "os 3 não fazemos sem ordem"; a ordem chegou). `home-testimonials.tsx` recupera `author` + `<figcaption>` (estrutura pré-anonimização); nome do 3.º testemunho passa ao completo: **Raniere Bruno** (era só "Raniere"). Teste de anonimato invertido - passa a verificar os 4 nomes (Bernardo Degues, Sara Narciso, Raniere Bruno, André Mata). 445 verdes (sem mudança líquida).
+- update: [10-06-2026] **CTAs da página de curso: copy + destino mais claros**. (1) Vista "não inscrito": o botão passa de "Começar curso" para **"Adicionar a “Meus cursos”"** (com ícone +) - inscrever não navega para nenhuma aula, acrescenta o curso a `/meus-cursos`. (2) Vista "inscrito": "Começar curso" (sem progresso) e "Continuar curso" (com progresso) ganham uma segunda linha com o **nome da aula de destino** ("Primeira aula: X" / "A seguir: X"). (3) "Continuar curso" deixa de ir sempre para a primeira aula do curso e passa a retomar na **primeira aula não concluída** - novo helper puro `getFirstIncompleteLesson` em `completion.ts` (com set vazio devolve a primeira aula, por isso serve os dois CTAs; fecha a intenção anotada no docstring de PR6/PR7). `getFirstLessonOfCourse` removido de `detail.ts` (ficou morto). Testes: 4 novos do helper + 1 novo do CTA de inscrição + asserts do nome da aula no `start-course-cta`; 3 do helper removido saem. 445 → 447 verdes.
+
+### docs
+- docs: [10-06-2026] **runbook de configuração externa do email OTP** em `feature-docs/email-otp-setup-guide.md`: passo-a-passo do zero - conta Resend + domínio `logos.cclx.pt` (região EU), registos DNS (MX/SPF/DKIM/DMARC) na Hostinger com os nomes relativos certos, API key, SMTP custom + provider Email + **templates com `{{ .Token }}` em PT-PT** (por default o Supabase envia link, não código - Magic Link **e** Confirm signup) + rate limits em `logos-dev`, widget Turnstile (site key no deploy **antes** do secret no Supabase, senão o envio de OTP parte) e smoke test. Checklist de lançamento para `logos-prod`. `email-otp-login.md` §0/§5 e o bloqueador em `status.md` passam a apontar para o guia.
+
+### update
+- update: [10-06-2026] **login com Microsoft (Entra/Azure) removido** - decisão do líder: os métodos de login passam a ser só **Google + email OTP**. O código Microsoft (adicionado a 04-06-2026) chegou a estar pronto na PR #49, mas o provider Azure nunca foi configurado no Supabase; foi retirado antes do merge. `src/lib/auth/actions.ts`: sai `signInWithMicrosoftAction` + o helper genérico `signInWithProvider` + o map `PROVIDERS`/`OAuthProvider`; `signInWithGoogleAction` passa a fazer o `signInWithOAuth({ provider: 'google' })` diretamente. `src/lib/auth/providers.ts`: registry `SIGN_IN_PROVIDERS` fica só com Google (slug `'google'`). Copy ajustada em `/entrar` (metadata) e `/meus-cursos` (estado anónimo). `feature-docs/microsoft-oauth-setup.md` apagado; SPEC bump 3.0 → 3.1; CLAUDE/architecture/status/supabase/email-otp-login reconciliados. Tests: 4 ficheiros ajustados (`provider-sign-in`, `page`, `meus-cursos-content`, `start-course-cta`) - deixam de exigir o botão Microsoft. 440 verdes.
+
+### add
+- add: [07-06-2026] **login por email + código (OTP) implementado**. Terceiro método de login (passwordless, código de 6 dígitos via SMTP do Supabase/Resend) para quem não tem Google nem Microsoft. Server Actions `sendEmailOtpAction` / `verifyEmailOtpAction` em `src/lib/auth/actions.ts` (2 passos via `useActionState`; verificação faz `redirect(safeNextPath)`, anti-enumeration no envio). Componente `email-otp-sign-in.tsx` (email → código, reenviar, usar outro email) + `turnstile-widget.tsx` (captcha gated por `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, inerte se ausente). Rota dedicada `/entrar?next=` junta providers OAuth + "ou" + OTP; item "Email (código)" no dropdown "Entrar". **Fica inerte até configurar SMTP/Resend + Email provider no Supabase** (`feature-docs/email-otp-login.md` §5/§6). Rate-limiting via `check_rate_limit` adiado (precisa de cliente service-role); proteção ativa = Turnstile + rate-limit nativo do Supabase. Handoff `email-otp-handoff.md` apagado. Tests: `email-otp-actions.test.ts` (9) + `email-otp-sign-in.test.tsx` (3). 425 → 437.
+- add: [04-06-2026] **login com Microsoft (Entra/Azure) além de Google**. A pedido do líder do projeto; override consciente da regra "Google OAuth apenas" (SPEC §17/§18 + CLAUDE.md atualizados; SPEC bump 2.9 → 3.0). Apple ficou de fora por exigir Apple Developer Program (~99 USD/ano). `src/lib/auth/actions.ts` ganha helper genérico `signInWithProvider(provider)` + wrappers `signInWithGoogleAction` / `signInWithMicrosoftAction` (Microsoft = slug `azure`, com `scopes: 'email'`). Novo componente reutilizável `src/components/site/provider-sign-in.tsx` (par de botões Google + Microsoft num só `<form>` com `next` partilhado via `formAction`). Aplicado em hero, `/meus-cursos` (estado anónimo), CTA de começar curso e vista anónima de `/conteudos/[courseId]`. `SignInButton` do cabeçalho passa a dropdown com os dois providers. **O código fica inerte até o provider Azure ser configurado no painel Supabase** (`logos-dev` e, no lançamento, `logos-prod`) - passo-a-passo em `feature-docs/microsoft-oauth-setup.md`. Tests: novo `provider-sign-in.test.tsx` (3) + ajustes em `page.test.tsx`, `meus-cursos-content.test.tsx`, `start-course-cta.test.tsx`.
+
+### update
+- update: [04-06-2026] **testemunhos do carrossel da home anónimos**, alinhados com a versão em produção (V2/`main`). Os 4 quotes mantêm-se; removidos os nomes de autor (`author`/`<figcaption>`) que tinham sido acrescentados em `v3-cursos`. `home-testimonials.tsx` + teste atualizado (passa a verificar anonimato).
+
+### fix
+- fix: [09-06-2026] **error boundary global em PT-PT** (`src/app/error.tsx`): a app não tinha nenhum `error.tsx`, e as Server Actions de OAuth fazem `throw` quando o `signInWithOAuth` falha - exatamente o que acontece hoje ao clicar "Entrar → Microsoft" com o provider Azure ainda por configurar no Supabase. O utilizador caía na página default do Next ("Application error...") em inglês e sem saída; agora cai numa página da casa com "Tentar novamente" (reset) + "Voltar ao início". 3 testes novos. Achado da revisão local da PR #49 (fallback do ultrareview que excedeu 30 min na cloud).
+- fix: [09-06-2026] **poll do Turnstile com limite** (`turnstile-widget.tsx`): quando o script existe no DOM mas nunca carrega (adblocker, rede), o `setInterval` de 200ms pollava indefinidamente enquanto o componente estivesse montado. Agora desiste ao fim de ~15s.
+- fix: [09-06-2026] **CSP permite o Cloudflare Turnstile** (`next.config.ts`): `script-src` e `frame-src` ganham `https://challenges.cloudflare.com`. Sem isto, quando o Turnstile fosse ativado (site key + Supabase), o browser bloqueava silenciosamente o script `api.js` e o iframe do desafio - o captcha nunca renderizava e o envio de OTP falhava com captcha obrigatório. Detetado em revisão local do commit OTP.
+- fix: [09-06-2026] **"Reenviar código" deixa de reutilizar o token Turnstile consumido**. Tokens Turnstile são de uso único: o do 1º envio já foi gasto, e o reenvio submetia-o outra vez (falharia sempre que o captcha estivesse ativo no Supabase). O form de reenviar passa a montar um `TurnstileWidget` próprio (renderiza `null` sem site key - zero impacto até o captcha existir) e o widget limpa o token ao desmontar (`onVerify('')`), para nenhum form submeter token obsoleto de outro passo.
+
+### update
+- update: [09-06-2026] **registry único de providers de login** (`src/lib/auth/providers.ts`): `SIGN_IN_PROVIDERS` passa a alimentar o `<ProviderSignIn>` e o dropdown "Entrar" do cabeçalho - adicionar/remover um provider é um wrapper em `actions.ts` + uma entrada na lista, sem tocar nos componentes. (Vive fora de `actions.ts` porque ficheiros `'use server'` só exportam funções async.)
+- update: [09-06-2026] **fluxo OTP reutiliza `SubmitButton`**: os dois submits de `email-otp-sign-in.tsx` deixam de duplicar à mão o estilo do botão primário + estado pending (spinner via `useFormStatus`); `PRIMARY_BTN` removido. O reset de `forceEmailStep` migrou do `onClick` do botão para o wrapper da action do form.
+- update: [09-06-2026] `signInWithProvider` paraleliza `getServerClient()` + `headers()` (independentes; eram sequenciais no caminho de login).
+
+### docs
+- docs: [09-06-2026] `architecture.md` reconciliado com o login por email OTP (diagrama §1, §4 autenticação com o fluxo de 2 passos + Turnstile, §8 DNS: SPF/DKIM Resend deixa de ser "adiado V5+" e passa a pré-condição do OTP). Lacuna deixada pelo commit do OTP, que atualizou SPEC/CLAUDE/changelog/status mas não a arquitetura.
+- docs: [04-06-2026] **plano de login por email + código (OTP passwordless via Resend)** - decisão fechada de avançar (terceiro método de login para quem não tem Google/Microsoft, sem sistema de palavras-passe). Plano completo + setup Resend/SMTP/DNS/Turnstile em `feature-docs/email-otp-login.md`; handoff para implementação em `feature-docs/email-otp-handoff.md`. SPEC §17/§18/§19 atualizada (OTP entra em âmbito; password continua fora). Implementação por fazer.
+- docs: [04-06-2026] apagar handoff stale `feature-docs/v3-3-handoff.md` (listava PR5-PR8 como pendentes quando já estavam mergeadas: #38/#40/#41/#42/#43) e substituir pela entrada definitiva `feature-docs/v3-3-iteration.md`. Secção "Em progresso" do `status.md` reconciliada: V3.1/V3.2/V3.3 todas fechadas em código + DB; pré-requisitos sequenciais confirmados como adiados para V4. Bloqueador residual ao merge `v3-cursos → main` continua a ser testemunhos do ministério + smoke no preview.
+
+### add
+- add: [02-06-2026] portar para `v3-cursos` o hardening de segurança da V2.5 (agora em prod). Cherry-pick dos 4 commits de segurança (sem o RGPD nem o copy/UX): headers HTTP + CSP enforcing + host allowlist (`next.config.ts`), patch Next 16.2.4 -> 16.2.6 + overrides pnpm (postcss/qs/brace-expansion), REVOKE EXECUTE nos helpers SECURITY DEFINER, lockdown da política UPDATE de `profiles`, rate limiter Postgres (`check_rate_limit`), fix de open-redirect em `next` (`src/lib/auth/redirect.ts`) e hardening do `getOrigin` contra host-header injection. Paridade de conteúdo verificada contra `main`. `bodySizeLimit` reconciliado para 25mb (a v3 faz upload de PDFs; o limite do Next é global, não por-action). 422/422 testes verdes. Caveat de migrações em `feature-docs/seguranca-port-v3.md`. (`sec/portar-seguranca-v2.5-para-v3`)
+
+### infra
+- infra: [09-06-2026] **CI passa a correr em PRs contra `v3-cursos`** (e push à branch). Desde 19-05 todas as PRs de V3 (#38-#49) abriam contra `v3-cursos` sem nenhum check de CI - só pipeline local. A razão original de limitar a `main` (poupar minutos do plano gratuito) caducou quando o repo passou a público (Actions gratuito/ilimitado em repos públicos). `ci.yml` + `feature-docs/ci.md` §2 atualizados. Check informativo (sem branch protection em `v3-cursos`).
 - add: repositório GitHub privado inicial
 - add: estrutura de documentação (`CLAUDE.md`, `architecture.md`, `status.md`, `feature-docs/`)
 - add: `.env.example` com placeholders Supabase + Resend
@@ -19,54 +145,782 @@
 
 ---
 
-## [02-06-2026] — V2.5 segurança/legal: rate limiter + RGPD (privacidade + apagar conta)
-
-Trabalho de conformidade legal e hardening na branch `launch/v2.5-security`, condição de lançamento para um site português que recolhe dados pessoais.
-
-**Conformidade RGPD (mínimo legal).** Análise concluiu que o único item *obrigatório por lei* é a Política de Privacidade (RGPD art. 13.º, dever de informação); Termos, banner de cookies e página `/cookies` separada **não** são exigidos (só cookies essenciais + analytics cookieless dispensam consentimento). Implementado o mínimo + o botão de apagar conta pedido pelo ministério. Responsável pelo tratamento: **CCLX - Comunidade Cristã de Lisboa**; contacto de privacidade: `logos@cclx.pt`.
-
-**Direito ao apagamento (art. 17.º)** via função `delete_own_account()` `SECURITY DEFINER`: resolve o alvo por `auth.uid()` (nunca aceita id, logo ninguém apaga conta de terceiros), apaga `profiles` antes de `auth.users` (FK `ON DELETE RESTRICT`), EXECUTE só para `authenticated`. Mesmo padrão de lockdown do `rate_limit` e dos helpers.
+## [30-05-2026] — Estatísticas: pesquisa + ordenação nas tabelas (INP-safe)
 
 ### add
-- add: `supabase/migrations/20260602100000_delete_own_account.sql` — função `delete_own_account()` (RGPD art. 17), SECURITY DEFINER com `search_path` fixo, EXECUTE revogado de public/anon e concedido só a `authenticated`.
-- add: `src/app/privacidade/page.tsx` — Política de Privacidade PT-PT (server component) com as 9 secções do art. 13.º: responsável, dados e finalidade, fundamento jurídico, subcontratantes (Supabase/Vercel/Google/Resend), transferências internacionais, cookies (só essenciais, sem banner), conservação, direitos do titular (+ link para apagar conta e CNPD), alterações.
-- add: `src/components/site/delete-account-button.tsx` — botão de apagar conta com confirmação em dois passos (`role="alertdialog"`), no `/perfil`.
-- add: `src/lib/auth/actions.ts` → `deleteAccountAction()` — chama a RPC `delete_own_account`, termina sessão e redireciona para a home; lança sem terminar sessão se a RPC falhar.
-- add: `src/lib/auth/actions.test.ts` — 3 testes (wiring da RPC + signOut + redirect; RPC sem id de alvo; falha da RPC não termina sessão).
-- add: `supabase/migrations/20260530170000_rate_limit.sql` — rate limiter fixed-window em Postgres (`check_rate_limit()`), commitado nesta ronda. Primitiva de DB; caller na app ainda por ligar.
+- **`SortableStatsTable`** (`src/components/admin/sortable-stats-table.tsx`) — tabela cliente reutilizável com **pesquisa** (opcional) e **ordenação por coluna** (clicar no cabeçalho alterna asc/desc; numéricas começam do maior). Filtro usa `useDeferredValue` para **não bloquear a escrita** (INP saudável à medida que as listas crescem). Lógica pura em `src/lib/stats-table.ts` (`filterAndSortStatRows`; 5 testes).
+- Aplicado a: **overview por curso** (pesquisa por título; ordena por acessos/inscritos/finalizações/etc.), **detalhe do curso** (módulos e aulas; pesquisa de aulas; ordena por visitas/conclusões), e **por utilizador** (pesquisa por nome/papel; ordena por inscritos/terminados). A lista por-utilizador deixa de usar `ListSearch` (passa a ter também ordenação).
 
-### update
-- update: `src/app/perfil/page.tsx` — nova secção "Apagar conta" com `<DeleteAccountButton />` e link para a Política de Privacidade.
-- update: `src/components/site/footer.tsx` — link para `/privacidade`.
-
-- add: `src/components/site/home-hero.tsx` → aviso de consentimento no CTA de login (art. 13.º, ponto de recolha): "Entras com a tua conta Google. Ao continuar, aceitas a Política de Privacidade."
+### fix
+- Resposta ao aviso de **INP** na pesquisa: as tabelas de estatísticas filtram de forma diferida (não-bloqueante). A pesquisa do catálogo `/conteudos` já era server-side (form GET), não filtra por tecla.
 
 ### infra
-- infra: migrações aplicadas. **`logos-dev`** — só a nova `delete_own_account` (as de segurança já lá estavam via linha V3, sob outros timestamps). **`logos-prod`** — sequência pendente completa aplicada em ordem (`role_mutation_authority`, `revoke_execute...`, `profiles_update_lockdown`, `rate_limit`, `delete_own_account`), com a **versão exata de cada ficheiro** registada em `schema_migrations` (histórico de prod passa a coincidir com o repo). Advisor de segurança de prod: só avisos esperados.
-
-### docs
-- docs: `feature-docs/legal-privacidade.md` — decisão de âmbito (o que a lei obriga vs. recomendado), conteúdo da política, arquitetura do apagamento (+ caveat V3 dos FK `RESTRICT`), e o que falta a cargo da organização (DPAs com subcontratantes).
-- docs: `feature-docs/legal-pendencias.md` — checklist do que falta para conformidade plena (aviso de consentimento ✅, DPAs, RAT, art. 9.º categorias especiais, procedimento de violação de dados, menores, caveat V3 do apagamento).
+- Só em `v3-cursos`. Sem migration.
 
 ---
 
-## [26-05-2026] — V2.5: vídeo de apresentação na home (antes dos testemunhos) + copy final
-
-Acrescento à home — um vídeo de apresentação único do LOGOS posicionado **entre `HomeMotto` e `HomeTestimonials`**. Hosting decidido como **YouTube em modo "não listado"** no canal LOGOS / CCLX, embebido por iframe (`youtube-nocookie.com`, `loading="lazy"`, `referrerPolicy="strict-origin-when-cross-origin"`). Mantém-se a regra dura de `CLAUDE.md` §🚫: sem ficheiros de vídeo no sistema. A configuração reduz-se a uma constante `DEFAULT_VIDEO_ID` no componente; vazio renderiza placeholder em paleta laranja.
-
-Confirmação do ministério: **toda a copy de V2.5 é final**. Único bloqueio de copy restante antes do merge a `main` é o conteúdo dos testemunhos do carrossel (`feature-docs/v2-copy-and-conteudos.md` §8 actualizado).
-
-> Nota: a primeira iteração desta sessão colocou o vídeo no topo de `/conteudos`. O utilizador corrigiu o destino para a home. `/conteudos` voltou ao estado pré-acrescento; só ficou a versão home.
+## [30-05-2026] — Estatísticas profundas (puxar V5), fase 2: detalhe por curso + por utilizador
 
 ### add
-- add: `src/components/site/home-presentation-video.tsx` — client component `<HomePresentationVideo />` com iframe YouTube (`youtube-nocookie`) e placeholder "Vídeo de apresentação em preparação" quando o ID está vazio. `<motion.section>` com `aria-label`, max-w-5xl, `aspect-video` 16:9, integrado no stagger via `staggerContainer`/`staggerItem`.
-- add: `src/components/site/home-presentation-video.test.tsx` — cobre `aria-label` da section, placeholder com `videoId=""` e iframe com `src` correcto + `loading="lazy"` + `allowFullScreen` quando `videoId="dQw4w9WgXcQ"`.
-
-### update
-- update: `src/app/page.tsx` — renderiza `<HomePresentationVideo />` entre `<HomeMotto />` e `<HomeTestimonials />`. Sem props; usa o `DEFAULT_VIDEO_ID` do componente.
+- **Detalhe por curso** `/admin/estatisticas/cursos/[courseId]` (admin+) — cards (inscritos, finalizações, acessos, únicos), **módulos e aulas ordenados por visitas** (visitas/únicos/conclusões via `lesson_views` + `lesson_completions`), e **"Quem terminou"** com nomes+datas **só para super_admin** (admin normal vê só a contagem). `src/lib/courses/stats-detail.ts` (`aggregateCourseDetail` + `buildFinishers` com gate de papel; 6 testes).
+- **Por utilizador** `/admin/estatisticas/utilizadores` + `/[id]` (**só super_admin**) — lista pesquisável com nº de cursos inscritos/terminados; detalhe com cursos inscritos (activos) e terminados (com datas). `src/lib/courses/stats-users.ts` (`aggregateUsersOverview`, `aggregateUserDetail`, `activeEnrollmentKeys`; 4 testes). Link "Ver por utilizador →" no overview (super_admin).
+- Linhas do overview passam a ligar a `/admin/estatisticas/cursos/[id]`.
 
 ### docs
-- docs: `feature-docs/v2-copy-and-conteudos.md` §9 nova (vídeo de apresentação na home — decisão de hosting YouTube unlisted, ficheiros, passo único de configuração, verificações). §8 actualizada: cards de cursos do `/conteudos` marcados como copy final; único bloqueio de copy restante é o conteúdo dos testemunhos.
+- `SPEC_1.md` §9/§10 — dashboard de estatísticas (contagens) marcado como **puxado de V5 para V3** (30-05); ficam em V5 só as taxas/percentagens e segmentação por etiqueta.
+- `feature-docs/admin-estatisticas.md` — secção de detalhe profundo + regras de PII/papéis.
+
+### infra
+- Só em `v3-cursos`. Sem migration nova (usa `lesson_views`/RPC da fase 1, já em `logos-dev`).
+
+---
+
+## [30-05-2026] — Estatísticas profundas (puxar V5), fase 1: visitas + overview expandido
+
+> Decisão de scope: o "dashboard de estatísticas mais profundo" é V5 (SPEC_1.md §9). Foi **puxado para o período de V3** a pedido do utilizador. Só quantidades — sem percentagens/taxas (respeita "sem percentagens até V7") nem segmentação por etiqueta (fica V5).
+
+### add
+- Migration `20260530130000_stats_deep_v5.sql`: tabela **`lesson_views`** (visitas a aulas; RLS SELECT admin, INSERT self, imutável) + função **`count_registered_users()`** SECURITY DEFINER (devolve só a contagem de `profiles`, e só a admins — sem expor PII).
+- **Instrumentação de visitas:** `logLessonViewAction` (best-effort) em `access-actions.ts` + `<LessonViewBeacon>` (client, dispara uma vez no mount) montado na página de aula.
+- **Overview expandido** (`/admin/estatisticas`): novo card **Utilizadores registados** (via RPC; "—" se indisponível) e, na tabela por curso, novas colunas **Inscritos** (inscrições activas via row mais recente do `course_access_log` com `unenrolled_at IS NULL`) e **Finalizações** (`course_completions` por curso). `aggregateOverview` estendida (+3 testes; 9 no total).
+
+### infra
+- Só em `v3-cursos`. Migrations a aplicar a `logos-dev` (nunca `logos-prod`).
+
+---
+
+## [30-05-2026] — super_admin pode promover a super_admin (pela UI)
+
+### add
+- **Promoção a super_admin pela UI** em `/admin/utilizadores` — botão "Promover a super admin" (só super_admin, só sobre alvos não-super) + confirmação inline (`?promover-super=<id>`, mesmo padrão URL-driven do `?apagar=` das etiquetas) a avisar que **é irreversível pela interface**.
+- Migration `20260530120000_allow_super_admin_promotion.sql` — recria `enforce_profiles_role_mutation_authority()` para aceitar `NEW.role = 'super_admin'`. **Mantém** o bloqueio de alterar um super_admin existente (`OLD.role = 'super_admin'`) → despromover continua só-SQL (evita lock-out).
+- `setUserRoleAction` aceita `newRole = 'super_admin'` (mantém: caller super_admin, alvo não-super, não-próprio).
+
+### docs
+- `feature-docs/auth-architecture.md` §5.1 — nota sobre promoção a super_admin via UI vs demoção só-SQL.
+
+### infra
+- Só em `v3-cursos`. Migration aplicada a `logos-dev` (nunca `logos-prod`).
+
+---
+
+## [30-05-2026] — Estatísticas admin: vista agregada (V3-básico)
+
+### add
+- **Nova página `/admin/estatisticas`** (admin + super_admin) — visão geral da utilização num só sítio: 5 cards de totais (cursos publicados/rascunhos, acessos totais, utilizadores activos, aulas concluídas, cursos concluídos) + tabela-resumo por curso (acessos, únicos, conclusões de aulas) com cada linha a ligar para `/admin/conteudos/<courseId>`. Link "Estatísticas" na sidebar admin (a seguir a Conteúdos).
+- **`src/lib/courses/overview-stats.ts`** — `aggregateOverview()` (função pura, 7 testes) + `getAdminOverview()` (6 SELECTs agregados em JS). "Utilizadores activos" = `count(distinct user_id)` de `course_access_log` (admin-safe; `profiles` só dá SELECT a super_admin). Sem N+1 — um SELECT por tabela.
+- **`src/components/admin/stat-card.tsx`** — `StatCard` extraído de `course-stats-content.tsx` e partilhado pelas duas vistas (DRY).
+
+### docs
+- Fronteira de versão respeitada: o **dashboard profundo** (taxas de conclusão %, segmentação por etiqueta, tendências, export) é **V5** (SPEC_1.md §9) e fica deferido. Esta entrega é só "estatísticas básicas visíveis ao admin" (V3).
+
+### infra
+- Só em `v3-cursos` (V3 — não toca em `v2.5-copy-ux` nem `main`). Sem migration: UI read-only sobre tabelas existentes; RLS de admin já dá SELECT.
+
+---
+
+## [29-05-2026] — Copy final do ministério: carrossel + hero (v2.5 + v3)
+
+### update
+- `src/components/site/home-testimonials.tsx` — carrossel redesenhado para **um testemunho por slide** em cartão **largo horizontal** (ícone `Quote` à esquerda + citação/autor à direita em ≥sm; empilha em mobile). `basis-full` (deixa de mostrar 2/3 cards lado a lado), `align: 'center'`, autoplay 5,5s → 6,5s (textos mais longos, um de cada vez). Cada testemunho ganha `author`.
+- **4 testemunhos finais do ministério** (substituem placeholders): Bernardo Degues, Sara Narciso, Raniere e o novo **André Mata**.
+- `src/components/site/home-hero.tsx` — subtítulo do hero passa de "O ministério LOGOS é o espaço da CCLX..." para **"Cursos, Apostilas e o teu ritmo — Sempre gratuitos."**
+- Testes: `home-testimonials.test.tsx` (4 slides + atribuição de autor) e `page.test.tsx` (subtítulo gratuito).
+
+### docs
+- `status.md` — removidos os 2 itens "Bloqueado por: ministério" (Conhece-nos copy final — já estava final no repo; morada/horários — dispensados a pedido do utilizador).
+
+### infra
+- Aplicado em **ambas** as branches `v3-cursos` e `v2.5-copy-ux` (copy partilhada; ver `feature-docs/branch-strategy.md`).
+
+---
+
+## [29-05-2026] — V3.3 PR8: enrollment + estado anónimo + ordenação do catálogo (bloqueador final V3.3)
+
+### add (iteração 29-05-2026)
+- **Dropdown de ordenação em `/conteudos`** com 4 chaves: `por-comecar` (default auth), `concluidos`, `a-z` (default anon), `z-a`. Persistido em `?ordenar=` (partilhável, server-rendered). Para anon só aparecem `A→Z` / `Z→A`.
+- **`src/lib/courses/sort.ts`** + 10 testes — `defaultSortKey`, `isSortKey`, `sortCourses` (ordena dentro de grupos por estado + alfabético).
+- **`getEnrolledCourseIdsForCurrentUser`** em `enrollment.ts` — Set de cursos com inscrição activa. Usada pelo sort por estado.
+- **Catálogo greyout para cursos concluídos**: cards de cursos em `course_completions` ganham `opacity-60` + badge "Concluído" + CTA "Rever curso →" (mesma UX que `/meus-cursos` "Terminados"). Mantêm-se clicáveis para rever.
+- **Anon não vê "Em breve"** — cards de cursos sem aulas continuam clicáveis para anon; clicar leva ao CTA de login na landing do curso. "Em breve" e o estado disabled só aparecem para utilizadores autenticados.
+- **`getCompletedCourseIdsForCurrentUser`** em `completion.ts` — Set de cursos concluídos pelo utilizador. RLS filtra a `own`.
+
+### add (PR8 original)
+- **Modelo de enrollment** sobre `course_access_log`: row mais recente por (user, course) decide o estado. `unenrolled_at IS NULL` → inscrito. Nova migration `20260529120000_enrollment_and_anon_landing.sql` adiciona coluna `unenrolled_at`, índice composto e UPDATE policy.
+- **`src/lib/courses/enrollment.ts`** com `getEnrollmentState`, `enrollAction`, `unenrollAction`. Revalida `/conteudos/<id>` + `/meus-cursos` em mutações.
+- **3 vistas em `/conteudos/[courseId]`**:
+  - **Anon:** banner + título + descrição + CTA "Inicia sessão com Google" (com `next` correcto).
+  - **Logado não-inscrito:** + estrutura de módulos e aulas read-only (numeradas `1.1, 1.2…`, sem links) + CTA "Começar curso".
+  - **Logado inscrito:** comportamento V3 actual (módulos como link cards, aulas clicáveis) + link discreto "Sair do curso" no fundo.
+- **`EnrollCourseCta` e `UnenrollCourseLink`** Components com Server Actions inline.
+- **Acesso anónimo a courses publicados sem `required_tags`**: `course_is_visible(courses)` passa a aceitar `anon` (apenas para published + sem required_tags). Anon vê banner via storage `course-banners`. Modules/lessons ficam auth-only via `auth.role() = 'authenticated'` explícito nas suas policies.
+- Testes: 14 novos em `enrollment.test.ts` (getEnrollmentState, enrollAction, unenrollAction) + 2 novos em `started.test.ts` para o filtro de unenrollment.
+
+### update
+- **`getStartedCoursesForUser`** filtra cursos onde o utilizador saiu (mais recente `unenrolled_at` not null). Re-inscrever-se faz o curso voltar a aparecer em `/meus-cursos`.
+- **`/conteudos/[courseId]/[lessonId]`** e **`/conteudos/[courseId]/modulos/[moduleId]`** ganham guard de enrollment — redirect para a landing do curso quando o utilizador não está inscrito (defesa em profundidade ao RLS).
+
+### infra
+- Migration aplicada em `logos-dev` (PR aprovado bloqueia push prod).
+
+---
+
+## [29-05-2026] — V3.3 PR7: smoothness pass — view transitions, transições, polish do estado vazio
+
+### add
+- **View Transitions API** activado via `experimental.viewTransition: true` em `next.config.ts` — Next.js 16 + React 19 fazem crossfade automático entre rotas. Browsers sem suporte caem para navegação instantânea, sem regressão.
+- **Transição suave de `<details>`** via `interpolate-size: allow-keywords` + `::details-content` em `globals.css` — `CollapsibleSection` abre e fecha com fade de 250 ms em vez de salto instantâneo. Inclui fallback `prefers-reduced-motion`.
+- **Baseline de transições em `<a>`, `<button>`, `<summary>`, `[role='button']`** — 150 ms ease-out em `color` / `background-color` / `border-color` / `opacity`. Cobre todos os hovers que não tinham `transition-colors` explícito, sem precisar de auditar dezenas de ficheiros. Components com transições próprias sobrepõem o default sem conflito.
+
+### update
+- **`/meus-cursos`: ícone `Sparkles` removido** da mensagem "Não tens cursos em progresso" quando o utilizador só tem cursos terminados. Mesma direcção dos restantes estados vazios (PR3).
+- Import de `Sparkles` em `meus-cursos-content.tsx` removido.
+
+### infra
+- `interpolate-size`, `::details-content` e `viewTransition` são features modernas de browser/framework. Compatibilidade: Chrome 129+ / Safari 18.2+ / Firefox 137+ (interpolate-size); navegadores antigos degradam para o comportamento instantâneo de sempre.
+
+---
+
+## [29-05-2026] — V3.3 PR6: search admin + linha clicável em `/admin/conteudos`
+
+### add
+- **`<ListSearch>`** novo component reutilizável (`src/components/admin/list-search.tsx`) — wrapper Client que filtra descendentes com `data-search-text` client-side. Input acessível com label SR-only, empty-state quando zero matches, ignora espaços à volta. Fallback para listagens admin que vão crescer antes de existir paginação server-side (V4).
+- **`<ClickableRow>`** (`src/components/admin/clickable-row.tsx`) — `<tr>` Client que navega para `href` ao clicar. Cliques em `<a>`/`<button>`/`<input>`/`<label>` são ignorados para não interferir com controlos inline.
+- Search aplicada em **3 listagens admin**:
+  - `/admin/conteudos`: pesquisa por título do curso.
+  - `/admin/utilizadores`: pesquisa por nome, papel ou etiqueta.
+  - `/admin/etiquetas`: pesquisa por nome da etiqueta.
+- Testes em `list-search.test.tsx` (6 casos: label, default visível, filter substring, empty-state, clear, trim de espaços).
+
+### update
+- **`/admin/conteudos`**: linhas inteiras passam a ser clicáveis (navegam para a página do curso). Coluna "Ações" + botão "Abrir →" removidos — redundância eliminada.
+
+---
+
+## [29-05-2026] — V3.3 PR5: catálogo full-width + módulos como páginas + imagem edge-to-edge
+
+### add
+- **Página própria por módulo no público (`/conteudos/[courseId]/modulos/[moduleId]`)** — substitui os `<details>` dropdowns. Mostra título, descrição, lista de aulas com estado de conclusão, CTA "Próximo módulo →" quando concluído, e link "← Voltar ao curso".
+- Breadcrumb da aula ganha link para a página do módulo (Conteúdos › Curso › Módulo › Aula).
+
+### update
+- **`/conteudos` ocupa toda a largura do ecrã em desktop** — `max-w-5xl` substituído por `w-full` com padding maior (`lg:px-12 xl:px-16`). Grid passa a `xl:grid-cols-4` para aproveitar o espaço.
+- **`CourseCard`: imagem preenche o topo edge-to-edge em `aspect-video` (16:9 standard)** — mesmo ratio que a hero da landing do curso, sem distorção, `object-cover` para crop limpo. Card ganha `overflow-hidden` e padding migra para a coluna de texto. Icon fallback usa `h-14 w-14`.
+- **`CourseCard` no catálogo já não mostra descrição** — fica reservada à landing do curso, evitando congestionar o catálogo. /meus-cursos continua a mostrar descrição.
+- **Course landing (`/conteudos/[courseId]`): módulos passam de `<details>` dropdowns a link cards** que navegam para a página do módulo. Mantém-se contagem `N/M` e check quando concluído.
+- "Próximo módulo →" da página da aula passa a apontar para a página do módulo (não para a primeira aula do módulo).
+
+### remove
+- Layout split 50/50 (PR #39) descartado após teste do utilizador.
+
+### docs
+- `feature-docs/v3-3-handoff.md` atualizado: PR4 marcada como descartada; PR5 expandida.
+
+---
+
+## [28-05-2026] — V3.3 PR3: copy /meus-cursos (ícone fora + textos novos)
+
+### update
+- **`/meus-cursos` estado anónimo**: remover ícone `BookMarked`. Subtexto passa a *"Aqui ficam guardados os cursos que já começaste. Inicia com a tua conta Google para começar."* Heading mantém-se.
+- **`/meus-cursos` estado autenticado vazio**: remover ícone `BookMarked`. Subtexto passa a *"Aqui ficam guardados os cursos que começaste, ordenados pelo mais recente."* (alinha mensagem com o que a página entrega quando há cursos.)
+- Import de `BookMarked` removido.
+
+---
+
+## [28-05-2026] — V3.3 PR2: admin homogeneidade + estatísticas card + numeração 1.x
+
+### add
+- **Página de módulo (`/admin/conteudos/<courseId>/<moduleId>`) ganha forma canónica V3.3**:
+  - **Detalhes do módulo** (CollapsibleSection nova — form para editar título/descrição usando `updateModuleAction`).
+  - **Aulas (N)** (CollapsibleSection — count vai para o título da secção). Form "Nova aula" passa a viver dentro desta secção, no topo. Sub-heading "Aulas existentes" eliminada.
+  - **Zona de perigo** (CollapsibleSection nova — flow `?confirmar=apagar` para apagar módulo de dentro da sua própria página, em vez de ter de subir ao curso).
+- **Modo edição de aula (`?editar=<lessonId>`)**: a página colapsa para uma única CollapsibleSection "Detalhes da aula" com o form. Detalhes do módulo / Aulas / Zona de perigo ficam escondidos. CourseTree à direita mantém-se visível.
+- **Estatísticas como CollapsibleSection** em `/admin/conteudos/<courseId>` (entre Módulos e Zona de perigo). Componente `course-stats-content.tsx` partilhado.
+- **CourseTree (sidebar Estrutura) ganha header com nome do curso actual** — utilizador vê em que curso está mesmo sem olhar para o breadcrumb.
+
+### update
+- **Numeração de aulas passa a `{módulo}.{aula}`** — módulo 1 → aulas 1.1, 1.2, 1.3; módulo 2 → 2.1, 2.2... Aplicado em `CourseTree` (sidebar) e `LessonList` (admin).
+- **Header da página de módulo mostra `{n}. {título}`** com o número 1-based do módulo no curso.
+- **Secção "Módulos" no curso ganha contador no título**: `Módulos (N)`. Sub-heading "Módulos existentes" eliminada.
+
+### remove
+- **Rota `/admin/conteudos/<courseId>/stats` removida**. Estatísticas vivem só dentro da secção do curso. Link "Ver estatísticas →" no header do curso eliminado.
+
+---
+
+## [28-05-2026] — V3.3 PR1: collapsibles fechados + reorder admin/curso
+
+### update
+- **`CollapsibleSection` arranca fechado por defeito** (`defaultOpen = false`). Páginas admin densas (curso, módulo) deixam de abrir todas as secções de uma vez — o utilizador escolhe o que expandir.
+- **`/admin/conteudos/<courseId>` reordena para a forma canónica V3.3**: Detalhes do curso → Módulos → Zona de perigo. Stats continua acessível via link `Ver estatísticas →` (será absorvida em CollapsibleSection na PR3).
+- **`/admin/conteudos/<courseId>/<moduleId>`**: secções "Nova aula" e "Aulas existentes" passam a arrancar fechadas (vinha implícito do default antigo).
+- Testes de `collapsible-section.test.tsx` actualizados para o novo default.
+
+---
+
+## [28-05-2026] — V3.2 PR5: "Meus cursos" no nav + duas secções + catálogo limpo
+
+### add
+- **Item "Meus cursos" na navegação principal** (`src/lib/site-config.ts`). Sempre visível, entre "Conteúdos" e "Fala Connosco". Anónimos caem no CTA "Inicia sessão" da página `/meus-cursos` (já existente).
+- **`/meus-cursos` ganha duas secções**: "Em progresso" (cursos com `completed=false`) e "Terminados" (`completed=true`). A secção "Terminados" só renderiza quando há terminados. Cards terminados ganham `opacity-60` (hover repõe).
+- **Mensagem + link "Ver catálogo →"** dentro da secção "Em progresso" quando o utilizador só tem cursos terminados (não tem nada em curso).
+
+### update
+- **Catálogo `/conteudos` passa a marketplace puro** — cards já não mostram badges "Começado" / "Concluído". Estado pessoal vive exclusivamente em `/meus-cursos`. Mantém-se "Em breve" para cursos sem aulas.
+- `src/app/conteudos/page.tsx` deixa de chamar `getCourseProgressForUser` — render simplificado.
+- `ConteudosContent` recebe `courses: VisibleCourse[]` em vez de `VisibleCourseWithProgress[]`.
+
+### remove
+- `src/lib/courses/progress.ts` e `progress.test.ts` apagados (helpers `getCourseProgressForUser` / `CourseProgress` ficaram órfãos depois de o catálogo deixar de mostrar estado pessoal).
+
+### test
+- 345 testes (340 → 345). `/meus-cursos`: 5 testes novos (secções, mensagem com link, opacity). `/conteudos`: bloco "badges de progresso" reduzido a 2 testes (asserção negativa + "Em breve" preservado). Fixture `makeCourse` no catálogo passa a `VisibleCourse` simples.
+
+---
+
+## [27-05-2026] — V3.2 PR1: Banner opcional em cursos
+
+### add
+- **Coluna `courses.banner_storage_path`** (text nullable) + bucket privado `course-banners` (5 MB, JPEG/PNG/WebP) com policy SELECT `course_banners_select_visible` que reutiliza `course_is_visible(courses)` por path (`split_part(name, '/', 1)`). Convenção de path: `<courseId>/banner` (sem extensão; MIME via Content-Type). Migration `20260527000000`.
+- **Helpers `getBannerUrlsByPath` / `getBannerUrlForPath`** em `src/lib/courses/banner.ts` — signing batched + single, TTL 30 min. Falha graciosa devolve Map vazio / null.
+- **Componente `<CourseImage variant="card"|"hero">`** em `src/lib/courses/course-image.tsx` — banner com `next/image unoptimized` (CDN directo, sem cache miss em rotação de signed URL); fallback de icon Lucide quando `bannerUrl=null`. Test ids `course-image-banner` / `course-image-icon`.
+- **Admin upload de banner** em `course-form.tsx` (form `multipart/form-data`, preview do existente, checkbox "Remover"); `createCourseAction` e `updateCourseAction` aceitam ficheiro `banner` (validação MIME + 5 MB); `updateCourseAction` aceita `remove_banner=on` (nova upload tem prioridade); `deleteCourseAction` faz cleanup best-effort do ficheiro.
+
+### update
+- **Listagens `/conteudos` e `/meus-cursos`** trocam `<CourseIcon>` por `<CourseImage variant="card">` (aspect-video no topo do card).
+- **`/conteudos/[courseId]`** ganha hero banner em `aspect-video` acima do header (icon ainda usado como fallback).
+- **Skeletons `loading.tsx`** das 3 rotas (listagens + landing de curso) reflectem o novo espaço aspect-video.
+- **`VisibleCourse`, `StartedCourse`, `CourseDetail`** ganham `bannerUrl: string | null`; selects e mapping em `visibility.ts`, `started.ts`, `detail.ts` actualizados.
+
+### docs
+- `architecture.md` §7 dividido em 7.1 PDFs + 7.2 banners; tabela de migrations recebe linha `20260527000000`.
+- `status.md` ganha bloco "V3.2 — Iteração de UI/UX e prerequisitos" (PR1 ⏳ + PR2-PR5 pendentes).
+- `feature-docs/v3-2-iteration.md` (a criar) consolida o plano dos 5 PRs e as decisões (banner opt-in + icon fallback; bucket privado + signed URL 30 min; bloqueio misto cursos-invisíveis-aulas-locked; prerequisitos opt-in por entidade).
+
+### test
+- 18 testes novos (331 → 349) — `course-image.test.tsx` (5), `banner.test.ts` (7), `courses-actions.test.ts` (6 casos de banner). Fixtures de `CourseFormInitialData`, `VisibleCourse`, `StartedCourse`, `CourseDetail` ganham `bannerUrl: null`.
+
+---
+
+## [26-05-2026] — V3.1: migrations alinhadas em `logos-dev` (push + repair)
+
+Aplicadas as 2 migrations pendentes a `logos-dev` (PR V3.1 T4/T6 ficam totalmente funcionais no preview Vercel):
+
+- `20260520140000_drop_courses_slug.sql` — drop column `courses.slug`
+- `20260526180000_course_access_log_select_own.sql` — policy SELECT permissiva no `course_access_log` (V3.1 T4)
+
+Durante o push apareceu uma migration órfã no remote: `20260519230230` (drop `tags.slug`, conteúdo idêntico ao nosso local `20260520120000_drop_tags_slug.sql`). Vinha da outra máquina onde a operação foi aplicada a 19-05 antes de a versão definitiva ser commited a 20-05 com timestamp diferente. Estado real do schema já estava correcto desde 19-05 — só faltava limpar o tracking.
+
+### infra
+- repair: `supabase migration repair --status reverted 20260519230230` — limpa órfão (sem tocar no schema; coluna `slug` continua dropped).
+- repair: `supabase migration repair --status applied 20260520120000` — alinha tracking com o schema real (operação já aconteceu, só por outro nome).
+- push: `supabase db push` aplicou as 2 migrations realmente pendentes. `migration list` agora mostra 11 entradas Local + Remote alinhadas.
+
+### decision
+- `repair` em vez de `db pull` para resolver a divergência: pull traria o conteúdo da migration órfã como ficheiro local novo, duplicando a nossa `20260520120000_drop_tags_slug.sql` (mesmo SQL, timestamp diferente). Repair preserva a história limpa que já tínhamos commited.
+
+---
+
+## [26-05-2026] — V3.1 T6: badges "Em curso" / "Concluído" no catálogo `/conteudos` — local em `v3-cursos`
+
+Cards do catálogo passam a mostrar o estado do utilizador para cada curso: badge sage "Concluído ✓" se está em `course_completions`; badge laranja claro "Começado" se está em `course_access_log` mas não concluído; nada se nunca foi iniciado. Anónimos não vêem badges. Cards "Em breve" (sem aulas) também não — não faz sentido badge de progresso num curso vazio.
+
+### add
+- add: `src/lib/courses/progress.ts` — helper `getCourseProgressForUser(courseIds)` devolve `Record<string, {started, completed}>` para o set fornecido. 2 queries em paralelo (`course_access_log` + `course_completions` filtrados por `IN`), dedup client-side. Anónimos ou input vazio ⇒ `{}` sem touch à DB.
+- add: `src/lib/courses/progress.test.ts` (7 testes — input vazio, anónimo, sem progresso, started=true, completed=true, ambos erros).
+- add: tipo exportado `VisibleCourseWithProgress = VisibleCourse & CourseProgress` em `conteudos-content.tsx` — usado pela page e pelos testes.
+
+### update
+- update: `src/app/conteudos/page.tsx` — chama `getCourseProgressForUser(courses.map(c => c.id))` e faz o merge com defaults `{started: false, completed: false}` antes de passar a `<ConteudosContent />`. RLS de `course_access_log` (V3.1 T4 migration) garante que só vê os próprios acessos.
+- update: `src/app/conteudos/conteudos-content.tsx` — Props aceita `VisibleCourseWithProgress[]`; cards renderizam badge condicional (completed > started > nenhum). Cards `hasLessons=false` mantêm só "Em breve" (sem progresso).
+- update: `src/app/conteudos/page.test.tsx` — fixture `makeCourse` actualizada para o tipo augmentado (defaults `started: false, completed: false`); import passa de `VisibleCourse` para `VisibleCourseWithProgress`.
+
+### test
+- 4 testes novos em `page.test.tsx` (nenhum badge, "Começado", prioridade "Concluído", cards "Em breve" sem badges). 316 → 327 verdes (+7 helper + 4 content). Lint + typecheck verdes.
+
+### decision
+- Helper separado de `getVisibleCoursesForUser` em vez de mergear: mantém `VisibleCourse` minimal (sem campos opcionais) e separa responsabilidades. Page faz o join. `Record` em vez de `Map` para serialização limpa entre Server Component e Client Component (Next.js).
+- "Concluído" tem prioridade sobre "Começado" no card. Razão: um curso concluído é tipicamente também started (clicou para começar, depois concluiu); mostrar apenas o estado mais avançado. Trade-off aceite: se o user concluir sem nunca clicar "Começar curso" (entrou directo via aula), o badge mostra "Concluído" sem ter visto "Começado" — comportamento correcto.
+
+---
+
+## [26-05-2026] — V3.1 T5: CTA hero e dropdown apontam a `/meus-cursos` — local em `v3-cursos`
+
+Trivial: o hero "Meus cursos" e o item "Os meus cursos" no dropdown do utilizador deixam de apontar a `/conteudos` (catálogo) e passam a apontar a `/meus-cursos` (rota pessoal criada em T4). Mais coerente com o label.
+
+### update
+- update: `src/app/page.tsx` — `<HomeHero ctaHref="/meus-cursos" />` (era `/conteudos`).
+- update: `src/components/site/user-menu.tsx` — `DropdownMenuItem` "Os meus cursos" agora `href="/meus-cursos"` (era `/conteudos`).
+- update: `src/app/page.test.tsx` — 5 occurrences de `'/conteudos'` actualizadas para `'/meus-cursos'`. Testes continuam a verificar o contrato do `HomeHero` (prop flows through); valor da prop alinhado com produção.
+
+### test
+- 316/316 verdes (sem testes novos — testes existentes do `HomeHero` cobrem o contrato). Lint + typecheck verdes.
+
+---
+
+## [26-05-2026] — V3.1 T4: rota `/meus-cursos` — local em `v3-cursos`
+
+Nova rota pessoal: lista os cursos que o utilizador começou (≥1 row em `course_access_log`), ordenados pelo último acesso. Cada card mostra badge "Em curso" ou "Concluído ✓" e leva à página do curso (onde o "Continuar curso" já leva à primeira aula incompleta). Anónimos vêem um CTA de login com `next=/meus-cursos`.
+
+### infra
+- add: `supabase/migrations/20260526180000_course_access_log_select_own.sql` — nova policy SELECT permissiva `course_access_log_select_own` (`user_id = current_profile_id()`). Compõe OR com a `course_access_log_select_admin` de PR2 (admin/super_admin continua a ver tudo para stats). Sem mudança a INSERT/UPDATE/DELETE. **Não aplicada a `logos-dev` automaticamente** — pede `pnpm dlx supabase login` interactivo. Versionada e pronta para `pnpm dlx supabase db push` na próxima sessão.
+
+### add
+- add: `src/lib/courses/started.ts` — helper `getStartedCoursesForUser()` retorna `StartedCourse[]` (`VisibleCourse` + `completed: boolean` + `lastAccessedAt: string`). Faz 2 queries: `course_access_log` (ordered desc, dedup client-side por `course_id`, filtra acessos a cursos despublicados) + `course_completions` (limitado ao set de course ids actual via `.in()`).
+- add: `src/lib/courses/started.test.ts` (9 testes — sem sessão, sem acessos, dedup, dropped courses, completed flag, ambos erros, hasLessons=false).
+- add: `src/app/meus-cursos/page.tsx` — server component. Sem sessão → `<MeusCursosContent isAuthenticated={false}>`; com sessão → busca cursos e passa para o content.
+- add: `src/app/meus-cursos/meus-cursos-content.tsx` — client component com 3 estados: anónimo (CTA Google + `next=/meus-cursos`), autenticado vazio (link "Ver catálogo"), autenticado com cursos (grid de cards estilo `/conteudos` + badges Concluído/Em curso).
+- add: `src/app/meus-cursos/meus-cursos-content.test.tsx` (6 testes — heading sempre, CTA anónimo + hidden next, estado vazio com link, grid + href correcto, badges para os 2 estados).
+- add: `src/app/meus-cursos/loading.tsx` — skeleton do caminho mais comum (3 cards).
+
+### test
+- 301 → 316 verdes. Lint + typecheck verdes.
+
+### decision
+- Card aponta a `/conteudos/[courseId]` (página do curso), não directamente à primeira aula incompleta. Razão: a página do curso já calcula a primeira aula incompleta no botão "Continuar curso" (PR7), e expor isso no helper exigiria carregar modules + lessons + completions de todos os cursos começados (N+1 ou query pesada). 1 clique extra para uma feature secundária — aceitável.
+- RLS policy adicionada em vez de SECURITY DEFINER function — mesmo padrão de `lesson_completions` ("own OR admin" composto via 2 policies SELECT). Mais simples e idiomático em Postgres.
+- Sem sessão renderiza inline em vez de redireccionar — a rota `/meus-cursos` é descobrível via link do `UserMenu`; mostrar o que ela faz + CTA de login é melhor UX que redirect cego.
+
+---
+
+## [26-05-2026] — V3.1 T7: login-gate em "Começar curso" + proteger rota de aula — local em `v3-cursos`
+
+Anónimos deixam de poder abrir aulas directamente. CTA "Começar/Continuar curso" no detalhe do curso muda para "Inicia sessão para começar →" quando não há sessão; clicar dispara `signInWithGoogleAction` com `next` apontado à primeira aula (mesmo padrão do hero "Meus cursos" em `home-hero.tsx`). A rota `/conteudos/[courseId]/[lessonId]` ganha um early-return: sem sessão redirige para `/conteudos/[courseId]`, onde o utilizador encontra o CTA de sign-in.
+
+### add
+- add: `src/app/conteudos/[courseId]/start-course-cta.tsx` — server component com 3 estados: anónimo (form `signInWithGoogleAction` + hidden `next`), autenticado sem progresso ("Começar curso"), autenticado com progresso ("Continuar curso"). Server Action inline mantém o `logCourseAccessAction` + `redirect` quando autenticado.
+- add: `src/app/conteudos/[courseId]/start-course-cta.test.tsx` (3 testes).
+- add: `src/app/conteudos/[courseId]/[lessonId]/page.test.tsx` (2 testes — redirect anónimo + UUID check vem antes do auth check).
+
+### update
+- update: `src/app/conteudos/[courseId]/page.tsx` — chama `getCurrentUser()` + delega CTA ao `<StartCourseCta />` (substitui form inline `'use server'` + `redirect`). Imports de `logCourseAccessAction` e `redirect` saem (já vivem dentro do componente).
+- update: `src/app/conteudos/[courseId]/[lessonId]/page.tsx` — auth-gate entre a validação de UUID e a query Supabase. Anónimos não chegam a tocar a DB.
+
+### test
+- 296 → 301 verdes (5 novos). Lint + typecheck verdes.
+
+### decision
+- Redirect anónimo aponta para a página do curso (`/conteudos/[courseId]`), não para `/?next=...`. Razão: a página do curso já tem o login-gate com `next` correcto após T7; redireccionar para `/` exigiria adicionar consumo de `?next` no hero, fora do âmbito desta task. Trade-off: utilizador que clique num deep link de aula aterra na detalhe do curso (não na aula original após login) — aceitável dado que deep links anónimos para aulas são caso de borda.
+- Extracção do `StartCourseCta` (em vez de manter inline em `page.tsx`) para testabilidade: 3 ramos isolados, testes pequenos, sem mocks pesados do resto da página. Mantém a inline `'use server'` action dentro do componente — sem mudança ao padrão estabelecido do codebase.
+
+---
+
+## [21-05-2026] — V3.1 followup: drop `courses.slug` — URLs públicas por UUID — local em `v3-cursos`
+
+Cursos passam a ser referenciados por `id` (uuid) nas URLs públicas (`/conteudos/<uuid>` e `/conteudos/<uuid>/<lessonId>`). Coluna `courses.slug` removida da DB; UNIQUE index e CHECK constraint do regex caem com a coluna. Coerente com `tags`, já sem slug (migration `20260520120000_drop_tags_slug.sql`). Sem custo de redirects — V3 ainda não tem cursos em produção.
+
+### infra
+- add: `supabase/migrations/20260520140000_drop_courses_slug.sql` — `alter table public.courses drop column slug;`. Comment da tabela actualizado para reflectir "Identificação interna e em URLs públicas por id (uuid); UI mostra title". RLS, helper `course_is_visible(courses)` e FKs (`modules.course_id`, `course_access_log.course_id`) ficam intactos — não dependiam de slug.
+- update: `.gitignore` — `.agents/` e `.codex/` (config local de outras ferramentas de agentes, por máquina; mesmo princípio que `.claude/settings.local.json`).
+
+### update
+- update: directório de rota renomeado `src/app/conteudos/[slug]/...` → `src/app/conteudos/[courseId]/...` (8 ficheiros movidos: `page.tsx`, `loading.tsx`, `[lessonId]/page.tsx`, `[lessonId]/loading.tsx`, `[lessonId]/mark-complete-button.tsx`, `[lessonId]/pdf-download-button.tsx` + 2 testes correspondentes).
+- update: `src/lib/courses/detail.ts` — `getCourseDetailBySlug(slug)` → `getCourseDetailById(courseId)`; `.eq('slug', ...)` → `.eq('id', ...)`; campo `slug` removido de `CourseDetail`, `LessonDetail.course` e dos select strings. JSDoc actualizado para `[courseId]`.
+- update: `src/lib/courses/visibility.ts` — `slug` removido de `VisibleCourse`, `CourseRow` e select string.
+- update: `src/app/conteudos/conteudos-content.tsx` — links do hub passam a usar `course.id`.
+- update: `src/app/admin/conteudos/courses-actions.ts` — `validateSlug`, regex e constantes `SLUG_MIN/MAX` removidos; create/update deixa de aceitar/escrever `slug`; mensagens de erro para `23505` (unique violation) removidas (já não há constraint UNIQUE em slug).
+- update: `src/app/admin/conteudos/course-form.tsx` — input `slug` removido do grid; layout colapsa para coluna única com apenas "Título". `CourseFormInitialData` perde campo `slug`.
+- update: admin pages (`page.tsx`, `[courseId]/page.tsx`, `novo/page.tsx`, `novo/loading.tsx`) sem referências residuais a slug.
+
+### test
+- update: `courses-actions.test.ts`, `detail.test.ts`, `visibility.test.ts`, `completion.test.ts`, `page.test.tsx`, `mark-complete-button.test.tsx`, `pdf-download-button.test.tsx` — fixtures e expects sem `slug`; helpers renomeados (`...BySlug` → `...ById`).
+- 296/296 verdes. Lint + typecheck + format:check clean.
+
+### decision
+- **Remover slug em vez de derivar de title.** Em V3 ainda não há cursos em produção, por isso o custo de redirects é zero. Manter slug obrigava o admin a inventar um nome estável separado do título e duplicava defesa em profundidade (UNIQUE + CHECK + regex client + regex server). UUID nas URLs é menos amigável de partilhar, mas hoje a partilha é interna ao ministério — pode evoluir para slug derivado em V4 sem migration custosa (FKs continuam por id).
+- **`.agents/` e `.codex/` em `.gitignore`, não commit.** São config de ferramentas de agentes que vivem por máquina (à semelhança de `.claude/settings.local.json`/`.claude/worktrees/`); não fazem parte do projecto partilhado.
+
+### docs
+- update: `changelog.md` ganha esta entrada. `status.md` não precisa de update — milestone ("V3 fechada à espera de testemunhos") mantém-se; isto é cleanup V3.1, não muda o mapa de 3 camadas nem desbloqueia/bloqueia o PR `v3-cursos` → `main`.
+
+---
+
+## [20-05-2026] — V3 PR9a: Vercel Analytics — local em `v3-cursos`
+
+`@vercel/analytics@2.0.1` adicionado às dependências; `<Analytics />` (`@vercel/analytics/next`) inserido no root `src/app/layout.tsx` antes de `</body>`, depois do `<Footer />`. Cookieless por design — não acrescenta banner de cookies. Activo automaticamente no preview e production.
+
+### add
+- add: dependência `@vercel/analytics@^2.0.1` em `package.json`.
+- add: `<Analytics />` no root layout (`src/app/layout.tsx`) com import de `@vercel/analytics/next`. Posicionamento depois do `<Footer />` para não competir com layout shift inicial; o componente injecta o script client-side via Next.js dynamic import.
+
+### test
+- Sem testes novos. O componente é um wrapper que injecta `/_vercel/insights/script.js`; testar o efeito exigiria mock do `window` + interceptar a request, baixo retorno vs custo. 284/284 mantêm-se verdes.
+
+### decision
+- **`<Analytics />` no root layout vs em páginas específicas.** Plataforma quer cobrir todas as rotas (incluindo `/admin`) para perceber padrões de uso interno. Sem opt-out condicional — Vercel Analytics é cookieless por design e o site já cumpre RGPD (não há cookies de tracking de terceiros).
+
+### docs
+- update: `status.md` regista PR9a concluída e abre PR9b (Playwright E2E) como "Em progresso"; `feature-docs/v3-plan.md` §9 dividida em 9a (✅) e 9b (⏳, bloqueada por decisão de OAuth bypass).
+
+---
+
+## [20-05-2026] — V3 PR8: access log activo + stats admin — local em `v3-cursos`
+
+`logCourseAccessAction` deixa de ser stub (PR6) e passa a inserir em `course_access_log`. Página de stats por curso em `/admin/conteudos/[courseId]/stats` com 3 números essenciais. RLS da PR2 já restringia tudo — nada novo no schema; só UI + activação da action.
+
+### add
+- add: `src/lib/courses/stats.ts` — `getCourseStats(courseId, lessonIds[])` devolve `{ totalAccesses, uniqueUsers, lessonCompletions }`. Total + distintos a partir das linhas de `course_access_log` (Set client-side, evita RPC para uma plataforma pequena). `lessonCompletions` via `count: 'exact', head: true` filtrado por `lesson_id IN (...)`. Sem `lessonIds` (curso sem aulas), salta a segunda query.
+- add: `src/app/admin/conteudos/[courseId]/stats/page.tsx` — Server Component gated admin+super_admin; breadcrumb 3 níveis; 3 `StatCard` (acessos totais, utilizadores únicos, aulas concluídas) com ícones Lucide (`BarChart3`, `Users`, `CheckCircle2`); rodapé "Notas" explica origem dos números e a deviação de PR7 (`course_completions` não escrita).
+- add: `src/app/admin/conteudos/[courseId]/stats/loading.tsx` — skeleton match com layout dos 3 cards.
+- add: link "Ver estatísticas →" no header de `/admin/conteudos/[courseId]` (à direita do título do curso, mesmo estilo dos botões secundários do admin).
+
+### update
+- update: `src/lib/courses/access-actions.ts` — `logCourseAccessAction` deixa de ser no-op. Insert em `course_access_log` com `{ user_id: caller.id, course_id }`. Erro do insert é propagado (não silenciado) para que call sites possam diagnosticar, mas a UI ignora o resultado (best-effort). Comentário do ficheiro reescrito para reflectir que já não é stub.
+- update: `src/app/conteudos/[slug]/page.tsx` — CTA "Começar/Continuar curso" passa de `<Link>` para `<form action={async () => { 'use server'; await logCourseAccessAction(course.id); redirect(...); }}>`. Custo: ~200ms extra por submit/redirect; benefício: telemetria sem JS no cliente. Falha do log não bloqueia o redirect — RLS deny ou sessão expirada continua a abrir a aula (que tem o seu próprio gating por RLS de `lessons`).
+
+### test
+- 6 testes novos: 5 em `stats.test.ts` (zeros sem dados, total + distinct via Set, propagação de erro do select de acessos, propagação de erro do count, count null → 0) + 1 net em `access-actions.test.ts` (3 reescritos: stub removido, insert correcto, propagação de erro do insert).
+- 284/284 verdes (278 → 284, +6 líquido).
+
+### decision
+- **Distinct via `Set` client-side, não RPC.** Para volumes pequenos (admin único, dezenas-centenas de linhas por curso) é mais simples carregar a coluna e dedupe em JS do que criar uma função `get_course_unique_users()` em SQL. Reabrir se `course_access_log` crescer a milhares de linhas por curso — ainda há margem de muitos meses.
+- **Action falha não bloqueia redirect.** Log de acesso é best-effort. Bloquear a navegação por causa de um insert falhado em telemetria seria pior UX. A consequência: utilizador pode chegar à aula sem acesso registado se RLS recusar (sessão expirada entre carregar a página e clicar) — aceitável.
+- **Sem contagem de "utilizadores que concluíram o curso inteiro"** — exigiria query mais cara (group by user_id + comparar com Set de lessonIds do curso). Adiada para V3.1 ou para quando o ministério pedir uma métrica concreta.
+
+### docs
+- update: `status.md` regista PR8 concluída e move PR9 para "Em progresso"; `feature-docs/v3-plan.md` §8 marcada ✅ + tabela actualizada.
+
+---
+
+## [20-05-2026] — V3 PR7: conclusão binária + ecrã "curso concluído" — local em `v3-cursos`
+
+Toggle binário de "Marcar como concluída" por aula, sem percentagens nem gamificação (CLAUDE.md §🚫). Conclusão de módulo e de curso são derivadas *on-read* a partir de `lesson_completions` — `course_completions` fica reservada para V3.1 se precisarmos da data preservada para stats da PR8.
+
+### add
+- add: `src/lib/courses/completion-actions.ts` — `markLessonCompleteAction(lessonId)` faz insert em `lesson_completions` e silencia o erro 23505 (PK duplicate → já estava marcada; clicar duas vezes não falha). `unmarkLessonCompleteAction(lessonId)` faz delete por `(user_id, lesson_id)`. UUID validado antes do round-trip à DB. Ambas revalidam `'/conteudos'` em `'layout'` para refrescar a página de curso simultânea ao toggle na página de aula.
+- add: `src/lib/courses/completion.ts` — `getCompletedLessonIds(lessonIds[])` devolve `Set<string>` carregando só as conclusões cujos `lesson_id` pertencem ao input (evita full scan da tabela); RLS filtra por `current_profile_id()`. `isModuleComplete`/`isCourseComplete` retornam `false` quando o módulo/curso não tem aulas (não há nada para concluir). `getNextModuleWithLessons` salta módulos sem aulas — não contam para a progressão.
+- add: `src/app/conteudos/[slug]/[lessonId]/mark-complete-button.tsx` — Client Component com `useOptimistic` + `startTransition`. Toggle visual imediato; `aria-pressed` reflecte estado. Em falha sem revalidate, optimistic reverte para `initiallyCompleted`. Estado pending implícito (action corre dentro do startTransition; sem spinner adicional — o feedback é a mudança imediata da label/ícone).
+
+### update
+- update: `src/app/conteudos/[slug]/page.tsx` — carrega `getCompletedLessonIds(allLessonIds)` antes de renderizar; aulas concluídas ganham ícone ✓ em círculo laranja + label `line-through`; cada módulo mostra contador `X/Y`; quando o módulo está completo, mostra `<Check>` + banner "Módulo concluído → Próximo módulo" se há próximo, ou "Último módulo concluído" se não; quando tudo está feito, banner "✓ Curso concluído" substitui o CTA principal. CTA muda label entre "Começar curso" (zero conclusões) e "Continuar curso" (≥1 conclusão).
+- update: `src/app/conteudos/[slug]/[lessonId]/page.tsx` — carrega completions só do módulo actual (`getCompletedLessonIds(moduleLessonIds)`) — não precisa de tudo aqui. `MarkCompleteButton` abaixo do PDF. Quando a aula actual é a última do módulo e o módulo fica completo, bloco "Módulo/Curso concluído" abaixo do botão com link para o próximo módulo ou de volta ao curso.
+- update: `src/app/conteudos/[slug]/loading.tsx` + `[slug]/[lessonId]/loading.tsx` — skeletons alinhados com o novo layout (botão de conclusão + banners).
+
+### test
+- 25 testes novos: 10 em `completion.test.ts` (helpers + edge cases: `Set` vazio quando sem sessão, RLS skip, módulo/curso vazio retorna false, `getNextModuleWithLessons` salta módulos vazios), 9 em `completion-actions.test.ts` (mark idempotente em 23505, mark falha em outro erro, unmark sucesso, unmark sem sessão, UUID inválido em ambos), 6 em `mark-complete-button.test.tsx` (render por initiallyCompleted, toggle visual, action correcta consoante estado, optimistic reverte em sem-action).
+- 278/278 verdes (253 → 278, +25 líquido).
+
+### decision
+- **`course_completions` não é escrita.** Schema da PR2 mantém a tabela, mas PR7 deriva o estado "curso concluído" on-read a partir de `lesson_completions`. Trade-off: sem data de conclusão preservada, mas implementação simples (sem trigger, sem race condition entre "marca última aula" e "insere conclusão de curso"). Reabrir em V3.1 se PR8 (stats) precisar da data ou se o ministério pedir exibição "concluído em DD-MM-YYYY". `architecture.md` §6 reflecte a deviação.
+
+### docs
+- update: `status.md` regista PR7 concluída e move PR8 para "Em progresso"; `architecture.md` §6 ajusta para "derivação on-read; `course_completions` não escrita em V3"; `feature-docs/v3-plan.md` §7 marcada ✅; `changelog.md` ganha esta entrada.
+
+---
+
+## [20-05-2026] — V3 PR6: página de curso + página de aula — local em `v3-cursos`
+
+Rotas públicas para consumir conteúdo: `/conteudos/[slug]` e `/conteudos/[slug]/[lessonId]`. URL da aula usa o UUID (lessons não têm slug; adicionar slug ficou para V4 — estável e sem migration). Visibilidade fica 100% delegada na RLS de PR2 (`course_is_visible` herdada em modules/lessons via subquery).
+
+### add
+- add: `src/lib/courses/detail.ts` — `getCourseDetailBySlug(slug)` carrega o curso completo (módulos + aulas) ordenado por position; `getLessonDetailById(id)` faz select com embed `module:modules!inner ( ..., course:courses!inner ( ... ) )` e devolve a aula em forma flat; `getLessonNavigation(course, currentLessonId)` linariza módulos+aulas e retorna `{ previous, next }`; `getFirstLessonOfCourse(course)` para o CTA "Começar curso" (PR7 muda para "primeira aula incompleta").
+- add: `src/lib/courses/access-actions.ts` — `getLessonPdfSignedUrlAction(lessonId)` gera URL assinada de 5 min para o PDF (RLS em `lessons` filtra acesso; storage policies permitem authenticated ler qualquer objecto do bucket, defesa fina aqui). `logCourseAccessAction(courseId)` — stub no-op em PR6; PR8 destapa o insert em `course_access_log`.
+- add: `src/lib/courses/youtube.ts` — `extractYoutubeId(url)` parseia formatos aceites em PR4b (`youtu.be/<id>`, `youtube.com/watch?v=<id>`); valida id contra `^[A-Za-z0-9_-]{11}$`; devolve null em formato inválido (defesa contra URL antiga/corrompida).
+- add: `src/app/conteudos/[slug]/page.tsx` — header com ícone + título + descrição; CTA "Começar curso" linka para primeira aula; lista de módulos (h2) com aulas (Link cada uma); estado "Em breve" quando o curso não tem aulas publicadas. `generateMetadata` server-side com o título do curso.
+- add: `src/app/conteudos/[slug]/[lessonId]/page.tsx` — breadcrumb 3 níveis (Conteúdos › Curso › Aula); módulo + título + descrição; iframe YouTube em `aspect-video` rounded-2xl com `loading="lazy"`, `youtube-nocookie.com` (privacidade), `allow` standard, `allowFullScreen`; botão "Descarregar apostila" (Client); navegação anterior/próxima atravessando fronteira de módulo; "Voltar ao curso" se for a última; índice do curso colapsável (módulo actual `open` por defeito) com indicador visual `aria-current="page"` na aula activa.
+- add: `src/app/conteudos/[slug]/[lessonId]/pdf-download-button.tsx` — Client Component que chama `getLessonPdfSignedUrlAction` via `useTransition`, abre a URL em nova aba (`window.open(..., '_blank', 'noopener,noreferrer')`). Estados: idle (Download icon + label), pending (Spinner + "A preparar PDF…" + disabled + aria-busy), error (alert inline). UUID validado antes do submit.
+- add: skeletons em `[slug]/loading.tsx` e `[slug]/[lessonId]/loading.tsx` reflectem o layout final (ícone + título + módulos / vídeo + nav + índice).
+
+### test
+- 33 testes novos: 9 em `youtube.test.ts` (formatos válidos + inválidos), 12 em `detail.test.ts` (mock supabase chain; navegação edge cases — primeira/última/atravessar módulo), 8 em `access-actions.test.ts` (RLS deny via maybeSingle null, signed URL TTL=300s, stub PR6), 4 em `pdf-download-button.test.tsx` (idle/pending/error/click flow).
+- 253/253 verdes (215 → 253, +38 líquido).
+
+### docs
+- update: `status.md` regista PR6 concluída; `changelog.md` ganha esta entrada.
+
+---
+
+## [20-05-2026] — Fase C: optimistic UI em etiquetas-por-utilizador + apagar etiqueta — local em `v3-cursos`
+
+Resposta a queixa do user de Fase B ("alguns botões demoram muito"): mesmo com `Spinner` no `SubmitButton`, atribuir/remover etiqueta a um utilizador ou apagar uma etiqueta tinham latência perceptível (round-trip Supabase + revalidatePath). Solução: `useOptimistic` aplica o estado-melhor-caso imediatamente; a Server Action corre em paralelo via `startTransition`; em falha, `useOptimistic` reverte automaticamente para o estado base do server.
+
+### add
+- add: `src/app/admin/utilizadores/user-tags-cell.tsx` — Client Component que renderiza pills + select de adicionar com `useOptimistic`. Estado é `assigned: TagItem[]` + reducer que aplica `add` (insere ordenado por label PT-PT) ou `remove` (filtra por id). Pill é agora `<button type="button">` com `onClick` (já não é submit num form) — feedback visual é o desaparecimento imediato, não o spinner. Form de adicionar usa `action={handleAdd}` (Client Component aceita server action wrapped numa função client; `formRef.current?.reset()` limpa o select após o submit).
+- add: `src/app/admin/etiquetas/tags-table.tsx` — Client Component que envolve a tabela de etiquetas com `useOptimistic` para o delete. Linha desaparece imediatamente ao clicar "Apagar definitivamente"; `deleteTagAction` corre em paralelo. Edit row continua URL-driven (`?editar=`) e usa a Server Action `updateTagAction` directamente. Confirm delete também URL-driven (`?apagar=`) mas o botão final agora é client `onClick` (e não form submit).
+
+### remove
+- remove: `src/app/admin/utilizadores/tag-pill-remove-button.tsx` + teste — substituído por `UserTagsCell`. O spinner no `×` deixa de ser necessário porque a pill desaparece imediato (optimistic). Manter o spinner seria redundante.
+
+### update
+- update: `src/app/admin/utilizadores/page.tsx` — passa de ~70 linhas de forms inline (pills + select de adicionar) para `<UserTagsCell userId userName assigned allTags />`. Server Component continua a fazer o fetch das 3 queries (profiles + tags + user_tags) e calcular `tagsByUser`; o Client Component recebe só os dados via props.
+- update: `src/app/admin/etiquetas/page.tsx` — passa de ~150 linhas de tabela inline para `<TagsTable initial editingId confirmingDeleteId />`. Server Component continua a ler `searchParams` (`editar`, `apagar`) e a fazer a query.
+
+### test
+- 13 testes novos: 7 em `user-tags-cell.test.tsx` (render placeholder/pills/select; options excluem assigned; click chama action; pill desaparece imediato com mock pending; pill aparece imediato ao adicionar) + 6 em `tags-table.test.tsx` (placeholder; render; edit/confirm rows; optimistic delete com mock pending).
+- 215/215 verdes (204 → 215, +11 líquido — -2 TagPillRemoveButton + 13 novos).
+- Nota sobre testes de `useOptimistic`: o estado optimistic reverte assim que a action resolve. Para observá-lo na assertion, o mock precisa de ficar pending (`new Promise(() => {})`). Documentado no comentário inline dos testes relevantes.
+
+### docs
+- update: `status.md` regista a Fase C; `changelog.md` ganha esta entrada.
+
+---
+
+## [20-05-2026] — Remove `tags.slug` — local em `v3-cursos`
+
+Decisão do user: tags nunca aparecem em URLs públicas (são referenciadas por UUID internamente). Manter um slug kebab-case estável era fricção desnecessária no fluxo "criar etiqueta". `courses.slug` fica — esse vai ser usado em `/conteudos/[curso-slug]`.
+
+### remove
+- remove (DB): coluna `tags.slug` (incluindo UNIQUE constraint implícito e CHECK do regex/length). Migration `20260520120000_drop_tags_slug.sql` aplicada a `logos-dev`. RLS, função `current_profile_has_tag(uuid[])` e `user_tags` ficam intactos — não dependiam de `slug`.
+- remove (Server Action): `validateSlug`, `SLUG_RE`, `SLUG_MIN`, `SLUG_MAX` em `etiquetas/actions.ts`. `createTagAction` / `updateTagAction` deixam de aceitar/inserir slug.
+- remove (UI): input "Slug (kebab-case, estável)" do form Nova etiqueta + da row de edição. Coluna "Slug" da tabela. `<code>{tag.slug}</code>` em `CourseForm` ao lado da label da etiqueta no fieldset de `required_tags`.
+- remove (queries): `id, slug, label` passa a `id, label` em 4 selects (`etiquetas/page.tsx`, `utilizadores/page.tsx`, `conteudos/novo/page.tsx`, `conteudos/[courseId]/page.tsx`).
+
+### update
+- update: copy do form Nova etiqueta — "Nome visível" passa a só "Nome" (uma palavra chega quando não há slug). Grid `1fr_1fr_auto` → `1fr_auto`.
+- update: confirm delete de etiqueta deixa de mostrar `(slug)` ao lado da label.
+- update: `architecture.md` §3 (tabela `tags` sem `slug`); `feature-docs/v3-plan.md` §1 reflecte a remoção.
+
+### test
+- update: `etiquetas/actions.test.ts` — testes que validavam slug (caracteres inválidos, demasiado curto, duplicado 23505) removidos. Novos: "recusa label demasiado longa", "faz trim ao label antes de gravar", "propaga erro de DB ao insert". Net 204/204 (sem mudança de cobertura final).
+
+### docs
+- update: `status.md` regista a remoção; `changelog.md` ganha esta entrada.
+
+---
+
+## [19-05-2026] — Remove CoursesColumn (bloco lateral redundante) — local em `v3-cursos`
+
+Pedido directo do user antes de avançar para Fase C: o bloco lateral "Cursos" no painel `/admin/conteudos/*` era redundante com a `CourseTree` (que mostra a árvore do curso actual) e com o item "Conteúdos" da sidebar admin. Sem migrations, mudança puramente cosmética + simplificação de layout.
+
+### remove
+- remove: componente `CoursesColumn` em `src/app/admin/conteudos/courses-column.tsx` (linhas ~14-78). Ficheiro renomeado para `conteudos-breadcrumb.tsx` — só fica lá o `ConteudosBreadcrumb` mobile-only que ainda é usado.
+- remove: `<CoursesColumn />` das 3 páginas (`/novo`, `/[courseId]`, `/[courseId]/[moduleId]`). O esqueleto correspondente nos 3 `loading.tsx` também sai.
+- update: `course-tree.tsx` comentário deixa de mencionar "à direita da CoursesColumn".
+
+### update
+- update: `/admin/conteudos/novo/page.tsx` deixa de precisar de wrapper `<div className="flex gap-6">` — não há 2ª coluna ali.
+- update: `[courseId]/page.tsx` e `[courseId]/[moduleId]/page.tsx` mantêm o wrapper flex porque a `CourseTree` (xl+) ainda vive lá.
+
+### test
+- 204/204 verdes (sem mudança de cobertura — não havia testes do `CoursesColumn`).
+
+### docs
+- update: `status.md` regista a remoção; `changelog.md` ganha esta entrada.
+
+---
+
+## [19-05-2026] — Skeletons em falta + spinners em todos os submits — local em `v3-cursos`
+
+Resposta a queixa do user: vários botões clicados ficavam mudos (sem indicar "estou a trabalhar"), e várias rotas com queries Supabase abriam em branco antes do conteúdo aparecer. Auditoria identificou 5 rotas sem `loading.tsx` e 8 botões `<button type="submit">` sem feedback de pending. Sem migrations, sem mudanças funcionais — só visibilidade.
+
+### add
+- add: `src/app/admin/conteudos/[courseId]/[moduleId]/loading.tsx` — skeleton da página de aulas (3 colunas: conteúdo + Cursos + CourseTree).
+- add: `src/app/admin/conteudos/novo/loading.tsx` — skeleton do `CourseForm` em modo create (2 colunas).
+- add: `src/app/admin/utilizadores/loading.tsx` — skeleton da tabela de profiles (5 colunas, 5 rows).
+- add: `src/app/admin/etiquetas/loading.tsx` — skeleton do form de criar + tabela de etiquetas.
+- add: `src/app/perfil/loading.tsx` — skeleton do avatar + dl 2x2.
+- add: `src/app/admin/utilizadores/tag-pill-remove-button.tsx` — Client Component que envolve o pill `{label}×` e troca `×` por `Spinner` enquanto a Server Action corre. Necessário porque o `SubmitButton` standard tem children textuais; aqui a children é composta e precisa de reagir a `useFormStatus` numa estrutura custom.
+
+### update
+- update: `src/app/admin/utilizadores/page.tsx` — botões **Promover/Despromover** e **Adicionar etiqueta** passam de `<button type="submit">` cru para `<SubmitButton>` com `pendingLabel` apropriado. Pill `×` de remover etiqueta passa a usar `<TagPillRemoveButton>`.
+- update: `src/app/admin/etiquetas/page.tsx` — botões **Criar**, **Guardar** (edit) e **Apagar definitivamente** passam para `<SubmitButton>`. O destrutivo mantém `bg-destructive` via className.
+- update: `src/app/admin/conteudos/course-form.tsx` — botão **Criar curso / Guardar alterações** passa para `<SubmitButton>` com `pendingLabel` dinâmico por `mode`. Este era dos mais lentos (validação + slug-unique + redirect) e o mais visível.
+
+### test
+- add: `src/app/admin/utilizadores/tag-pill-remove-button.test.tsx` — 2 testes (idle mostra `×`; pending mostra `Spinner` + disable + `aria-busy`).
+- 204/204 testes verdes (202 → 204, +2 nesta iteração).
+
+### docs
+- update: `status.md` regista a iteração; `changelog.md` ganha esta entrada.
+
+---
+
+## [19-05-2026] — Admin UX: secções colapsáveis + reorder optimistic — local em `v3-cursos`
+
+Continuação da iteração de UX admin. Páginas `/admin/conteudos/[courseId]` e `[courseId]/[moduleId]` estavam a empilhar 3–5 blocos densos (Módulos, Detalhes, Zona de perigo / Nova aula, Aulas existentes), forçando scroll longo. Reordenar módulos/aulas com ↑↓ implicava `revalidatePath` + full reload — perceptível em listas grandes. Sem migrations, sem mudanças funcionais — só extracção de componentes UI + `useOptimistic` nas listas.
+
+### add
+- add: `src/components/ui/collapsible-section.tsx` — wrapper genérico `<details>` + `<summary>` com chevron rotativo (`group-open:rotate-180`), título `font-display` (h2), subtítulo opcional, `variant="default" | "danger"`, `defaultOpen` controlável. Zero JS no cliente — o browser cuida do toggle; leitores de ecrã têm suporte nativo a `<details>`. Persistência não — o estado vive na DOM e reseta em navegação (aceitável dado ≤ 5 secções por página).
+- add: `src/app/admin/conteudos/module-list.tsx` — Client Component que renderiza a lista de módulos com **optimistic reorder** via `useOptimistic`. Clicar ↑/↓ aplica o swap imediato na UI; `startTransition` dispara `moveModuleUpAction` / `moveModuleDownAction` em paralelo. Quando o server confirma e `revalidatePath` corre, `initial` muda e o estado optimistic reseta. Modos edit/delete continuam URL-driven (`?editar=`, `?apagar=`) — o pai pré-renderiza `editingNode` / `deletingNode` (JSX com Server Actions inline) e passa-os via props (funções não passam para Client Components, JSX pré-renderizado passa).
+- add: `src/app/admin/conteudos/lesson-list.tsx` — mesmo padrão de `ModuleList` para aulas, com pill do template (só pdf / vídeo + pdf) e link YouTube quando `template === 'video_pdf'`.
+
+### update
+- update: `[courseId]/page.tsx` refactor — `Módulos`, `Detalhes do curso`, `Zona de perigo` passam a viver dentro de `<CollapsibleSection>`. Detalhes e Zona de perigo arrancam fechados (`defaultOpen={false}`). 459 → menos linhas (a lógica de ordenar/editar/apagar saiu da página para `ModuleList`).
+- update: `[courseId]/[moduleId]/page.tsx` refactor — `Nova aula` e `Aulas existentes` passam a viver dentro de `<CollapsibleSection>`. Lista de aulas movida para `LessonList`. 485 → menos linhas.
+
+### test
+- 24 testes novos: 6 em `collapsible-section.test.tsx` (heading, subtítulo, defaultOpen, variant danger, id-heading), 8 em `module-list.test.tsx` (render: placeholder vazio, numeração 1-based, editingNode, deletingNode; reorder: ↑ no primeiro disabled, ↓ no último disabled, ↑ chama action com FormData, ↓ chama action), 10 em `lesson-list.test.tsx` (mesmo do ModuleList + pill do template + link YouTube).
+- 202/202 testes verdes (178 → 202, +24 nesta iteração).
+
+### docs
+- update: `status.md` regista a iteração; `changelog.md` ganha esta entrada.
+
+---
+
+## [19-05-2026] — A11y WCAG AA + loading states — local em `v3-cursos`
+
+Resposta a issues de axe DevTools (contraste insuficiente em `orange-primary`, falha de "Label in Name" no `UserMenu`) + pedido de skeletons/spinners/progress bars. Sem migrations, sem mudanças funcionais — só tokens visuais + novos componentes UI.
+
+### fix
+- fix: `orange-primary` passa de `#E36A2C` para `#B14E1F` — WCAG AA passa com margem (5.27:1 white-on-orange; 4.84:1 orange-on-cream). Antes falhava o threshold 4.5:1 em ambas as direcções. `orange-hover` de `#C85A22` para `#993F15` (6.84:1 / 6.27:1).
+- fix: `UserMenu` `DropdownMenuTrigger` deixa de ter `aria-label="Menu do utilizador X"` — substituía o texto visível `Olá, X` e falhava WCAG SC 2.5.3 "Label in Name". Accessible name passa a derivar do texto visível (Base UI anuncia o role de menu trigger automaticamente). Teste actualizado para verificar `getByRole('button', { name: /olá, joão/i })`.
+
+### add
+- add: `src/components/ui/spinner.tsx` — Lucide `Loader2` com `animate-spin`, `role="status"` + sr-only label. Server-renderable.
+- add: `src/components/ui/skeleton.tsx` — `bg-muted/60` + `animate-pulse`, `aria-hidden`. Usado por `loading.tsx`.
+- add: `src/components/ui/progress-bar.tsx` — indeterminada, `role="progressbar"` sem `aria-valuenow` (pattern WAI-ARIA recomendado). Keyframe `indeterminate` definido em `globals.css`.
+- add: `src/components/ui/submit-button.tsx` — Client Component que usa `useFormStatus` (React 19) para mostrar `Spinner` + label alternativo enquanto a Server Action corre. Opcional `showProgressBar` para uploads longos. Aplicado nos forms de criar e editar aula (uploads de PDF até 20 MB são lentos).
+- add: `src/app/admin/conteudos/loading.tsx`, `src/app/admin/conteudos/[courseId]/loading.tsx`, `src/app/conteudos/loading.tsx` — skeletons que reflectem o layout final para minimizar layout shift quando a página real chega.
+
+### update
+- update: `branding.md` §1 reflecte os novos hex.
+
+### test
+- 15 testes novos: 3 em `spinner.test.tsx`, 3 em `progress-bar.test.tsx`, 3 em `skeleton.test.tsx`, 5 em `submit-button.test.tsx` (mock de `useFormStatus`).
+- update: `user-menu.test.tsx` — verifica accessible name via texto visível em vez do antigo `aria-label`.
+- 178/178 testes verdes (163 → 178, +15 nesta iteração).
+
+### docs
+- update: `status.md` regista a iteração de a11y + loading states; `changelog.md` ganha entrada para 19-05-2026.
+
+---
+
+## [19-05-2026] — Admin UX: full-width + árvore do curso (CourseTree) — local em `v3-cursos`
+
+Iteração de UX após pedido do user em showcase: admin estava demasiado centrado no PC, e navegar entre aulas de um curso exigia voltar à página do módulo a cada salto. Sem migrations, sem mudanças funcionais — só layout + nova coluna de navegação.
+
+### update
+- update: `src/app/admin/layout.tsx` deixa de ter `mx-auto max-w-6xl` e passa a usar a largura toda do viewport (`px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14`). Sidebar admin slim em `md` (w-48) e wider em `lg+` (w-56). Páginas públicas (Home, Conhece-nos, Conteúdos, Fala connosco, Perfil) **não** são tocadas — mantêm `max-w-*` para legibilidade de texto longo.
+- update: `[courseId]/page.tsx` e `[courseId]/[moduleId]/page.tsx` ganham `<CourseTree />` como terceira coluna, sempre depois de `<CoursesColumn />`.
+
+### add
+- add: `src/app/admin/conteudos/course-tree.tsx` — Server Component que carrega módulos + aulas do curso actual via `select('id, title, position, lessons ( id, title, position )')` num único round-trip e renderiza uma árvore navegável. Detalhes:
+  - `<details>` puro para colapsar/expandir módulos (zero JS no cliente; usa `<summary>` + `group-open:rotate-90` no chevron).
+  - Visibilidade `hidden xl:block` — só aparece em ecrãs ≥1280px (mobile/md/lg continuam com layout actual).
+  - Default-open só no módulo actual (`open={isCurrentModule}`).
+  - Cada aula é um `<Link>` para `/admin/conteudos/[courseId]/[moduleId]?editar=<lessonId>` — o estado "aula em edit" vive em search param, por isso o salto entre aulas é só navegação na mesma página.
+  - Destaque `aria-current="page"` + estilo laranja no módulo activo (quando sem `?editar=`) ou na aula activa.
+  - "Sem aulas" inline em itálico quando o módulo está vazio.
+
+### test
+- add: `src/app/admin/conteudos/course-tree.test.tsx` com 16 testes — render básico (heading, estado vazio, error throw), render de árvore completa (links de módulos + aulas com URLs correctos, ordenação JS quando DB devolve desordenado, "Sem aulas" em módulo vazio), destaque do actual (default-open só no current module, sem currentModuleId nenhum abre, aria-current na aula vs. no módulo conforme `?editar=`), shape da query Supabase (eq course_id, order position asc, select embed correcto), semantics (aside com aria-label).
+- 163/163 testes verdes (147 → 163, +16 nesta iteração).
+
+### docs
+- update: `status.md` regista a iteração de admin UX como concluída em `v3-cursos`.
+
+---
+
+## [19-05-2026] — V3 PR5: Catálogo público em `/conteudos` — local em `v3-cursos`
+
+Sexta PR de V3 (1ª UI pública depois das 4 admin). `/conteudos` deixa de ser placeholder "Em breve" e passa a renderizar o catálogo real de cursos, com pesquisa textual e badge "Em breve" para cursos sem aulas. Continua só em `logos-dev`; nada vai a `main`/`logos-prod` antes de 01-07-2026.
+
+### add
+- add: `src/lib/courses/visibility.ts` com `getVisibleCoursesForUser({ query? })`. Não duplica regras: delega visibilidade na RLS policy `course_is_visible(courses)` criada em PR2; só agrega `hasLessons` via embed PostgREST `modules ( lessons ( count ) )` num único round-trip. Pesquisa opcional via `.ilike('title', '%q%')`, trim + 80 char max, vazio/whitespace é ignorado.
+- add: `src/lib/courses/icons.tsx` — registry partilhado de ícones Lucide para cursos + componente `<CourseIcon slug={…} className={…} />` (fallback `book-open` para slugs desconhecidos). Substitui o array local de `icon-picker.tsx`.
+- update: `src/app/admin/conteudos/icon-picker.tsx` passa a importar `COURSE_ICONS` do registry partilhado (sem duplicação entre admin e catálogo).
+- update: `src/app/conteudos/page.tsx` reescrita como Server Component que lê `searchParams.q`, chama o helper de visibilidade e passa `courses + query` ao componente cliente.
+- update: `src/app/conteudos/conteudos-content.tsx` (continua `'use client'` para manter as animações `motion/react`) — form GET de pesquisa (`role="search"` + input com ícone Lucide e botão "Pesquisar" + link "Limpar" quando filtro activo); grid responsivo 1 / 2 / 3 colunas de cards com ícone laranja, título, descrição (line-clamp-4), badge `Em breve` se `hasLessons = false` (com `aria-disabled` + `tabIndex=-1` + `pointer-events-none`). Estado vazio reusa o bloco Sparkles, com título dinâmico `Em breve` vs `Sem resultados`.
+
+### decisions
+- GET form em vez de `useTransition` + Server Action — mais simples, acessível sem JS, cacheável; revisitar se UX exigir instant search.
+- RLS é fonte única de visibilidade — helper não passa `profileId` nem filtra em JS; toda a regra vive em `course_is_visible(courses)`.
+- Cards sem aulas continuam visíveis mas desactivados — dão sinal ao utilizador em vez de desaparecerem.
+
+### test
+- add: `src/lib/courses/visibility.test.ts` com 14 testes (empty/error, `hasLessons` em todos os shapes possíveis, `.ilike` com trim/limit/skip, ordering, embed select).
+- update: `src/app/conteudos/page.test.tsx` reescrita com 12 testes (sempre-presente: heading + intro + search form; vazio sem filtro: "Em breve" sem Limpar; vazio com filtro: "Sem resultados" + Limpar + input pré-populado; cards: link para slug, badge + `aria-disabled` quando sem aulas, sem badge quando há aulas, descrição nula omitida).
+- 147/147 testes verdes (124 → 147, +23 nesta PR: 14 visibility + 12 conteúdos novos − 3 conteúdos antigos).
+
+### docs
+- update: `status.md` move "V3 PR5" de "Em progresso" para "Concluído"; "V3 PR6 — Página de curso + página de aula" passa a próxima.
+- update: `feature-docs/v3-plan.md` tabela e §5 ticadas para PR5, com decisões e contagem de testes.
+
+---
+
+## [19-05-2026] — V3 PR4b: Admin CRUD de Aulas — local em `v3-cursos`
+
+Quinto passo de V3 (PR4 sub-iteração b, depois de PR4a e PR4-IA). Sem migrations novas: a página de aulas vive em cima do schema da PR2 e do storage `lesson-pdfs`. Server Actions com upload PDF, validação YouTube URL e coerência de template entre `pdf` ↔ `video_pdf`. Continua só em `logos-dev`; nada vai a `main`/`logos-prod` antes de 01-07-2026.
+
+### add
+- add: `src/app/admin/conteudos/lessons-actions.ts` com 5 Server Actions — `createLessonAction`, `updateLessonAction`, `deleteLessonAction`, `moveLessonUpAction`, `moveLessonDownAction`. Triple defesa: role admin+super_admin, RLS em `lessons`, CHECK constraints DB. Upload PDF para `lesson-pdfs/<courseId>/<lessonId>.pdf` (MIME `application/pdf`, ≤ 20 MB, `upsert: true`). Insert primeiro com placeholder em `pdf_storage_path` para satisfazer o NOT NULL; substituído pelo path real após upload. Em falha de upload faz rollback do row inserido.
+- add: regra de coerência de template — `pdf → video_pdf` exige `youtube_url` no mesmo submit; `video_pdf → pdf` limpa o `youtube_url`. PDF mantém-se sempre. Validador `validateYoutubeUrl` aceita `youtu.be/<id>` e `youtube.com/watch?v=<id>`.
+- add: `src/app/admin/conteudos/[courseId]/[moduleId]/page.tsx` — drill-down de aulas dentro de um módulo (admin+super_admin). Breadcrumb mobile `Cursos › Curso › Módulo`, voltar ao curso via link no header. Form "Nova aula" no topo (`encType="multipart/form-data"`) com radios de template, URL do YouTube opcional, file input `accept="application/pdf"`. Listagem ordenada por `position` com pill do template + URL YouTube linkado. Edit inline via `?editar=<lessonId>` (PDF opcional — vazio mantém o actual), confirm delete inline via `?apagar=<lessonId>`, setas ↑↓ para reordenar.
+- update: `ConteudosBreadcrumb` ganha `moduleTitle` + `courseId` para suportar três níveis (Cursos / Curso / Módulo); curso passa a link quando há módulo selecionado.
+- update: lista de módulos em `/admin/conteudos/[courseId]` ganha botão **Aulas →** (CTA primário em borda laranja) a apontar para o drill-down. Descrição da secção actualizada (já não diz "PR4b").
+
+### test
+- add: `src/app/admin/conteudos/lessons-actions.test.ts` com 17 testes — 9 em `createLessonAction` (role guard, template inválido, video_pdf sem URL, URL fora do formato, PDF em falta, MIME errado com rollback, > 20 MB com rollback, happy path full, falha de storage com rollback), 3 em `updateLessonAction` (role, coerência pdf→video_pdf sem URL, coerência video_pdf→pdf limpa URL, novo PDF anexado), 1 em `deleteLessonAction` (apaga DB + bucket + revalida), 3 em `moveLessonUpAction` (swap, no-op no primeiro, rejeita module_id que não bate).
+- 124/124 testes verdes (107 → 124, +17 nesta PR).
+
+### docs
+- update: `status.md` move "V3 PR4b" de "Em progresso" para "Concluído"; "V3 PR5 — Catálogo público" passa a próxima.
+- update: `feature-docs/v3-plan.md` tabela e §4b ticadas para PR4b.
+
+---
+
+## [19-05-2026] — V3 PR3: Admin CRUD de Cursos — local em `v3-cursos`
+
+Terceira PR de V3. Primeira UI por cima do schema da PR2: a área admin ganha o painel `/admin/cursos` para criar, editar e apagar cursos. Aplicada apenas a `logos-dev` (sem migrations novas — só UI). Continua sem mergear em `main` conforme estratégia de 3 camadas.
+
+### add
+- add: `/admin/cursos` listagem (admin + super_admin) com estado Publicado/Rascunho, etiquetas necessárias resolvidas para labels, botão "Novo curso".
+- add: `/admin/cursos/novo` form de criação (server component) com `title`, `slug` (kebab-case regex), `description` (textarea texto puro), `icon` (Lucide name livre, opcional), `required_tags` (checkboxes alimentados por `tags` da PR1), toggle "Publicado". Após sucesso faz `redirect` para `/admin/cursos/<id>` para o utilizador continuar a editar.
+- add: `/admin/cursos/[id]` form de edição com o mesmo `CourseForm` partilhado. UUID inválido ou curso inexistente → `notFound()`.
+- add: Zona de perigo na página de edição com hard delete confirmado via `?confirmar=apagar` (mesmo padrão server-side de `/admin/etiquetas`, sem Client Components). Apagar usa o CASCADE da FK em modules/lessons/completions.
+- add: Server Actions `createCourseAction`/`updateCourseAction`/`deleteCourseAction` em `src/app/admin/cursos/actions.ts` com validação inline (slug regex 2-80, title 1-120, description ≤ 4000, icon ≤ 64, required_tags UUID-checked, dedup), defesa de role admin+super_admin, mensagem clara para slug duplicado (Postgres 23505). Sem Zod — manter convenção das actions existentes.
+- add: regra `published_at` "primeira publicação preservada" — toggle off ⇒ NULL; toggle on com `published_at` actual ⇒ mantém data; toggle on com NULL anterior ⇒ `now()`. Decisão para minimizar churn da data publicada em re-edições.
+- add: link "Cursos" na navegação admin (`src/app/admin/layout.tsx`) visível a admin **e** super_admin (diferente de Etiquetas/Utilizadores que ficam só super_admin).
+- add: `src/app/admin/cursos/course-form.tsx` (server component) partilhado entre create/edit para reduzir duplicação.
+
+### test
+- add: `src/app/admin/cursos/actions.test.ts` com 13 testes — 7 para `createCourseAction` (sessão, role, slug regex, título vazio, required_tags UUID, rascunho vs publicado, slug duplicado 23505), 5 para `updateCourseAction` (role, id inválido, preservação de `published_at`, despublicar, primeira publicação, curso inexistente), 1 para `deleteCourseAction`.
+- update: `src/app/admin/layout.test.tsx` ajustado para verificar que `role=admin` vê link Cursos mas não vê Utilizadores/Etiquetas.
+- 89/89 testes verdes (73 → 89, +16 incluindo 13 novos em cursos + 3 ajustes no layout).
+
+### docs
+- update: `status.md` move "V3 PR3" de "Em progresso" para "Concluído"; aponta "V3 PR4" como próxima.
+- update: `feature-docs/v3-plan.md` tabela e §3 ticadas para PR3.
+
+---
+
+## [19-05-2026] — V3 PR2: Schema base + storage (cursos, módulos, aulas, conclusões, bucket lesson-pdfs) — local em `v3-cursos`
+
+Segunda PR de V3, puramente SQL/infra (sem UI; ship-able sozinha sem mudar nada visível). PRs 3-7 vão construir UI por cima deste schema. Aplicada apenas a `logos-dev`; `logos-prod` continua schema V2 conforme estratégia de 3 camadas (`feature-docs/branch-strategy.md`).
+
+### add
+- add: migration `supabase/migrations/20260519020000_v3_courses_schema_and_storage.sql` aplicada a `logos-dev`.
+  - **Helper** `set_updated_at()` trigger function genérica para gerir `updated_at`.
+  - **`courses`**: id, slug unique (kebab-case CHECK 2-80), title (1-120), description, icon (nome Lucide ou texto livre), `required_tags uuid[] default '{}'`, `published_at` nullable (NULL = draft), created_by → profiles restrict, updated_at via trigger. Índice parcial `courses_published_at_idx` em published_at IS NOT NULL para catálogo público rápido.
+  - **`modules`**: course_id CASCADE, position int >= 0, title, description, updated_at via trigger. Índice composto `(course_id, position)`.
+  - **`lessons`**: module_id CASCADE, position, title, description, template CHECK in ('pdf','video_pdf'), youtube_url nullable, pdf_storage_path **not** nullable (V3 exige apostila), CHECK `video_pdf → youtube_url IS NOT NULL`. Índice composto `(module_id, position)`.
+  - **`lesson_completions`**: PK composta (user_id, lesson_id), CASCADE em ambos. Idempotente por design.
+  - **`course_completions`**: PK composta (user_id, course_id), CASCADE. Imutável (sem policy UPDATE/DELETE).
+  - **`course_access_log`**: id uuid, user/course CASCADE, accessed_at — sem unique. Índices em course_id e accessed_at desc para stats em PR8.
+  - **Helper** `course_is_visible(courses) → boolean` STABLE + SECURITY DEFINER unifica a regra de visibilidade: admin/super_admin tudo; user só published_at NOT NULL E (required_tags vazio OR overlap via `current_profile_has_tag`). Reutilizado nas policies de courses, modules e lessons.
+  - **RLS** activa em todas as 6 tabelas:
+    - `courses`/`modules`/`lessons` SELECT via `course_is_visible`; INSERT/UPDATE/DELETE admin+super_admin.
+    - `lesson_completions` SELECT próprias ou admin/super_admin; INSERT/DELETE só o próprio (conclusão é acto pessoal — admin não marca por outros).
+    - `course_completions` SELECT próprias ou admin/super_admin; INSERT só o próprio; sem UPDATE/DELETE (imutável).
+    - `course_access_log` SELECT só admin/super_admin (auditoria); INSERT só o próprio.
+  - **Storage**: bucket `lesson-pdfs` privado (public=false), `file_size_limit` 20 MB, `allowed_mime_types: ['application/pdf']`. Policies em `storage.objects`: SELECT authenticated qualquer profile (acesso fino fica na Server Action de PR6 que verifica `course_is_visible` antes de `createSignedUrl`); INSERT/UPDATE/DELETE admin+super_admin.
+
+### testing
+- Suite continua 73/73 (esperado — sem código novo). RLS validada manualmente em PR3-PR7 quando a UI existir.
+
+### docs
+- docs: `status.md` move V3 PR2 para concluído; muda "Em progresso" para PR3.
+
+---
+
+## [19-05-2026] — V3 PR1: Etiquetas (fundação) — local em `v3-cursos`
+
+Primeira PR de V3, executada localmente. V2.5 fica em hold em preview a aguardar testemunhos do ministério; V3 desenvolve em paralelo em `v3-cursos` sem tocar `main` (V3 sobe ao Production só no merge final, prazo 01-07-2026). Decisão: V2 PR4 (etiquetas planeada em `feature-docs/v2-auth.md` §4) absorvida directamente em V3 PR1, conforme `feature-docs/v3-plan.md` §1.
+
+### add
+- add: migration `supabase/migrations/20260518120000_tags_and_user_tags.sql` aplicada a `logos-dev` via `pnpm dlx supabase db push`. Cria `tags` (id, slug unique kebab-case CHECK 2-64 chars, label 1-80, created_by → profiles `on delete restrict`, created_at) e `user_tags` (PK composta `(user_id, tag_id)`, assigned_by → profiles `on delete restrict`, assigned_at, cascade em user_id/tag_id). Índice em `user_tags(tag_id)` para queries reversas. Helper SQL `current_profile_has_tag(uuid[]) → boolean` STABLE + SECURITY DEFINER (padrão anti-recursão RLS estabelecido em V2). RLS: `tags` SELECT admin/super_admin tudo + user só as próprias (subquery a `user_tags`), escrita só super_admin; `user_tags` SELECT próprias ou admin/super_admin, INSERT/DELETE admin + super_admin (sem UPDATE — atribuição binária).
+- add: `src/app/admin/etiquetas/{page,actions,actions.test}.tsx|ts` — CRUD de etiquetas super_admin-only. Form de criar (label + slug, ambos com regex/length validation matching DB constraints). Edição inline via query param `?editar=<id>`, confirmação de delete via `?apagar=<id>` (server-side puro, sem Client Components novos). Mensagens claras para slug duplicado (Postgres 23505).
+- add: `src/app/admin/utilizadores/actions.ts` — `assignTagAction` + `unassignTagAction` (admin + super_admin). Upsert idempotente com `onConflict: 'user_id,tag_id', ignoreDuplicates: true` para evitar 409 em cliques duplos. Defesas em profundidade: caller role, UUID regex em ambos os IDs, RLS no servidor.
+
+### update
+- update: `src/app/admin/layout.tsx` — adiciona link "Etiquetas" no aside (super_admin only).
+- update: `src/app/admin/utilizadores/page.tsx` — gating relaxa para admin + super_admin (antes era super_admin only). Coluna "Etiquetas" nova com pills das etiquetas atribuídas (botão `×` por pill → unassign) + `<select>` nativo + botão Adicionar para atribuir as ainda não atribuídas. Coluna "Papel" (acção) condicional só para super_admin; admin vê página focada em etiquetas. Cabeçalho cresce com link "Criar uma etiqueta" quando não há etiquetas e o caller é super_admin.
+
+### testing
+- 21 testes novos (52 → 73 a passar): 12 em `etiquetas/actions.test.ts` (create/update/delete com defesas + slug regex + label vazia + dup 23505), 8 em `utilizadores/actions.test.ts` (assign/unassign com defesas + idempotência), 1 ajuste em `admin/layout.test.tsx` (novo link "Etiquetas" aparece a super_admin, ausente a admin).
+
+### docs
+- docs (a fazer): `status.md` move V3 PR1 para concluído e regista a estratégia "V3 só sobe ao Production no fim".
 
 ---
 

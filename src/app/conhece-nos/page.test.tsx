@@ -8,7 +8,7 @@ describe('ConheceNosContent', () => {
     expect(screen.getByRole('heading', { level: 1, name: /conhece-nos/i })).toBeInTheDocument();
   });
 
-  it('identifica LOGOS como ministério de ensino da CCLX — Comunidade Cristã de Lisboa', () => {
+  it('identifica LOGOS como ministério de ensino da CCLX - Comunidade Cristã de Lisboa', () => {
     render(<ConheceNosContent />);
     expect(
       screen.getByText(/ministério de ensino da CCLX.*Comunidade Cristã de Lisboa/i),

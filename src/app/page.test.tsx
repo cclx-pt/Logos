@@ -5,13 +5,13 @@ import { HomeMotto } from '@/components/site/home-motto';
 
 describe('HomeHero', () => {
   it('apresenta o heading principal com capitalizações pedidas', () => {
-    render(<HomeHero isAuthenticated={false} ctaHref="/conteudos" />);
+    render(<HomeHero isAuthenticated={false} ctaHref="/meus-cursos" />);
     const heading = screen.getByRole('heading', { level: 1 });
     expect(heading).toHaveTextContent(/Estudo Bíblico para uma Fé Enraizada\./);
   });
 
   it('mostra o wordmark LOGOS no hero', () => {
-    render(<HomeHero isAuthenticated={false} ctaHref="/conteudos" />);
+    render(<HomeHero isAuthenticated={false} ctaHref="/meus-cursos" />);
     expect(screen.getByLabelText('LOGOS')).toBeInTheDocument();
   });
 
@@ -23,21 +23,19 @@ describe('HomeHero', () => {
   });
 
   it('quando há sessão, expõe link "Meus cursos" para ctaHref', () => {
-    render(<HomeHero isAuthenticated={true} ctaHref="/conteudos" />);
+    render(<HomeHero isAuthenticated={true} ctaHref="/meus-cursos" />);
     const cta = screen.getByRole('link', { name: /meus cursos/i });
-    expect(cta).toHaveAttribute('href', '/conteudos');
+    expect(cta).toHaveAttribute('href', '/meus-cursos');
   });
 
-  it('sem sessão, expõe botão "Meus cursos" dentro de form com hidden input next', () => {
-    const { container } = render(<HomeHero isAuthenticated={false} ctaHref="/conteudos" />);
-    const button = screen.getByRole('button', { name: /meus cursos/i });
-    expect(button).toBeInTheDocument();
-    const hidden = container.querySelector('input[name="next"]');
-    expect(hidden).toHaveAttribute('value', '/conteudos');
+  it('sem sessão, expõe CTA "Entrar" para a página de login geral com next', () => {
+    render(<HomeHero isAuthenticated={false} ctaHref="/meus-cursos" />);
+    const entrar = screen.getByRole('link', { name: /^entrar$/i });
+    expect(entrar).toHaveAttribute('href', '/entrar?next=%2Fmeus-cursos');
   });
 
   it('não tem o botão "Conhece o projeto"', () => {
-    render(<HomeHero isAuthenticated={false} ctaHref="/conteudos" />);
+    render(<HomeHero isAuthenticated={false} ctaHref="/meus-cursos" />);
     expect(screen.queryByText(/conhece o projeto/i)).not.toBeInTheDocument();
   });
 });

@@ -13,8 +13,8 @@
 | `cream-card`     | `#FBE6D4` | `--accent` / variação cartão | Cartão pêssego (variação 1)                          |
 | `sage-card`      | `#C6CDB1` | variação cartão              | Cartão sálvia (variação 2)                           |
 | `butter-card`    | `#F6E6C4` | variação cartão              | Cartão amarelo suave (variação 3)                    |
-| `orange-primary` | `#E36A2C` | `--primary`                  | Marca, CTAs, links, ícones de destaque               |
-| `orange-hover`   | `#C85A22` | `--primary` (estado hover)   | Hover/active de elementos `orange-primary`           |
+| `orange-primary` | `#B14E1F` | `--primary`                  | Marca, CTAs, links, ícones de destaque               |
+| `orange-hover`   | `#993F15` | `--primary` (estado hover)   | Hover/active de elementos `orange-primary`           |
 | `ink`            | `#1A1A1A` | `--foreground`               | Texto principal                                      |
 | `muted`          | `#6B6B6B` | `--muted-foreground`         | Texto secundário, *placeholders*, metadados          |
 
@@ -29,8 +29,8 @@ A paleta vive directamente em `@theme` no `globals.css`. Tailwind v4 não usa `t
   --color-cream-card: #fbe6d4;
   --color-sage-card: #c6cdb1;
   --color-butter-card: #f6e6c4;
-  --color-orange: #e36a2c;
-  --color-orange-hover: #c85a22;
+  --color-orange: #b14e1f; /* WCAG AA: 5.27:1 contra branco; 4.84:1 contra cream */
+  --color-orange-hover: #993f15;
   --color-ink: #1a1a1a;
   --color-muted: #6b6b6b;
 
@@ -54,7 +54,7 @@ shadcn/ui (`new-york` / `base-nova`) consome tokens semânticos como `--backgrou
   --card-foreground: #1a1a1a;
   --popover: #faf4ea;
   --popover-foreground: #1a1a1a;
-  --primary: #e36a2c; /* orange-primary */
+  --primary: #b14e1f; /* orange-primary (AA-compliant) */
   --primary-foreground: #ffffff;
   --secondary: #f6e6c4; /* butter-card */
   --secondary-foreground: #1a1a1a;
@@ -65,7 +65,7 @@ shadcn/ui (`new-york` / `base-nova`) consome tokens semânticos como `--backgrou
   --destructive: #b3401a; /* alinhado com paleta quente */
   --border: #e5dcc7;
   --input: #e5dcc7;
-  --ring: #e36a2c;
+  --ring: #b14e1f;
   --radius: 0.625rem;
   /* charts/sidebar — placeholders shadcn (sem uso até V3+/V5) */
 }

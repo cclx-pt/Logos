@@ -16,15 +16,28 @@ const csp = [
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'self'",
-  // Embeds de YouTube (video de apresentacao na home + aulas V3).
-  'frame-src https://www.youtube-nocookie.com https://www.youtube.com',
-  // Avatares Google + imagens inline.
-  "img-src 'self' data: https://lh3.googleusercontent.com",
+  // Embeds de YouTube (video de apresentacao na home + aulas V3) + desafio
+  // Cloudflare Turnstile (captcha do login por email OTP, corre num iframe)
+  // + visualizador inline da apostila PDF (iframe com signed URL do bucket
+  // lesson-pdfs). O wildcard *.supabase.co cobre logos-dev e logos-prod sem
+  // acoplar a CSP a env vars de build - mesmo racional do connect-src.
+  'frame-src https://www.youtube-nocookie.com https://www.youtube.com https://challenges.cloudflare.com https://*.supabase.co',
+  // Avatares Google + imagens inline + banners de cursos (signed URLs do
+  // bucket course-banners, servidas de *.supabase.co - ver frame-src).
+  "img-src 'self' data: https://lh3.googleusercontent.com https://*.supabase.co",
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://va.vercel-scripts.com`,
-  // Supabase (auth/db/storage) + telemetria Vercel.
-  "connect-src 'self' https://*.supabase.co https://*.supabase.in https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+  // va.vercel-scripts.com: telemetria Vercel. challenges.cloudflare.com: script
+  // do Turnstile (api.js) carregado pelo TurnstileWidget quando ha site key.
+  // www.youtube.com: script da IFrame Player API (iframe_api + www-widgetapi.js)
+  // que o tutorial (/como-funciona) carrega para a pagina para controlar o
+  // player (autoplay fiavel do 1.o video + loop sem corte). O <iframe> de embed
+  // continua coberto por frame-src; isto e so para o *script* da API.
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://va.vercel-scripts.com https://challenges.cloudflare.com https://www.youtube.com`,
+  // Supabase (auth/db/storage) + telemetria Vercel + validacao do desafio
+  // Turnstile (o fetch que resolve o captcha bate aqui - sem isto o widget
+  // carrega e renderiza mas nunca resolve: "nao foi possivel conectar ao site").
+  "connect-src 'self' https://*.supabase.co https://*.supabase.in https://va.vercel-scripts.com https://vitals.vercel-insights.com https://challenges.cloudflare.com",
   "form-action 'self'",
   "manifest-src 'self'",
 ].join('; ');
@@ -53,19 +66,25 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // Rejeita payloads de Server Actions acima do limite. V2.5 nao tem uploads
-  // (so forms pequenos: login, gestao de papeis), por isso 64kb e folgado.
-  // NOTA: V3 (upload de PDF, ate 20MB) tera de subir este valor ao reconciliar.
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '64kb',
-    },
-  },
   images: {
     remotePatterns: [
       // Avatares Google (via Supabase Auth, user_metadata.avatar_url).
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
     ],
+  },
+  experimental: {
+    // Limite de payload de Server Actions. A V2.5 fixava 64kb (sem uploads),
+    // mas a V3 faz upload de PDFs (createLessonAction) — o schema da PR2
+    // (storage.buckets.lesson-pdfs) permite até 20 MB e damos buffer para o
+    // resto do FormData. Esta é a reconciliação que a nota da V2.5 antecipava.
+    serverActions: {
+      bodySizeLimit: '25mb',
+    },
+    // Smoothness pass V3.3 PR7 — fade automático entre rotas via
+    // View Transitions API. Browsers sem suporte caem para navegação
+    // instantânea (sem regressão). Activa o componente <ViewTransition>
+    // do React 19 + crossfade default em `<Link>`s.
+    viewTransition: true,
   },
   async headers() {
     return [

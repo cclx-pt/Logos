@@ -13,8 +13,9 @@
   --color-cream-card: #fbe6d4;
   --color-sage-card: #c6cdb1;
   --color-butter-card: #f6e6c4;
-  --color-orange: #e36a2c;
-  --color-orange-hover: #c85a22;
+  --color-orange: #b14e1f; /* AA-compliant (WCAG 2.5.3) — 5.27:1 contra branco; 4.84:1 contra cream */
+  --color-orange-primary: #b14e1f; /* alias canónico (branding.md §1) — usado em bg-orange-primary/text-orange-primary */
+  --color-orange-hover: #983f15; /* hover/active — 6.84:1 contra branco; 6.27:1 contra cream */
   --color-ink: #1a1a1a;
   --color-muted: #6b6b6b;
 
@@ -80,7 +81,7 @@
   --card-foreground: #1a1a1a;
   --popover: #faf4ea; /* cream-bg */
   --popover-foreground: #1a1a1a;
-  --primary: #e36a2c; /* orange-primary */
+  --primary: #b14e1f; /* orange-primary (AA-compliant) */
   --primary-foreground: #ffffff;
   --secondary: #f6e6c4; /* butter-card */
   --secondary-foreground: #1a1a1a;
@@ -91,7 +92,7 @@
   --destructive: #b3401a; /* vermelho-laranja escuro, alinhado com paleta quente */
   --border: #e5dcc7; /* cream-bg → contorno suave */
   --input: #e5dcc7;
-  --ring: #e36a2c; /* orange-primary */
+  --ring: #b14e1f; /* orange-primary (AA-compliant) */
 
   /* Charts — defaults shadcn em escala quente (a refinar quando V5 trouxer dashboards) */
   --chart-1: oklch(0.87 0 0);
@@ -155,5 +156,101 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
+  }
+
+  /*
+   * Smoothness pass V3.3 PR7 — animar transições size-keyword (`auto`).
+   * Permite que `<details>` e outros elementos com `block-size: auto`
+   * façam transição limpa em vez de salto. Suportado em Chrome 129+,
+   * Safari 18.2+, Firefox 137+. Browsers antigos ignoram e ficam com
+   * o comportamento instantâneo de sempre.
+   */
+  :root {
+    interpolate-size: allow-keywords;
+  }
+
+  /*
+   * `<details>` ganha abertura suave via `::details-content` (a parte
+   * "filhos" do details, isolada do `<summary>`). Browsers sem suporte
+   * caem para abertura instantânea — sem regressão funcional.
+   */
+  details::details-content {
+    block-size: 0;
+    overflow: hidden;
+    transition:
+      block-size 250ms ease-out,
+      content-visibility 250ms ease-out allow-discrete;
+  }
+  details[open]::details-content {
+    block-size: auto;
+  }
+
+  /*
+   * Smoothness pass V3.3 PR7 — baseline de transições suaves em todos os
+   * elementos interactivos. Cobre os spots onde `hover:bg-*` / `hover:text-*`
+   * existe sem `transition-colors` explícito, sem precisar de auditar
+   * dezenas de ficheiros. Componentes que já têm `transition-colors`
+   * próprio sobrepõem este default sem conflito.
+   */
+  a,
+  button,
+  summary,
+  [role='button'] {
+    transition-property: color, background-color, border-color, opacity;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+  }
+
+  /*
+   * Respeita `prefers-reduced-motion`: desliga animações pesadas para
+   * utilizadores que pedem menos movimento (sistema operativo).
+   */
+  @media (prefers-reduced-motion: reduce) {
+    details::details-content,
+    details[open]::details-content,
+    a,
+    button,
+    summary,
+    [role='button'] {
+      transition: none;
+    }
+  }
+}
+
+/*
+ * Keyframes para a ProgressBar indeterminada (src/components/ui/progress-bar.tsx).
+ * Usado via classe arbitrária `animate-[indeterminate_1.5s_ease-in-out_infinite]`.
+ */
+@keyframes indeterminate {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+/*
+ * Pulsar do ponto do badge "Ao vivo" (src/components/site/live-badge.tsx).
+ * Spec §6.2: opacidade 1 → 0.3 → 1, ciclo de 1.4s. Desligado para quem pede
+ * menos movimento.
+ */
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.animate-live-pulse {
+  animation: live-pulse 1.4s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-live-pulse {
+    animation: none;
   }
 }

@@ -15,9 +15,21 @@ import type { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import type { SupabaseClient, User as SupabaseUser } from '@supabase/supabase-js';
 
+import { getServiceRoleClient } from './service-client';
+
 export type { SupabaseUser };
 
 export type Role = 'user' | 'admin' | 'super_admin';
+
+/**
+ * Etiqueta PT-PT canónica para cada `Role`. Usada em `/perfil`, `/admin` e
+ * `/admin/utilizadores` — manter sincronizado.
+ */
+export const ROLE_LABEL: Record<Role, string> = {
+  user: 'Utilizador',
+  admin: 'Administrador',
+  super_admin: 'Super administrador',
+};
 
 export type Profile = {
   id: string;
@@ -132,4 +144,101 @@ export async function getCurrentUser(): Promise<Profile | null> {
     role: data.role,
     createdAt: data.created_at,
   };
+}
+
+/**
+ * Email da sessão activa, lido da camada de identidade (`auth.users`), ou
+ * `null` se não houver sessão. Existe porque o `Profile` **não** transporta o
+ * email (regra dura: email não é duplicado em tabelas Logos; vive em
+ * `auth.users`). Quem precisar dele - p.ex. o Reply-To das perguntas às aulas -
+ * pede-o aqui, on-demand, sem o persistir.
+ */
+export async function getCurrentAuthEmail(): Promise<string | null> {
+  const supabase = await getServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user?.email ?? null;
+}
+
+/**
+ * Email de um aluno a partir do seu `profiles.id`, lido da camada de identidade
+ * (`auth.users`), ou `null` se não existir. Usado pela resposta do admin às
+ * perguntas às aulas (V3.6 PR3): para enviar o email ao aluno é preciso o seu
+ * endereço, mas o `Profile` nunca o transporta (regra dura: email não é
+ * duplicado em tabelas Logos).
+ *
+ * Usa o **cliente service-role** de propósito: um `admin` não-super não pode ler
+ * perfis alheios (RLS de `profiles`) nem `auth.users`. O bypass de RLS fica
+ * confinado a esta fronteira de identidade; o resto da app continua a correr com
+ * a sessão do utilizador. Lê só `external_auth_id` (a ligação ao sistema de
+ * identidade externo) e troca-o pelo email via `auth.admin.getUserById`.
+ */
+export async function getAuthEmailByProfileId(profileId: string): Promise<string | null> {
+  const svc = getServiceRoleClient();
+
+  const { data: profile, error } = await svc
+    .from('profiles')
+    .select('external_auth_id')
+    .eq('id', profileId)
+    .maybeSingle<{ external_auth_id: string }>();
+  if (error || !profile) return null;
+
+  const { data, error: authError } = await svc.auth.admin.getUserById(profile.external_auth_id);
+  if (authError) return null;
+  return data.user?.email ?? null;
+}
+
+/**
+ * Emails de vários utilizadores a partir dos seus `profiles.id`, lidos da camada
+ * de identidade (`auth.users`). Devolve um `Map<profileId, email>`; perfis sem
+ * email (ou sem correspondência em `auth.users`) ficam de fora. Versão em lote
+ * do `getAuthEmailByProfileId`, para listas (ex.: a tabela de admin de
+ * utilizadores), evitando N chamadas `getUserById`.
+ *
+ * Usa o **cliente service-role** (mesma fronteira de identidade): um `admin`
+ * não-super não pode ler `auth.users` nem perfis alheios via RLS. Lê os
+ * `external_auth_id` dos perfis pedidos e cruza-os com a lista de utilizadores
+ * de identidade (`auth.admin.listUsers`, paginada). O email nunca é persistido
+ * em tabelas Logos (regra dura).
+ */
+export async function getAuthEmailsByProfileIds(
+  profileIds: string[],
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  if (profileIds.length === 0) return result;
+
+  const svc = getServiceRoleClient();
+
+  const { data: profiles, error } = await svc
+    .from('profiles')
+    .select('id, external_auth_id')
+    .in('id', profileIds)
+    .returns<{ id: string; external_auth_id: string }[]>();
+  if (error || !profiles || profiles.length === 0) return result;
+
+  // external_auth_id → email via Admin API paginada. Escala de igreja: na
+  // prática 1 página; o `while` protege contra crescimento futuro.
+  const emailByAuthId = new Map<string, string>();
+  const perPage = 1000;
+  let page = 1;
+  let done = false;
+  while (!done) {
+    const { data, error: listError } = await svc.auth.admin.listUsers({ page, perPage });
+    if (listError || !data) break;
+    for (const u of data.users) {
+      if (u.email) emailByAuthId.set(u.id, u.email);
+    }
+    if (data.users.length < perPage) {
+      done = true;
+    } else {
+      page += 1;
+    }
+  }
+
+  for (const p of profiles) {
+    const email = emailByAuthId.get(p.external_auth_id);
+    if (email) result.set(p.id, email);
+  }
+  return result;
 }

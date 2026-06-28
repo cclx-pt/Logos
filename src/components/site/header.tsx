@@ -1,26 +1,90 @@
+import { AdminBadgeLink } from './admin-badge-link';
+import { ConversasLink } from './conversas-link';
 import { Logo } from './logo';
 import { NavLinks } from './nav-links';
+import { LiveNavLink } from './live-nav-link';
 import { MobileNav } from './mobile-nav';
 import { SignInButton } from './sign-in-button';
 import { UserMenu } from './user-menu';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, getServerClient } from '@/lib/auth';
+import { isConversationUnread } from '@/lib/questions/question';
+import { institutionalNavItems, publicContentNavItems, accountNavItems } from '@/lib/site-config';
 
 export async function Header() {
   const user = await getCurrentUser();
+  const showAdminBadge = user !== null && user.role !== 'user';
+
+  // Estado do ponto "Conversas" (duas cores, sem gamificação):
+  //  - laranja (alerta): conversa do próprio que a equipa respondeu e o aluno
+  //    ainda não abriu (answered + updated_at > owner_seen_at).
+  //  - cinza (neutro): há conversas mas nada novo por ler.
+  // Filtro explícito por profile_id - a RLS de admin é permissiva. Falha-aberto
+  // (sem ponto) se a query falhar.
+  let conversasHasUnread = false;
+  let conversasHasConversations = false;
+  if (user) {
+    try {
+      const supabase = await getServerClient();
+      const { data } = await supabase
+        .from('lesson_questions')
+        .select('status, updated_at, owner_seen_at')
+        .eq('profile_id', user.id)
+        .returns<
+          { status: 'new' | 'answered'; updated_at: string; owner_seen_at: string | null }[]
+        >();
+      const rows = data ?? [];
+      conversasHasConversations = rows.length > 0;
+      conversasHasUnread = rows.some((r) =>
+        isConversationUnread({
+          status: r.status,
+          updatedAt: r.updated_at,
+          ownerSeenAt: r.owner_seen_at,
+        }),
+      );
+    } catch {
+      conversasHasUnread = false;
+      conversasHasConversations = false;
+    }
+  }
 
   return (
     <header className="bg-background/95 border-border supports-[backdrop-filter]:bg-background/80 sticky top-0 z-30 border-b backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3">
-          <MobileNav />
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+        {/* Logo à esquerda. `mr-auto` empurra toda a navegação + perfil para a
+            direita (em mobile fica logo + hamburguer à esquerda, perfil à direita). */}
+        <div className="mr-auto flex items-center gap-3">
+          <MobileNav
+            showAdminLink={showAdminBadge}
+            isAuthenticated={user !== null}
+            conversasHasConversations={conversasHasConversations}
+            conversasHasUnread={conversasHasUnread}
+          />
           <Logo size="md" />
         </div>
-        <div className="flex items-center gap-4 sm:gap-6">
-          <nav aria-label="Navegação principal" className="hidden md:block">
-            <NavLinks orientation="horizontal" />
-          </nav>
-          {user ? <UserMenu user={user} /> : <SignInButton />}
-        </div>
+        {/* Navegação (só xl), agrupada à direita (a seguir ao logo com `mr-auto`).
+            Ordem: Live → institucionais → Conteúdos → (conta, só logado). */}
+        <nav
+          aria-label="Navegação principal"
+          className="hidden items-center gap-6 whitespace-nowrap xl:flex"
+        >
+          <LiveNavLink orientation="horizontal" />
+          <NavLinks orientation="horizontal" items={institutionalNavItems} flatten />
+          <NavLinks orientation="horizontal" items={publicContentNavItems} flatten />
+          {user && (
+            <>
+              <NavLinks orientation="horizontal" items={accountNavItems} flatten />
+              <ConversasLink
+                href="/perguntas"
+                hasConversations={conversasHasConversations}
+                hasUnread={conversasHasUnread}
+                className="whitespace-nowrap"
+              />
+            </>
+          )}
+          {showAdminBadge && <AdminBadgeLink />}
+        </nav>
+        {/* Conta/perfil - último item, encostado à direita (logo tem `mr-auto`). */}
+        {user ? <UserMenu user={user} /> : <SignInButton />}
       </div>
     </header>
   );

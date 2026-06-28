@@ -146,6 +146,7 @@ Cada aula tem um **modelo** que define o tipo de conteúdo que entrega. Modelos 
 | Modelo       | Conteúdo                                                       |
 |--------------|----------------------------------------------------------------|
 | `pdf`        | Apenas um PDF descarregável                                    |
+| `video`      | Apenas um vídeo do YouTube embebido (sem apostila)            |
 | `video_pdf`  | Vídeo do YouTube embebido **mais** um PDF descarregável        |
 
 O sistema deve ser desenhado para permitir adicionar novos modelos no futuro (por exemplo, `live_stream`, `quiz`, `text_only`) sem reescrever o modelo de dados. O modelo é guardado como campo de texto na aula; a lógica da aplicação decide que campos são obrigatórios para cada modelo.
@@ -156,6 +157,16 @@ O sistema deve ser desenhado para permitir adicionar novos modelos no futuro (po
 - Em V4, o campo de etiquetas exigidas existe também nas entidades **Módulo** e **Aula**.
 
 A migração de V3 para V4 é aditiva (acrescenta colunas, não remove nem altera dados existentes).
+
+### Sequência e pré-requisitos (V3.6)
+
+Cada **curso** tem três controlos opcionais de progressão, geridos pelo admin no formulário do curso. As duas flags de sequência interna são **independentes**:
+
+- **Aulas em sequência** (`courses.sequential_lessons`, boolean): dentro de cada módulo, as aulas têm de ser concluídas pela ordem (`lesson.position`) - a aula 2 exige a aula 1 do mesmo módulo. A primeira por concluir do módulo (a "fronteira") e as já concluídas ficam acessíveis; as restantes ficam **bloqueadas**.
+- **Módulos em sequência** (`courses.sequential_modules`, boolean): um módulo só fica acessível depois de o módulo anterior (com aulas) estar **totalmente concluído**. Independente de `sequential_lessons` - dá para exigir ordem só das aulas, só dos módulos, ambas ou nenhuma.
+- **Curso pré-requisito** (`courses.prerequisite_course_id`, auto-referência nullable): o curso só fica disponível depois de o curso apontado estar **concluído**. `NULL` = curso autónomo. Encadear cursos (A → B → C) cria uma **sequência de cursos**. Ciclos são impedidos (auto-referência por CHECK na BD; cadeias mais longas pela Server Action).
+
+**Conteúdo bloqueado por sequência aparece com cadeado e dica** ("Conclui a aula anterior primeiro" / "Conclui [Curso A] primeiro"), **não é escondido** - ao contrário da restrição por etiqueta (§5), que é invisível. A diferença é intencional: a sequência é pedagógica (mostra o caminho), a etiqueta é controlo de acesso. A regra é aplicada **server-side** (a página de aula/módulo redirecciona para a fronteira; a inscrição recusa se o pré-requisito faltar), não em RLS - tal como a deteção de "curso concluído" (§8).
 
 ### Outras regras de conteúdo
 
@@ -233,7 +244,7 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 - Página inicial com o logótipo Logos e a marca da CCLX (paleta creme + laranja vivo)
 - Página *Conhece-nos*
 - Página *Fala connosco*
-- Página *Conteúdos* — hub de topo do ensino, com dois cartões: *Cursos* e *Escola Bíblica*. Cada cartão leva a uma sub-página placeholder "em breve" (`/conteudos/cursos`, `/conteudos/escola-biblica`). O catálogo real de cursos é construído na V3; a Escola Bíblica (transmissões em direto) na V6. A entrega ao público de um esqueleto "em construção" é deliberada — sinaliza o que virá.
+- Página *Conteúdos* — placeholder "em breve" em V1. V3 substitui pelo catálogo real de cursos com pesquisa textual (PR5: filtragem por título via `?q=`, badge "Em breve" para cursos sem aulas, RLS filtra por etiqueta). Escola Bíblica (transmissões em direto) entra em V6 como rota dedicada se o ministério fizer transmissões — não há sub-página dedicada em V3.
 - Identidade visual aplicada em todo o site
 - Disponível em `logos.cclx.pt`
 - **Sem login, sem base de dados** — a V1 pode ser inteiramente estática.
@@ -250,15 +261,16 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 
 - CRUD de admin para Cursos → Módulos → Aulas
 - Upload de PDFs e colagem de URLs do YouTube
-- Modelos de aula: `pdf` e `video_pdf` (com possibilidade de adicionar mais no futuro)
+- Modelos de aula: `pdf`, `video` e `video_pdf` (com possibilidade de adicionar mais no futuro)
 - **Restrição apenas ao nível do curso:** ao criar um curso, o admin pode anexar etiquetas exigidas. Cursos sem etiquetas são públicos; cursos com etiquetas só aparecem a utilizadores autenticados que tenham pelo menos uma das etiquetas
 - Catálogo público mostra cursos sem etiquetas a todos. Cursos restritos só aparecem após login a utilizadores com etiqueta correspondente
-- Página de visualização de aula (corresponde ao mockup superior esquerdo, **sem** o campo de perguntas): vídeo embebido, descarregar PDF, barra lateral de módulo com lista de aulas, botões "Próxima aula" e "Próximo módulo"
+- Página de visualização de aula (corresponde ao mockup superior esquerdo; o **campo de perguntas** foi acrescentado em **V3.5** e virou **conversa ligada** em V3.6 - ver §V5): vídeo embebido, descarregar PDF, barra lateral de módulo com lista de aulas, botões "Próxima aula" e "Próximo módulo"
 - "Marcar como concluída" por aula, com check ✓ visível
 - Ecrã "Curso Concluído" com data de conclusão
 - Pesquisa e navegação no catálogo
 - **Contabilização leve de acessos:** botão "Aceder ao curso" / "Começar curso" regista um acesso. Estatísticas básicas visíveis ao admin (por exemplo: "X utilizadores começaram este curso")
 - Vercel Analytics ativado (gratuito, automático)
+- **(Puxado de V5 — 30-05-2026):** dashboard de estatísticas em `/admin/estatisticas` — totais, por curso (inscritos, finalizações, acessos, visitas a módulos/aulas) e por utilizador (super_admin). Inclui tracking de visitas a aulas (`lesson_views`). **Sem** taxas/percentagens de conclusão nem segmentação por etiqueta — essa parte continua em V5.
 
 ### V4 — Etiquetas Multi-Nível
 
@@ -268,18 +280,18 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 - UI do admin para anexar etiquetas a módulos e aulas durante a criação/edição
 - Recálculo automático de visibilidade e do estado de "Curso Concluído" quando as etiquetas mudam
 - **Sem mudanças no sistema de conclusão:** continua binário, sem percentagens
+- **Pré-requisitos sequenciais (aula/módulo/curso) puxados para V3.6 (14-06-2026):** as flags por curso `sequential_lessons` (aulas em ordem dentro do módulo) e `sequential_modules` (módulos em ordem), independentes, mais o `prerequisite_course_id` (cadeia de cursos opcional) foram **antecipados** para o ciclo V3. Ver §6 (Sequência e pré-requisitos), §19 e `feature-docs/sequencing.md`. Migration `20260614140000` (só `logos-dev`).
 
 ### V5 — Perguntas & Respostas e Estatísticas
 
-- Campo de perguntas por aula (corresponde ao input visível no mockup)
-- Perguntas guardadas em base de dados; vista de "caixa de entrada" para a equipa de admins
-- Equipa responde inicialmente fora da plataforma (email manual ao aluno); respostas estruturadas dentro da plataforma podem vir mais tarde
-- Notificação por email aos admins quando uma nova pergunta é submetida (via Resend)
-- **Dashboard de estatísticas mais profundo:** conclusões por curso, taxas de conclusão, segmentação por etiqueta
+- **Q&A puxado para V3.5/V3.6 (13-06-2026):** o campo de perguntas por aula, a gravação em base de dados (`lesson_questions`), a vista de "caixa de entrada" para a equipa (`/admin/perguntas`) e a notificação por email (via Resend) foram **antecipados** para o ciclo V3 - tal como as estatísticas (30-05). Em **V3.6** puxou-se também o **thread bidirecional / inbox do aluno**: a equipa responde **dentro da app** (a resposta vai por email ao aluno), o aluno recebe cópia da pergunta e pode dar **seguimento** em `/perguntas`, tudo ligado por um código `LOGOS-XXXXXX`. Migrations `20260612220000` + `20260612230000` + `20260613120000` (só `logos-dev`). Ver `feature-docs/qa-perguntas.md`.
+- **Fica para V5:** FAQ pública / agrupar os temas mais pedidos a partir das conversas guardadas. (As respostas estruturadas dentro da plataforma - thread bidirecional + inbox do aluno - foram entregues em V3.6.)
+- **Dashboard de estatísticas mais profundo:** ~~conclusões por curso~~, **taxas de conclusão** e **segmentação por etiqueta**. *(As contagens — conclusões/inscrições/visitas por curso, módulo, aula e utilizador — foram puxadas para V3 em 30-05-2026, ver §9 V3 e `feature-docs/admin-estatisticas.md`. Ficam para V5 apenas as percentagens/taxas e a segmentação por etiqueta.)*
 
 ### V6 — Live Stream e Tema
 
 - Suporte para embeber YouTube Live (vídeos não listados): admin cola um URL ao vivo e o player aparece na área **Escola Bíblica** (`/conteudos/escola-biblica`), cujo esqueleto foi entregue na V1
+  - **Antecipado para V3.6 (13-06-2026), com âmbito ajustado:** entregue como entrada de nav **"Live"** + página `/live` (canal LOGOS), deteção automática live/offline via YouTube Data API no servidor (sem o admin colar URL), em vez de `/conteudos/escola-biblica`. Ver §19 e `feature-docs/live.md`.
 - Alternância **modo escuro / modo claro**
 
 ### V7 — Indicadores de Progresso *(opcional)*
@@ -311,14 +323,15 @@ A equipa do ministério organizou os pedidos por **prioridade** (P1 essencial �
 | Login com email/palavra-passe e Google                | PDF P1A              |     P1     |   V2   |
 | Sistema de etiquetas (fundação)                       | PDF P1A              |     P1     |   V2   |
 | CRUD de Cursos / Módulos / Aulas                      | PDF P1B              |     P1     |   V3   |
-| Modelos de aula (`pdf`, `video_pdf`)                  | PDF P1B              |     P1     |   V3   |
+| Modelos de aula (`pdf`, `video`, `video_pdf`)         | PDF P1B              |     P1     |   V3   |
 | Restrição de cursos por etiqueta                      | PDF P1A              |     P1     |   V3   |
 | Marcação binária de aulas concluídas                  | Especificação        |     —      |   V3   |
 | Ecrã "Curso Concluído"                                | Especificação        |     —      |   V3   |
 | Contabilização leve de acessos                        | PDF P1C              |     P1     |   V3   |
 | Restrição de módulos e aulas por etiqueta             | PDF P1A              |     P1     |   V4   |
 | Perguntas por aula → caixa de entrada da equipa       | PDF P2A              |     P2     |   V5   |
-| Dashboard de estatísticas                             | Novo                 |     —      |   V5   |
+| Dashboard de estatísticas (contagens)                 | Novo                 |     —      | V3 (puxado 30-05) |
+| Dashboard de estatísticas (taxas % + segmentação)     | Novo                 |     —      |   V5   |
 | Live stream do YouTube embebido                       | PDF P3A              |     P3     |   V6   |
 | Modo escuro / modo claro                              | PDF P4A              |     P4     |   V6   |
 | Indicadores de progresso (barra, %)                   | A reavaliar          |     —      |   V7   |
@@ -334,7 +347,7 @@ A equipa do ministério organizou os pedidos por **prioridade** (P1 essencial �
 | Estilização                           | **Tailwind CSS**                         | Utility-first; rápido para humano e para Claude Code                                      |
 | Componentes UI                        | **shadcn/ui**                            | Acessíveis, configuráveis para a paleta creme + laranja                                   |
 | Base de dados                         | **Supabase (Postgres)** — 2 projetos: `logos-dev` e `logos-prod` | Auth da Supabase fixa-se ao schema `auth.users`; só projetos separados isolam contas. Plano gratuito acomoda 2 projetos |
-| Autenticação                          | **Supabase Auth** (Google OAuth) — único método; ver §17 e §18 | Integrada com a base de dados; trata de papéis e sessões. Sem signup/recovery de palavra-passe (decisão de scope V2 para reduzir esforço e dependências externas) |
+| Autenticação                          | **Supabase Auth** (OAuth social: Google + email OTP) — ver §17 e §18 | Integrada com a base de dados; trata de papéis e sessões. Sem signup/recovery de palavra-passe (decisão de scope V2 para reduzir esforço e dependências externas). Microsoft (Entra/Azure) foi acrescentado em 04-06-2026 e removido em 10-06-2026 (decisão do líder: só Google + email); Apple adiado por exigir Apple Developer Program pago |
 | Armazenamento de ficheiros (PDFs)     | **Supabase Storage**                     | Mesma conta Supabase; URLs assinados para descarregar                                     |
 | Acesso à base de dados                | **Supabase JS client** (`@supabase/ssr` para SSR) | Sessão em Server Components/Actions via cookies httpOnly; migração para Drizzle adiada |
 | Migrations                            | **Supabase CLI** (`supabase/migrations/*.sql` versionado) | Schema replicado entre `logos-dev` e `logos-prod` com `supabase db push`; ficheiros SQL no Git |
@@ -472,7 +485,7 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 
 3. **Detalhe de curso**: bloco hero com ícone do curso, título, descrição e botão "Iniciar". Abaixo, uma lista horizontal numerada dos módulos (1 → 2 → 3 → 4 → 5 → ...) com os títulos de módulo por baixo de cada número. **Esta numeração é navegação, não progresso.**
 
-4. **Visualização de aula**: player de vídeo (área principal), barra lateral do módulo com lista de aulas, botão "Próxima aula", linha "Apostila.pdf" com "Descarregar". A sidebar mostra as aulas com indicação visual mínima da aula atual e check ✓ nas concluídas. **A sidebar é navegação, não barra de progresso.** O campo "Deixa a tua pergunta" visível no mockup pertence à **V5** e **não** está incluído nem na V3 nem na V4.
+4. **Visualização de aula**: player de vídeo (área principal), barra lateral do módulo com lista de aulas, botão "Próxima aula", linha "Apostila.pdf" com "Descarregar". A sidebar mostra as aulas com indicação visual mínima da aula atual e check ✓ nas concluídas. **A sidebar é navegação, não barra de progresso.** O campo "Deixa a tua pergunta" visível no mockup foi entregue em **V3.5** (Q&A puxado de V5, 13-06-2026): caixa "Pergunta aos professores" no leitor → guarda em `lesson_questions` + notificação por email à equipa (Reply-To = aluno) + inbox em `/admin/perguntas`. Em **V3.6** virou **conversa ligada**: a equipa responde dentro da app (resposta por email ao aluno) e o aluno acompanha e dá seguimento na sua conversa em `/perguntas`. Ver §V5 e `feature-docs/qa-perguntas.md`.
 
 5. **Visualização de PDF**: título "Título Apostila", botão "Descarregar" no canto superior direito, conteúdo do PDF renderizado em linha na página.
 
@@ -518,7 +531,9 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 - **Design da funcionalidade de Q&A (V5)** — adiada na totalidade até a V4 estar estável.
 - **Decisão sobre indicadores de progresso (V7)** — só após V3+V4 em produção e feedback real de utilizadores.
 - **Integração futura com shell partilhada CCLX** — não implementada agora, mas a fronteira de identidade do Logos foi estruturada para a tornar uma substituição de camada (e não uma reescrita): identidade isolada em `src/lib/auth/` como única importadora de `@supabase/ssr`, FKs sempre para `profiles.id` (nunca para `auth.users`), RLS via função helper `current_profile_id()`. O contrato concreto com a shell será definido em documento próprio quando a shell for desenhada. Detalhes em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
-- **Email/password como método alternativo de autenticação** — fora do âmbito V1-V9. Decisão tomada em 09-05-2026 para reduzir esforço da V2 (de ~13h para ~3.5h), eliminar dependências externas em Resend e DNS Hostinger, e acelerar a entrega da V3 (01-07-2026). Reabrir apenas se o ministério explicitamente pedir inclusão de utilizadores sem Google account. Detalhes em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
+- **Email/password como método alternativo de autenticação** — fora do âmbito V1-V9. Decisão tomada em 09-05-2026 para reduzir esforço da V2 (de ~13h para ~3.5h), eliminar dependências externas em Resend e DNS Hostinger, e acelerar a entrega da V3 (01-07-2026). Reabrir apenas se o ministério explicitamente pedir. Detalhes em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
+- **Providers OAuth suportados** — **Google** (desde V2) é o único provider OAuth. Microsoft/Entra (Azure) foi acrescentado em 04-06-2026 e **removido em 10-06-2026** (decisão do líder do projeto: simplificar para Google + email OTP; o código Microsoft chegou a estar pronto mas o provider nunca foi configurado no Supabase). **Apple adiado**: "Sign in with Apple" exige Apple Developer Program (~99 USD/ano) + Services ID + chave de assinatura; reabrir quando justificado. O código está preparado para reintroduzir providers (um wrapper em `src/lib/auth/actions.ts` + uma entrada no registry `SIGN_IN_PROVIDERS` em `src/lib/auth/providers.ts`). As credenciais de cada provider vivem no painel Supabase Auth, nunca no repositório.
+- **Login por email + código (OTP passwordless)** — **decidido avançar** em 04-06-2026 (líder do projeto): segundo método de login para quem não tem (ou não quer usar) Google, sem sistema de palavras-passe. Código de 6 dígitos via Supabase OTP, email entregue por **Resend (SMTP do Supabase)**. Reabre a dependência de email/DNS que a V2 tinha adiado (SPF/DKIM Hostinger). **OTP não é palavra-passe** — login com password continua fora de âmbito (§18). Plano completo + setup em `feature-docs/email-otp-login.md`.
 
 ---
 
@@ -537,14 +552,34 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 - Certificados de conclusão de curso para além do simples ecrã "Curso Concluído"
 - Ficheiros de vídeo alojados pelo próprio sistema
 - Barras de progresso, percentagens ou cálculos visuais de avanço (até pelo menos a V7, e mesmo aí só se justificado)
-- Login com email e palavra-passe (e respectivos fluxos: registo manual, recuperação de palavra-passe, validação de email) — Google OAuth é o método único de autenticação V1-V9; ver §17
+- Login com email e **palavra-passe** (e respectivos fluxos: registo manual, recuperação de palavra-passe) — continua fora de âmbito. A autenticação faz-se por OAuth social (Google) e por **email + código OTP** (passwordless, sem gestão de palavras-passe); ver §17
+- **Microsoft/Entra (Azure)** como provider OAuth — acrescentado em 04-06-2026 e removido em 10-06-2026 (ver §17). Reabrir só se o ministério pedir.
 
 ---
 
 ## 19. Estado do Documento
 
-- **Versão:** 2.9
-- **Última atualização:** 14 de maio de 2026
+- **Versão:** 3.6
+- **Última atualização:** 14 de junho de 2026
+- **Alterações relativamente à v3.5:**
+  - §6, §8, §9 (V3/V4) — **Pré-requisitos sequenciais puxados de V4 para V3.6** (decisão do líder, 14-06-2026; mesmo padrão da antecipação de Live, Q&A e estatísticas). Em `status.md` (V3.2) estes pré-requisitos estavam explicitamente "adiados para V4 (pós-01-07-2026)"; passam a entrar em V3.6. Três controlos, todos opcionais por curso: (1) **aulas em sequência** (`courses.sequential_lessons`) - ordem obrigatória das aulas dentro de cada módulo; (2) **módulos em sequência** (`courses.sequential_modules`) - um módulo só abre depois de o anterior estar concluído; as duas flags são independentes; (3) **curso pré-requisito** (`courses.prerequisite_course_id`, auto-referência nullable) - um curso só fica disponível depois de outro estar concluído, encadeável (A → B → C) para uma sequência de cursos, `NULL` = autónomo. Conteúdo bloqueado **aparece com cadeado + dica** (não escondido, ao contrário da restrição por etiqueta - §5). Aplicação **server-side** (Server Components + Server Actions), não em RLS, tal como a conclusão de curso (`architecture.md` §6). Migration `20260614140000_sequential_prerequisites.sql` (**só `logos-dev`**). Sem dependência nova, sem env nova. Detalhe em `feature-docs/sequencing.md`.
+- **Alterações relativamente à v3.4:**
+  - §V5, §9 (V3) — **Q&A simplifica para conversa de 2 estados + "não lido" do aluno** (V3.6 PR5; decisão do líder, 14-06-2026). O estado da conversa reduz-se a **`new` (Por responder) / `answered` (Respondida)** - o `archived` é removido (a limpeza de spam passa a ser **DELETE** pelo super_admin). **Qualquer resposta do aluno reabre** a conversa. **Toda a mensagem escrita** (resposta da equipa + seguimento do aluno) **avisa por email ambas as partes** (aluno + caixa da equipa) - o email é o arquivo de tudo. A lista do aluno ganha **destaque de "não lido"** (conversa respondida que o aluno ainda não abriu), suportado por `owner_seen_at` + RPC `mark_thread_seen` (SECURITY DEFINER, com o `now()` da BD para não haver desvio de relógio). DB: migration `20260614120000_question_two_states_and_seen.sql` (migra `archived`→`answered`, CHECK a 2 estados, coluna `owner_seen_at`, RPC), **só `logos-dev`**. Sem dependência nova, sem env nova. Detalhe em `feature-docs/qa-perguntas.md`.
+- **Alterações relativamente à v3.3:**
+  - §V5, §9 (V3), §13.5 (mockups §4) — **Q&A evolui de "resposta por email" para conversa ligada dentro da app** (V3.6; decisão do líder, 13-06-2026; mais uma fatia de V5 puxada). A equipa passa a **responder dentro da Logos** (a resposta vai por email ao aluno), o aluno recebe **cópia da pergunta** e pode dar **seguimento** sem sair da app, e pergunta + respostas + seguimentos ficam **ligados numa conversa** por um código `LOGOS-XXXXXX` partilhado no assunto e nos headers de thread dos emails. Nova vista do aluno em `/perguntas` (lista) e `/perguntas/[code]` (conversa, alvo dos links dos emails), com entrada de cabeçalho "As minhas conversas" (indicador quando a equipa respondeu). DB: migration `20260613120000_lesson_question_threads.sql` (`thread_code` em `lesson_questions` + tabela `lesson_question_messages` + RLS do aluno/equipa + trigger que conduz o `status`), **só `logos-dev`**. Sem dependência nova, sem env nova. Detalhe em `feature-docs/qa-perguntas.md`.
+- **Alterações relativamente à v3.2:**
+  - §V6, §13.5 — **Live Stream do canal LOGOS puxado de V6 para V3.6** (decisão do líder, 13-06-2026; mesmo padrão da antecipação das estatísticas em 30-05 e do Q&A em 12/13-06). Entregue: entrada de nav **"Live"** com badge de estado (ao vivo/offline/a carregar) e página `/live` com a transmissão do canal LOGOS embebida no portal (`youtube-nocookie`), mais botão "Subscrever canal" (`sub_confirmation=1`). O estado live/offline é determinado no servidor (Route Handler `/api/youtube/live-status`) com a `YOUTUBE_API_KEY` **nunca exposta ao cliente**; a quota da YouTube Data API é protegida por **janelas de transmissão** (`YOUTUBE_LIVE_WINDOWS`, Europe/Lisbon) + **Next.js Data Cache** (substitui a "cache em memória" do pedido original, que não funciona em Vercel serverless). **Fail-safe**: qualquer incerteza resolve para offline. Sem migration, sem dependência nova. Nota de âmbito: a área chama-se **"Live"** (rota `/live`), não "Escola Bíblica" — o nome `/conteudos/escola-biblica` do esqueleto V1 foi abandonado. Plano e detalhe em `feature-docs/live.md`.
+  - §V5, §9 (V3), §13.5 (mockups §4) — **Q&A das aulas puxado de V5 para V3.5** (decisão do líder, 12/13-06-2026; mesmo padrão da antecipação das estatísticas em 30-05). Entregue: caixa "Pergunta aos professores" no leitor → grava em `lesson_questions` + notifica a equipa por email (Reply-To = aluno) + inbox de triagem em `/admin/perguntas` (estados new/answered/archived). **Sem** inbox do aluno na app (a resposta vai por email) - essa parte (thread bidirecional) fica para V5. DB: migrations `20260612220000` (tabela + RLS column-scoped) e `20260612230000` (snapshot `author_name`), **só `logos-dev`**. Sem dependência nova (email via `fetch` à API do Resend). Plano e detalhe em `feature-docs/qa-perguntas.md`.
+- **Alterações relativamente à v3.1:**
+  - §6 (Modelos de aula) e §9/§10 — novo modelo de aula **`video`** (só vídeo do YouTube, sem apostila). Uma aula passa a poder ser `pdf` (só apostila), `video` (só vídeo) ou `video_pdf` (ambos). É a extensibilidade prevista na própria secção "Modelos de aula"; sem mudança de âmbito de versão. DB: CHECK de `lessons` relaxado (apostila deixa de ser sempre obrigatória; vídeo passa a exigir `youtube_url`) - migration `20260612120000` (V3.4 PR1, só `logos-dev`). O formulário de aula no admin mostra apenas os campos do modelo escolhido.
+- **Alterações relativamente à v3.0:**
+  - §9/§11, §17 e §18 — **Microsoft/Entra (Azure) removido** como provider OAuth (decisão do líder do projeto, 10-06-2026: simplificar para Google + email OTP). O código Microsoft chegou a estar pronto na branch da PR #49 mas o provider nunca foi configurado no Supabase; foi retirado antes do merge. Os métodos de login passam a ser **Google + email OTP**.
+- **Alterações relativamente à v2.9:**
+  - §9/§11 — célula Autenticação: de "Google OAuth (único método)" para "OAuth social: Google + Microsoft".
+  - §17 — nova decisão: providers OAuth suportados (Google + Microsoft); Apple adiado por exigir Apple Developer Program pago. Código preparado para novos providers.
+  - §17 — nova decisão: avançar com **login por email + código OTP** (passwordless via Resend) como terceiro método; plano em `feature-docs/email-otp-login.md`.
+  - §18 — "fora de âmbito" reformulado: só login com **palavra-passe** fica de fora; OAuth (Google + Microsoft) e OTP por email estão dentro.
+  - Pedido do líder do projeto em 04-06-2026.
 - **Alterações relativamente à v2.8:**
   - §6 — nova sub-secção "Conteúdos: o nível de topo": o ensino passa a organizar-se sob um nível de topo **Conteúdos** com duas áreas (Cursos + Escola Bíblica). A árvore Curso → Módulo → Aula passou a sub-secção "Árvore de Cursos".
   - §9 V1 — "Página *Cursos* vazia" passa a "Página *Conteúdos*": hub com dois cartões (Cursos + Escola Bíblica), cada um a ligar a uma sub-página placeholder.
