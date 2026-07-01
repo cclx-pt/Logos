@@ -10,8 +10,9 @@ type Props = {
 
 /**
  * PdfDownloadButton — `<a>` simples para o route handler
- * `/conteudos/[courseId]/[lessonId]/sebenta?dl=1`, que assina a URL e
- * redirecciona com `Content-Disposition: attachment`.
+ * `/conteudos/[courseId]/[lessonId]/sebenta?dl=1`, que serve o PDF com
+ * `Content-Disposition: attachment`. O atributo `download` (rota same-origin)
+ * reforça o download.
  *
  * Era um botão que fazia `window.open(url)` **depois** de um `await` à Server
  * Action. Em mobile (sobretudo iOS Safari) o bloqueador de popups só deixa
@@ -23,6 +24,7 @@ export function PdfDownloadButton({ courseId, lessonId, lessonTitle }: Props) {
   return (
     <a
       href={`/conteudos/${courseId}/${lessonId}/sebenta?dl=1`}
+      download=""
       aria-label={`Descarregar sebenta de ${lessonTitle}`}
       className={cn(
         'bg-orange-primary hover:bg-orange-hover focus-visible:ring-ring inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none',

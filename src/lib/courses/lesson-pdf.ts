@@ -16,24 +16,17 @@ import { UUID_RE } from '@/lib/validation';
 
 const SIGNED_URL_TTL_SECONDS = 300;
 
-export type SignedUrlResult = { ok: true; url: string } | { ok: false; error: string };
-
-export type SignLessonPdfOptions = {
-  /**
-   * Quando definido, força `Content-Disposition: attachment` (download em vez
-   * de abrir inline). `true` = nome derivado do título da aula; string = nome
-   * de ficheiro à medida.
-   */
-  download?: boolean | string;
-};
+export type SignedUrlResult =
+  | { ok: true; url: string; fileName: string }
+  | { ok: false; error: string };
 
 /**
  * Constrói o nome do ficheiro a partir do título da aula. Remove os caracteres
  * ilegais em nomes de ficheiro (`/ \ : * ? " < > |`), colapsa espaços e limita
- * o comprimento; mantém acentos (os browsers tratam UTF-8 no Content-Disposition).
+ * o comprimento; mantém acentos (o route handler codifica-os no Content-Disposition).
  */
-function pdfFileNameFromTitle(title: string): string {
-  const cleaned = title
+function pdfFileNameFromTitle(title: string | null | undefined): string {
+  const cleaned = (title ?? '')
     .replace(/[\\/:*?"<>|]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -42,15 +35,13 @@ function pdfFileNameFromTitle(title: string): string {
 }
 
 /**
- * Gera uma URL assinada (5 min) para o PDF da aula. Assina sempre fresca — é
- * por isso que o iframe e o botão de download passam por aqui a cada pedido em
- * vez de reutilizarem uma URL embebida no HTML que expirava ao fim de 5 min
- * (origem do erro intermitente "sem acesso" no visualizador em mobile).
+ * Gera uma URL assinada (5 min) para o PDF da aula, mais o nome de ficheiro
+ * sugerido (derivado do título). Assina sempre fresca — é por isso que o iframe
+ * e o download passam por aqui a cada pedido em vez de reutilizarem uma URL
+ * embebida no HTML que expirava ao fim de 5 min (origem do erro intermitente
+ * "sem acesso" no visualizador em mobile).
  */
-export async function signLessonPdfUrl(
-  lessonId: string,
-  options?: SignLessonPdfOptions,
-): Promise<SignedUrlResult> {
+export async function signLessonPdfUrl(lessonId: string): Promise<SignedUrlResult> {
   const caller = await getCurrentUser();
   if (!caller) {
     return { ok: false, error: 'Precisas de iniciar sessão.' };
@@ -79,21 +70,17 @@ export async function signLessonPdfUrl(
     return { ok: false, error: 'Esta aula não tem sebenta.' };
   }
 
-  const storage = supabase.storage.from('lesson-pdfs');
-  // `true` → nome a partir do título; string → nome à medida; falsy → inline.
-  const downloadName =
-    options?.download === true ? pdfFileNameFromTitle(lesson.title) : options?.download;
-  // Só passamos o 3.o argumento quando há download — mantém a chamada de 2
-  // argumentos no caminho inline (e o teste que a fixa).
-  const { data: signed, error: signedError } = downloadName
-    ? await storage.createSignedUrl(lesson.pdf_storage_path, SIGNED_URL_TTL_SECONDS, {
-        download: downloadName,
-      })
-    : await storage.createSignedUrl(lesson.pdf_storage_path, SIGNED_URL_TTL_SECONDS);
+  // URL inline (sem download param). O route handler é que decide o que fazer:
+  // no modo inline faz 302 para esta URL (o browser mostra o PDF); no modo
+  // download serve o ficheiro ele próprio com `Content-Disposition: attachment`
+  // (garante o download em qualquer browser, sem depender do redirect/Supabase).
+  const { data: signed, error: signedError } = await supabase.storage
+    .from('lesson-pdfs')
+    .createSignedUrl(lesson.pdf_storage_path, SIGNED_URL_TTL_SECONDS);
 
   if (signedError || !signed) {
     return { ok: false, error: `Falha a gerar URL: ${signedError?.message ?? 'desconhecido'}` };
   }
 
-  return { ok: true, url: signed.signedUrl };
+  return { ok: true, url: signed.signedUrl, fileName: pdfFileNameFromTitle(lesson.title) };
 }
