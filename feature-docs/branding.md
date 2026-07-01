@@ -213,9 +213,9 @@ Acolhedor, limpo, adequado a uma igreja. Tradução prática:
 | Ecrã                     | Notas                                                                                                              |
 |--------------------------|--------------------------------------------------------------------------------------------------------------------|
 | Catálogo de cursos       | Grelha de 3 cartões (alternância pêssego / sálvia / amarelo). Cada cartão: ícone, título display, seta laranja CTA.|
-| Visualização de aula     | Vídeo 16:9 + sidebar com lista numerada de aulas + CTA "Próxima aula". Linha "Apostila.pdf · Descarregar".         |
+| Visualização de aula     | Vídeo 16:9 + sidebar com lista numerada de aulas + CTA "Próxima aula". Linha "Sebenta.pdf · Descarregar".         |
 | Detalhe de módulo / curso| Hero pêssego com ícone circular, título display, descrição, botão "Iniciar". Lista horizontal numerada de módulos. |
-| Apostila                 | Cabeçalho com título display + botão "Descarregar" no canto. Conteúdo em corpo Inter.                              |
+| Sebenta                 | Cabeçalho com título display + botão "Descarregar" no canto. Conteúdo em corpo Inter.                              |
 
 > O campo "Deixa a tua pergunta" visível no mockup da aula pertence à V5 e **não** está em V3 nem V4.
 

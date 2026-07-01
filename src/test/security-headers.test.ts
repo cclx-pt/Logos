@@ -3,7 +3,7 @@
  *
  * Razão de existir: o port do hardening V2.5 (#47) trouxe uma CSP verificada
  * por paridade contra `main` - mas `main` não tem banners de cursos nem
- * visualizador inline de apostilas, e a CSP bloqueou silenciosamente o
+ * visualizador inline de sebentas, e a CSP bloqueou silenciosamente o
  * Supabase Storage em `img-src`/`frame-src` (banners e PDFs desapareceram
  * no preview). Estes testes pinam as origens externas reais de que cada
  * directiva depende, para a próxima revisão de CSP não repetir o erro.
@@ -54,13 +54,15 @@ describe('CSP (next.config.ts)', () => {
     expect(scriptSrc).toContain('https://www.youtube.com');
   });
 
-  it('frame-src permite YouTube, Turnstile e apostilas PDF do Supabase Storage', async () => {
+  it('frame-src permite same-origin, YouTube, Turnstile e sebentas PDF do Supabase Storage', async () => {
     const csp = await getCspDirectives();
     const frameSrc = csp.get('frame-src') ?? '';
+    // 'self': o iframe da sebenta aponta para o route handler same-origin
+    // /conteudos/.../sebenta, que faz 302 para a signed URL do bucket.
+    expect(frameSrc).toContain("'self'");
     expect(frameSrc).toContain('https://www.youtube-nocookie.com');
     expect(frameSrc).toContain('https://challenges.cloudflare.com');
-    // Apostilas: a página de aula embebe o PDF num <iframe> com signed URL
-    // do bucket lesson-pdfs.
+    // Sebentas: o alvo do redirect é uma signed URL do bucket lesson-pdfs.
     expect(frameSrc).toContain('https://*.supabase.co');
   });
 

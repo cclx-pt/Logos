@@ -20,7 +20,7 @@ export const TITLE_MAX = 120;
 export const DESCRIPTION_MAX = 4000;
 
 /**
- * Limite de tamanho da apostila PDF. Alinhado com o `file_size_limit` do bucket
+ * Limite de tamanho da sebenta PDF. Alinhado com o `file_size_limit` do bucket
  * `lesson-pdfs` (storage.buckets, migration de PR2). Quem o faz cumprir de facto
  * é a Storage do Supabase no upload directo (browser -> bucket); este valor só
  * serve para feedback imediato no browser antes de iniciar o upload.

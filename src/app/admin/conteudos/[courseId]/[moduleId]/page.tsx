@@ -237,7 +237,7 @@ export default async function ModuloDetalhePage({ params, searchParams }: PagePr
               title={`Aulas (${lessons.length})`}
               subtitle={
                 <>
-                  Escolhe o template conforme o conteúdo: <strong>Só PDF</strong> (apostila),{' '}
+                  Escolhe o template conforme o conteúdo: <strong>Só PDF</strong> (sebenta),{' '}
                   <strong>Só vídeo</strong> (YouTube embebido) ou <strong>Vídeo + PDF</strong>{' '}
                   (ambos). Os campos a preencher mudam com o template.
                 </>

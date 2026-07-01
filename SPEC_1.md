@@ -146,7 +146,7 @@ Cada aula tem um **modelo** que define o tipo de conteúdo que entrega. Modelos 
 | Modelo       | Conteúdo                                                       |
 |--------------|----------------------------------------------------------------|
 | `pdf`        | Apenas um PDF descarregável                                    |
-| `video`      | Apenas um vídeo do YouTube embebido (sem apostila)            |
+| `video`      | Apenas um vídeo do YouTube embebido (sem sebenta)            |
 | `video_pdf`  | Vídeo do YouTube embebido **mais** um PDF descarregável        |
 
 O sistema deve ser desenhado para permitir adicionar novos modelos no futuro (por exemplo, `live_stream`, `quiz`, `text_only`) sem reescrever o modelo de dados. O modelo é guardado como campo de texto na aula; a lógica da aplicação decide que campos são obrigatórios para cada modelo.
@@ -473,7 +473,7 @@ Acolhedor, limpo, adequado a uma igreja. Não corporativo, não frio. A combina�
 
 Os ficheiros em `docs/branding/` são a fonte de verdade visual:
 - `placeholder-cclx-logos.png` — *placeholder* atual em `cclx.cclx.pt/logos`. Estabelece o tom geral; o laranja é mais terracota que o da plataforma final.
-- `mockups-v3.jpeg` — quatro mockups da V3 (catálogo, detalhe de curso, aula, apostila). **Vinculativos no nível da estrutura e da paleta, não ao pixel.**
+- `mockups-v3.jpeg` — quatro mockups da V3 (catálogo, detalhe de curso, aula, sebenta). **Vinculativos no nível da estrutura e da paleta, não ao pixel.**
 
 ### Referências de mockup
 
@@ -485,9 +485,9 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 
 3. **Detalhe de curso**: bloco hero com ícone do curso, título, descrição e botão "Iniciar". Abaixo, uma lista horizontal numerada dos módulos (1 → 2 → 3 → 4 → 5 → ...) com os títulos de módulo por baixo de cada número. **Esta numeração é navegação, não progresso.**
 
-4. **Visualização de aula**: player de vídeo (área principal), barra lateral do módulo com lista de aulas, botão "Próxima aula", linha "Apostila.pdf" com "Descarregar". A sidebar mostra as aulas com indicação visual mínima da aula atual e check ✓ nas concluídas. **A sidebar é navegação, não barra de progresso.** O campo "Deixa a tua pergunta" visível no mockup foi entregue em **V3.5** (Q&A puxado de V5, 13-06-2026): caixa "Pergunta aos professores" no leitor → guarda em `lesson_questions` + notificação por email à equipa (Reply-To = aluno) + inbox em `/admin/perguntas`. Em **V3.6** virou **conversa ligada**: a equipa responde dentro da app (resposta por email ao aluno) e o aluno acompanha e dá seguimento na sua conversa em `/perguntas`. Ver §V5 e `feature-docs/qa-perguntas.md`.
+4. **Visualização de aula**: player de vídeo (área principal), barra lateral do módulo com lista de aulas, botão "Próxima aula", linha "Sebenta.pdf" com "Descarregar". A sidebar mostra as aulas com indicação visual mínima da aula atual e check ✓ nas concluídas. **A sidebar é navegação, não barra de progresso.** O campo "Deixa a tua pergunta" visível no mockup foi entregue em **V3.5** (Q&A puxado de V5, 13-06-2026): caixa "Pergunta aos professores" no leitor → guarda em `lesson_questions` + notificação por email à equipa (Reply-To = aluno) + inbox em `/admin/perguntas`. Em **V3.6** virou **conversa ligada**: a equipa responde dentro da app (resposta por email ao aluno) e o aluno acompanha e dá seguimento na sua conversa em `/perguntas`. Ver §V5 e `feature-docs/qa-perguntas.md`.
 
-5. **Visualização de PDF**: título "Título Apostila", botão "Descarregar" no canto superior direito, conteúdo do PDF renderizado em linha na página.
+5. **Visualização de PDF**: título "Título Sebenta", botão "Descarregar" no canto superior direito, conteúdo do PDF renderizado em linha na página.
 
 ---
 
@@ -571,7 +571,7 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
   - §V6, §13.5 — **Live Stream do canal LOGOS puxado de V6 para V3.6** (decisão do líder, 13-06-2026; mesmo padrão da antecipação das estatísticas em 30-05 e do Q&A em 12/13-06). Entregue: entrada de nav **"Live"** com badge de estado (ao vivo/offline/a carregar) e página `/live` com a transmissão do canal LOGOS embebida no portal (`youtube-nocookie`), mais botão "Subscrever canal" (`sub_confirmation=1`). O estado live/offline é determinado no servidor (Route Handler `/api/youtube/live-status`) com a `YOUTUBE_API_KEY` **nunca exposta ao cliente**; a quota da YouTube Data API é protegida por **janelas de transmissão** (`YOUTUBE_LIVE_WINDOWS`, Europe/Lisbon) + **Next.js Data Cache** (substitui a "cache em memória" do pedido original, que não funciona em Vercel serverless). **Fail-safe**: qualquer incerteza resolve para offline. Sem migration, sem dependência nova. Nota de âmbito: a área chama-se **"Live"** (rota `/live`), não "Escola Bíblica" — o nome `/conteudos/escola-biblica` do esqueleto V1 foi abandonado. Plano e detalhe em `feature-docs/live.md`.
   - §V5, §9 (V3), §13.5 (mockups §4) — **Q&A das aulas puxado de V5 para V3.5** (decisão do líder, 12/13-06-2026; mesmo padrão da antecipação das estatísticas em 30-05). Entregue: caixa "Pergunta aos professores" no leitor → grava em `lesson_questions` + notifica a equipa por email (Reply-To = aluno) + inbox de triagem em `/admin/perguntas` (estados new/answered/archived). **Sem** inbox do aluno na app (a resposta vai por email) - essa parte (thread bidirecional) fica para V5. DB: migrations `20260612220000` (tabela + RLS column-scoped) e `20260612230000` (snapshot `author_name`), **só `logos-dev`**. Sem dependência nova (email via `fetch` à API do Resend). Plano e detalhe em `feature-docs/qa-perguntas.md`.
 - **Alterações relativamente à v3.1:**
-  - §6 (Modelos de aula) e §9/§10 — novo modelo de aula **`video`** (só vídeo do YouTube, sem apostila). Uma aula passa a poder ser `pdf` (só apostila), `video` (só vídeo) ou `video_pdf` (ambos). É a extensibilidade prevista na própria secção "Modelos de aula"; sem mudança de âmbito de versão. DB: CHECK de `lessons` relaxado (apostila deixa de ser sempre obrigatória; vídeo passa a exigir `youtube_url`) - migration `20260612120000` (V3.4 PR1, só `logos-dev`). O formulário de aula no admin mostra apenas os campos do modelo escolhido.
+  - §6 (Modelos de aula) e §9/§10 — novo modelo de aula **`video`** (só vídeo do YouTube, sem sebenta). Uma aula passa a poder ser `pdf` (só sebenta), `video` (só vídeo) ou `video_pdf` (ambos). É a extensibilidade prevista na própria secção "Modelos de aula"; sem mudança de âmbito de versão. DB: CHECK de `lessons` relaxado (sebenta deixa de ser sempre obrigatória; vídeo passa a exigir `youtube_url`) - migration `20260612120000` (V3.4 PR1, só `logos-dev`). O formulário de aula no admin mostra apenas os campos do modelo escolhido.
 - **Alterações relativamente à v3.0:**
   - §9/§11, §17 e §18 — **Microsoft/Entra (Azure) removido** como provider OAuth (decisão do líder do projeto, 10-06-2026: simplificar para Google + email OTP). O código Microsoft chegou a estar pronto na branch da PR #49 mas o provider nunca foi configurado no Supabase; foi retirado antes do merge. Os métodos de login passam a ser **Google + email OTP**.
 - **Alterações relativamente à v2.9:**

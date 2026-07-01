@@ -18,10 +18,12 @@ const csp = [
   "frame-ancestors 'self'",
   // Embeds de YouTube (video de apresentacao na home + aulas V3) + desafio
   // Cloudflare Turnstile (captcha do login por email OTP, corre num iframe)
-  // + visualizador inline da apostila PDF (iframe com signed URL do bucket
-  // lesson-pdfs). O wildcard *.supabase.co cobre logos-dev e logos-prod sem
-  // acoplar a CSP a env vars de build - mesmo racional do connect-src.
-  'frame-src https://www.youtube-nocookie.com https://www.youtube.com https://challenges.cloudflare.com https://*.supabase.co',
+  // + visualizador inline da sebenta PDF. 'self': o iframe da sebenta aponta
+  // para o route handler same-origin /conteudos/.../sebenta, que faz 302 para
+  // a signed URL do bucket lesson-pdfs (por isso *.supabase.co tambem e
+  // preciso - a CSP valida cada salto do redirect). O wildcard *.supabase.co
+  // cobre logos-dev e logos-prod sem acoplar a CSP a env vars de build.
+  "frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com https://challenges.cloudflare.com https://*.supabase.co",
   // Avatares Google + imagens inline + banners de cursos (signed URLs do
   // bucket course-banners, servidas de *.supabase.co - ver frame-src).
   "img-src 'self' data: https://lh3.googleusercontent.com https://*.supabase.co",

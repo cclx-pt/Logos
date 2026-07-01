@@ -7,7 +7,7 @@
 
 ## 0. Resumo
 
-V3 entrega o **conteúdo** do LOGOS: Cursos → Módulos → Aulas com vídeo YouTube embebido e apostila em PDF, restrição de acesso por etiqueta (apenas a nível de curso em V3; módulo/aula em V4), conclusão binária por aula, ecrã "Curso Concluído" e contabilização leve de acessos.
+V3 entrega o **conteúdo** do LOGOS: Cursos → Módulos → Aulas com vídeo YouTube embebido e sebenta em PDF, restrição de acesso por etiqueta (apenas a nível de curso em V3; módulo/aula em V4), conclusão binária por aula, ecrã "Curso Concluído" e contabilização leve de acessos.
 
 V2 PR4 (etiquetas, fundação) absorvida em V3 PR1 porque V3 depende dela.
 
@@ -57,7 +57,7 @@ PRs 1-7 são *gates* para o prazo: sem elas, V3 não existe. PRs 8-9 são *polis
 - DB:
   - `courses` (slug unique CHECK 2-80, title 1-120, `required_tags uuid[]` default `{}`, `published_at` nullable, created_by → profiles restrict, índice parcial em `published_at IS NOT NULL`).
   - `modules` (course CASCADE, position int>=0, índice composto `(course_id, position)`).
-  - `lessons` (module CASCADE, template CHECK `pdf|video_pdf`, youtube_url nullable, `pdf_storage_path` **not null** — V3 exige apostila, CHECK `video_pdf ⇒ youtube_url IS NOT NULL`).
+  - `lessons` (module CASCADE, template CHECK `pdf|video_pdf`, youtube_url nullable, `pdf_storage_path` **not null** — V3 exige sebenta, CHECK `video_pdf ⇒ youtube_url IS NOT NULL`).
   - `lesson_completions` PK composta (idempotente).
   - `course_completions` PK composta, **imutável** (sem policy UPDATE/DELETE — `SPEC_1.md` §9 V3 exige preservar data).
   - `course_access_log` sem unique, índices em `course_id` e `accessed_at desc` para stats em PR8.
@@ -138,7 +138,7 @@ Mudança de informação-arquitectura. A área admin perde `/admin/cursos*` e ga
 #### Entregue
 - `/admin/conteudos/[courseId]/[moduleId]` — drill-down de aulas dentro do módulo (admin+super_admin). Breadcrumb mobile `Cursos › Curso › Módulo`. Header com back-link "← {curso}". Listagem ordenada por `position` com pill do template (`só pdf` / `vídeo + pdf`) e URL do YouTube linkado quando aplicável.
 - Form "Nova aula" no topo (`encType="multipart/form-data"`): `title`, `description` (opcional), `template` (radios `pdf` ↔ `video_pdf`), `youtube_url` (sempre visível com hint "obrigatório se template = Vídeo + PDF"), file `accept="application/pdf"` obrigatório.
-- Edit inline via `?editar=<lessonId>` — mesma estrutura do form de create, com file input opcional e legenda "Deixar vazio mantém a apostila actual". Cancel link volta a `/admin/conteudos/[courseId]/[moduleId]`.
+- Edit inline via `?editar=<lessonId>` — mesma estrutura do form de create, com file input opcional e legenda "Deixar vazio mantém a sebenta actual". Cancel link volta a `/admin/conteudos/[courseId]/[moduleId]`.
 - Delete inline via `?apagar=<lessonId>` — confirm com aviso de remoção do PDF e conclusões associadas. Best-effort `storage.remove()` após delete (se falhar, fica órfão até limpeza manual).
 - Setas ↑↓ (forms server-action) com no-op nos extremos. Verificação de `module_id` recebido vs `module_id` real da aula antes de mover (`A aula não pertence ao módulo indicado.`).
 - Server Actions em `src/app/admin/conteudos/lessons-actions.ts`: `createLessonAction`, `updateLessonAction`, `deleteLessonAction`, `moveLessonUpAction`, `moveLessonDownAction`. Triple defesa: role admin+super_admin, RLS em `lessons`, CHECK constraints DB.

@@ -124,7 +124,7 @@ Atalhos para a checklist do ministério:
 - **Nav (`site-config.ts`):** `{ href: '/conteudos', label: 'Conteúdos' }`.
 - **Conteúdo do placeholder:**
   - Título "Conteúdos".
-  - Parágrafo intro justificado: "Os nossos conteúdos foram desenvolvidos para fortalecer a igreja e aprofundar o amor pelas Escrituras. Disponibilizamos diferentes formatos, aulas gravadas, apostilas, materiais de apoio e outros recursos pensados para tornar o ensino bíblico mais acessível, prático e transformador. O nosso objetivo é ajudar cada pessoa a crescer no conhecimento da Palavra de Deus, com conteúdos claros, edificantes e centrados em Cristo."
+  - Parágrafo intro justificado: "Os nossos conteúdos foram desenvolvidos para fortalecer a igreja e aprofundar o amor pelas Escrituras. Disponibilizamos diferentes formatos, aulas gravadas, sebentas, materiais de apoio e outros recursos pensados para tornar o ensino bíblico mais acessível, prático e transformador. O nosso objetivo é ajudar cada pessoa a crescer no conhecimento da Palavra de Deus, com conteúdos claros, edificantes e centrados em Cristo."
   - Lista scrolável vertical de "cursos" placeholder (3–4 cards estáticos sem links activos). Cada card: título, descrição curta de 2 linhas, tag "Em preparação".
   - Nota final pequena: "Catálogo completo a abrir em breve."
 - **Sitemap:** `src/app/sitemap.ts` já deriva de `navItems`, fica automático.

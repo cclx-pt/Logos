@@ -17,7 +17,7 @@
  * ao re-publicar usa de novo `now()`. Manter a UX simples — sem campo de data
  * separado em V3.
  *
- * Banner (V3.2 PR1; upload directo em V3.7): opcional. Tal como as apostilas
+ * Banner (V3.2 PR1; upload directo em V3.7): opcional. Tal como as sebentas
  * PDF, o ficheiro NÃO passa por esta Server Action - o browser envia-o
  * directamente para o bucket `course-banners` via signed upload URL
  * (`createCourseBannerUploadUrlAction`), contornando o limite de ~4.5 MB do

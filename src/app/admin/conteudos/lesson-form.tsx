@@ -90,7 +90,7 @@ export function LessonForm({
   async function runSubmit(formData: FormData): Promise<void> {
     setError(null);
 
-    // 1. Se há apostila e um ficheiro novo foi escolhido, faz upload directo.
+    // 1. Se há sebenta e um ficheiro novo foi escolhido, faz upload directo.
     let pdfStoragePath: string | null = null;
     if (hasPdf) {
       const file = formData.get('pdf');
@@ -220,7 +220,7 @@ export function LessonForm({
       {hasPdf ? (
         <label className="block">
           <span className="text-muted-foreground text-xs font-medium">
-            {isEdit ? 'Substituir apostila (opcional, até 20 MB)' : 'Apostila PDF (até 20 MB)'}
+            {isEdit ? 'Substituir sebenta (opcional, até 20 MB)' : 'Sebenta PDF (até 20 MB)'}
           </span>
           <input
             type="file"
@@ -231,7 +231,7 @@ export function LessonForm({
           />
           {isEdit ? (
             <span className="text-muted-foreground mt-1 block text-[11px]">
-              Deixar vazio mantém a apostila actual.
+              Deixar vazio mantém a sebenta actual.
             </span>
           ) : null}
         </label>

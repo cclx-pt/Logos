@@ -112,7 +112,7 @@ export function ConteudosContent({
         className="text-muted-foreground mt-8 max-w-3xl text-justify font-sans text-lg leading-relaxed hyphens-auto"
       >
         Os nossos conteúdos foram desenvolvidos para fortalecer a igreja e aprofundar o amor pelas
-        Escrituras. Disponibilizamos diferentes formatos, aulas gravadas, apostilas, materiais de
+        Escrituras. Disponibilizamos diferentes formatos, aulas gravadas, sebentas, materiais de
         apoio e outros recursos pensados para tornar o ensino bíblico mais acessível, prático e
         transformador. O nosso objetivo é ajudar cada pessoa a crescer no conhecimento da Palavra de
         Deus, com conteúdos claros, edificantes e centrados em Cristo.
