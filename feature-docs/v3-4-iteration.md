@@ -25,7 +25,7 @@ Afinações posteriores ao feedback do líder: PR4 (conteúdo centrado + sticky 
 | Tema | Decisão |
 |---|---|
 | Âmbito do template `video` | **Em âmbito.** SPEC §"Modelos de aula" prevê novos modelos sem reescrever dados. SPEC bump 3.2. |
-| Coerência template ↔ campos (DB) | CHECK de `lessons` relaxado: vídeo (`video`/`video_pdf`) exige `youtube_url`; apostila (`pdf`/`video_pdf`) exige `pdf_storage_path`; `video` guarda `pdf_storage_path = null`. Migration `20260612120000` **só `logos-dev`**. |
+| Coerência template ↔ campos (DB) | CHECK de `lessons` relaxado: vídeo (`video`/`video_pdf`) exige `youtube_url`; sebenta (`pdf`/`video_pdf`) exige `pdf_storage_path`; `video` guarda `pdf_storage_path = null`. Migration `20260612120000` **só `logos-dev`**. |
 | Form de aula no admin | Passa a **Client Component** (`lesson-form.tsx`) para mostrar só os campos do template. Validação real continua nas Server Actions + CHECK. |
 | Navegação inferior da aula | **Módulo-scoped** (`getModuleLessonNavigation`): a última aula do módulo não tem "Próxima aula". A passagem entre módulos é o banner de conclusão + a árvore. |
 | Árvore da vista de aula | Espelho público da `CourseTree` do admin (`lesson-tree.tsx`), só `xl+`, **sticky abaixo do cabeçalho fixo** (`top-20` + `max-h-[calc(100vh-7rem)] overflow-y-auto` — o `top-6` original enfiava por baixo do header `h-16`). |
@@ -39,11 +39,11 @@ Afinações posteriores ao feedback do líder: PR4 (conteúdo centrado + sticky 
 ## Plano de PRs (todas mergeadas)
 
 ### PR1 — Template só-vídeo (#53)
-- Migration `20260612120000_lessons_video_only_template.sql` (só `logos-dev`): `template in ('pdf','video','video_pdf')`; CHECK de vídeo/apostila relaxados.
-- `lessons-actions.ts`: YouTube obrigatório se o template tem vídeo; PDF obrigatório se tem apostila; criar `video` insere `pdf_storage_path null` sem upload; mudar para `video` limpa o path e remove o ficheiro best-effort.
+- Migration `20260612120000_lessons_video_only_template.sql` (só `logos-dev`): `template in ('pdf','video','video_pdf')`; CHECK de vídeo/sebenta relaxados.
+- `lessons-actions.ts`: YouTube obrigatório se o template tem vídeo; PDF obrigatório se tem sebenta; criar `video` insere `pdf_storage_path null` sem upload; mudar para `video` limpa o path e remove o ficheiro best-effort.
 - **`lesson-form.tsx`** (novo Client Component, criar+editar): campos condicionais ao template.
-- `detail.ts`: tipo `LessonTemplate`; `pdf_storage_path` nullable. `template-label.ts` (etiquetas do leitor). `lesson-list.tsx` (etiquetas do admin: só pdf/só vídeo/vídeo+pdf). `access-actions.ts`: guard para aulas sem apostila.
-- Leitor de aula renderiza vídeo/apostila conforme o template. SPEC bump 3.2.
+- `detail.ts`: tipo `LessonTemplate`; `pdf_storage_path` nullable. `template-label.ts` (etiquetas do leitor). `lesson-list.tsx` (etiquetas do admin: só pdf/só vídeo/vídeo+pdf). `access-actions.ts`: guard para aulas sem sebenta.
+- Leitor de aula renderiza vídeo/sebenta conforme o template. SPEC bump 3.2.
 
 ### PR2 — Leitor de aula: navegação + layout (#54)
 - **`lesson-tree.tsx`**: árvore à direita (módulos colapsáveis → aulas, aula atual destacada, ✓ nas concluídas), só `xl+`. A página carrega a conclusão de todo o curso.

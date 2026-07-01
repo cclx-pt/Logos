@@ -4,15 +4,10 @@
  * Server Actions para acesso a conteúdo de cursos.
  *
  * 1. `getLessonPdfSignedUrlAction` (PR6): gera URL assinada de 5 minutos
- *    para o PDF da aula. Defesa em profundidade em duas camadas:
- *      - RLS em `lessons` filtra visibilidade ao nível da DB; se o select
- *        devolver nada, recusamos antes de tocar em Storage.
- *      - RLS em `storage.objects` (policy `lesson_pdfs_select_visible`)
- *        filtra visibilidade ao nível do bucket via path parsing
- *        (`<courseId>/<lessonId>.pdf` → `course_is_visible(courses)`), o
- *        que fecha o canal directo cliente → Storage. Esta Server Action
- *        mantém-se como ponto único de signing por ergonomia, não por
- *        ser a fronteira de segurança.
+ *    para o PDF da aula. Delega em `signLessonPdfUrl` (`./lesson-pdf`), o
+ *    núcleo partilhado também pelo route handler
+ *    `GET /conteudos/[courseId]/[lessonId]/sebenta`. Mantida por estabilidade
+ *    de API e testes; a UI já usa o route handler (mais robusto em mobile).
  *
  * 2. `logCourseAccessAction` (PR8): regista clique em "Começar/Continuar
  *    curso" na tabela `course_access_log`. INSERT só do próprio (RLS de
@@ -23,51 +18,15 @@
 
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { UUID_RE } from '@/lib/validation';
-
-const SIGNED_URL_TTL_SECONDS = 300;
-
-export type SignedUrlResult = { ok: true; url: string } | { ok: false; error: string };
+// Nota: NÃO re-exportar `SignedUrlResult` daqui. Este é um módulo 'use server'
+// e o Turbopack trata cada export como uma Server Action em runtime - um
+// re-export de tipo (apagado na compilação) rebenta o `next build`
+// ("Export SignedUrlResult doesn't exist"). Quem precisar do tipo importa-o
+// de `./lesson-pdf`. Aqui usamo-lo só como anotação (import type, apagado).
+import { signLessonPdfUrl, type SignedUrlResult } from './lesson-pdf';
 
 export async function getLessonPdfSignedUrlAction(lessonId: string): Promise<SignedUrlResult> {
-  const caller = await getCurrentUser();
-  if (!caller) {
-    return { ok: false, error: 'Precisas de iniciar sessão.' };
-  }
-  if (!UUID_RE.test(lessonId)) {
-    return { ok: false, error: 'Aula inválida.' };
-  }
-
-  const supabase = await getServerClient();
-
-  // RLS faz a filtragem de visibilidade — se a aula não for visível, .maybeSingle()
-  // devolve null. Confiamos no helper SQL `course_is_visible` herdado em
-  // `lessons_select_visible` (V3 PR2).
-  const { data: lesson, error } = await supabase
-    .from('lessons')
-    .select('id, pdf_storage_path')
-    .eq('id', lessonId)
-    .maybeSingle<{ id: string; pdf_storage_path: string | null }>();
-
-  if (error) {
-    return { ok: false, error: `Falha a carregar aula: ${error.message}` };
-  }
-  if (!lesson) {
-    return { ok: false, error: 'Aula não encontrada ou sem acesso.' };
-  }
-  // Aulas só-vídeo (template = video) não têm apostila.
-  if (!lesson.pdf_storage_path) {
-    return { ok: false, error: 'Esta aula não tem apostila.' };
-  }
-
-  const { data: signed, error: signedError } = await supabase.storage
-    .from('lesson-pdfs')
-    .createSignedUrl(lesson.pdf_storage_path, SIGNED_URL_TTL_SECONDS);
-
-  if (signedError || !signed) {
-    return { ok: false, error: `Falha a gerar URL: ${signedError?.message ?? 'desconhecido'}` };
-  }
-
-  return { ok: true, url: signed.signedUrl };
+  return signLessonPdfUrl(lessonId);
 }
 
 export type LogAccessResult = { ok: true } | { ok: false; error: string };

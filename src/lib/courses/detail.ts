@@ -132,7 +132,7 @@ export type LessonDetail = {
   description: string | null;
   template: LessonTemplate;
   youtube_url: string | null;
-  /** `null` quando template = video (aula sem apostila). */
+  /** `null` quando template = video (aula sem sebenta). */
   pdf_storage_path: string | null;
   position: number;
   module: { id: string; title: string; position: number };

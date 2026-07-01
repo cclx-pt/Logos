@@ -1,10 +1,10 @@
-# Upload de apostilas PDF — upload directo (V3.7)
+# Upload de sebentas PDF — upload directo (V3.7)
 
 > **Estado:** completo. Substitui o upload via Server Action de V3 PR4b.
 
 ## Problema
 
-A UI prometia apostilas **até 20 MB** (bucket `lesson-pdfs` com `file_size_limit = 20 MB`, validação na Server Action a 20 MB, `bodySizeLimit` do Next a 25 MB), mas qualquer PDF acima de **~4.5 MB** falhava em produção (Vercel). Um PDF de 5 MB dava erro.
+A UI prometia sebentas **até 20 MB** (bucket `lesson-pdfs` com `file_size_limit = 20 MB`, validação na Server Action a 20 MB, `bodySizeLimit` do Next a 25 MB), mas qualquer PDF acima de **~4.5 MB** falhava em produção (Vercel). Um PDF de 5 MB dava erro.
 
 **Causa:** na Vercel, as Server Actions correm como Functions, e a plataforma impõe um limite **rígido de ~4.5 MB ao corpo do pedido** que o `serverActions.bodySizeLimit` do Next **não** sobrepõe. O ficheiro era rejeitado na borda, antes de o nosso código (e a validação dos 20 MB) o ver. Localmente (`pnpm dev`) não acontecia - aí manda o `bodySizeLimit`, daí passar despercebido.
 
@@ -46,6 +46,24 @@ Era `<courseId>/<lessonId>.pdf`; passou a **`<courseId>/<uuid>.pdf`** (nome alea
 - `src/components/ui/submit-button.tsx` - prop `pending`.
 
 Sem migration, sem env nova (reusa `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`).
+
+## Leitura/download da sebenta - route handler `/sebenta` (mobile, 30-06-2026)
+
+O **upload** (acima) vai browser → bucket. A **leitura** (visualizador + download) passou a ir toda por um route handler que assina a URL **fresca a cada pedido**, resolvendo dois bugs de mobile:
+
+- **Download falhava em silêncio:** o botão fazia `window.open(url)` **depois** de um `await` à Server Action. Em iOS Safari (e outros) o bloqueador de popups só deixa abrir nova janela no **gesto síncrono** do toque - perdido após o await, o popup era bloqueado sem aviso. No desktop o bloqueador é permissivo, daí parecer só-mobile.
+- **Visualizador dava "sem permissão" intermitente:** a página embebia no `<iframe>` uma signed URL de 5 min assinada no render. Em mobile os browsers recarregam iframes fora de vista; ao recarregar após 5 min, a URL expirada fazia o Supabase devolver o seu erro de acesso **dentro do iframe** (lia como falta de permissão). **Não é o sistema de etiquetas** - conteúdo restrito por etiqueta é invisível, nunca dá erro.
+
+### Como funciona agora
+
+- **`signLessonPdfUrl(lessonId, { download? })`** (`src/lib/courses/lesson-pdf.ts`) - núcleo de signing (auth + RLS de `lessons` + `createSignedUrl`, TTL 5 min). `download: true` força `Content-Disposition: attachment` com o **nome do ficheiro derivado do título da aula** (`pdfFileNameFromTitle`: tira caracteres ilegais, mantém acentos, limita a 80 chars); `download: '<nome>'` permite um nome à medida. Partilhado pela Server Action `getLessonPdfSignedUrlAction` (mantida por compat/estabilidade) e pelo route handler.
+- **`GET /conteudos/[courseId]/[lessonId]/sebenta`** (`.../sebenta/route.ts`, `force-dynamic`, `no-store`): assina fresco e faz **302** para a signed URL. Sem query = inline (alvo do iframe); `?dl=1` = download. Em erro devolve uma página HTML mínima PT-PT (em vez de deixar o erro cru do Supabase aparecer no iframe).
+- **`PdfDownloadButton`** deixou de ser client/`window.open` e passou a `<a href=".../sebenta?dl=1">` (navegação real - sem o problema do gesto).
+- **Iframe** (`page.tsx`) aponta para `.../sebenta` (inline). A signed URL deixa de viver no HTML; só se renderiza quando `lesson.pdf_storage_path` existe. Dica `sm:hidden` para mobile (muitos browsers não renderizam PDF em iframe → usar o botão).
+
+**CSP:** `frame-src` ganhou `'self'` (`next.config.ts`) - o iframe aponta para a rota same-origin que faz 302 para `*.supabase.co`; a CSP valida **cada salto** do redirect, por isso são precisos ambos. Regressão fixada em `src/test/security-headers.test.ts`.
+
+Sem migration, sem env nova. A fronteira de segurança continua a ser a RLS (`lessons_select_visible` + `lesson_pdfs_select_visible`); o handler só assina.
 
 ## Banners de curso (mesmo mecanismo)
 

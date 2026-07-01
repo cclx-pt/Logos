@@ -10,7 +10,7 @@ import { ConteudosContent } from './conteudos-content';
 export const metadata: Metadata = {
   title: 'Conteúdos',
   description:
-    'Catálogo de estudo Bíblico da CCLX. Cursos em vídeo com apostilas para descarregar, sempre gratuitos.',
+    'Catálogo de estudo Bíblico da CCLX. Cursos em vídeo com sebentas para descarregar, sempre gratuitos.',
 };
 
 type PageProps = {

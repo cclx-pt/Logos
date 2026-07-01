@@ -47,7 +47,7 @@ As migrações de segurança **já estão aplicadas em `logos-dev`** (objetos co
 
 ## Adenda (10-06-2026): regressão de CSP nos assets do Storage
 
-A "paridade com prod" (§acima) tinha um ponto cego: `main` não tem banners de cursos nem visualizador inline de PDF, por isso a CSP portada não contemplava o Supabase Storage. Em `v3-cursos`, `img-src` bloqueava os banners (`course-banners` via `<CourseImage>`) e `frame-src` bloqueava o iframe da apostila (`lesson-pdfs`) - ambos servidos por signed URLs de `*.supabase.co`. Os assets "desapareciam" silenciosamente (só o console do browser acusava a violação de CSP).
+A "paridade com prod" (§acima) tinha um ponto cego: `main` não tem banners de cursos nem visualizador inline de PDF, por isso a CSP portada não contemplava o Supabase Storage. Em `v3-cursos`, `img-src` bloqueava os banners (`course-banners` via `<CourseImage>`) e `frame-src` bloqueava o iframe da sebenta (`lesson-pdfs`) - ambos servidos por signed URLs de `*.supabase.co`. Os assets "desapareciam" silenciosamente (só o console do browser acusava a violação de CSP).
 
 **Corrigido a 10-06-2026:** wildcard `https://*.supabase.co` em `img-src` e `frame-src` (mesmo racional do `connect-src`) + teste de regressão `src/test/security-headers.test.ts` que pina as origens externas de cada directiva.
 

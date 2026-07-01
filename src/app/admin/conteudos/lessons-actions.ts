@@ -9,14 +9,14 @@
  *      que escritas por outro role nunca tocam dados.
  *   3. CHECK constraints na DB (position >= 0, length(title) 1-120,
  *      template in ('pdf','video','video_pdf'); vídeo ⇒ youtube_url not null;
- *      apostila (pdf|video_pdf) ⇒ pdf_storage_path not null) defendem contra
+ *      sebenta (pdf|video_pdf) ⇒ pdf_storage_path not null) defendem contra
  *      inputs maliciosos. Migration de 12-06-2026 (V3.4).
  *
  * Coerência de template (V3.4 estende a decisão de 19-05-2026, v3-plan.md §10):
  *   - Templates com vídeo (video, video_pdf) exigem `youtube_url` no mesmo
  *     submit; template `pdf` limpa qualquer URL antigo.
- *   - Templates com apostila (pdf, video_pdf) exigem PDF; `video` (só vídeo)
- *     não tem apostila e guarda `pdf_storage_path = null` (ficheiro removido
+ *   - Templates com sebenta (pdf, video_pdf) exigem PDF; `video` (só vídeo)
+ *     não tem sebenta e guarda `pdf_storage_path = null` (ficheiro removido
  *     best-effort ao migrar de/para esse template).
  *
  * Upload PDF (upload directo, V3.7): o ficheiro NUNCA passa por esta Server
@@ -63,7 +63,7 @@ type Template = (typeof TEMPLATES)[number];
 const PDF_BUCKET = 'lesson-pdfs';
 
 // Coerência template ↔ campos (V3.4): vídeo exige YouTube; só 'video'
-// dispensa apostila. Espelha os CHECK em `lessons` (migration de 12-06-2026).
+// dispensa sebenta. Espelha os CHECK em `lessons` (migration de 12-06-2026).
 function templateHasVideo(template: Template): boolean {
   return template !== 'pdf';
 }
@@ -114,7 +114,7 @@ export async function createLessonPdfUploadUrlAction(
 ): Promise<UploadUrlResult> {
   const caller = await getCurrentUser();
   if (!caller || !isAdmin(caller.role)) {
-    return { ok: false, error: 'Apenas admin ou super_admin pode enviar apostilas.' };
+    return { ok: false, error: 'Apenas admin ou super_admin pode enviar sebentas.' };
   }
   const courseId = validateUuid(rawCourseId, 'course_id');
   if (!courseId.ok) return courseId;
@@ -157,7 +157,7 @@ export async function createLessonAction(formData: FormData): Promise<CreateLess
   }
 
   // O PDF já foi enviado pelo browser (upload directo); aqui só chega o path.
-  // Templates com apostila exigem-no; só-vídeo guarda null.
+  // Templates com sebenta exigem-no; só-vídeo guarda null.
   let pdfStoragePath: string | null = null;
   if (templateHasPdf(template.value)) {
     const validated = validatePdfStoragePath(formData.get('pdf_storage_path'), courseId.value);
@@ -262,11 +262,11 @@ export async function updateLessonAction(formData: FormData): Promise<LessonActi
   }
   const currentPath = current.pdf_storage_path;
 
-  // Coerência de apostila por template:
-  //   - video        → sem apostila: pdf_storage_path = null (ficheiro antigo
+  // Coerência de sebenta por template:
+  //   - video        → sem sebenta: pdf_storage_path = null (ficheiro antigo
   //     removido best-effort após o update).
   //   - pdf|video_pdf → novo path enviado (upload directo) substitui o actual;
-  //     senão mantém-no. Se a aula vinha de 'video' (sem apostila), exige PDF.
+  //     senão mantém-no. Se a aula vinha de 'video' (sem sebenta), exige PDF.
   const newPathRaw = formData.get('pdf_storage_path');
   const hasNewPdf = typeof newPathRaw === 'string' && newPathRaw.length > 0;
 
@@ -282,7 +282,7 @@ export async function updateLessonAction(formData: FormData): Promise<LessonActi
     if (currentPath && currentPath !== pdfStoragePath) orphanToRemove = currentPath;
   } else {
     if (!currentPath) {
-      return { ok: false, error: 'Esta aula passou a ter apostila - anexa um PDF.' };
+      return { ok: false, error: 'Esta aula passou a ter sebenta - anexa um PDF.' };
     }
     pdfStoragePath = currentPath;
   }

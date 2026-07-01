@@ -11,7 +11,6 @@ import {
   getModuleLessonNavigation,
 } from '@/lib/courses/detail';
 import { extractYoutubeId } from '@/lib/courses/youtube';
-import { getLessonPdfSignedUrlAction } from '@/lib/courses/access-actions';
 import {
   getCompletedLessonIds,
   getNextModuleWithLessons,
@@ -116,15 +115,12 @@ export default async function LessonPage({ params }: PageProps) {
   const hasPdf = lesson.template !== 'video';
   const youtubeId = hasVideo ? extractYoutubeId(lesson.youtube_url) : null;
 
-  // PDF inline: gera URL assinada server-side. Passamos ao iframe via prop.
-  // RLS já validou visibilidade no select acima; createSignedUrl não acrescenta
-  // gating mas é a forma canónica de acesso ao bucket privado. Aulas só-vídeo
-  // não têm apostila - saltamos o signing.
-  let pdfUrl: string | null = null;
-  if (hasPdf) {
-    const pdfResult = await getLessonPdfSignedUrlAction(lesson.id);
-    pdfUrl = pdfResult.ok ? pdfResult.url : null;
-  }
+  // PDF inline: o iframe e o botão de download apontam para o route handler
+  // `/sebenta`, que assina a URL fresca a cada pedido. Não pré-assinamos cá
+  // (evita a URL de 5 min embebida no HTML, que expirava e dava o erro
+  // intermitente em mobile). Só renderizamos quando há ficheiro.
+  const hasSebenta = hasPdf && Boolean(lesson.pdf_storage_path);
+  const sebentaHref = `/conteudos/${course.id}/${lesson.id}/sebenta`;
 
   return (
     <div className="mx-auto flex max-w-[84rem] justify-center gap-8 px-4 py-12 sm:px-6 sm:py-16">
@@ -184,34 +180,35 @@ export default async function LessonPage({ params }: PageProps) {
           </p>
         ) : null}
 
-        {hasPdf ? (
-          <section aria-labelledby="apostila-heading" className="mt-8">
+        {hasSebenta ? (
+          <section aria-labelledby="sebenta-heading" className="mt-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2
-                id="apostila-heading"
+                id="sebenta-heading"
                 className="text-muted-foreground text-xs font-semibold tracking-wide uppercase"
               >
-                Apostila
+                Sebenta
               </h2>
-              <PdfDownloadButton lessonId={lesson.id} lessonTitle={lesson.title} />
+              <PdfDownloadButton
+                courseId={course.id}
+                lessonId={lesson.id}
+                lessonTitle={lesson.title}
+              />
             </div>
-            {pdfUrl ? (
-              <div className="border-border bg-card mt-3 h-[75vh] w-full overflow-hidden rounded-2xl border">
-                <iframe
-                  src={pdfUrl}
-                  title={`Apostila: ${lesson.title}`}
-                  className="h-full w-full"
-                  // O bucket é privado; só este iframe (com URL assinada de 5 min) e o
-                  // botão de download conseguem ler. Em mobile, alguns browsers ignoram
-                  // o iframe e abrem o PDF na app nativa - comportamento aceitável.
-                />
-              </div>
-            ) : (
-              <p className="text-muted-foreground mt-3 inline-flex items-center rounded-md border border-dashed px-4 py-3 text-sm">
-                Não foi possível carregar a apostila. Usa o botão “Descarregar apostila” para a
-                obter.
-              </p>
-            )}
+            <div className="border-border bg-card mt-3 h-[75vh] w-full overflow-hidden rounded-2xl border">
+              <iframe
+                src={sebentaHref}
+                title={`Sebenta: ${lesson.title}`}
+                className="h-full w-full"
+                // O bucket é privado; o iframe aponta para o route handler /sebenta
+                // que assina a URL fresca a cada pedido (sem a URL expirar no HTML).
+                // Em mobile, muitos browsers não renderizam PDF em iframe e mostram
+                // o quadro vazio - daí a dica abaixo para usar o botão de download.
+              />
+            </div>
+            <p className="text-muted-foreground mt-2 text-xs sm:hidden">
+              Se a sebenta não abrir aqui, usa o botão “Descarregar sebenta” acima.
+            </p>
           </section>
         ) : null}
 
