@@ -112,10 +112,10 @@ describe('getLessonPdfSignedUrlAction', () => {
     expect(result).toEqual({ ok: false, error: expect.stringMatching(/boom/) });
   });
 
-  it('chama createSignedUrl com 300s TTL quando aula visível', async () => {
+  it('chama createSignedUrl com 300s TTL e devolve url + nome de ficheiro do título', async () => {
     mockGetCurrentUser.mockResolvedValue(makeProfile());
     setDbResponse({
-      data: { id: VALID_LESSON_ID, pdf_storage_path: 'c1/l1.pdf' },
+      data: { id: VALID_LESSON_ID, title: 'Aula 1', pdf_storage_path: 'c1/l1.pdf' },
       error: null,
     });
     mockCreateSignedUrl.mockResolvedValue({
@@ -126,7 +126,7 @@ describe('getLessonPdfSignedUrlAction', () => {
     const result = await getLessonPdfSignedUrlAction(VALID_LESSON_ID);
 
     expect(mockCreateSignedUrl).toHaveBeenCalledWith('c1/l1.pdf', 300);
-    expect(result).toEqual({ ok: true, url: 'https://signed.example/pdf' });
+    expect(result).toEqual({ ok: true, url: 'https://signed.example/pdf', fileName: 'Aula 1.pdf' });
   });
 
   it('propaga erro do createSignedUrl', async () => {

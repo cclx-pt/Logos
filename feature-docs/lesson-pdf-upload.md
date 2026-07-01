@@ -56,9 +56,12 @@ O **upload** (acima) vai browser → bucket. A **leitura** (visualizador + downl
 
 ### Como funciona agora
 
-- **`signLessonPdfUrl(lessonId, { download? })`** (`src/lib/courses/lesson-pdf.ts`) - núcleo de signing (auth + RLS de `lessons` + `createSignedUrl`, TTL 5 min). `download: true` força `Content-Disposition: attachment` com o **nome do ficheiro derivado do título da aula** (`pdfFileNameFromTitle`: tira caracteres ilegais, mantém acentos, limita a 80 chars); `download: '<nome>'` permite um nome à medida. Partilhado pela Server Action `getLessonPdfSignedUrlAction` (mantida por compat/estabilidade) e pelo route handler.
-- **`GET /conteudos/[courseId]/[lessonId]/sebenta`** (`.../sebenta/route.ts`, `force-dynamic`, `no-store`): assina fresco e faz **302** para a signed URL. Sem query = inline (alvo do iframe); `?dl=1` = download. Em erro devolve uma página HTML mínima PT-PT (em vez de deixar o erro cru do Supabase aparecer no iframe).
-- **`PdfDownloadButton`** deixou de ser client/`window.open` e passou a `<a href=".../sebenta?dl=1">` (navegação real - sem o problema do gesto).
+- **`signLessonPdfUrl(lessonId)`** (`src/lib/courses/lesson-pdf.ts`) - núcleo de signing (auth + RLS de `lessons` + `createSignedUrl`, TTL 5 min). Devolve `{ url, fileName }`: a `url` é sempre **inline** (sem download param) e o `fileName` é **derivado do título da aula** (`pdfFileNameFromTitle`: tira caracteres ilegais, mantém acentos, limita a 80 chars). Partilhado pela Server Action `getLessonPdfSignedUrlAction` (mantida por compat/estabilidade) e pelo route handler.
+- **`GET /conteudos/[courseId]/[lessonId]/sebenta`** (`.../sebenta/route.ts`, `force-dynamic`, `no-store`):
+  - **sem query (inline, alvo do iframe):** faz **302** para a signed URL, o browser mostra o PDF.
+  - **`?dl=1` (download):** **serve o ficheiro ele próprio** com `Content-Disposition: attachment` (fez `fetch` à signed URL e faz stream do corpo, sem bufferizar). Antes fazia 302 com o param `download` do Supabase, mas os browsers tratavam isso de forma inconsistente e abriam o PDF inline em vez de descarregar; servir com o nosso cabeçalho **garante o download**. Nome de ficheiro via `Content-Disposition` (RFC 6266: `filename` ASCII + `filename*` UTF-8 para acentos).
+  - Em erro devolve uma página HTML mínima PT-PT (em vez de deixar o erro cru do Supabase aparecer no iframe).
+- **`PdfDownloadButton`** deixou de ser client/`window.open` e passou a `<a href=".../sebenta?dl=1" download>` (navegação real + atributo `download` numa rota same-origin - sem o problema do gesto).
 - **Iframe** (`page.tsx`) aponta para `.../sebenta` (inline). A signed URL deixa de viver no HTML; só se renderiza quando `lesson.pdf_storage_path` existe. Dica `sm:hidden` para mobile (muitos browsers não renderizam PDF em iframe → usar o botão).
 
 **CSP:** `frame-src` ganhou `'self'` (`next.config.ts`) - o iframe aponta para a rota same-origin que faz 302 para `*.supabase.co`; a CSP valida **cada salto** do redirect, por isso são precisos ambos. Regressão fixada em `src/test/security-headers.test.ts`.
