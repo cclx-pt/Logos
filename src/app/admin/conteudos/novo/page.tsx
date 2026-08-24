@@ -45,7 +45,7 @@ export default async function NovoCursoPage() {
         <h1 className="font-display text-ink text-3xl font-medium tracking-tight">Novo curso</h1>
         <p className="text-muted-foreground mt-2 max-w-prose text-sm">
           Cria um novo curso. Fica como rascunho até marcares <strong>Publicado</strong>. Podes
-          ajustar tudo mais tarde — título, etiquetas, conteúdo.
+          ajustar tudo mais tarde: título, etiquetas, conteúdo.
         </p>
       </header>
 
