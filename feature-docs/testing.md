@@ -195,6 +195,31 @@ it('rejeita não-admin a aceder a /admin/courses', async () => {
 
 A V2 (auth) instala estes patterns. Documentar em PR.
 
+### 6.4. Guardas ao SQL das migrations (25-08-2026)
+
+> Quando a autoridade real vive num trigger ou numa policy, **os testes de Server Action não a cobrem** - mockam o Supabase, por isso o SQL nunca corre.
+
+Foi assim que a promoção a super administrador esteve partida ~3 meses com a suite toda verde: `setUserRoleAction` tinha 8 testes, todos a passar, e o trigger na base de dados recusava o valor. Ver `feature-docs/auth-architecture.md` §5.1.
+
+O padrão que fecha esta lacuna lê os **ficheiros de migration** e valida a versão que fica viva na base de dados - a que ordena por último, não a mais recente em wall-clock:
+
+```ts
+// src/test/profiles-role-trigger.test.ts
+const files = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql')).sort();
+let last = null;
+for (const file of files) {
+  const match = readFileSync(join(MIGRATIONS_DIR, file), 'utf8').match(DEFINITION_RE);
+  if (match) last = { file, body: match[1] };   // fica a ULTIMA na ordem de aplicacao
+}
+expect(/not\s+in\s*\(\s*'user'\s*,\s*'admin'\s*,\s*'super_admin'\s*\)/i.test(last.body)).toBe(true);
+```
+
+Quando usar: sempre que uma função ou policy for recriada por `create or replace` / `drop policy` em **mais do que uma migration** - aí um ramo pode reverter outro em silêncio. A mensagem de falha deve **nomear o ficheiro culpado**, senão o teste diz "está partido" sem dizer onde.
+
+Quando **não** usar: para regras que vivem em TypeScript. Aí testa-se a função, não o texto do ficheiro.
+
+Limite honesto: isto valida o **SQL versionado**, não a base de dados. Se alguém aplicar DDL à mão sem migration, o teste continua verde e a BD diverge - foi por isso que o fix de 25-08 registou a versão do ficheiro em `supabase_migrations.schema_migrations` ao aplicá-lo.
+
 ---
 
 ## 7. Anti-padrões
@@ -219,6 +244,7 @@ A V2 (auth) instala estes patterns. Documentar em PR.
 - **Sem MSW** (`msw` para mockar route handlers) — adicionar quando V2 trouxer rotas com fetch externo.
 - **Sem testes E2E** — Playwright entra na V3 (SPEC_1 §11). Pasta `e2e/` já está em `vitest.config.ts` exclude para não colidir.
 - **Sem coverage thresholds** — adicionar em V2 quando houver lógica não trivial.
+- **A suite não corre SQL.** Não há Postgres nos testes: RLS, triggers e policies só são exercidos pelo texto das migrations (§6.4) ou à mão contra a BD. Qualquer autoridade que viva no Postgres é, para a suite, um ponto cego - assume-o ao ler uma suite verde.
 
 ---
 

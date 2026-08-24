@@ -91,7 +91,7 @@ profiles  -- fonte de verdade do Logos para o utilizador
 
 **Fronteira de identidade (regra dura):** `profiles.external_auth_id` é o único campo do Logos que aponta para o sistema de identidade externo. Hoje aponta para `auth.users.id` (Supabase Auth). No futuro pode apontar para o ID que uma shell partilhada CCLX vier a entregar — quando essa shell existir, **muda-se apenas este campo (e a função `current_profile_id()`); nenhuma outra tabela é afetada**. Nada mais no Logos referencia `auth.users` diretamente: todas as FKs apontam para `profiles.id`. Detalhes em `feature-docs/auth-architecture.md`.
 
-**Estado actual do schema** (após V3 PR1+PR2, em `logos-dev`):
+**Estado do schema** - *snapshot da era V3 PR1+PR2*. Desde o lançamento (28-06-2026) a fonte de verdade é a pasta `supabase/migrations/`; a coluna abaixo lê-se com a nomenclatura da altura, em que `logos-prod` era o alvo do lançamento. **Hoje o ref live é `dknrnqyqlojvnhspwjrd`** (o antigo `logos-dev`, promovido por troca de env) e o `tirzriuabfwzqxtjsmfb` (o antigo `logos-prod`) é dev/staging - ou seja, tudo o que a tabela diz "pendente em `logos-prod`" está **aplicado no live** e é o *staging* que está atrasado:
 
 | Tabela | Migration | Estado em `logos-prod` |
 |---|---|---|
@@ -107,7 +107,9 @@ profiles  -- fonte de verdade do Logos para o utilizador
 | Banner opcional em cursos + bucket `course-banners` + storage RLS por path | `20260527000000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 | Pré-requisitos sequenciais: `courses.sequential_lessons` + `courses.sequential_modules` + `courses.prerequisite_course_id` (auto-FK, on delete set null) + CHECK não-auto-referência (V3.6) | `20260614140000` | ⏳ aplicada em `logos-dev`; pendente em `logos-prod` (sobe no lançamento V3) |
 
-Migrations V3 sobem a `logos-prod` apenas no dia do lançamento (01-07-2026). Ver `feature-docs/branch-strategy.md`.
+| Fix da promoção a super administrador: repõe `super_admin` como valor válido no trigger de role, sem perder a imutabilidade de `id`/`external_auth_id` | `20260825120000` | ✅ aplicada no live (`dknrnqyqlojvnhspwjrd`); ⏳ pendente no staging (`tirzriuabfwzqxtjsmfb`) |
+
+**Cuidado com `enforce_profiles_role_mutation_authority()`** - é a **única** função do schema recriada por `create or replace` em mais do que uma migration (quatro, a esta data: `20260514030344`, `20260530120000`, `20260530150000`, `20260825120000`). Vive na BD a versão da migration que ordena **por último**, não a mais recente em wall-clock. Foi exactamente isto que partiu a promoção a super administrador entre 02-06 e 25-08-2026: uma migration de outro ramo, com timestamp back-dated mais alto, recriou a função a partir de uma versão antiga e comeu a permissão em silêncio. Qualquer `create or replace` futuro tem de partir da **última definição na ordem de aplicação**; há um teste que o verifica (`src/test/profiles-role-trigger.test.ts`). Detalhes em `feature-docs/auth-architecture.md` §5.1.
 
 **Realtime + interruptor de live (V3.6):** a tabela singleton `live_override` (`id=1`, `is_live`, `video_id`, `armed_until`; migration `20260613120000`, **só `logos-dev`** até ao lançamento) guarda o estado que a equipa liga/desliga em `/admin/live` ("Estamos no ar"/"Terminámos"). Está na publicação `supabase_realtime` — **primeira utilização de Supabase Realtime no Logos**: o cliente subscreve via `src/lib/auth/browser-client.ts` (`subscribeToTable`, dentro da camada de identidade), pelo que o estado se propaga a todos os clientes em < 1s sem polling pesado. Reusa as env públicas do Supabase (sem infra nova). Escrita protegida por RLS (`current_profile_role() in ('admin','super_admin')`) e só feita por Server Actions admin; a leitura (`getLiveStatus` em `src/lib/youtube/`) é pura e nunca escreve.
 

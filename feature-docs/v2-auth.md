@@ -141,6 +141,8 @@ Trade-off: se a Supabase mudar a interface dos triggers de `auth.users`, o sync 
   - Policy `profiles_update_super_admin` (`for update using/check current_profile_role() = 'super_admin'`) — compõe (OR) com `profiles_update_own` da PR1, permitindo super_admin ver/escrever em linhas alheias.
   - Função `enforce_profiles_role_mutation_authority()` `SECURITY DEFINER` + trigger BEFORE UPDATE em `profiles`. Quando `NEW.role IS DISTINCT FROM OLD.role`, exige (a) caller=super_admin, (b) `OLD.role <> 'super_admin'`, (c) `NEW.role ∈ {user, admin}`. Raise com `errcode 42501` / `22023`. Cobre service-role-bypass (RLS não corre, trigger sim) — única forma de mudar role de super_admin é via SQL directo, coerente com bootstrap do primeiro super_admin (auth-architecture.md §5.1).
 
+  > **Estado posterior (este doc descreve a V2 PR3 tal como aterrou; não foi reescrito).** A regra (c) mudou duas vezes desde então: `20260530120000` alargou `NEW.role` a `{user, admin, super_admin}` para permitir promover a super administrador pela UI, e `20260825120000` repô-la depois de a `20260530160000` (lockdown da V2.5, de outro ramo e com timestamp mais alto) a ter revertido em silêncio. A função é a **única** do schema recriada por várias migrations - vale sempre a versão que ordena por último. História completa em `feature-docs/auth-architecture.md` §5.1.
+
 ### Decisões vs spec original
 
 - **Layout admin para `admin` permite Painel mas não `/admin/utilizadores`.** A spec não tinha posição definida sobre se admin (não super_admin) consegue ver Utilizadores. Decisão: não — `utilizadores/page.tsx` faz `notFound()` se role !== 'super_admin'. Razão: hoje só super_admin pode mutar roles; mostrar a lista a admin sem botões era ruído sem valor.

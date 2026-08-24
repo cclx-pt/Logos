@@ -43,6 +43,8 @@ As migrações de segurança **já estão aplicadas em `logos-dev`** (objetos co
 
 > Nota: as restantes migrações de V3 mantêm divergência ficheiro-vs-ledger pré-existente (ex.: `allow_super_admin_promotion` ficheiro `…120000` vs ledger `…172850`). Fora do âmbito deste port; tratar na reconciliação geral antes do lançamento.
 
+> **Epílogo (25-08-2026): esta nota apanhou o problema e foi arquivada cedo demais.** Os dois números que ela cita dizem tudo: o `allow_super_admin_promotion` entrou no ledger às `…172850` e o `profiles_update_lockdown` às `…220850` - **o lockdown correu depois**, e como recria a mesma função por `create or replace` a partir de uma versão antiga, apagou o alargamento a `super_admin`. A promoção a super administrador ficou partida de 02-06 a 25-08-2026. O que a nota tratou como problema *de ledger* era também um problema *de conteúdo*: quando duas migrations recriam o mesmo objecto, a ordem não é só uma questão de re-aplicação, decide **que versão fica viva**. Reposto pela `20260825120000` + teste de regressão `src/test/profiles-role-trigger.test.ts`. Ver `feature-docs/auth-architecture.md` §5.1.
+
 **No lançamento (01-07-2026):** estas 3 migrações já estão em `logos-prod` desde a V2.5; o processo de subida de V3 a prod tem de as saltar (não re-aplicar), tal como já acontece com as restantes migrações de V3 com versões divergentes.
 
 ## Adenda (10-06-2026): regressão de CSP nos assets do Storage
