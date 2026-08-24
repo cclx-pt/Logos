@@ -158,7 +158,7 @@ function NotEnrolledCourseView({
         <EnrollCourseCta courseId={course.id} />
       ) : (
         <p className="text-muted-foreground mt-8 inline-flex items-center rounded-md border border-dashed px-4 py-3 text-sm">
-          Em breve — este curso ainda não tem aulas publicadas.
+          Em breve - este curso ainda não tem aulas publicadas.
         </p>
       )}
 
@@ -256,7 +256,7 @@ async function EnrolledCourseView({
             ✓ Curso concluído
           </p>
           <p className="text-ink mt-2 text-base">
-            Parabéns — concluíste todas as aulas deste curso
+            Parabéns - concluíste todas as aulas deste curso
             {completedAt ? (
               <>
                 {' '}
@@ -276,7 +276,7 @@ async function EnrolledCourseView({
         />
       ) : (
         <p className="text-muted-foreground mt-8 inline-flex items-center rounded-md border border-dashed px-4 py-3 text-sm">
-          Em breve — este curso ainda não tem aulas publicadas.
+          Em breve - este curso ainda não tem aulas publicadas.
         </p>
       )}
 

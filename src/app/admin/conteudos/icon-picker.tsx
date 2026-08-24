@@ -1,4 +1,4 @@
-import { HelpCircle } from 'lucide-react';
+import { Ban, HelpCircle } from 'lucide-react';
 
 import { COURSE_ICONS } from '@/lib/courses/icons';
 
@@ -49,9 +49,7 @@ export function IconPicker({ selected }: Props) {
             defaultChecked={trimmed.length === 0}
             className="sr-only"
           />
-          <span aria-hidden="true" className="text-muted-foreground text-lg">
-            —
-          </span>
+          <Ban aria-hidden="true" className="text-muted-foreground h-5 w-5" />
           <span className="sr-only">Sem ícone</span>
         </label>
 

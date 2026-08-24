@@ -225,7 +225,7 @@ export default async function CursoDetalhePage({ params, searchParams }: PagePro
         <CollapsibleSection
           id="detalhes"
           title="Detalhes do curso"
-          subtitle="Metadados visíveis no catálogo público. Despublicar não apaga — apenas esconde dos utilizadores."
+          subtitle="Metadados visíveis no catálogo público. Despublicar não apaga - apenas esconde dos utilizadores."
         >
           <CourseForm
             mode="edit"
