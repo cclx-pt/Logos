@@ -36,10 +36,21 @@ type UserTagRow = {
   tag_id: string;
 };
 
+/** Mensagens dos `?guardado=` / `?erro=` com que as actions redirecionam. */
+const FEEDBACK: Record<string, { tone: 'ok' | 'erro'; text: string }> = {
+  papel_atualizado: { tone: 'ok', text: 'Papel atualizado.' },
+  etiquetas_atribuidas: { tone: 'ok', text: 'Etiqueta atribuída aos utilizadores selecionados.' },
+  selecao_vazia: { tone: 'erro', text: 'Seleciona pelo menos um utilizador.' },
+  generico: {
+    tone: 'erro',
+    text: 'Não foi possível concluir a operação. Tenta de novo; se persistir, verifica os registos do servidor.',
+  },
+};
+
 export default async function UtilizadoresPage({
   searchParams,
 }: {
-  searchParams: Promise<{ 'promover-super'?: string }>;
+  searchParams: Promise<{ 'promover-super'?: string; guardado?: string; erro?: string }>;
 }) {
   const user = await getCurrentUser();
   // Acesso para admin e super_admin. Promover/despromover continua restrito a
@@ -51,7 +62,12 @@ export default async function UtilizadoresPage({
   const canMutateRoles = isSuperAdmin(user.role);
   // Confirmação inline de promoção a super_admin (URL-driven, como `?apagar=`
   // nas etiquetas). Só super_admin a vê e só sobre alvos não-super.
-  const { 'promover-super': confirmingSuperId } = await searchParams;
+  const { 'promover-super': confirmingSuperId, guardado, erro } = await searchParams;
+
+  // As actions desta página redirecionam com `?guardado=` / `?erro=`. Sem este
+  // banner, sucesso e falha ficavam visualmente idênticos (nada acontecia) - foi
+  // o que escondeu a falha de promoção a super administrador.
+  const feedback = FEEDBACK[erro ?? ''] ?? FEEDBACK[guardado ?? ''] ?? null;
 
   const supabase = await getServerClient();
   const [
@@ -127,6 +143,19 @@ export default async function UtilizadoresPage({
           </p>
         )}
       </header>
+
+      {feedback ? (
+        <p
+          role={feedback.tone === 'erro' ? 'alert' : 'status'}
+          className={`text-ink border-l-4 px-3 py-2 text-sm ${
+            feedback.tone === 'erro'
+              ? 'border-l-destructive bg-destructive/10'
+              : 'border-l-orange-primary bg-orange-primary/10'
+          }`}
+        >
+          {feedback.text}
+        </p>
+      ) : null}
 
       <ListSearch label="Pesquisar utilizador" placeholder="Pesquisar por nome, email ou papel...">
         {/* Atribuição em lote: marca as checkboxes dos utilizadores na tabela,
