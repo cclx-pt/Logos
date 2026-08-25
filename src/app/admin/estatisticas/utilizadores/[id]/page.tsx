@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
+import { TableScroll } from '@/components/admin/table-scroll';
 import { getCurrentUser, ROLE_LABEL } from '@/lib/auth';
 import { isSuperAdmin } from '@/lib/auth/guards';
 import { getUserStatsDetail } from '@/lib/courses/stats-users';
@@ -73,14 +74,14 @@ export default async function UserStatsDetailPage({ params }: { params: Promise<
         {detail.completed.length === 0 ? (
           <p className="text-muted-foreground text-sm">Ainda não terminou nenhum curso.</p>
         ) : (
-          <div className="border-border overflow-hidden rounded-lg border">
+          <TableScroll label="Tabela de cursos terminados">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
                 <tr>
-                  <th scope="col" className="px-4 py-2 font-medium">
+                  <th scope="col" className="px-4 py-2 font-medium whitespace-nowrap">
                     Curso
                   </th>
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
+                  <th scope="col" className="px-4 py-2 text-right font-medium whitespace-nowrap">
                     Concluído em
                   </th>
                 </tr>
@@ -96,14 +97,14 @@ export default async function UserStatsDetailPage({ params }: { params: Promise<
                         {c.title}
                       </Link>
                     </td>
-                    <td className="text-muted-foreground px-4 py-3 text-right">
+                    <td className="text-muted-foreground px-4 py-3 text-right whitespace-nowrap">
                       {formatDate(c.completedAt)}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+          </TableScroll>
         )}
       </section>
     </div>

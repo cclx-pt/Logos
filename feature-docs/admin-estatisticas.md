@@ -37,6 +37,8 @@ A pedido do utilizador, o dashboard ganhou detalhe muito além do básico. **Só
 
 **Pesquisa + ordenação:** as tabelas que crescem (overview por curso, módulos/aulas do curso, lista por-utilizador) usam `SortableStatsTable` (`src/components/admin/sortable-stats-table.tsx`) — pesquisa opcional + ordenação por coluna (clicar no cabeçalho). O filtro corre com `useDeferredValue` (não bloqueia a escrita → INP saudável). Lógica pura testável em `src/lib/stats-table.ts`.
 
+**Mobile:** as tabelas do admin chegam a 7 colunas, por isso vivem dentro do `TableScroll` (`src/components/admin/table-scroll.tsx`) — `overflow-x-auto`, nunca `overflow-hidden`. A distinção não é cosmética: com `overflow-hidden` as colunas da direita eram **cortadas e ficavam inalcançáveis** abaixo dos ~1000px (fix de 25-08-2026, ver `changelog.md`). O scroll é só CSS; a região focável para teclado e a dica de deslizar aparecem depois da hidratação, e só quando há mesmo o que deslizar. Qualquer tabela nova do admin deve usar o mesmo wrapper.
+
 **PII / papéis:** tudo o que mostra **nomes** de utilizadores (quem terminou, vistas por-utilizador) é **só super_admin** — alinhado com o RLS de `profiles`. Admins normais veem todos os números agregados, mas não nomes. `count_registered_users()` devolve só a contagem (sem linhas) e só a admins.
 
 ## Fronteira V3 / V5 (deliberada)

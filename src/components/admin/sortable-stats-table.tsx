@@ -4,6 +4,7 @@ import { useDeferredValue, useId, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowDown, ArrowUp, ArrowUpDown, Search } from 'lucide-react';
 
+import { TableScroll } from '@/components/admin/table-scroll';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/format';
 import {
@@ -23,6 +24,8 @@ type Props = {
   searchLabel?: string;
   searchPlaceholder?: string;
   emptyMessage?: string;
+  /** Rótulo da região de scroll horizontal da tabela (leitores de ecrã). */
+  tableLabel?: string;
 };
 
 /**
@@ -42,6 +45,7 @@ export function SortableStatsTable({
   searchLabel,
   searchPlaceholder = 'Pesquisar...',
   emptyMessage = 'Sem resultados para esta pesquisa.',
+  tableLabel = 'Tabela de estatísticas',
 }: Props) {
   const primaryKey = columns[0]?.key ?? '';
   const [query, setQuery] = useState('');
@@ -90,7 +94,7 @@ export function SortableStatsTable({
         </label>
       ) : null}
 
-      <div className="border-border overflow-hidden rounded-lg border">
+      <TableScroll label={tableLabel}>
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
             <tr>
@@ -102,7 +106,10 @@ export function SortableStatsTable({
                     key={col.key}
                     scope="col"
                     aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
-                    className={cn('px-4 py-2 font-medium', i === 0 ? 'text-left' : 'text-right')}
+                    className={cn(
+                      'px-4 py-2 font-medium whitespace-nowrap',
+                      i === 0 ? 'text-left' : 'text-right',
+                    )}
                   >
                     <button
                       type="button"
@@ -144,7 +151,10 @@ export function SortableStatsTable({
                   }
                   if (col.date) {
                     return (
-                      <td key={col.key} className="text-muted-foreground px-4 py-3 text-right">
+                      <td
+                        key={col.key}
+                        className="text-muted-foreground px-4 py-3 text-right whitespace-nowrap"
+                      >
                         {value ? formatDate(String(value)) : '-'}
                       </td>
                     );
@@ -154,7 +164,11 @@ export function SortableStatsTable({
                       key={col.key}
                       className={cn(
                         'px-4 py-3',
-                        col.numeric ? 'text-right tabular-nums' : 'text-muted-foreground',
+                        // Números nunca partem linha; texto (ex.: título do
+                        // módulo) parte, senão a tabela cresce sem fim.
+                        col.numeric
+                          ? 'text-right whitespace-nowrap tabular-nums'
+                          : 'text-muted-foreground',
                       )}
                     >
                       {value}
@@ -165,7 +179,7 @@ export function SortableStatsTable({
             ))}
           </tbody>
         </table>
-      </div>
+      </TableScroll>
 
       {visible.length === 0 ? (
         <p className="text-muted-foreground text-sm" role="status">
