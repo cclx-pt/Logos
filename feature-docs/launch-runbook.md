@@ -63,6 +63,29 @@ cascade;
 - [ ] **Configurar a auth do staging** (Resend SMTP + templates com `{{ .Token }}` + Turnstile + confirmar Google). O Google ja la estava da era V2; o **OTP nao**, por ter entrado a 07-06, depois de este projecto congelar. Ver `feature-docs/email-otp-setup-guide.md` Parte D/E. **Ordem importa:** site key no deploy ANTES de ligar o CAPTCHA no Supabase, senao o envio de OTP parte.
 - [ ] Apontar o **Preview scope** da Vercel para o staging - so `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (+ `LOGOS_QUESTIONS_TO_EMAIL`, para as perguntas de teste nao cairem na caixa real). A `NEXT_PUBLIC_TURNSTILE_SITE_KEY` **nao** muda: e um widget so, a servir os dois projectos.
 - [ ] (Opcional) limpar as 14 contas antigas do staging.
+- [ ] (Limpeza) `NEXT_PUBLIC_SITE_URL` esta definida na Vercel (Production + Development) mas **nao e lida em lado nenhum do codigo** - confirmado por varrimento a arvore toda. Candidata a remocao.
+
+### Estado das variaveis na Vercel (levantado a 25-08-2026)
+
+Levantamento feito com `vercel env ls` para nao ter de se repetir. **O formato importa**: uma variavel com uma so entrada a cobrir varios ambientes nao se consegue diferenciar por ambiente sem a apagar e recriar em duas.
+
+| Variavel | Entradas hoje | Repoint |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | separadas (Production / Preview / Development) | limpo - substituir so a de Preview |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | separadas | limpo - substituir so a de Preview |
+| `SUPABASE_SERVICE_ROLE_KEY` | **uma** entrada `Production, Preview` | tem de separar |
+| `LOGOS_QUESTIONS_TO_EMAIL` | **uma** entrada `Development, Preview, Production` | tem de separar |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | uma entrada `Production, Preview` | **nao mexer** - e um widget so a servir os dois projectos |
+
+**Separar faz-se no painel, nao pela CLI.** Editar a variavel e desmarcar `Preview` (fica so Production, valor intacto), depois criar uma segunda entrada so para Preview. Pela CLI seria apagar e recriar, o que abre uma janela de segundos em que um redeploy de producao sairia sem a chave. O site no ar nao seria afectado - a Vercel injecta as variaveis no build, por isso o deployment activo mantem os valores que ja tem - mas nao ha razao para correr o risco quando o painel separa nativamente.
+
+**As tres tem de ir juntas.** Meio repoint deixa o cliente a ler do staging e o servidor a usar a service role da producao. Nao corrompe dados (as chaves sao por projecto, o staging rejeita-a), mas parte de forma confusa de diagnosticar.
+
+### Porque e que o repoint ficou por fazer (decisao de 25-08-2026)
+
+Depois de a Vercel Authentication ser ligada, **o risco de seguranca fechou**: os previews deixaram de ser publicos. O que sobra do repoint e higiene - evitar que os testes em preview sujem as estatisticas reais e, sobretudo, que testar uma funcionalidade de admin num preview mexa no curso a serio.
+
+Vale a pena fazer, mas **so de uma assentada e com a auth do staging incluida**. Apontados para o staging sem OTP configurado, os previews ficam *menos* uteis, nao mais: nao se consegue sequer entrar neles. E o Google nao funciona em URLs de preview de qualquer forma (`google-oauth-setup.md` §8.3), por isso o acesso a previews passa todo por email OTP - exactamente a peca que falta no staging. Os dois itens pendentes estao acoplados; tratar de um sem o outro nao entrega nada.
 
 > **Nota (25-08-2026): os previews estavam publicos E ligados a producao.** O item do Preview scope acima nunca foi feito, e o "deixar como esta" ficou a apontar para o `dknrnqyqlojvnhspwjrd` - que passou a ser producao no lancamento. Pior: a Deployment Protection do projecto Vercel estava **toda desligada** (`ssoProtection`, `passwordProtection`, `trustedIps` a `false`), ao contrario do que o `status.md` afirmava - qualquer URL de preview era uma app publica, sem login, a escrever na base de dados real. Nao havia segredo exposto (a publishable key e publica por desenho e a RLS e a mesma), mas era codigo por rever a correr contra dados reais. **Corrigido a 25-08-2026** ligando Vercel Authentication em `all_except_custom_domains` - protege previews e os aliases `.vercel.app`, deixa `logos.cclx.pt` publico. Verificado: preview passou de 200 a 302, producao mantem 200.
 
