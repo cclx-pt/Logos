@@ -55,13 +55,16 @@ cascade;
 - [ ] Áreas de admin acessíveis ao super_admin.
 
 ### 5. Renomear + anunciar
-- [ ] Painel Supabase: `logos-dev` -> "logos"; `logos-prod` -> "logos-staging" (os refs/keys não mudam).
+- [ ] Painel Supabase: `logos-dev` -> "logos"; `logos-prod` -> "logos-staging" (os refs/keys não mudam). **Por fazer** - os nomes continuam trocados e a enganar; guiar-se sempre pelo ref.
 - [ ] Anunciar à comunidade.
 
 ## Pós-lançamento (com calma, "off", enquanto desenvolves outras coisas)
-- [ ] Aplicar migrations V3 ao novo dev (`tirzriuabfwzqxtjsmfb`) + configurar a sua auth (Resend/Turnstile/Google) para voltar a ter ambiente de testes completo.
-- [ ] Apontar o **Preview scope** da Vercel para o novo dev.
-- [ ] (Opcional) limpar as 14 contas antigas do novo dev.
+- [x] **Migrations V3 aplicadas ao staging** (`tirzriuabfwzqxtjsmfb`) - 25-08-2026, via `supabase db push --include-all`. As 19 em falta, verificadas por `migration list` (0 por aplicar) e por `inspect db` (schema V3 completo). O `--include-all` foi preciso porque duas delas (`20260530120000`, `20260530130000`) ordenam **antes** de migrations ja aplicadas em 02-06; o resultado final esta correcto porque a `20260825120000` ordena em ultimo e repoe as duas garantias do trigger de role (confirmado por query ao `prosrc`).
+- [ ] **Configurar a auth do staging** (Resend SMTP + templates com `{{ .Token }}` + Turnstile + confirmar Google). O Google ja la estava da era V2; o **OTP nao**, por ter entrado a 07-06, depois de este projecto congelar. Ver `feature-docs/email-otp-setup-guide.md` Parte D/E. **Ordem importa:** site key no deploy ANTES de ligar o CAPTCHA no Supabase, senao o envio de OTP parte.
+- [ ] Apontar o **Preview scope** da Vercel para o staging - so `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (+ `LOGOS_QUESTIONS_TO_EMAIL`, para as perguntas de teste nao cairem na caixa real). A `NEXT_PUBLIC_TURNSTILE_SITE_KEY` **nao** muda: e um widget so, a servir os dois projectos.
+- [ ] (Opcional) limpar as 14 contas antigas do staging.
+
+> **Nota (25-08-2026): os previews estavam publicos E ligados a producao.** O item do Preview scope acima nunca foi feito, e o "deixar como esta" ficou a apontar para o `dknrnqyqlojvnhspwjrd` - que passou a ser producao no lancamento. Pior: a Deployment Protection do projecto Vercel estava **toda desligada** (`ssoProtection`, `passwordProtection`, `trustedIps` a `false`), ao contrario do que o `status.md` afirmava - qualquer URL de preview era uma app publica, sem login, a escrever na base de dados real. Nao havia segredo exposto (a publishable key e publica por desenho e a RLS e a mesma), mas era codigo por rever a correr contra dados reais. **Corrigido a 25-08-2026** ligando Vercel Authentication em `all_except_custom_domains` - protege previews e os aliases `.vercel.app`, deixa `logos.cclx.pt` publico. Verificado: preview passou de 200 a 302, producao mantem 200.
 
 ## Notas
 - Plano grátis Supabase **sem backups**: a partir do lançamento, `dknrnqyqlojvnhspwjrd` tem dados reais - cuidado redobrado em qualquer operação.
