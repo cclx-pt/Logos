@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { ClickableRow } from '@/components/admin/clickable-row';
 import { ListSearch } from '@/components/admin/list-search';
+import { TableScroll } from '@/components/admin/table-scroll';
 import { getCurrentUser, getServerClient } from '@/lib/auth';
 import { isAdmin } from '@/lib/auth/guards';
 import { formatDate } from '@/lib/format';
@@ -76,20 +77,20 @@ export default async function ConteudosPage() {
           </p>
         ) : (
           <ListSearch label="Pesquisar curso" placeholder="Pesquisar por título...">
-            <div className="border-border overflow-hidden rounded-lg border">
+            <TableScroll label="Tabela de cursos">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
                   <tr>
-                    <th scope="col" className="px-4 py-2 font-medium">
+                    <th scope="col" className="px-4 py-2 font-medium whitespace-nowrap">
                       Título
                     </th>
-                    <th scope="col" className="px-4 py-2 font-medium">
+                    <th scope="col" className="px-4 py-2 font-medium whitespace-nowrap">
                       Estado
                     </th>
-                    <th scope="col" className="px-4 py-2 font-medium">
+                    <th scope="col" className="px-4 py-2 font-medium whitespace-nowrap">
                       Etiquetas
                     </th>
-                    <th scope="col" className="px-4 py-2 font-medium">
+                    <th scope="col" className="px-4 py-2 font-medium whitespace-nowrap">
                       Criado em
                     </th>
                   </tr>
@@ -142,13 +143,15 @@ export default async function ConteudosPage() {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3">{formatDate(course.created_at)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {formatDate(course.created_at)}
+                        </td>
                       </ClickableRow>
                     );
                   })}
                 </tbody>
               </table>
-            </div>
+            </TableScroll>
           </ListSearch>
         )}
       </section>

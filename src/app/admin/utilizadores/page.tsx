@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 
 import { ListSearch } from '@/components/admin/list-search';
+import { TableScroll } from '@/components/admin/table-scroll';
 import { SubmitButton } from '@/components/ui/submit-button';
 import {
   getAuthEmailsByProfileIds,
@@ -212,30 +213,30 @@ export default async function UtilizadoresPage({
           </form>
         )}
 
-        <div className="border-border overflow-hidden rounded-lg border">
+        <TableScroll label="Tabela de utilizadores">
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
               <tr>
                 <th scope="col" className="px-4 py-2 font-medium">
                   <span className="sr-only">Selecionar</span>
                 </th>
-                <th scope="col" className="px-4 py-2 font-medium">
+                <th scope="col" className="px-4 py-2 font-medium whitespace-nowrap">
                   Nome
                 </th>
-                <th scope="col" className="px-4 py-2 font-medium">
+                <th scope="col" className="px-4 py-2 font-medium whitespace-nowrap">
                   Email
                 </th>
-                <th scope="col" className="px-4 py-2 font-medium">
+                <th scope="col" className="px-4 py-2 font-medium whitespace-nowrap">
                   Papel
                 </th>
-                <th scope="col" className="px-4 py-2 font-medium">
+                <th scope="col" className="px-4 py-2 font-medium whitespace-nowrap">
                   Etiquetas
                 </th>
-                <th scope="col" className="px-4 py-2 font-medium">
+                <th scope="col" className="px-4 py-2 font-medium whitespace-nowrap">
                   Criado em
                 </th>
                 {canMutateRoles && (
-                  <th scope="col" className="px-4 py-2 text-right font-medium">
+                  <th scope="col" className="px-4 py-2 text-right font-medium whitespace-nowrap">
                     Papel
                   </th>
                 )}
@@ -323,7 +324,7 @@ export default async function UtilizadoresPage({
                     <td className="text-muted-foreground px-4 py-3">
                       {email ?? <span className="italic">sem email</span>}
                     </td>
-                    <td className="px-4 py-3">{ROLE_LABEL[row.role]}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{ROLE_LABEL[row.role]}</td>
                     <td className="px-4 py-3">
                       <UserTagsCell
                         userId={row.id}
@@ -332,7 +333,7 @@ export default async function UtilizadoresPage({
                         allTags={tags}
                       />
                     </td>
-                    <td className="px-4 py-3">{formatDate(row.created_at)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{formatDate(row.created_at)}</td>
                     {canMutateRoles && (
                       <td className="px-4 py-3 text-right">
                         {canMutateRow ? (
@@ -378,7 +379,7 @@ export default async function UtilizadoresPage({
               })}
             </tbody>
           </table>
-        </div>
+        </TableScroll>
       </ListSearch>
     </div>
   );

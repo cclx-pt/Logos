@@ -8,9 +8,9 @@ type BreadcrumbProps = {
 };
 
 /**
- * Breadcrumb visível apenas em mobile (sidebar admin está `hidden md:block`,
- * por isso em mobile o utilizador precisa de uma forma de voltar atrás). Em
- * desktop é redundante.
+ * Breadcrumb visível apenas em mobile. Em md+ a barra lateral do admin dá o
+ * caminho de volta; em mobile a nav colapsa numa fila de chips sem hierarquia,
+ * por isso este breadcrumb é a única forma de subir um nível.
  *
  * Suporta dois níveis de drill-down:
  *   - Cursos › Curso (página do curso)

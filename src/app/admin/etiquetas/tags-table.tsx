@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 
 import { ListSearch } from '@/components/admin/list-search';
+import { TableScroll } from '@/components/admin/table-scroll';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { formatDate } from '@/lib/format';
 import { deleteTagAction, updateTagAction } from './actions';
@@ -64,17 +65,17 @@ export function TagsTable({ initial, editingId, confirmingDeleteId }: Props) {
 
   return (
     <ListSearch label="Pesquisar etiqueta" placeholder="Pesquisar por nome...">
-      <div className="border-border overflow-hidden rounded-lg border">
+      <TableScroll label="Tabela de etiquetas">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-muted-foreground text-left text-xs uppercase">
             <tr>
-              <th scope="col" className="px-4 py-2 font-medium">
+              <th scope="col" className="px-4 py-2 font-medium whitespace-nowrap">
                 Nome
               </th>
-              <th scope="col" className="px-4 py-2 font-medium">
+              <th scope="col" className="px-4 py-2 font-medium whitespace-nowrap">
                 Criada em
               </th>
-              <th scope="col" className="px-4 py-2 text-right font-medium">
+              <th scope="col" className="px-4 py-2 text-right font-medium whitespace-nowrap">
                 Ações
               </th>
             </tr>
@@ -160,7 +161,9 @@ export function TagsTable({ initial, editingId, confirmingDeleteId }: Props) {
               return (
                 <tr key={tag.id} data-search-text={tag.label.toLowerCase()} className="text-ink">
                   <td className="px-4 py-3 font-medium">{tag.label}</td>
-                  <td className="px-4 py-3 text-sm">{formatDate(tag.created_at)}</td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                    {formatDate(tag.created_at)}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-3">
                       <Link
@@ -182,7 +185,7 @@ export function TagsTable({ initial, editingId, confirmingDeleteId }: Props) {
             })}
           </tbody>
         </table>
-      </div>
+      </TableScroll>
     </ListSearch>
   );
 }
