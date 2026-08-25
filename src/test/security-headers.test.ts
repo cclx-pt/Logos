@@ -77,6 +77,40 @@ describe('CSP (next.config.ts)', () => {
     expect(connectSrc).toContain('https://challenges.cloudflare.com');
   });
 
+  it('media-src permite o áudio das aulas servido do Supabase Storage', async () => {
+    const csp = await getCspDirectives();
+    const mediaSrc = csp.get('media-src') ?? '';
+    // Sem esta directiva, `media-src` cai em `default-src 'self'` e o 302 do
+    // route handler /conteudos/.../audio para a signed URL do bucket é
+    // bloqueado - o áudio simplesmente não toca, sem erro óbvio.
+    expect(mediaSrc).toContain("'self'");
+    expect(mediaSrc).toContain('https://*.supabase.co');
+    // blob:: pré-escuta do ficheiro convertido no formulário de admin, antes
+    // de haver upload.
+    expect(mediaSrc).toContain('blob:');
+  });
+
+  it('permite o ffmpeg.wasm da área de admin (extracção de áudio)', async () => {
+    const csp = await getCspDirectives();
+    // 'wasm-unsafe-eval' é o mínimo para compilar WebAssembly. NÃO é o
+    // 'unsafe-eval' geral - se alguém trocar um pelo outro, é uma regressão
+    // de segurança, não uma equivalência.
+    expect(csp.get('script-src') ?? '').toContain("'wasm-unsafe-eval'");
+    // O @ffmpeg/ffmpeg arranca o seu worker; sem worker-src ele não nasce e a
+    // conversão morre em silêncio.
+    expect(csp.get('worker-src') ?? '').toContain("'self'");
+  });
+
+  it('não abre a CSP a CDNs externas para o core do ffmpeg', async () => {
+    const csp = await getCspDirectives();
+    // O @ffmpeg/ffmpeg aponta por omissão para unpkg.com. Servimos o core de
+    // /ffmpeg/ (copiado de node_modules no build) exactamente para não pôr
+    // uma CDN de terceiros no caminho crítico do admin nem na CSP.
+    const all = [...csp.values()].join(' ');
+    expect(all).not.toContain('unpkg.com');
+    expect(all).not.toContain('cdn.jsdelivr.net');
+  });
+
   it('mantém as directivas restritivas de base', async () => {
     const csp = await getCspDirectives();
     expect(csp.get('object-src')).toBe("'none'");

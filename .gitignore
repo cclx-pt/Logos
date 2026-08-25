@@ -77,3 +77,6 @@ supabase/seed/*.sql
 .turbo/
 .cache/
 .vercel
+
+# ---- ffmpeg.wasm core (copiado de node_modules por scripts/copy-ffmpeg-core.mjs) ----
+/public/ffmpeg/

@@ -39,7 +39,17 @@ const eslintConfig = defineConfig([
       'no-restricted-imports': 'off',
     },
   },
-  globalIgnores(['.next/**', 'out/**', 'build/**', 'coverage/**', 'next-env.d.ts']),
+  globalIgnores([
+    '.next/**',
+    'out/**',
+    'build/**',
+    'coverage/**',
+    'next-env.d.ts',
+    // Core do ffmpeg.wasm, copiado de node_modules por
+    // scripts/copy-ffmpeg-core.mjs. É um bundle Emscripten gerado - não é
+    // nosso código e não passa (nem tem de passar) nas nossas regras.
+    'public/ffmpeg/**',
+  ]),
 ]);
 
 export default eslintConfig;

@@ -35,7 +35,20 @@ const csp = [
   // que o tutorial (/como-funciona) carrega para a pagina para controlar o
   // player (autoplay fiavel do 1.o video + loop sem corte). O <iframe> de embed
   // continua coberto por frame-src; isto e so para o *script* da API.
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://va.vercel-scripts.com https://challenges.cloudflare.com https://www.youtube.com`,
+  // 'wasm-unsafe-eval': o ffmpeg.wasm (extraccao do audio da aula no browser,
+  // area de admin) precisa de compilar o modulo WebAssembly. E o minimo - NAO
+  // e o 'unsafe-eval' geral: permite compilar wasm e mais nada.
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'${isDev ? " 'unsafe-eval'" : ''} https://va.vercel-scripts.com https://challenges.cloudflare.com https://www.youtube.com`,
+  // O @ffmpeg/ffmpeg arranca o seu worker a partir de um blob URL. Sem isto o
+  // worker nunca chega a nascer e a conversao morre em silencio.
+  "worker-src 'self' blob:",
+  // Audio das aulas. 'self': o <audio> aponta para o route handler same-origin
+  // /conteudos/.../audio, que faz 302 para a signed URL do bucket lesson-audio
+  // (por isso *.supabase.co tambem e preciso - a CSP valida cada salto do
+  // redirect, tal como na sebenta). blob:: pre-escuta do ficheiro convertido no
+  // formulario de admin, antes de existir upload.
+  // Sem esta directiva cairia em default-src 'self' e o 302 seria bloqueado.
+  "media-src 'self' blob: https://*.supabase.co",
   // Supabase (auth/db/storage) + telemetria Vercel + validacao do desafio
   // Turnstile (o fetch que resolve o captcha bate aqui - sem isto o widget
   // carrega e renderiza mas nunca resolve: "nao foi possivel conectar ao site").
