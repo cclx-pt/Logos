@@ -94,7 +94,16 @@ export function SpikeAudioClient() {
           // Apontado a uma copia servida de /ffmpeg/, o worker fica fora do
           // alcance do bundler e o import volta a ser nativo do browser.
           // Ver scripts/copy-ffmpeg-core.mjs.
-          classWorkerURL: '/ffmpeg/worker.js',
+          //
+          // ABSOLUTO DE PROPOSITO. O load() faz
+          // `new Worker(new URL(classWorkerURL, import.meta.url))`, e em
+          // producao o Turbopack compila `import.meta.url` para um file:// (o
+          // caminho do ficheiro em build, nao o URL do site). Um caminho
+          // relativo resolveria contra essa base e dava
+          // "Failed to construct 'Worker': Script at 'file:///ffmpeg/worker.js'
+          // cannot be accessed from origin ...". Sendo absoluto, o new URL
+          // ignora a base.
+          classWorkerURL: `${window.location.origin}/ffmpeg/worker.js`,
         });
         push('Core carregado.');
 

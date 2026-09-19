@@ -102,6 +102,14 @@ Coisas que custaram a descobrir e que valem para a implementação a sério:
   `worker.js` importa `./const.js` e `./errors.js` - ambos folhas -, por isso **os três**
   viajam para `public/ffmpeg/`. As duas metades falham em silêncio se alguma se perder, logo
   ficam travadas por `src/test/ffmpeg-worker-assets.test.ts`
+- **E o `classWorkerURL` tem de ser absoluto** (segunda armadilha, encadeada na primeira). O
+  `load()` faz `new Worker(new URL(classWorkerURL, import.meta.url))`, e em produção o
+  Turbopack compila o `import.meta.url` para um `file://` - o caminho do ficheiro em build,
+  não o URL do site. Um caminho relativo (`'/ffmpeg/worker.js'`) resolve contra essa base e dá
+  **`Failed to construct 'Worker': Script at 'file:///ffmpeg/worker.js' cannot be accessed from
+  origin ...`**. Com `${window.location.origin}/ffmpeg/worker.js` o `new URL` ignora a base.
+  Só o `classWorkerURL` precisa disto: o `coreURL` e o `wasmURL` são resolvidos **dentro** do
+  worker, contra o URL do próprio worker, que já está certo
 - **Core servido de `/ffmpeg/`, não de CDN.** Por omissão o `@ffmpeg/ffmpeg` aponta para
   `unpkg.com` (`const.js:CORE_URL`). Copiar de `node_modules` no build evita uma CDN de
   terceiros no caminho crítico do admin *e* na CSP, sem meter 32 MB no git

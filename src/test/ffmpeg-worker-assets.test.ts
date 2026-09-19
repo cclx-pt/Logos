@@ -38,6 +38,10 @@ describe('arranque do ffmpeg.wasm', () => {
   it('passa classWorkerURL ao load(), senao o Turbopack empacota o worker', () => {
     const client = read('src', 'app', 'admin', 'spike-audio', 'spike-audio-client.tsx');
 
-    expect(client).toContain("classWorkerURL: '/ffmpeg/worker.js'");
+    expect(client).toContain('classWorkerURL');
+    // Absoluto: um caminho relativo resolve contra `import.meta.url`, que o
+    // Turbopack compila para file:// em producao, e o Worker rebenta com
+    // "Script at 'file:///ffmpeg/worker.js' cannot be accessed from origin".
+    expect(client).toContain('window.location.origin}/ffmpeg/worker.js');
   });
 });
