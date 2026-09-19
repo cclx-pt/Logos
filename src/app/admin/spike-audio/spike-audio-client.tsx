@@ -53,6 +53,7 @@ export function SpikeAudioClient() {
   // ---- A) conversao -------------------------------------------------------
   const [converting, setConverting] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [failure, setFailure] = useState<string | null>(null);
   const [result, setResult] = useState<{
     url: string;
     inputBytes: number;
@@ -66,6 +67,7 @@ export function SpikeAudioClient() {
       setConverting(true);
       setProgress(0);
       setResult(null);
+      setFailure(null);
       push(`Entrada: ${file.name} (${megabytes(file.size)}, ${file.type || 'tipo desconhecido'})`);
 
       const started = performance.now();
@@ -82,6 +84,17 @@ export function SpikeAudioClient() {
         await ffmpeg.load({
           coreURL: '/ffmpeg/ffmpeg-core.js',
           wasmURL: '/ffmpeg/ffmpeg-core.wasm',
+          // SEM ISTO NAO CONVERTE NADA. Por omissao o load() faz
+          // `new Worker(new URL("./worker.js", import.meta.url))`, que o
+          // Turbopack analisa e empacota - e dentro do worker esta
+          // `await import(coreURL)`, com um URL que so existe em runtime. O
+          // bundler nao o resolve, troca-o por um stub, e a conversao morre com
+          // "Cannot find module as expression is too dynamic" (o
+          // /* @vite-ignore */ do pacote serve o Vite, nao o Turbopack).
+          // Apontado a uma copia servida de /ffmpeg/, o worker fica fora do
+          // alcance do bundler e o import volta a ser nativo do browser.
+          // Ver scripts/copy-ffmpeg-core.mjs.
+          classWorkerURL: '/ffmpeg/worker.js',
         });
         push('Core carregado.');
 
@@ -119,7 +132,9 @@ export function SpikeAudioClient() {
         );
         ffmpeg.terminate();
       } catch (error) {
-        push(`FALHOU: ${error instanceof Error ? error.message : String(error)}`);
+        const message = error instanceof Error ? error.message : String(error);
+        setFailure(message);
+        push(`FALHOU: ${message}`);
       } finally {
         setConverting(false);
       }
@@ -268,6 +283,10 @@ export function SpikeAudioClient() {
           disabled={converting}
           onChange={(event) => {
             const file = event.target.files?.[0];
+            // Limpa o valor do input: sem isto, escolher o MESMO ficheiro outra
+            // vez nao dispara o evento (o valor nao mudou) e a pagina fica muda
+            // - que e indistinguivel de "nao faz nada".
+            event.target.value = '';
             if (file) void convert(file);
           }}
           className="border-border mt-4 block w-full rounded-md border p-2 text-sm"
@@ -285,6 +304,15 @@ export function SpikeAudioClient() {
               {Math.round(progress * 100)}% - não feches o separador.
             </p>
           </div>
+        )}
+
+        {failure && (
+          <p
+            role="alert"
+            className="border-l-destructive bg-destructive/10 text-ink mt-4 border-l-4 px-3 py-2 text-sm"
+          >
+            Falhou: {failure}
+          </p>
         )}
 
         {result && (

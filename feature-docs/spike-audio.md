@@ -31,8 +31,12 @@ Precisa de um **telemóvel real**. Emuladores e o modo responsivo do browser nã
 se está a testar é o comportamento do sistema operativo quando o ecrã bloqueia.
 
 1. Abrir o preview da Vercel do ramo no telemóvel e entrar em `/admin/spike-audio`
-2. Na secção **B**, colar o URL de um MP3 acessível (serve qualquer episódio de podcast
-   público) e carregar em **Carregar**
+2. Na secção **B**, colar o URL de um MP3 acessível e carregar em **Carregar**.
+   **Atenção: tem de estar em `*.supabase.co` ou no próprio site.** A `media-src` da CSP
+   (`next.config.ts`) é `'self' blob: https://*.supabase.co` - o MP3 de um podcast público
+   qualquer é **bloqueado pela CSP** e o teste falha pela razão errada. Carregar um MP3 para
+   o Storage do projeto live e usar um URL assinado de longa duração (é o caminho real da
+   PR3, portanto ainda melhor prova)
 3. **Tocar**
 4. **Bloquear o telemóvel.** Confirmar que:
    - o som continua
@@ -46,6 +50,14 @@ Repetir em **iOS/Safari** e em **Android/Chrome**. Os dois têm de passar.
 
 > Nota: preferir um URL a um blob. Um ficheiro convertido em blob vive na memória do
 > separador e não prova o caminho real (streaming por HTTP, com Range requests).
+
+> **Como chegar à página no telemóvel** (dois portões, ambos por ultrapassar antes do teste):
+> 1. Os previews estão atrás de **Vercel Authentication** desde 25-08-2026 - fazer login da
+>    Vercel nesse browser primeiro, senão o URL responde 302 e nunca se chega à app
+> 2. `/admin/spike-audio` exige sessão de **admin**. O login **Google não funciona em URLs de
+>    preview** (falta `https://logos-*-jcrninjas-projects.vercel.app/**` nas Redirect URLs do
+>    Supabase - item ⏳ do `status.md`): ou se acrescenta lá o wildcard, ou se entra por
+>    **email OTP**, que não depende de redirect URLs
 
 ## Como testar A
 
@@ -77,6 +89,19 @@ Coisas que custaram a descobrir e que valem para a implementação a sério:
   (`classes.js:110`). Num module worker o `importScripts` rebenta e o `worker.js` cai no catch
   com `await import(coreURL)`. Passar-lhe o build UMD dá um erro obscuro em runtime.
   `scripts/copy-ffmpeg-core.mjs` copia de `dist/esm`
+- **O worker tem de ser servido de `/ffmpeg/` e passado em `classWorkerURL`** (descoberto a
+  19-09-2026, quando a secção A não fazia nada). Por omissão o `load()` faz
+  `new Worker(new URL("./worker.js", import.meta.url))` (`classes.js:110`) - padrão que o
+  **Turbopack analisa e empacota**. Dentro do worker está `await import(coreURL)`
+  (`worker.js:19`), com um URL que só existe em runtime: o bundler não o resolve, troca-o por
+  um stub, e a conversão morre com **`Cannot find module as expression is too dynamic`**. O
+  `/* @vite-ignore */` que o pacote traz nessa linha serve o Vite, não o Turbopack. Com
+  `classWorkerURL: '/ffmpeg/worker.js'` o `load()` vai pelo ramo de `classes.js:105`
+  (`new Worker(new URL(<variável>, ...))`, que o bundler não consegue analisar e deixa em
+  paz): o ficheiro é servido tal e qual e o import volta a ser nativo do browser. O
+  `worker.js` importa `./const.js` e `./errors.js` - ambos folhas -, por isso **os três**
+  viajam para `public/ffmpeg/`. As duas metades falham em silêncio se alguma se perder, logo
+  ficam travadas por `src/test/ffmpeg-worker-assets.test.ts`
 - **Core servido de `/ffmpeg/`, não de CDN.** Por omissão o `@ffmpeg/ffmpeg` aponta para
   `unpkg.com` (`const.js:CORE_URL`). Copiar de `node_modules` no build evita uma CDN de
   terceiros no caminho crítico do admin *e* na CSP, sem meter 32 MB no git
