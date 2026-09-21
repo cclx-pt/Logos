@@ -76,10 +76,10 @@ Se a saída for muito maior, o `-b:a 64k` não pegou.
 | B: continua a tocar com ecrã bloqueado | | | n/a |
 | B: controlos no ecrã de bloqueio | | | n/a |
 | B: imagem no ecrã de bloqueio | | | n/a |
-| A: master de entrada (MB) | n/a | n/a | |
-| A: MP3 de saída (MB) | n/a | n/a | |
-| A: tempo de conversão | n/a | n/a | |
-| A: pico de memória (DevTools) | n/a | n/a | |
+| A: master de entrada (MB) | n/a | n/a | **147,3** (29m44s, 720p, AAC 127 kb/s estéreo) |
+| A: MP3 de saída (MB) | n/a | n/a | **13,6** (64,0 kb/s mono) |
+| A: tempo de conversão | n/a | n/a | **24,5 s** (~80x tempo real) |
+| A: pico de memória (DevTools) | n/a | n/a | não medido - não foi preciso, não houve pressão |
 
 ## Decisões técnicas já fechadas neste spike
 
@@ -135,7 +135,20 @@ Coisas que custaram a descobrir e que valem para a implementação a sério:
 
 > Preencher depois de correr. Enquanto estiver assim, o plano de áudio está por validar.
 
-**A - extracção:** _por correr_
+**A - extracção: PASSA** (19-09-2026, desktop). Um master real da CCLX
+(`Fundamentos da Fé Módulo 1 - Aula 3.mp4`, **147,3 MB**, 29m44s) converteu em
+**24,5 s** para **13,6 MB**, a ~80x tempo real. O WORKERFS aguentou sem copiar o ficheiro
+para dentro da memória do wasm, e o `-b:a 64k` pegou (o log fecha em `bitrate= 64.0kbits/s`).
+Extrapolando para uma aula de 45 min: **~21 MB, ~37 s**. A primeira conversão da sessão paga
+~4 s a carregar o core; as seguintes não.
+
+> Detalhe que parece mau e não é: no fim do log aparece `Aborted()`, **depois** de o ficheiro
+> estar completo (o `PRONTO` vem logo a seguir). É o `exit()` do ffmpeg a derrubar o runtime
+> emscripten no fim da execução. Só seria problema se a mesma instância fosse reutilizada -
+> o código cria uma `new FFmpeg()` por conversão, por isso não é.
+
+**Consequência para o plano:** a extração no browser fica de pé, logo o admin **não** precisa
+de exportar o áudio por fora. O "menos trabalho" mantém-se.
 
 **B - segundo plano:** _por correr_
 
