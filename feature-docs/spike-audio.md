@@ -1,6 +1,6 @@
 # Spike - áudio das aulas em segundo plano (PR0)
 
-> **Estado (08-10-2026):** A ✅ passa (19/21-09-2026, desktop); **B ⏳ por correr** em iPhone e Android reais. Ramo `spike-audio-segundo-plano`. **Descartável - não mergeia em `main`.**
+> **Estado (08-10-2026):** A ✅ passa (desktop e iPhone); B 🟡 iPhone passa com blob, falta iPhone com URL e Android. Ramo `spike-audio-segundo-plano`. **Descartável - não mergeia em `main`.**
 >
 > Existe para responder a duas perguntas antes de investir ~2 semanas na funcionalidade
 > completa. Quando estiver respondido, este ficheiro fica com os resultados e o ramo é
@@ -73,10 +73,10 @@ Se a saída for muito maior, o `-b:a 64k` não pegou.
 
 | Métrica | iPhone | Android | Desktop |
 |---|---|---|---|
-| B: continua a tocar com ecrã bloqueado | | | n/a |
-| B: controlos no ecrã de bloqueio | | | n/a |
+| B: continua a tocar com ecrã bloqueado | ✅ blob (troca de app + bloqueio); URL por testar | | n/a |
+| B: controlos no ecrã de bloqueio | ✅ pausa + saltos (o salto é de **10 s**, não 15) | | n/a |
 | B: imagem no ecrã de bloqueio | | | n/a |
-| A: master de entrada (MB) | n/a | n/a | **147,3** (29m44s, 720p, AAC 127 kb/s estéreo) |
+| A: master de entrada (MB) | converteu no próprio iPhone | n/a | **147,3** (29m44s, 720p, AAC 127 kb/s estéreo) |
 | A: MP3 de saída (MB) | n/a | n/a | **13,6** (64,0 kb/s mono) |
 | A: tempo de conversão | n/a | n/a | **24,5 s** (~80x tempo real) |
 | A: pico de memória (DevTools) | n/a | n/a | não medido - não foi preciso, não houve pressão |
@@ -150,6 +150,17 @@ Extrapolando para uma aula de 45 min: **~21 MB, ~37 s**. A primeira conversão d
 **Consequência para o plano:** a extração no browser fica de pé, logo o admin **não** precisa
 de exportar o áudio por fora. O "menos trabalho" mantém-se.
 
-**B - segundo plano:** _por correr_
+**B - segundo plano: iPhone PASSA (com fonte blob)** (08-10-2026, iOS/Safari). Ficheiro convertido
+na secção A **no próprio iPhone**, "Usar no leitor", troca de app e ecrã bloqueado: o som
+continuou, e os controlos do ecrã de bloqueio (pausa e saltos) funcionaram. Dois achados:
+
+- **O salto no ecrã de bloqueio é de 10 s, apesar de o código pedir 15** (`SKIP_SECONDS`). O
+  iOS mostra os seus próprios botões de 10 s e não respeita o valor da página. Na implementação
+  a sério usar **10 s** em todo o lado, para o leitor da página e o ecrã de bloqueio dizerem o
+  mesmo
+- **Bónus da pergunta A:** a conversão também corre num iPhone, não só no desktop
+
+**Falta:** (1) o mesmo teste no iPhone com **URL** em vez de blob - é o caminho real (streaming
+por HTTP com Range) e o blob não o prova; (2) **Android/Chrome**.
 
 **Decisão:** _por tomar_
