@@ -1,7 +1,7 @@
 # architecture.md — Logos
 
 > **Quando atualizar:** após mudanças estruturais (novo serviço, alteração de modelo de dados, nova fronteira de segurança, mudança de stack).
-> **Última atualização:** 14-06-2026 (V3.6 — pré-requisitos sequenciais: `courses.sequential_lessons` + `courses.sequential_modules` (independentes) + `courses.prerequisite_course_id`, aplicação server-side em `src/lib/courses/sequencing.ts`, ver §2 e §6)
+> **Última atualização:** 08-10-2026 (§8 reescrita para o estado pós-lançamento: ambientes, refs Supabase e regras de migrations. Anterior: 14-06-2026, V3.6 - pré-requisitos sequenciais, ver §2 e §6)
 
 ## 1. Visão de alto nível
 
@@ -201,22 +201,21 @@ Se a shell partilhada CCLX vier a oferecer email/password ou mais providers no f
 
 | Ambiente | Branch | Frontend | Supabase | Notas |
 |---|---|---|---|---|
-| Produção | `main` | `logos.cclx.pt` | `logos-prod` | V2 live (auth + papéis + hub `/conteudos`). `NEXT_PUBLIC_SUPABASE_*` activos desde 14-05-2026. |
-| V2.5 stored | `v2.5-copy-ux` | `logos-git-v2.5-copy-ux-jcrninjas-projects.vercel.app` | `logos-dev` | Aguarda testemunhos finais + títulos dos cards de `/conteudos` para mergear em `main`. |
-| V3 dev | `v3-cursos` | `logos-git-v3-cursos-jcrninjas-projects.vercel.app` | `logos-dev` | Inteira a desenvolver-se aqui até 01-07-2026. Não mergea em `main` em parciais. |
-| Outras previews | feature branches | `logos-<hash>-jcrninjas-projects.vercel.app` (Vercel scope Preview) | `logos-dev` | Vercel cria automático por push. |
-| Local | — | `localhost:3000` | `logos-dev` | `.env.local` (gitignored); espelhado em Vercel scope Development para `vercel env pull` |
+| Produção | `main` | `logos.cclx.pt` | `dknrnqyqlojvnhspwjrd` | V3 live desde 28-06-2026. O ref chama-se "logos-dev" no painel: o nome engana, foi promovido por troca de env |
+| Previews | qualquer ramo/PR | `logos-<hash>-jcrninjas-projects.vercel.app` (Vercel scope Preview) | `dknrnqyqlojvnhspwjrd` | **Mesma BD da produção.** Protegidos por Vercel Authentication (`all_except_custom_domains`) desde 25-08-2026 |
+| Staging | - | - | `tirzriuabfwzqxtjsmfb` | Ex-"logos-prod". Schema V3 em dia (25-08-2026), sem auth configurada, sem deploy ligado. É o ref a que a CLI do Supabase está ligada |
+| Local | - | `localhost:3000` | `dknrnqyqlojvnhspwjrd` | `.env.local` (gitignored). **Escreve em produção** (verificado 08-10-2026) |
 
-Estratégia de 3 camadas (com regras de promoção V2→V2.5→V3 e workflow de teste em outros dispositivos) em `feature-docs/branch-strategy.md`. Bootstrap Vercel (env vars por scope, visibilidade do repo, gotcha do CLI em Claude Code) em `feature-docs/vercel.md`.
+**Confirmar sempre o ref antes de qualquer operação destrutiva** - os nomes dos projetos no painel do Supabase estão trocados em relação aos papéis. Separar previews e local da produção (apontá-los para o staging) está pendente e só compensa feito com a auth do staging configurada; levantamento em `feature-docs/launch-runbook.md`. A estratégia de 3 camadas que vigorou até ao lançamento está em `feature-docs/branch-strategy.md` (histórico). Bootstrap Vercel em `feature-docs/vercel.md`.
 
 **DNS (Hostinger):**
 - CNAME `logos.cclx.pt → 00f4337193415fe7.vercel-dns-017.com` activo desde 12-05-2026.
-- TXT (SPF) e CNAME (DKIM) para Resend — **pré-condição do login por email OTP** (SMTP custom do Supabase via Resend); passos em `feature-docs/email-otp-login.md` §5. Até lá o OTP fica inerte.
+- TXT (SPF), CNAME (DKIM) e MX para Resend - domínio `logos.cclx.pt` Verified desde 11-06-2026; serve o SMTP do login por email OTP e os emails do Q&A. Valores em `feature-docs/email-otp-setup-guide.md` Parte B.
 
 **Migrations:**
 - `supabase/migrations/*.sql` no Git (Supabase CLI).
-- `pnpm dlx supabase db push` aplica a `logos-dev` (CLI está linkada via `supabase/.temp/`).
-- Aplicação a `logos-prod` é **manual e deliberada**, **só** após PR mergear em `main`. Migrations V3 (PR1+PR2 e futuras) ficam **apenas** em `logos-dev` até 01-07-2026; vão a `logos-prod` no merge final de V3.
+- A CLI está ligada (`supabase/.temp/`) ao **staging** (`tirzriuabfwzqxtjsmfb`): um `db push` sem mais vai para lá. Confirmar o ref antes de cada push.
+- Produção (`dknrnqyqlojvnhspwjrd`): aplicação **manual e deliberada**, só depois de a PR entrar em `main`. O ledger de `schema_migrations` da produção diverge dos nomes dos ficheiros em algumas versões (o MCP auto-versionava), por isso a via segura tem sido o SQL Editor do dashboard + registar à mão a versão exata do ficheiro em `supabase_migrations.schema_migrations`. O MCP do Supabase está a falhar o OAuth (`Unrecognized client_id`).
 
 ## 9. Decisões adiadas
 

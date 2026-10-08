@@ -272,6 +272,17 @@ A estrutura de versões organiza o lançamento incremental. As prioridades do do
 - Vercel Analytics ativado (gratuito, automático)
 - **(Puxado de V5 — 30-05-2026):** dashboard de estatísticas em `/admin/estatisticas` — totais, por curso (inscritos, finalizações, acessos, visitas a módulos/aulas) e por utilizador (super_admin). Inclui tracking de visitas a aulas (`lesson_views`). **Sem** taxas/percentagens de conclusão nem segmentação por etiqueta — essa parte continua em V5.
 
+### V3.8 — Áudio das aulas em segundo plano *(em validação)*
+
+- Decidido a 25-08-2026 (líder do projeto), antes da V4. Objetivo: ouvir uma aula com o telemóvel bloqueado ou noutra app ("modo Spotify")
+- Fonte: **ficheiro de áudio próprio** (MP3 a 64 kb/s mono), extraído do vídeo master **no browser do admin** (ffmpeg.wasm) e guardado no Supabase Storage. Não é vídeo alojado (§18): o vídeo continua sempre no YouTube
+- **Porque não o YouTube:** os browsers móveis suspendem o iframe em segundo plano, e os Termos do YouTube proíbem separar o áudio do vídeo
+- **Porque não o Spotify:** os embeds de podcast tocam 30 s na maioria dos browsers, e o Spotify não aceita feeds privados externos, logo nunca serviria conteúdo restrito por etiqueta (§5). Pode servir como destino de deep-link para cursos públicos (tarefa do ministério, não de engenharia)
+- Leitor: elemento `<audio>` + Media Session API. **Nunca Web Audio** (o `AudioContext` do iOS é suspenso quando o ecrã bloqueia)
+- Restrição por etiqueta igual ao resto da aula: o áudio herda a visibilidade da aula, servido por URL assinada
+- **Pré-condição:** o egress de áudio não cabe no plano gratuito do Supabase - transferir o projeto live para a organização Pro da igreja (§16)
+- **Estado (08-10-2026):** spike (PR0) a meio. Extração no browser validada; reprodução com ecrã bloqueado em iPhone/Android **por validar** - se falhar, a V3.8 não avança. Detalhe em `feature-docs/spike-audio.md` (ramo `spike-audio-segundo-plano`)
+
 ### V4 — Etiquetas Multi-Nível
 
 - Etiquetas exigidas passam a existir também ao **nível do módulo** e ao **nível da aula**
@@ -511,6 +522,7 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 - A **empresa que constrói o site principal é independente** e não precisa de coordenar com este projeto além da configuração de DNS.
 - **Acesso a DNS** tem de ser obtido junto de quem gere a conta Hostinger da igreja antes da semana de lançamento (a identificar; assinalado como dependência pré-lançamento).
 - **Os limites do plano gratuito** assumem-se suficientes para o primeiro ano de operação. As primeiras eventuais subidas de plano seriam Supabase Pro (para *backups*) e Resend (para volume de email mais alto) — nenhuma necessária no lançamento.
+  - **Atualização 25-08-2026:** a igreja já tem uma **organização Supabase em plano Pro**. Plano: transferir para lá o projeto live (`dknrnqyqlojvnhspwjrd`) - ganha *backups* e o egress que a V3.8 (áudio) exige. A transferência mantém ref, URL, chaves, BD e storage (sem mexer em env, redirect URLs nem código, sem downtime); custo adicional ~10 USD/mês de compute. As quotas de storage/egress passam a ser partilhadas por toda a organização. Garantir papel de Owner/Administrator na organização **antes** de transferir.
 - **Branch protection em `main` está activa** (12-05-2026). Tornada elegível pela mudança de visibilidade do repositório para público (ver `feature-docs/vercel.md` §5) e aplicada via API GitHub no mesmo dia. Regra:
   - Pull request obrigatório (sem push directo).
   - Check `Lint · Typecheck · Test · Format` (GitHub Actions) tem de passar antes de merge.
@@ -523,12 +535,12 @@ A equipa forneceu um conjunto de mockups a servir de referência visual de alto 
 
 ## 17. Questões em Aberto / Decisões Adiadas
 
-- **Logótipo final em SVG** do ministério — em falta. A V1 pode arrancar com wordmark em texto (Cormorant Garamond a `orange-primary`); substitui-se quando o ficheiro chegar. Paleta e tipografia foram fixadas em §14.
-- **Estratégia de backup no plano gratuito do Supabase** — aceitar o risco para a V1; rever quando houver utilizadores reais.
-- **Identificar o contacto de DNS** na conta Hostinger da igreja — necessário antes da semana de lançamento (com bastante antecedência relativamente a 1 de julho).
+- ~~**Logótipo final em SVG**~~ — resolvido a 14-05-2026: usa-se `public/logo-cclx-interiors.svg`, gerado a partir do SVG oficial. Paleta e tipografia fixadas em §14.
+- **Estratégia de backup no plano gratuito do Supabase** — já há utilizadores reais. Resolve-se com a transferência do projeto live para a organização Pro da igreja (§16), pendente.
+- ~~**Identificar o contacto de DNS**~~ — resolvido: `logos.cclx.pt` ativo desde 12-05-2026 e registos do Resend verificados a 11-06-2026.
 - **Texto público final** (página inicial, *Conhece-nos*, etiquetas de botões) — redigido durante a V1 e revisto pelos responsáveis da igreja.
 - **Decisão sobre adicionar Sentry, analytics ou Drizzle ORM** — adiar até V2+.
-- **Design da funcionalidade de Q&A (V5)** — adiada na totalidade até a V4 estar estável.
+- ~~**Design da funcionalidade de Q&A (V5)**~~ — antecipado e entregue na V3.5/V3.6 (conversa ligada). Fica para V5 só a FAQ pública (ver §9).
 - **Decisão sobre indicadores de progresso (V7)** — só após V3+V4 em produção e feedback real de utilizadores.
 - **Integração futura com shell partilhada CCLX** — não implementada agora, mas a fronteira de identidade do Logos foi estruturada para a tornar uma substituição de camada (e não uma reescrita): identidade isolada em `src/lib/auth/` como única importadora de `@supabase/ssr`, FKs sempre para `profiles.id` (nunca para `auth.users`), RLS via função helper `current_profile_id()`. O contrato concreto com a shell será definido em documento próprio quando a shell for desenhada. Detalhes em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
 - **Email/password como método alternativo de autenticação** — fora do âmbito V1-V9. Decisão tomada em 09-05-2026 para reduzir esforço da V2 (de ~13h para ~3.5h), eliminar dependências externas em Resend e DNS Hostinger, e acelerar a entrega da V3 (01-07-2026). Reabrir apenas se o ministério explicitamente pedir. Detalhes em `architecture.md` §4 e `feature-docs/auth-architecture.md`.
@@ -559,8 +571,10 @@ Para manter as primeiras versões focadas, o seguinte está **explicitamente for
 
 ## 19. Estado do Documento
 
-- **Versão:** 3.6
-- **Última atualização:** 14 de junho de 2026
+- **Versão:** 3.7
+- **Última atualização:** 8 de outubro de 2026
+- **Alterações relativamente à v3.6:**
+  - §9 — nova iteração **V3.8 (áudio das aulas em segundo plano)**, decidida a 25-08-2026, em validação por spike. §16 — organização Supabase Pro da igreja e plano de transferência do projeto live. Nota de contexto: a V3 foi lançada a 28-06-2026 (PR #70), dentro do prazo de 01-07-2026.
 - **Alterações relativamente à v3.5:**
   - §6, §8, §9 (V3/V4) — **Pré-requisitos sequenciais puxados de V4 para V3.6** (decisão do líder, 14-06-2026; mesmo padrão da antecipação de Live, Q&A e estatísticas). Em `status.md` (V3.2) estes pré-requisitos estavam explicitamente "adiados para V4 (pós-01-07-2026)"; passam a entrar em V3.6. Três controlos, todos opcionais por curso: (1) **aulas em sequência** (`courses.sequential_lessons`) - ordem obrigatória das aulas dentro de cada módulo; (2) **módulos em sequência** (`courses.sequential_modules`) - um módulo só abre depois de o anterior estar concluído; as duas flags são independentes; (3) **curso pré-requisito** (`courses.prerequisite_course_id`, auto-referência nullable) - um curso só fica disponível depois de outro estar concluído, encadeável (A → B → C) para uma sequência de cursos, `NULL` = autónomo. Conteúdo bloqueado **aparece com cadeado + dica** (não escondido, ao contrário da restrição por etiqueta - §5). Aplicação **server-side** (Server Components + Server Actions), não em RLS, tal como a conclusão de curso (`architecture.md` §6). Migration `20260614140000_sequential_prerequisites.sql` (**só `logos-dev`**). Sem dependência nova, sem env nova. Detalhe em `feature-docs/sequencing.md`.
 - **Alterações relativamente à v3.4:**

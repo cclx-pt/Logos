@@ -1,5 +1,7 @@
 # Runbook de Lançamento - Logos V3
 
+> **Estado: lançamento CONCLUÍDO a 28-06-2026** (PR #70). Este documento fica como registo do que foi feito e como referência para a separação pendente de previews/local do staging (secção de 25-08-2026 abaixo). Ambientes atuais em `architecture.md` §8.
+
 > **Objetivo:** no dia (alvo **01-07-2026**), o lançamento é só "trocar o deploy".
 > **Estratégia (decisão 19-06-2026):** promover o **`logos-dev` a produção**, em vez de aplicar migrations + recriar conteúdo no `logos-prod`. Poupa migrations, recriação do curso e toda a re-configuração de auth.
 

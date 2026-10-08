@@ -10,7 +10,7 @@ Plataforma online de estudo bíblico da **CCLX** (igreja em Portugal). Cursos �
 - **Idioma:** Português de Portugal (PT-PT) — nunca PT-BR
 - **Custo para utilizadores:** Sempre gratuito
 - **URL:** `logos.cclx.pt`
-- **Prazo absoluto V3:** 1 de julho de 2026
+- **Prazo absoluto V3:** 1 de julho de 2026 - **cumprido**: V3 lançada a 28-06-2026 (PR #70). Próxima iteração: V3.8 (áudio em segundo plano), ver `status.md`
 
 ## 🏗️ Arquitetura
 - **Framework:** Next.js 16 + TypeScript (App Router)
@@ -32,8 +32,8 @@ Modelo de dados (3 níveis): `Curso → Módulo → Aula`. Aulas têm `template`
 
 ## 🚫 Regras (não negociáveis)
 - **Nunca fazer push direto para `main`.** Sempre via Pull Request.
-- **V3 nunca mergea em `main` em parciais.** Entre 19-05-2026 e 01-07-2026 (lançamento), o repo vive em 3 camadas: `main` (V2 live), `v2.5-copy-ux` (V2.5 stored), `v3-cursos` (V3 em dev). PRs de V3 (PR1-PR9) ficam só em `v3-cursos`. Detalhes e workflow de teste cross-device em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md).
-- **Lançamento promove o `logos-dev` (ref `dknrnqyqlojvnhspwjrd`) a produção - não se recria nada.** Decisão 19-06-2026: em vez de aplicar migrations + recriar conteúdo no antigo `logos-prod`, no dia troca-se o env da Vercel (Production -> `logos-dev`; Preview -> antigo `logos-prod`). O `logos-dev` já tem schema V3 + Resend/OTP/Turnstile/callback Google validados. **A partir do lançamento, o ref de produção (live) é `dknrnqyqlojvnhspwjrd`; `tirzriuabfwzqxtjsmfb` passa a dev/staging.** Qualquer operação destrutiva confirma o ref primeiro. Runbook: [`feature-docs/launch-runbook.md`](feature-docs/launch-runbook.md).
+- **Trabalho novo ramifica de `origin/main`.** `main` é produção desde o lançamento (28-06-2026). Nunca ramificar de `v3-cursos` (morto: a #70 foi squash, logo diverge do histórico de `main`). O modelo de 3 camadas que vigorou até ao lançamento está em [`feature-docs/branch-strategy.md`](feature-docs/branch-strategy.md) (histórico).
+- **O ref de produção (live) é `dknrnqyqlojvnhspwjrd`** (chama-se "logos-dev" no painel - nome enganador; foi promovido a produção por troca de env no lançamento). `tirzriuabfwzqxtjsmfb` ("logos-prod") é staging, e é a ele que a CLI do Supabase está ligada. **O `.env.local` e os previews apontam para a produção.** Qualquer operação destrutiva confirma o ref primeiro. Ambientes em `architecture.md` §8; histórico do lançamento em [`feature-docs/launch-runbook.md`](feature-docs/launch-runbook.md).
 - **Sempre escrever testes** para: visibilidade por etiquetas, lógica de conclusão de curso, controlo de acesso por papel.
 - **Verificar a versão (V1–V9) antes de implementar.** Nada de scope creep entre versões.
 - **PT-PT em toda a UI e copy.** Sem PT-BR. Sem inglês na UI.
