@@ -1,6 +1,6 @@
 # Spike - áudio das aulas em segundo plano (PR0)
 
-> **Estado:** por correr. Ramo `spike-audio-segundo-plano`. **Descartável - não mergeia em `main`.**
+> **Estado (08-10-2026):** A ✅ passa (19/21-09-2026, desktop); **B ⏳ por correr** em iPhone e Android reais. Ramo `spike-audio-segundo-plano`. **Descartável - não mergeia em `main`.**
 >
 > Existe para responder a duas perguntas antes de investir ~2 semanas na funcionalidade
 > completa. Quando estiver respondido, este ficheiro fica com os resultados e o ramo é
