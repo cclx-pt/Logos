@@ -1,6 +1,6 @@
 # Spike - áudio das aulas em segundo plano (PR0)
 
-> **Estado (08-10-2026):** A ✅ passa (desktop e iPhone); B 🟡 iPhone passa com blob, falta iPhone com URL e Android. Ramo `spike-audio-segundo-plano`. **Descartável - não mergeia em `main`.**
+> **Estado (08-10-2026):** A ✅ passa (desktop e iPhone); B ✅ iPhone passa (blob). **Decisão: avança** (URL e Android não testados, por decisão). Ramo `spike-audio-segundo-plano`. **Descartável - não mergeia em `main`.**
 >
 > Existe para responder a duas perguntas antes de investir ~2 semanas na funcionalidade
 > completa. Quando estiver respondido, este ficheiro fica com os resultados e o ramo é
@@ -163,4 +163,8 @@ continuou, e os controlos do ecrã de bloqueio (pausa e saltos) funcionaram. Doi
 **Falta:** (1) o mesmo teste no iPhone com **URL** em vez de blob - é o caminho real (streaming
 por HTTP com Range) e o blob não o prova; (2) **Android/Chrome**.
 
-**Decisão:** _por tomar_
+**Decisão (08-10-2026, líder do projeto): AVANÇA.** A V3.8 vai ser construída. O iPhone era a
+plataforma de maior risco e passou; o líder decidiu **não** correr o teste com URL nem o
+Android ("se funciona aqui deve funcionar em todos"). Risco aceite e registado: o caminho por
+streaming HTTP e o Android ficam validados só na implementação, no preview da PR do leitor -
+se falharem aí, o fallback é o mesmo leitor com o ficheiro descarregado para blob.
